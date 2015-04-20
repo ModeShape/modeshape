@@ -18,6 +18,7 @@ package org.modeshape.web.client.admin;
 import com.google.gwt.core.client.GWT;
 import com.smartgwt.client.types.Encoding;
 import com.smartgwt.client.types.FormMethod;
+import com.smartgwt.client.widgets.form.fields.CheckboxItem;
 import com.smartgwt.client.widgets.form.fields.HiddenItem;
 import com.smartgwt.client.widgets.form.fields.StaticTextItem;
 import com.smartgwt.client.widgets.form.fields.UploadItem;
@@ -33,6 +34,8 @@ public class UploadBackupDialog extends ModalDialog {
     
     private final HiddenItem repositoryField = new HiddenItem("repository");
     private final UploadItem fileItem = new UploadItem("Upload content");
+    private final CheckboxItem incBinaries = new CheckboxItem("Include binaries");
+    private final CheckboxItem reindexOnFinish = new CheckboxItem("Reindex on finish");
     private final UploadRestoreControl control;
     
     public UploadBackupDialog(UploadRestoreControl control) {
@@ -42,7 +45,7 @@ public class UploadBackupDialog extends ModalDialog {
         StaticTextItem description = new StaticTextItem("");
         description.setValue("Specify backup name");
 
-        setControls(description,repositoryField, fileItem);
+        setControls(description,repositoryField, fileItem, incBinaries, reindexOnFinish);
         setAction(GWT.getModuleBaseForStaticFiles() + "backup-upload/content");
 
         form().setEncoding(Encoding.MULTIPART);

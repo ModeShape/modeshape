@@ -22,6 +22,7 @@ import com.smartgwt.client.widgets.Label;
 import com.smartgwt.client.widgets.events.ClickEvent;
 import com.smartgwt.client.widgets.events.ClickHandler;
 import com.smartgwt.client.widgets.layout.VLayout;
+import org.modeshape.web.shared.BackupParams;
 
 /**
  *
@@ -58,8 +59,8 @@ public class BackupControl extends VLayout {
         addMember(text);
     }
 
-    protected void backup(String name) {
-        adminView.jcrService().backup(adminView.repository(), name, new AsyncCallback<Object>() {
+    protected void backup(String name, BackupParams params) {
+        adminView.jcrService().backup(adminView.repository(), name, params, new AsyncCallback<Object>() {
             @Override
             public void onFailure(Throwable caught) {
                 SC.say(caught.getMessage());

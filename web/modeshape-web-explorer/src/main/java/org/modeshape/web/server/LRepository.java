@@ -18,6 +18,8 @@ package org.modeshape.web.server;
 import javax.jcr.Repository;
 import javax.jcr.Session;
 import org.modeshape.web.client.RemoteException;
+import org.modeshape.web.shared.BackupParams;
+import org.modeshape.web.shared.RestoreParams;
 
 /**
  * @author kulikov
@@ -53,8 +55,22 @@ public interface LRepository {
      */
     public Session session( String workspace ) throws RemoteException;
 
-    public void backup( String name ) throws RemoteException;
+    /**
+     * Backup repository.
+     * 
+     * @param name
+     * @param options
+     * @throws RemoteException 
+     */
+    public void backup( String name, BackupParams options ) throws RemoteException;
 
-    public void restore( String name ) throws RemoteException;
+    /**
+     * Restore repository.
+     * 
+     * @param name
+     * @param options
+     * @throws RemoteException 
+     */
+    public void restore( String name, RestoreParams options ) throws RemoteException;
 
 }

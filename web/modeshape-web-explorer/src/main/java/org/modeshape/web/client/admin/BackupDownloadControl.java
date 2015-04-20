@@ -25,6 +25,7 @@ import com.smartgwt.client.widgets.events.ClickEvent;
 import com.smartgwt.client.widgets.events.ClickHandler;
 import com.smartgwt.client.widgets.form.DynamicForm;
 import com.smartgwt.client.widgets.layout.VLayout;
+import org.modeshape.web.shared.BackupParams;
 
 /**
  *
@@ -34,6 +35,7 @@ public class BackupDownloadControl extends VLayout {
 
     private final DynamicForm form = new DynamicForm();
     private final AdminView adminView;
+    private final BackupOptionsDialog optionsDialog = new BackupOptionsDialog(this);
     
     public BackupDownloadControl(final AdminView adminView) {
         super();
@@ -48,7 +50,7 @@ public class BackupDownloadControl extends VLayout {
         label.addClickHandler(new ClickHandler() {
             @Override
             public void onClick(ClickEvent event) {
-                backupAndDownload();
+                optionsDialog.showModal();
             }
         });
 
@@ -64,8 +66,8 @@ public class BackupDownloadControl extends VLayout {
 
     }
 
-    protected void backupAndDownload() {
-        adminView.jcrService().backup(adminView.repository(), "zzz", new AsyncCallback<Object>() {
+    protected void backupAndDownload(BackupParams params) {
+        adminView.jcrService().backup(adminView.repository(), "zzz", params, new AsyncCallback<Object>() {
             @Override
             public void onFailure(Throwable caught) {
                 SC.say(caught.getMessage());

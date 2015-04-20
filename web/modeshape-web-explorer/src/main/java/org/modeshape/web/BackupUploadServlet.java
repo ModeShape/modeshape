@@ -30,6 +30,7 @@ import org.apache.commons.fileupload.disk.DiskFileItemFactory;
 import org.apache.commons.fileupload.servlet.ServletFileUpload;
 import org.modeshape.common.util.FileUtil;
 import org.modeshape.web.server.Connector;
+import org.modeshape.web.shared.RestoreParams;
 
 /**
  *
@@ -40,6 +41,8 @@ public class BackupUploadServlet extends HttpServlet {
     private static final long serialVersionUID = 1505304380334878522L;
     private final static String CONTENT_PARAMETER = "Upload content";
     private final static String REPOSITORY_NAME_PARAMETER = "repository";
+    private final static String INCLUDE_BINARY_PARAMETER = "Include binaries";
+    private final static String REINDEX_ON_FINISH_PARAMETER = "Reindex on finish";
     private final static String REPOSITORY_CONNECTOR = "connector";
     private final static String DESTINATION_URL = "/tree/%s/";
     private ServletFileUpload upload;
@@ -66,16 +69,22 @@ public class BackupUploadServlet extends HttpServlet {
         }
 
         String repository = getParameter(items, REPOSITORY_NAME_PARAMETER);
+        String incBinaries = getParameter(items, INCLUDE_BINARY_PARAMETER);
+        String reindexOnFinish = getParameter(items, REINDEX_ON_FINISH_PARAMETER);
 
+        RestoreParams params = new RestoreParams();
+        params.setIncludeBinaries(Boolean.valueOf(incBinaries));
+        params.setReindexOnFinish(Boolean.valueOf(reindexOnFinish));
+        
         InputStream in = getStream(items);
 
-        File dir = new File("zzz");
+        File dir = new File(tempDir.getAbsolutePath() + File.pathSeparator + "zzz");
         
         FileUtil.unzip(in, dir.getAbsolutePath());
         Connector connector = (Connector) request.getSession().getAttribute(REPOSITORY_CONNECTOR);
 
         try {
-            connector.find(repository).restore(dir.getAbsolutePath());
+            connector.find(repository).restore(dir.getAbsolutePath(), params);
         } catch (Exception e) {
             throw new ServletException(e);
         }

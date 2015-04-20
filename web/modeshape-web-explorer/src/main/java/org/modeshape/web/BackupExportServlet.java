@@ -21,6 +21,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -34,18 +35,19 @@ import org.modeshape.common.util.IoUtil;
 public class BackupExportServlet extends HttpServlet {
 
     private static final long serialVersionUID = 1L;
-
+    private File tempDir;
+    
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws IOException {
-        File file = new File("zzz");
+        File file = new File(tempDir.getAbsoluteFile() + File.separator + "zzz");
         if (!file.exists()) {
             throw new FileNotFoundException(file.getAbsolutePath());
         }
 
-        File zipFile = new File("bak.zip");
+        File zipFile = new File(tempDir.getAbsolutePath() + File.separator + "bak.zip");
         
-        FileUtil.zipDir(new File("zzz").getAbsolutePath(), zipFile.getAbsolutePath());
+        FileUtil.zipDir(file.getAbsolutePath(), zipFile.getAbsolutePath());
         
         response.setHeader("Content-Type", "application/zip");
         response.setHeader("Content-Length", String.valueOf(zipFile.length()));
@@ -66,6 +68,14 @@ public class BackupExportServlet extends HttpServlet {
             throws IOException {
         doGet(request, response);
     }
+    
+    @Override
+    public void init() {
+        // Configure a repository (to ensure a secure temp location is used)
+        ServletContext servletContext = this.getServletConfig().getServletContext();
+        tempDir = (File) servletContext.getAttribute("javax.servlet.context.tempdir");
+    }
+    
 }
 
 
