@@ -78,7 +78,8 @@ public class BackupUploadServlet extends HttpServlet {
         
         InputStream in = getStream(items);
 
-        File dir = new File(tempDir.getAbsolutePath() + File.pathSeparator + "zzz");
+        File dir = new File(tempDir.getAbsolutePath() + File.pathSeparator + 
+                Long.toString(System.currentTimeMillis()));
         
         FileUtil.unzip(in, dir.getAbsolutePath());
         Connector connector = (Connector) request.getSession().getAttribute(REPOSITORY_CONNECTOR);

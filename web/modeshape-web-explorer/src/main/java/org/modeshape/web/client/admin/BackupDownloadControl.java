@@ -24,6 +24,7 @@ import com.smartgwt.client.widgets.Label;
 import com.smartgwt.client.widgets.events.ClickEvent;
 import com.smartgwt.client.widgets.events.ClickHandler;
 import com.smartgwt.client.widgets.form.DynamicForm;
+import com.smartgwt.client.widgets.form.fields.HiddenItem;
 import com.smartgwt.client.widgets.layout.VLayout;
 import org.modeshape.web.shared.BackupParams;
 
@@ -34,6 +35,8 @@ import org.modeshape.web.shared.BackupParams;
 public class BackupDownloadControl extends VLayout {
 
     private final DynamicForm form = new DynamicForm();
+    private final HiddenItem fileField = new HiddenItem("file");
+    
     private final AdminView adminView;
     private final BackupOptionsDialog optionsDialog = new BackupOptionsDialog(this);
     
@@ -43,6 +46,8 @@ public class BackupDownloadControl extends VLayout {
         
         setStyleName("admin-control");
 
+        form.setItems(fileField);
+        
         Label label = new Label("Backup & Download");
         label.setStyleName("button-label");
         label.setHeight(25);
@@ -67,7 +72,9 @@ public class BackupDownloadControl extends VLayout {
     }
 
     protected void backupAndDownload(BackupParams params) {
-        adminView.jcrService().backup(adminView.repository(), "zzz", params, new AsyncCallback<Object>() {
+        final String name = Long.toString(System.currentTimeMillis());
+        fileField.setValue(name);
+        adminView.jcrService().backup(adminView.repository(), name, params, new AsyncCallback<Object>() {
             @Override
             public void onFailure(Throwable caught) {
                 SC.say(caught.getMessage());
@@ -76,7 +83,7 @@ public class BackupDownloadControl extends VLayout {
             @SuppressWarnings("synthetic-access")
             @Override
             public void onSuccess(Object result) {
-                form.setAction(GWT.getModuleBaseForStaticFiles() + "backup/do?file=zzz");
+                form.setAction(GWT.getModuleBaseForStaticFiles() + "backup/da?file=" + name);
                 form.setMethod(FormMethod.GET);
                 form.submitForm();
             }

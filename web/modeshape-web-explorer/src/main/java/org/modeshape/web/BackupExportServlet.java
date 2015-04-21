@@ -25,6 +25,7 @@ import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.FileUtil;
 import org.modeshape.common.util.IoUtil;
 
@@ -37,10 +38,17 @@ public class BackupExportServlet extends HttpServlet {
     private static final long serialVersionUID = 1L;
     private File tempDir;
     
+    private Logger logger = Logger.getLogger("Servlet");
+    
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws IOException {
-        File file = new File(tempDir.getAbsoluteFile() + File.separator + "zzz");
+        String fname = request.getParameter("file");
+        String qs = request.getQueryString();
+        
+        logger.debug("--------- Query string=" + qs);
+        
+        File file = new File(tempDir.getAbsoluteFile() + File.separator + fname);
         if (!file.exists()) {
             throw new FileNotFoundException(file.getAbsolutePath());
         }
