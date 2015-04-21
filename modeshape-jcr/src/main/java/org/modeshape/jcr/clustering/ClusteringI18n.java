@@ -24,7 +24,7 @@ import org.modeshape.common.i18n.I18n;
  * @author Horia Chiorean (hchiorea@redhat.com)
  */
 public class ClusteringI18n {
-    public static I18n clusterNameRequired;
+    public static I18n channelNotConnected;
     public static I18n errorSendingMessage;
     public static I18n errorReceivingMessage;
     public static I18n memberOfClusterIsSuspect;

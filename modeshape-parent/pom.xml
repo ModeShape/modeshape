@@ -245,8 +245,10 @@
         <lucene.regex.version>3.0.3</lucene.regex.version>
 
         <infinispan.version>6.0.2.Final</infinispan.version>
+        <infinispan.module.slot>6.0</infinispan.module.slot>
         <!--Make sure the jgroups version is the same as the one used by ISPN -->
         <jgroups.version>3.4.3.Final</jgroups.version>
+        <jgroups.module.slot>3.4</jgroups.module.slot>
         <c3p0.version>0.9.1.2</c3p0.version>
         <jboss.logging.version>3.1.4.GA</jboss.logging.version>
 
@@ -1341,6 +1343,15 @@
                 <groupId>org.infinispan</groupId>
                 <artifactId>infinispan-commons</artifactId>
                 <version>${infinispan.version}</version>
+            </dependency>
+            <!-- 
+                Infinispan AS Server modules artifact
+            -->
+            <dependency>
+                <groupId>org.infinispan</groupId>
+                <artifactId>infinispan-as-modules</artifactId>
+                <version>${infinispan.version}</version>
+                <type>zip</type>
             </dependency>
 
             <!--

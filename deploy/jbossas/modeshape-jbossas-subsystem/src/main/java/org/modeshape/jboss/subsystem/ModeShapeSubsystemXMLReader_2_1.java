@@ -15,11 +15,11 @@
  */
 package org.modeshape.jboss.subsystem;
 
-import static org.jboss.as.controller.parsing.ParseUtils.requireNoAttributes;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
+import static org.jboss.as.controller.parsing.ParseUtils.requireNoAttributes;
 import java.util.ArrayList;
 import java.util.List;
 import javax.xml.stream.XMLStreamConstants;
@@ -31,7 +31,7 @@ import org.jboss.dmr.ModelNode;
 import org.jboss.staxmapper.XMLElementReader;
 import org.jboss.staxmapper.XMLExtendedStreamReader;
 
-public class ModeShapeSubsystemXMLReader_2_0 implements XMLStreamConstants, XMLElementReader<List<ModelNode>> {
+public class ModeShapeSubsystemXMLReader_2_1 implements XMLStreamConstants, XMLElementReader<List<ModelNode>> {
 
     @Override
     public void readElement( final XMLExtendedStreamReader reader,
@@ -56,7 +56,7 @@ public class ModeShapeSubsystemXMLReader_2_0 implements XMLStreamConstants, XMLE
             if (reader.isStartElement()) {
                 // elements
                 switch (Namespace.forUri(reader.getNamespaceURI())) {
-                    case MODESHAPE_2_0:
+                    case MODESHAPE_2_1:
                         Element element = Element.forName(reader.getLocalName());
                         switch (element) {
                             case REPOSITORY:
@@ -137,8 +137,11 @@ public class ModeShapeSubsystemXMLReader_2_0 implements XMLStreamConstants, XMLE
                     case CACHE_NAME:
                         ModelAttributes.CACHE_NAME.parseAndSetParameter(attrValue, repository, reader);
                         break;
-                    case CACHE_CONTAINER:
-                        ModelAttributes.CACHE_CONTAINER.parseAndSetParameter(attrValue, repository, reader);
+                    case CACHE_CONFIG:
+                        ModelAttributes.CACHE_CONFIG.parseAndSetParameter(attrValue, repository, reader);
+                        break;   
+                    case CONFIG_RELATIVE_TO:
+                        ModelAttributes.CONFIG_RELATIVE_TO.parseAndSetParameter(attrValue, repository, reader);
                         break;
                     case JNDI_NAME:
                         ModelAttributes.JNDI_NAME.parseAndSetParameter(attrValue, repository, reader);
@@ -326,7 +329,7 @@ public class ModeShapeSubsystemXMLReader_2_0 implements XMLStreamConstants, XMLE
                     case DEFAULT_WORKSPACE:
                         ModelAttributes.DEFAULT_WORKSPACE.parseAndSetParameter(attrValue, repository, reader);
                         break;
-                    case CACHE_CONTAINER: {
+                    case CACHE_CONFIG: {
                         ModelAttributes.WORKSPACES_CACHE_CONTAINER.parseAndSetParameter(attrValue, repository, reader);
                         break;
                     }
@@ -504,8 +507,8 @@ public class ModeShapeSubsystemXMLReader_2_0 implements XMLStreamConstants, XMLE
                     case META_CACHE_NAME:
                         ModelAttributes.METADATA_CACHE_NAME.parseAndSetParameter(attrValue, storageType, reader);
                         break;
-                    case CACHE_CONTAINER:
-                        ModelAttributes.CACHE_CONTAINER.parseAndSetParameter(attrValue, storageType, reader);
+                    case CACHE_CONFIG:
+                        ModelAttributes.CACHE_CONFIG.parseAndSetParameter(attrValue, storageType, reader);
                         break;
                     case CHUNK_SIZE:
                         ModelAttributes.CHUNK_SIZE.parseAndSetParameter(attrValue, storageType, reader);

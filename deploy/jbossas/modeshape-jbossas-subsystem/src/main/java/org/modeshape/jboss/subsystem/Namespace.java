@@ -25,12 +25,12 @@ enum Namespace {
     // must be first
     UNKNOWN(0, 0, null),
 
-    MODESHAPE_2_0(2, 0, new ModeShapeSubsystemXMLReader_2_0());
+    MODESHAPE_2_1(2, 1, new ModeShapeSubsystemXMLReader_2_1());
 
     /**
      * The current namespace version.
      */
-    public static final Namespace CURRENT = MODESHAPE_2_0;
+    public static final Namespace CURRENT = MODESHAPE_2_1;
 
     private static final String BASE_URN = "urn:jboss:domain:modeshape:";
 
@@ -46,13 +46,6 @@ enum Namespace {
         this.reader = reader;
     }
 
-    public int getMajorVersion() {
-        return this.major;
-    }
-
-    public int getMinorVersion() {
-        return this.minor;
-    }
 
     /**
      * Get the URI of this namespace.

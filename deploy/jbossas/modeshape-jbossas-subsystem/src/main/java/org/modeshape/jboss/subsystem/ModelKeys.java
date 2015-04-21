@@ -33,10 +33,10 @@ public class ModelKeys {
     static final String NESTED_STORAGE_TYPE_CACHE = "nested-storage-type-cache";
     static final String NESTED_STORAGE_TYPE_DB = "nested-storage-type-db";
     static final String NESTED_STORAGE_TYPE_CUSTOM = "nested-storage-type-custom";
-    static final String CACHE_CONTAINER = "cache-container";
+    static final String CACHE_CONFIG = "cache-config";
+    static final String CONFIG_RELATIVE_TO = "config-relative-to";
     static final String CACHE_NAME = "cache-name";
     static final String CLASSNAME = "classname";
-    static final String CONNECTION_FACTORY_JNDI_NAME = "connection-factory-jndi-name";
     static final String DATA_CACHE_NAME = "data-cache-name";
     static final String DATA_SOURCE_JNDI_NAME = "data-source-jndi-name";
     static final String DEFAULT_WORKSPACE = "default-workspace";
@@ -51,7 +51,6 @@ public class ModelKeys {
     static final String GARBAGE_COLLECTION_INTERVAL = "garbage-collection-interval";
     static final String JNDI_NAME = "jndi-name";
     static final String LOCK_CACHE_NAME = "lock-cache-name";
-    static final String LOCKING_STRATEGY = "locking-strategy";
     static final String METADATA_CACHE_NAME = "metadata-cache-name";
     static final String CHUNK_SIZE = "chunk-size";
     static final String MINIMUM_BINARY_SIZE = "minimum-binary-size";

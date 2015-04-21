@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<infinispan xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+            xsi:schemaLocation="urn:infinispan:config:6.0 http://www.infinispan.org/schemas/infinispan-config-6.0.xsd"
+            xmlns="urn:infinispan:config:6.0">
+    <global>
+        <globalJmxStatistics enabled="false" allowDuplicateDomains="true"/>
+        <transport clusterName="modeshape-sample-cluster">
+            <properties>
+                <property name="configurationFile" value="${jboss.domain.config.dir}/modeshape/jgroups-config.xml" />
+            </properties>
+        </transport>
+    </global>
+
+    <namedCache name="sample">
+        <clustering mode="replication">
+            <sync />
+        </clustering>
+
+        <transaction transactionManagerLookupClass="org.infinispan.transaction.lookup.GenericTransactionManagerLookup"
+                     transactionMode="TRANSACTIONAL"
+                     lockingMode="PESSIMISTIC" />
+        <locking lockAcquisitionTimeout="60000"/>
+        <persistence passivation="false">
+            <singleFile
+                    preload="false"
+                    shared="false"
+                    fetchPersistentState="true"
+                    purgeOnStartup="true"
+                    location="${jboss.server.data.dir}/modeshape/store/sample-ha">
+            </singleFile>
+        </persistence>
+    </namedCache>
+
+    <namedCache name="sample-binary-fs">
+        <clustering mode="replication">
+            <sync />
+        </clustering>
+        <locking lockAcquisitionTimeout="60000"/>
+        <transaction
+                transactionManagerLookupClass="org.infinispan.transaction.lookup.GenericTransactionManagerLookup"
+                transactionMode="TRANSACTIONAL"
+                lockingMode="PESSIMISTIC"/>
+        <persistence
+                passivation="false">
+            <singleFile
+                    shared="false"
+                    preload="false"
+                    fetchPersistentState="false"
+                    purgeOnStartup="false"
+                    location="${jboss.server.data.dir}/modeshape/binary-store/sample-ha-binary-fs">
+            </singleFile>
+        </persistence>
+    </namedCache>
+
+    <namedCache name="sample-binary-fs-meta">
+        <clustering mode="replication">
+            <sync />
+        </clustering>
+        <locking lockAcquisitionTimeout="60000"/>
+
+        <transaction
+                transactionManagerLookupClass="org.infinispan.transaction.lookup.GenericTransactionManagerLookup"
+                transactionMode="TRANSACTIONAL"
+                lockingMode="PESSIMISTIC"/>
+        <persistence
+                passivation="false">
+            <singleFile
+                    shared="false"
+                    preload="false"
+                    fetchPersistentState="false"
+                    purgeOnStartup="false"
+                    location="${jboss.server.data.dir}/modeshape/binary-store/sample-ha-binary-fs-meta">
+            </singleFile>
+        </persistence>
+    </namedCache>
+</infinispan>

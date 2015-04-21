@@ -15,19 +15,10 @@
  */
 package org.modeshape.jboss.subsystem;
 
-import java.util.List;
-import org.infinispan.manager.CacheContainer;
 import org.infinispan.schematic.document.EditableDocument;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.dmr.ModelNode;
-import org.jboss.msc.service.ServiceBuilder;
-import org.jboss.msc.service.ServiceController;
-import org.jboss.msc.service.ServiceName;
-import org.jboss.msc.service.ServiceTarget;
-import org.modeshape.jboss.service.BinaryStorage;
-import org.modeshape.jboss.service.BinaryStorageService;
-import org.modeshape.jboss.service.RepositoryService;
 import org.modeshape.jcr.RepositoryConfiguration.FieldName;
 import org.modeshape.jcr.RepositoryConfiguration.FieldValue;
 
@@ -61,27 +52,10 @@ public class AddCacheBinaryStorage extends AbstractAddBinaryStorage {
         if (chunkSize.isDefined()) {
             binaries.set(FieldName.CHUNK_SIZE, chunkSize.asInt());
         }
-        if (ModelAttributes.CACHE_CONTAINER.isMarshallable(model, false)) {
-            // There's a non-default value ...
-            containerName = ModelAttributes.CACHE_CONTAINER.resolveModelAttribute(context, model).asString();
-            // The proper container will be injected into the RepositoryService, so use the fixed container name ...
-            binaries.set(FieldName.CACHE_CONFIGURATION, RepositoryService.BINARY_STORAGE_CONTAINER_NAME);
+        ModelNode infinispanConfig = ModelAttributes.CACHE_CONFIG.resolveModelAttribute(context, model);
+        if (infinispanConfig.isDefined()) {
+            binaries.set(FieldName.CACHE_CONFIGURATION, infinispanConfig.asString());
         }
-    }
-
-    @Override
-    protected void addControllersAndDependencies( String repositoryName,
-                                                  BinaryStorageService service,
-                                                  ServiceBuilder<BinaryStorage> builder,
-                                                  List<ServiceController<?>> newControllers,
-                                                  ServiceTarget target,
-                                                  String binariesStoreName ) {
-        if (containerName != null) {
-            builder.addDependency(ServiceName.JBOSS.append("infinispan", containerName),
-                                  CacheContainer.class,
-                                  service.getBinaryCacheManagerInjector());
-        }
-        // otherwise, we'll use the content cache container that the RepositoryService is already dependent upon ...
     }
 
     @Override
