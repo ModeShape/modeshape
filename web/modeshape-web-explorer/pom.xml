@@ -28,6 +28,7 @@
         <dependency>
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-jcr-api</artifactId>
+            <scope>provided</scope>
         </dependency>
 
         <dependency>
