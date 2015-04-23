@@ -19,11 +19,13 @@ import org.modeshape.web.shared.JcrNode;
 import com.google.gwt.user.client.rpc.AsyncCallback;
 import java.util.Collection;
 import java.util.Date;
+import org.modeshape.web.shared.BackupParams;
 import org.modeshape.web.shared.JcrAccessControlList;
 import org.modeshape.web.shared.JcrNodeType;
 import org.modeshape.web.shared.JcrPermission;
 import org.modeshape.web.shared.JcrRepositoryDescriptor;
 import org.modeshape.web.shared.RepositoryName;
+import org.modeshape.web.shared.RestoreParams;
 import org.modeshape.web.shared.ResultSet;
 import org.modeshape.web.shared.Stats;
 
@@ -86,8 +88,8 @@ public interface JcrServiceAsync {
 
     public void save(String repository, String workspace, AsyncCallback<?> cb);
     
-    public void backup(String repositoy, String name, AsyncCallback<?> cb);
-    public void restore(String repositoy, String name, AsyncCallback<?> cb);
+    public void backup(String repositoy, String name, BackupParams params, AsyncCallback<?> cb);
+    public void restore(String repositoy, String name, RestoreParams params, AsyncCallback<?> cb);
     
     public void export(String repository, String workspace, String path, String location, 
             boolean skipBinary, boolean noRecurse, AsyncCallback<?> cb) ;

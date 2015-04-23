@@ -16,43 +16,47 @@
 package org.modeshape.web.client.admin;
 
 import com.smartgwt.client.widgets.form.fields.CheckboxItem;
-import com.smartgwt.client.widgets.form.fields.StaticTextItem;
 import com.smartgwt.client.widgets.form.fields.TextItem;
 import com.smartgwt.client.widgets.form.fields.events.ClickEvent;
 import org.modeshape.web.client.ModalDialog;
-import org.modeshape.web.shared.RestoreParams;
+import org.modeshape.web.shared.BackupParams;
 
 /**
  * Dialog asking backup directory.
  * 
  * @author kulikov
  */
-public class RestoreDialog extends ModalDialog {
+public class BackupOptionsDialog extends ModalDialog {
     
-    private final TextItem name = new TextItem("Backup name");
     private final CheckboxItem incBinariesField = new CheckboxItem("Include binaries");
-    private final CheckboxItem reindexOnFinishField = new CheckboxItem("Reindex on finish");
-    private final RestoreControl control;
+    private final CheckboxItem compressField = new CheckboxItem("Compress files");
+    private final TextItem docsPerFileField = new TextItem("Documents per file");
+    private final BackupDownloadControl control;
     
-    public RestoreDialog(RestoreControl control) {
-        super("Restore", 400, 200);
+    public BackupOptionsDialog(BackupDownloadControl control) {
+        super("Backup", 400, 200);
         this.control = control;
         
-        StaticTextItem description = new StaticTextItem("");
-        description.setValue("Specify backup name");
-        
-        setControls(description, name, incBinariesField, reindexOnFinishField);
+        setDefaults();        
+        setControls(incBinariesField, compressField, docsPerFileField);
+    }
+    
+    private void setDefaults() {
+        incBinariesField.setValue(true);
+        compressField.setValue(true);
+        docsPerFileField.setValue("10000");
     }
     
     @Override
     public void onConfirm(ClickEvent event) {
         //prepare clean options
-        RestoreParams params = new RestoreParams();
+        BackupParams params = new BackupParams();
         
         params.setIncludeBinaries(incBinariesField.getValueAsBoolean());
-        params.setReindexOnFinish(reindexOnFinishField.getValueAsBoolean());
+        params.setCompress(compressField.getValueAsBoolean());
+        params.setDocumentsPerFile(Long.valueOf(docsPerFileField.getValueAsString()));
         
-        control.restore(name.getValueAsString(), params);
+        control.backupAndDownload(params);
     }
  
     

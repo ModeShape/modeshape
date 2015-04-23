@@ -15,8 +15,6 @@
  */
 package org.modeshape.web.client.admin;
 
-import com.google.gwt.user.client.rpc.AsyncCallback;
-import com.smartgwt.client.util.SC;
 import org.modeshape.web.client.Console;
 import org.modeshape.web.client.JcrServiceAsync;
 import org.modeshape.web.client.View;
@@ -52,19 +50,5 @@ public class AdminView extends View {
         return console.contents().repository();
     }
     
-    public void restore( String name ) {
-        console.jcrService().restore(console.repository(), name, new AsyncCallback<Object>() {
-            @Override
-            public void onFailure( Throwable caught ) {
-                SC.say(caught.getMessage());
-            }
-
-            @Override
-            public void onSuccess( Object result ) {
-                SC.say("Complete");
-            }
-        });
-    }
-
 }
 

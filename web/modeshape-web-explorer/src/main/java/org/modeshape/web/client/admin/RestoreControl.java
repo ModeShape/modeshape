@@ -22,6 +22,7 @@ import com.smartgwt.client.widgets.Label;
 import com.smartgwt.client.widgets.events.ClickEvent;
 import com.smartgwt.client.widgets.events.ClickHandler;
 import com.smartgwt.client.widgets.layout.VLayout;
+import org.modeshape.web.shared.RestoreParams;
 
 /**
  *
@@ -62,8 +63,8 @@ public class RestoreControl extends VLayout {
         addMember(text);
     }
     
-    public void restore(String name) {
-        adminView.jcrService().restore(adminView.repository(), name, new AsyncCallback() {
+    public void restore(String name, RestoreParams params) {
+        adminView.jcrService().restore(adminView.repository(), name, params, new AsyncCallback() {
 
             @Override
             public void onFailure(Throwable caught) {
