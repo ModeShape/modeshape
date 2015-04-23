@@ -24,10 +24,10 @@ import org.jboss.security.AuthenticationManager;
 import org.modeshape.jboss.service.RepositoryService;
 import org.modeshape.jcr.ExecutionContext;
 import org.modeshape.jcr.api.JaasCredentials;
+import org.modeshape.jcr.security.EnvironmentAuthenticationProvider;
 import org.modeshape.jcr.security.JaasSecurityContext;
 import org.modeshape.jcr.security.JaccSubjectResolver;
 import org.modeshape.jcr.security.SecurityContext;
-import org.modeshape.jcr.security.EnvironmentAuthenticationProvider;
 import org.modeshape.jcr.security.SimplePrincipal;
 
 /**

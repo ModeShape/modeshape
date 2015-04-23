@@ -15,13 +15,18 @@
  */
 package org.modeshape.jboss.service;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 import javax.jcr.RepositoryException;
 import org.infinispan.manager.CacheContainer;
+import org.infinispan.manager.DefaultCacheManager;
 import org.infinispan.schematic.Schematic;
 import org.infinispan.schematic.document.Changes;
-import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.document.EditableArray;
 import org.infinispan.schematic.document.EditableDocument;
 import org.infinispan.schematic.document.Editor;
@@ -41,7 +46,6 @@ import org.modeshape.common.collection.Problems;
 import org.modeshape.common.util.DelegatingClassLoader;
 import org.modeshape.common.util.StringUtil;
 import org.modeshape.jboss.subsystem.MappedAttributeDefinition;
-import org.modeshape.jcr.ConfigurationException;
 import org.modeshape.jcr.Environment;
 import org.modeshape.jcr.JcrRepository;
 import org.modeshape.jcr.ModeShapeEngine;
@@ -56,27 +60,30 @@ import org.modeshape.jcr.RepositoryStatistics;
  */
 public class RepositoryService implements Service<JcrRepository>, Environment {
 
-    public static final String CONTENT_CONTAINER_NAME = "content";
     public static final String BINARY_STORAGE_CONTAINER_NAME = "binaries";
-    public static final String WORKSPACES_CONTAINER_NAME = "workspaces";
-
+    
     private static final Logger LOG = Logger.getLogger(RepositoryService.class.getPackage().getName());
 
     private final InjectedValue<ModeShapeEngine> engineInjector = new InjectedValue<ModeShapeEngine>();
-    private final InjectedValue<CacheContainer> cacheManagerInjector = new InjectedValue<CacheContainer>();
-    private final InjectedValue<CacheContainer> workspacesCacheContainerInjector = new InjectedValue<CacheContainer>();
     private final InjectedValue<BinaryStorage> binaryStorageInjector = new InjectedValue<BinaryStorage>();
     private final InjectedValue<String> dataDirectoryPathInjector = new InjectedValue<String>();
     private final InjectedValue<ModuleLoader> moduleLoaderInjector = new InjectedValue<ModuleLoader>();
     private final InjectedValue<RepositoryStatistics> monitorInjector = new InjectedValue<RepositoryStatistics>();
     private final InjectedValue<ISecurityManagement> securityManagementServiceInjector = new InjectedValue<ISecurityManagement>();
 
-    private RepositoryConfiguration repositoryConfiguration;
+    private final ConcurrentHashMap<String, CacheContainer> containers;
+    private final String cacheConfigRelativeTo;
+    private final String cacheConfig;
+    private final RepositoryConfiguration repositoryConfiguration;
+
     private String journalPath;
     private String journalRelativeTo;
 
-    public RepositoryService( RepositoryConfiguration repositoryConfiguration ) {
+    public RepositoryService( RepositoryConfiguration repositoryConfiguration, String cacheConfig, String cacheConfigRelativeTo ) {
         this.repositoryConfiguration = repositoryConfiguration;
+        this.containers = new ConcurrentHashMap<>();
+        this.cacheConfig = cacheConfig;
+        this.cacheConfigRelativeTo = cacheConfigRelativeTo;
     }
 
     @Override
@@ -94,19 +101,41 @@ public class RepositoryService implements Service<JcrRepository>, Environment {
 
     @Override
     public CacheContainer getCacheContainer( String name ) {
-        CacheContainer container = null;
-        if (BINARY_STORAGE_CONTAINER_NAME.equals(name)) {
-            BinaryStorage storage = binaryStorageInjector.getValue();
-            container = storage.getCacheContainer();
+        CacheContainer cacheContainer = containers.get(name);
+        if (cacheContainer != null) {
+            return cacheContainer;
         }
-        if (WORKSPACES_CONTAINER_NAME.equals(name)) {
-            container = workspacesCacheContainerInjector.getValue();
+        InputStream is = null;
+        String resourceFile = name;
+        if (RepositoryConfiguration.Default.WORKSPACE_CACHE_CONFIGURATION.equalsIgnoreCase(name)) {
+            // this is the default ws cache config which is pre-packaged by us so we'll just use the CL
+            is = RepositoryService.class.getClassLoader().getResourceAsStream(RepositoryConfiguration.Default.WORKSPACE_CACHE_CONFIGURATION);
+            if (is == null) {
+                throw new IllegalStateException("Cannot locate the default ModeShape workspace cache config in the classpath.");
+            }
+        } else {
+            String cacheConfig = name;
+            if (name.startsWith("/")) {
+                cacheConfig = name.substring(1);
+            }
+            String cacheConfigPath = this.cacheConfigRelativeTo + cacheConfig;
+            File file = new File(cacheConfigPath);
+            try {
+                is = new FileInputStream(file);
+                resourceFile = cacheConfigPath;
+            } catch (FileNotFoundException e) {
+                throw new RuntimeException("Cannot locate and read the Infinispan configuration file: " + cacheConfigPath);
+            }
         }
-        if (container == null) {
-            container = cacheManagerInjector.getValue();
+        try {
+            DefaultCacheManager defaultCacheManager = new DefaultCacheManager(is);
+            CacheContainer storedCacheContainer = containers.putIfAbsent(name, defaultCacheManager);
+            return storedCacheContainer != null ? storedCacheContainer : defaultCacheManager;
+        } catch (Exception e) {
+            throw new RuntimeException("Cannot load the Infinispan configuration file: " + resourceFile, e);
         }
-        return container;
     }
+
 
     @Override
     public ClassLoader getClassLoader( ClassLoader fallbackLoader,
@@ -159,8 +188,27 @@ public class RepositoryService implements Service<JcrRepository>, Environment {
             // Get the binary storage configuration ...
             BinaryStorage binaryStorageConfig = binaryStorageInjector.getValue();
             assert binaryStorageConfig != null;
-            Document binaryConfig = binaryStorageConfig.getBinaryConfiguration();
-            assert binaryConfig != null;
+            EditableDocument binaryConfig = binaryStorageConfig.getBinaryConfiguration();
+            String binaryStoreType = binaryConfig.getString(FieldName.TYPE);
+            if (RepositoryConfiguration.FieldValue.BINARY_STORAGE_TYPE_CACHE.equalsIgnoreCase(binaryStoreType)) {
+                String cacheConfiguration = binaryConfig.getString(FieldName.CACHE_CONFIGURATION);
+                if (StringUtil.isBlank(cacheConfiguration)) {
+                    // no explicit cache config defined for the binary store, use the repo's config
+                    binaryConfig.set(FieldName.CACHE_CONFIGURATION, this.cacheConfig);
+                }
+            } else if (RepositoryConfiguration.FieldValue.BINARY_STORAGE_TYPE_COMPOSITE.equalsIgnoreCase(binaryStoreType)) {
+                EditableDocument nestedStores = binaryConfig.getDocument(FieldName.COMPOSITE_STORE_NAMED_BINARY_STORES);
+                for (String storeName : nestedStores.keySet()) {
+                    EditableDocument nestedStore = nestedStores.getDocument(storeName);
+                    if (RepositoryConfiguration.FieldValue.BINARY_STORAGE_TYPE_CACHE.equalsIgnoreCase(nestedStore.getString(FieldName.TYPE))) {
+                        String cacheConfiguration = nestedStore.getString(FieldName.CACHE_CONFIGURATION);
+                        if (StringUtil.isBlank(cacheConfiguration)) {
+                            // no explicit cache config defined for the binary store, use the repo's config
+                            nestedStore.set(FieldName.CACHE_CONFIGURATION, this.cacheConfig);
+                        }
+                    }
+                }
+            }
 
             // Create a new configuration document ...
             EditableDocument config = Schematic.newDocument(repositoryConfiguration.getDocument());
@@ -185,18 +233,15 @@ public class RepositoryService implements Service<JcrRepository>, Environment {
                     LOG.debugv("Problems with configuration for '{0}' repository: {1}", repositoryName, problems);
                 }
             }
-
+            
             // Create a new (updated) configuration ...
-            repositoryConfiguration = new RepositoryConfiguration(config, repositoryName);
+            RepositoryConfiguration updatedConfiguration = new RepositoryConfiguration(config, repositoryName);
 
             // Deploy the repository and use this as the environment ...
-            engine.deploy(repositoryConfiguration.with(this));
-        } catch (ConfigurationException e) {
-            throw new StartException(e);
-        } catch (RepositoryException e) {
+            engine.deploy(updatedConfiguration.with(this));
+        } catch (Exception e) {
             throw new StartException(e);
         }
-
     }
 
     @Override
@@ -571,13 +616,6 @@ public class RepositoryService implements Service<JcrRepository>, Environment {
     }
 
     /**
-     * @return the injector used to set the CacheContainer reference used for content storage
-     */
-    public InjectedValue<CacheContainer> getCacheManagerInjector() {
-        return cacheManagerInjector;
-    }
-
-    /**
      * @return the injector used to set the data directory for this repository
      */
     public InjectedValue<String> getDataDirectoryPathInjector() {
@@ -589,13 +627,6 @@ public class RepositoryService implements Service<JcrRepository>, Environment {
      */
     public InjectedValue<ModuleLoader> getModuleLoaderInjector() {
         return moduleLoaderInjector;
-    }
-
-    /**
-     * @return the injector used to set the workspaces cache container
-     */
-    public InjectedValue<CacheContainer> getWorkspacesCacheContainerInjector() {
-        return workspacesCacheContainerInjector;
     }
     
     public InjectedValue<ISecurityManagement> getSecurityManagementServiceInjector() {

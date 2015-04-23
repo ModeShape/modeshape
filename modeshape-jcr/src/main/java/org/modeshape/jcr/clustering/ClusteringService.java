@@ -303,14 +303,14 @@ public abstract class ClusteringService {
     /**
      * Starts a new clustering service by forking a channel of an existing JGroups channel.
      * 
-     * @param forkStackId a {@link String} representing the JGroups stack ID of the fork stack. Services which are supposed to
-     *        communicate with each other should use the same stack id; may not be null
-     * @param mainChannel a {@link org.jgroups.Channel} instance; may not be null.
+     * @param mainChannel a {@link Channel} instance; may not be null.
      * @return a {@link org.modeshape.jcr.clustering.ClusteringService} instance, never null
      */
-    public static ClusteringService startForked( String forkStackId,
-                                                 Channel mainChannel ) {
-        ClusteringService clusteringService = new ForkedClusteringService(forkStackId, mainChannel);
+    public static ClusteringService startForked( Channel mainChannel ) {
+        if (!mainChannel.isConnected()) {
+            throw new IllegalStateException(ClusteringI18n.channelNotConnected.text());                        
+        }
+        ClusteringService clusteringService = new ForkedClusteringService(mainChannel);
         clusteringService.init();
         return clusteringService;
     }
@@ -522,9 +522,8 @@ public abstract class ClusteringService {
         private final static Map<String, List<String>> FORK_STACKS_BY_CHANNEL_NAME = new HashMap<>();
         private final Channel mainChannel;
 
-        protected ForkedClusteringService( String forkStackId,
-                                           Channel mainChannel ) {
-            super(forkStackId);
+        protected ForkedClusteringService( Channel mainChannel ) {
+            super(mainChannel.getClusterName());
             this.mainChannel = mainChannel;
         }
 

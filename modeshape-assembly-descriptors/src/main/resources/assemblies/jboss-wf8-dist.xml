@@ -77,8 +77,18 @@
     </files>
 
     <dependencySets>
+        <!--Infinispan AS modules -->
+        <dependencySet>
+            <useProjectArtifact>false</useProjectArtifact>
+            <outputDirectory>${jboss.kit.modules.location}</outputDirectory>
+            <includes>
+                <include>org.infinispan:infinispan-as-modules</include>
+            </includes>
+            <unpack>true</unpack>
+        </dependencySet>
 
-		<!-- Module for the standard JCR API -->
+
+        <!-- Module for the standard JCR API -->
 		<dependencySet>
             <useProjectArtifact>false</useProjectArtifact>
             <outputDirectory>${jboss.kit.modules.location}/javax/jcr/main</outputDirectory>

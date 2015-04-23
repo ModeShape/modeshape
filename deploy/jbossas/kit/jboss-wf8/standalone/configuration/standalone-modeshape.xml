@@ -259,30 +259,9 @@
                     <transaction mode="NONE"/>
                     <eviction strategy="NONE"/>
                 </local-cache>
-            </cache-container>
-            <!-- Each ModeShape repository uses one (or more) cache in a cache container. We define a single container
-                 named "modeshape" (other names require specifying the container names in each repository configuration,
-                 with a "sample" cache (each repository assumes the cache name matches the repository name). -->
-            <cache-container name="modeshape" default-cache="sample" module="org.modeshape">
-                <local-cache name="sample">
-                    <!--READ_COMMITTED is required to ensure multiple writer threads can update the same node(s)-->
-                    <locking isolation="READ_COMMITTED"/>
-                    <!-- ModeShape requires transactions -->
-                    <transaction mode="NON_XA"/>
-                    <!-- Use a cache with file-backed write-through storage. File-backed storage is simple, but not necessarily the fastest. -->
-                    <file-store path="modeshape/store/sample" passivation="false" purge="false"/>
-                </local-cache>
-                <local-cache name="artifacts">
-                    <!--READ_COMMITTED is required to ensure multiple writer threads can update the same node(s)-->
-                    <locking isolation="READ_COMMITTED"/>
-                    <!-- ModeShape requires transactions -->
-                    <transaction mode="NON_XA"/>
-                    <!-- Use a cache with file-backed write-through storage. File-backed storage is simple, but not necessarily the fastest. -->
-                    <file-store path="modeshape/store/artifacts" passivation="false" purge="false"/>
-                </local-cache>
-            </cache-container>
+            </cache-container>            
         </subsystem>
-        <subsystem xmlns="urn:jboss:domain:modeshape:2.0">
+        <subsystem xmlns="urn:jboss:domain:modeshape:2.1">
             <!--The list of web applications that is packaged inside the kit and should be deployed when the subsystem starts up-->
             <webapp name="modeshape-rest.war"/>
             <webapp name="modeshape-webdav.war"/>

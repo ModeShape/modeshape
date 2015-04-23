@@ -15,10 +15,7 @@
  */
 package org.modeshape.jboss.service;
 
-import org.infinispan.manager.CacheContainer;
 import org.infinispan.schematic.document.EditableDocument;
-import org.jboss.msc.inject.InjectionException;
-import org.jboss.msc.inject.Injector;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StopContext;
@@ -27,17 +24,6 @@ import org.modeshape.jcr.RepositoryConfiguration.FieldName;
 
 public class BinaryStorageService implements Service<BinaryStorage> {
 
-    private final Injector<CacheContainer> binaryManagerInjector = new Injector<CacheContainer>() {
-        @Override
-        public void inject( CacheContainer value ) throws InjectionException {
-            binaryStorage().setCacheContainer(value);
-        }
-
-        @Override
-        public void uninject() {
-            binaryStorage().setCacheContainer(null);
-        }
-    };
     private final InjectedValue<String> binaryStorageBasePathInjector = new InjectedValue<String>();
 
     private final BinaryStorage binaryStorage;
@@ -52,10 +38,6 @@ public class BinaryStorageService implements Service<BinaryStorage> {
     
     private BinaryStorageService(BinaryStorage storage) {
         this.binaryStorage = storage;
-    }
-    
-    protected final BinaryStorage binaryStorage() {
-        return binaryStorage;
     }
 
     private String getBinaryStorageBasePath() {
@@ -74,13 +56,6 @@ public class BinaryStorageService implements Service<BinaryStorage> {
      */
     public InjectedValue<String> getBinaryStorageBasePathInjector() {
         return binaryStorageBasePathInjector;
-    }
-
-    /**
-     * @return the injector used to set the CacheManager reference used for binary storage
-     */
-    public Injector<CacheContainer> getBinaryCacheManagerInjector() {
-        return binaryManagerInjector;
     }
 
     @Override

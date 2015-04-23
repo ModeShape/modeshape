@@ -111,27 +111,29 @@ public class ClusteringServiceTest {
     @Test
     @FixFor( "MODE-2226" )
     public void shouldAllowMultipleForksOffTheSameChannel() throws Exception {
-        ClusteringService main1 = startStandalone("main-service");
+        ClusteringService main11 = startStandalone("test-cluster1");
+        ClusteringService main12 = startStandalone("test-cluster2");
 
         //fork11 communicates via the same fork stack to fork21
-        ClusteringService fork11 = startForked("stack1", main1);
+        ClusteringService fork11 = startForked(main11);
         TestConsumer consumer11 = new TestConsumer("11", "21");
         fork11.addConsumer(consumer11);
 
         //fork12 communicates via the same fork stack to fork22
-        ClusteringService fork12 = startForked("stack2", main1);
+        ClusteringService fork12 = startForked(main12);
         TestConsumer consumer12 = new TestConsumer("12", "22");
         fork12.addConsumer(consumer12);
 
-        ClusteringService main2 = startStandalone("main-service");
+        ClusteringService main21 = startStandalone("test-cluster1");
+        ClusteringService main22 = startStandalone("test-cluster2");
 
         //fork21 communicates via the same fork stack to fork11
-        ClusteringService fork21 = startForked("stack1", main2);
+        ClusteringService fork21 = startForked(main21);
         TestConsumer consumer21 = new TestConsumer("11", "21");
         fork21.addConsumer(consumer21);
 
         //fork22 communicates via the same fork stack to fork12
-        ClusteringService fork22 = startForked("stack2", main2);
+        ClusteringService fork22 = startForked(main22);
         TestConsumer consumer22 = new TestConsumer("12", "22");
         fork22.addConsumer(consumer22);
 
@@ -146,14 +148,14 @@ public class ClusteringServiceTest {
         consumer22.assertAllPayloadsConsumed();
     }
 
-    private ClusteringService startStandalone( String name ) {
-        ClusteringService service = ClusteringService.startStandalone(name, "config/jgroups-test-config.xml");
+    private ClusteringService startStandalone( String clusterName ) {
+        ClusteringService service = ClusteringService.startStandalone(clusterName, "config/jgroups-test-config.xml");
         testClusteringServices.push(service);
         return service;
     }
 
-    private ClusteringService startForked( String forkStackId, ClusteringService mainService ) {
-        ClusteringService service = ClusteringService.startForked(forkStackId, mainService.getChannel());
+    private ClusteringService startForked( ClusteringService mainService ) {
+        ClusteringService service = ClusteringService.startForked(mainService.getChannel());
         testClusteringServices.push(service);
         return service;
     }

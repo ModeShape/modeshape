@@ -77,7 +77,8 @@ public class ModeShapeSubsystemXMLWriter implements XMLStreamConstants, XMLEleme
         // Repository attributes ...
 
         ModelAttributes.CACHE_NAME.marshallAsAttribute(repository, false, writer);
-        ModelAttributes.CACHE_CONTAINER.marshallAsAttribute(repository, false, writer);
+        ModelAttributes.CACHE_CONFIG.marshallAsAttribute(repository, false, writer);
+        ModelAttributes.CONFIG_RELATIVE_TO.marshallAsAttribute(repository, false, writer);
         ModelAttributes.JNDI_NAME.marshallAsAttribute(repository, false, writer);
         ModelAttributes.ENABLE_MONITORING.marshallAsAttribute(repository, false, writer);
         ModelAttributes.SECURITY_DOMAIN.marshallAsAttribute(repository, false, writer);
@@ -255,7 +256,7 @@ public class ModeShapeSubsystemXMLWriter implements XMLStreamConstants, XMLEleme
             ModelAttributes.DATA_CACHE_NAME.marshallAsAttribute(storage, false, writer);
             ModelAttributes.METADATA_CACHE_NAME.marshallAsAttribute(storage, false, writer);
             ModelAttributes.CHUNK_SIZE.marshallAsAttribute(storage, false, writer);
-            ModelAttributes.CACHE_CONTAINER.marshallAsAttribute(storage, false, writer);
+            ModelAttributes.CACHE_CONFIG.marshallAsAttribute(storage, false, writer);
             ModelAttributes.STORE_NAME.marshallAsAttribute(storage, false, writer);
             writer.writeEndElement();
         } else if (ModelKeys.DB_BINARY_STORAGE.equals(storageType)) {

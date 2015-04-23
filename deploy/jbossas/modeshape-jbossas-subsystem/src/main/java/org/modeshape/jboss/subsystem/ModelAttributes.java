@@ -77,7 +77,7 @@ public class ModelAttributes {
 
     public static final SimpleAttributeDefinition WORKSPACES_CACHE_CONTAINER = new MappedAttributeDefinitionBuilder(
                                                                                                                     ModelKeys.WORKSPACES_CACHE_CONTAINER,
-                                                                                                                    ModelType.STRING).setXmlName(Attribute.CACHE_CONTAINER.getLocalName())
+                                                                                                                    ModelType.STRING).setXmlName(Attribute.CACHE_CONFIG.getLocalName())
                                                                                                                                      .setAllowExpression(true)
                                                                                                                                      .setAllowNull(true)
                                                                                                                                      .setFlags(AttributeAccess.Flag.RESTART_NONE)
@@ -108,7 +108,8 @@ public class ModelAttributes {
                                                                                                             ModelType.STRING).setXmlName(Attribute.ANONYMOUS_USERNAME.getLocalName())
                                                                                                                              .setAllowExpression(true)
                                                                                                                              .setAllowNull(true)
-                                                                                                                             .setDefaultValue(new ModelNode().set("<anonymous>"))
+                                                                                                                             .setDefaultValue(new ModelNode().set(
+                                                                                                                                     "<anonymous>"))
                                                                                                                              .setFlags(AttributeAccess.Flag.RESTART_NONE)
                                                                                                                              .setAccessConstraints(SensitiveTargetAccessConstraintDefinition.SECURITY_DOMAIN_REF)
                                                                                                                              .setFieldPathInRepositoryConfiguration(FieldName.SECURITY,
@@ -134,13 +135,21 @@ public class ModelAttributes {
                                                                                                                      .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                                                                                                                      .build();
 
-    public static final SimpleAttributeDefinition CACHE_CONTAINER = new MappedAttributeDefinitionBuilder(
-                                                                                                         ModelKeys.CACHE_CONTAINER,
-                                                                                                         ModelType.STRING).setXmlName(Attribute.CACHE_CONTAINER.getLocalName())
+    public static final SimpleAttributeDefinition CACHE_CONFIG = new MappedAttributeDefinitionBuilder(ModelKeys.CACHE_CONFIG,
+                                                                                                         ModelType.STRING).setXmlName(Attribute.CACHE_CONFIG.getLocalName())
                                                                                                                           .setAllowExpression(false)
                                                                                                                           .setAllowNull(true)
                                                                                                                           .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                                                                                                                           .build();
+
+    public static final SimpleAttributeDefinition CONFIG_RELATIVE_TO = new MappedAttributeDefinitionBuilder(
+            ModelKeys.CONFIG_RELATIVE_TO,
+            ModelType.STRING).setXmlName(Attribute.CONFIG_RELATIVE_TO.getLocalName())
+                             .setAllowExpression(false)
+                             .setAllowNull(true)
+                             .setDefaultValue(new ModelNode().set(ModeShapeExtension.JBOSS_CONFIG_DIR_VARIABLE))
+                             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+                             .build();
 
     public static final SimpleAttributeDefinition CLASSNAME = new MappedAttributeDefinitionBuilder(ModelKeys.CLASSNAME,
                                                                                                    ModelType.STRING).setXmlName(Attribute.CLASSNAME.getLocalName())
@@ -667,7 +676,7 @@ public class ModelAttributes {
 
     public static final AttributeDefinition[] WEBAPP_ATTRIBUTES = {EXPLODED};
 
-    public static final AttributeDefinition[] REPOSITORY_ATTRIBUTES = {CACHE_NAME, CACHE_CONTAINER, JNDI_NAME, ENABLE_MONITORING,
+    public static final AttributeDefinition[] REPOSITORY_ATTRIBUTES = {CACHE_NAME, CACHE_CONFIG, CONFIG_RELATIVE_TO, JNDI_NAME, ENABLE_MONITORING,
         SECURITY_DOMAIN, ANONYMOUS_ROLES, ANONYMOUS_USERNAME, USE_ANONYMOUS_IF_AUTH_FAILED, NODE_TYPES, DEFAULT_WORKSPACE,
         PREDEFINED_WORKSPACE_NAMES, ALLOW_WORKSPACE_CREATION, WORKSPACES_CACHE_CONTAINER, DEFAULT_INITIAL_CONTENT,
         WORKSPACES_INITIAL_CONTENT, MINIMUM_BINARY_SIZE, MINIMUM_STRING_SIZE, GARBAGE_COLLECTION_THREAD_POOL,
@@ -680,7 +689,7 @@ public class ModelAttributes {
         RELATIVE_TO, STORE_NAME};
 
     public static final AttributeDefinition[] CACHE_BINARY_STORAGE_ATTRIBUTES = {MINIMUM_BINARY_SIZE, MINIMUM_STRING_SIZE,
-        CHUNK_SIZE, DATA_CACHE_NAME, METADATA_CACHE_NAME, CACHE_CONTAINER, STORE_NAME};
+        CHUNK_SIZE, DATA_CACHE_NAME, METADATA_CACHE_NAME, CACHE_CONFIG, STORE_NAME};
 
     public static final AttributeDefinition[] DATABASE_BINARY_STORAGE_ATTRIBUTES = {MINIMUM_BINARY_SIZE, MINIMUM_STRING_SIZE,
         DATA_SOURCE_JNDI_NAME, STORE_NAME};

@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
-           targetNamespace="urn:jboss:domain:modeshape:2.0"
-           xmlns="urn:jboss:domain:modeshape:2.0"
+           targetNamespace="urn:jboss:domain:modeshape:2.1"
+           xmlns="urn:jboss:domain:modeshape:2.1"
            elementFormDefault="qualified"
            attributeFormDefault="unqualified"
-           version="2.0">
+           version="2.1">
 
     <!-- The subsystem root element -->
     <xs:element name="subsystem" type="subsystem">
@@ -157,10 +157,21 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
-        <xs:attribute name="cache-container" type="xs:string">
+        <xs:attribute name="cache-config" type="xs:string">
             <xs:annotation>
-                <xs:documentation>The name of the Infinispan cache container in which the cache can be found.
-                    If not provided, the subsystem's default cache container will be used.
+                <xs:documentation>
+                    The relative path of the file which contains the Infinispan cache(s) configuration.
+                    The folder relative to which this is searched is defined by the config-relative-to attribute.
+                    If this attribute is not provided at all, it defaults to  modeshape/repository-name-cache-config.xml
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="config-relative-to" type="xs:string" default="jboss.server.config.dir">
+            <xs:annotation>
+                <xs:documentation>
+                    The folder relative to which the "cache-config" file will be searched. Defaults to ${jboss.server.config.dir}.
+                    All other cache configuration file (for binary stores, workspace caches etc) will be searched relative
+                    to this location.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
@@ -353,11 +364,11 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
-        <xs:attribute name="cache-container" type="xs:string" use="optional">
+        <xs:attribute name="cache-config" type="xs:string" use="optional">
             <xs:annotation>
-                <xs:documentation>The name of the Infinispan cache container in which the workspace caches reside. If not
-                    provider,
-                    a default configuration file is used.
+                <xs:documentation>
+                    The relative path (to the repository's config-relative-to folder) where an optional Infinispan configuration
+                    file is located for the workspace cache. If not defined a default configuration file is used.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
@@ -778,14 +789,13 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
-        <xs:attribute name="cache-container" type="xs:string">
+        <xs:attribute name="cache-config" type="xs:string">
             <xs:annotation>
-                <xs:documentation>The name of the Infinispan cache container in which the caches can be found
-                    for storing the binary values. If not provided, the repository's cache container will be used.
+                <xs:documentation> The relative path (to the repository's config-relative-to folder) where an optional Infinispan configuration
+                    file is located for the binary store. If not provided, the repository's configuration file will be used.
                 </xs:documentation>
             </xs:annotation>
-        </xs:attribute>
-        <xs:attribute name="chunk-size" type="xs:integer">
+        </xs:attribute>        <xs:attribute name="chunk-size" type="xs:integer">
             <xs:annotation>
                 <xs:documentation>The size (in bytes) of a segment which dictates into how many segments a binary value is split.
                     Each chunk is stored as an entry in the cache. If not provided, defaults to 1048576 bytes (1 MB).

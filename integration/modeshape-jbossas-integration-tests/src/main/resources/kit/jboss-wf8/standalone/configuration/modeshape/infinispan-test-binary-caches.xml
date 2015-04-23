@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<infinispan xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+            xsi:schemaLocation="urn:infinispan:config:6.0 http://www.infinispan.org/schemas/infinispan-config-6.0.xsd"
+            xmlns="urn:infinispan:config:6.0">
+    <global>
+        <globalJmxStatistics enabled="false" allowDuplicateDomains="true"/>
+    </global>
+
+    <namedCache name="binary-fs">
+        <transaction
+                transactionManagerLookupClass="org.infinispan.transaction.lookup.GenericTransactionManagerLookup"
+                transactionMode="TRANSACTIONAL"
+                lockingMode="PESSIMISTIC"/>
+        <persistence
+                passivation="false">
+            <singleFile
+                    shared="false"
+                    preload="false"
+                    fetchPersistentState="false"
+                    purgeOnStartup="false"
+                    location="${jboss.server.data.dir}/modeshape/binary-store/ispn-data">
+            </singleFile>
+        </persistence>
+    </namedCache>
+    
+    <namedCache name="binary-fs-meta">
+        <transaction
+                transactionManagerLookupClass="org.infinispan.transaction.lookup.GenericTransactionManagerLookup"
+                transactionMode="TRANSACTIONAL"
+                lockingMode="PESSIMISTIC"/>
+        <persistence
+                passivation="false">
+            <singleFile
+                    shared="false"
+                    preload="false"
+                    fetchPersistentState="false"
+                    purgeOnStartup="false"
+                    location="${jboss.server.data.dir}/modeshape/binary-store/binary-fs-meta">
+            </singleFile>
+        </persistence>
+    </namedCache>
+    
+    <namedCache name="binaryJDBCRepository-binary-data">
+        <eviction maxEntries="5" strategy="LIRS"/>
+        <transaction
+                transactionManagerLookupClass="org.infinispan.transaction.lookup.GenericTransactionManagerLookup"
+                transactionMode="TRANSACTIONAL"
+                lockingMode="PESSIMISTIC"/>
+        <persistence passivation="false">
+            <stringKeyedJdbcStore xmlns="urn:infinispan:config:jdbc:6.0"
+                                  fetchPersistentState="false"
+                                  ignoreModifications="false"
+                                  purgeOnStartup="false">
+                <dataSource jndiUrl="jboss/datasources/ModeshapeBinaryStoreDS"/>
+                <stringKeyedTable
+                        prefix="ISPN_"
+                        createOnStart="true"
+                        dropOnExit="false">
+                    <idColumn name="ID_COLUMN" type="VARCHAR(200)"/>
+                    <dataColumn name="DATA_COLUMN" type="BYTEA"/>
+                    <timestampColumn name="TIMESTAMP_COLUMN" type="BIGINT"/>
+                </stringKeyedTable>
+            </stringKeyedJdbcStore>
+        </persistence>
+    </namedCache> 
+    <namedCache name="binaryJDBCRepository-binary-metadata">
+        <eviction maxEntries="2000" strategy="LIRS"/>
+        <transaction
+                transactionManagerLookupClass="org.infinispan.transaction.lookup.GenericTransactionManagerLookup"
+                transactionMode="TRANSACTIONAL"
+                lockingMode="PESSIMISTIC"/>
+        <persistence passivation="false">
+            <stringKeyedJdbcStore xmlns="urn:infinispan:config:jdbc:6.0"
+                                  fetchPersistentState="false"
+                                  ignoreModifications="false"
+                                  purgeOnStartup="false">
+                <dataSource jndiUrl="jboss/datasources/ModeshapeBinaryStoreDS"/>
+                <stringKeyedTable
+                        prefix="ISPN_"
+                        createOnStart="true"
+                        dropOnExit="false">
+                    <idColumn name="ID_COLUMN" type="VARCHAR(200)"/>
+                    <dataColumn name="DATA_COLUMN" type="BYTEA"/>
+                    <timestampColumn name="TIMESTAMP_COLUMN" type="BIGINT"/>
+                </stringKeyedTable>
+            </stringKeyedJdbcStore>
+        </persistence>
+    </namedCache>
+</infinispan>

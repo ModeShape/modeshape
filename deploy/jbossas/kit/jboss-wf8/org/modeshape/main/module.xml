@@ -32,18 +32,15 @@
         <module name="org.modeshape.common" export="true"/>
 
         <!-- ModeShape JCR dependencies (must export Infinispan so that our stored classes can be loaded )-->
-        <module name="org.infinispan" export="true"/>
-        <module name="org.infinispan.commons" export="true"/>
-        <!--
-             Include the JDBC and Remote modules because in AS7.2, the ModeShape ISPN cache container will use the "module"
-             attribute, meaning Infinispan will be loaded using ModeShape's class loader. If we don't export these modules,
-             declaring JDBC or Remote caches within ModeShape's cache container would not be possible.
-        -->
-        <module name="org.infinispan.cachestore.jdbc" export="true"/>
-        <module name="org.infinispan.cachestore.remote" export="true"/>
+        <module name="org.infinispan" export="true" services="export" slot="${infinispan.module.slot}"/>
+
+        <!-- Include the JDBC & LevelDB modules-->
+        <module name="org.infinispan.persistence.jdbc" services="export" export="true" slot="${infinispan.module.slot}"/>
+        <!--<module name="org.infinispan.persistence.leveldb" services="export" export="true" slot="${infinispan.module.slot}"/>-->
+
+        <module name="org.jgroups" slot="${jgroups.module.slot}"/>
 
         <module name="org.joda.time" export="true"/>
-        <module name="org.jgroups"/>
         <module name="org.apache.tika" slot="${tika.version}" services="import"/>
 
         <!-- For naming ... -->
@@ -65,8 +62,6 @@
         <!-- For security -->
         <module name="org.picketbox"/>        
 
-        <!--Needed for clustering configurations-->
-        <module name="org.jboss.as.clustering.infinispan"/>
         <!--Needed for indexing via JMS-->
         <module name="javax.jms.api"/>
     </dependencies>

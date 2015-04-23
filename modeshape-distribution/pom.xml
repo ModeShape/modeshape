@@ -130,6 +130,12 @@
             <artifactId>modeshape-jbossas-subsystem</artifactId>
         </dependency>
 
+        <dependency>
+            <groupId>org.infinispan</groupId>
+            <artifactId>infinispan-as-modules</artifactId>
+            <type>zip</type>
+        </dependency>
+
     </dependencies>
 
     <profiles>

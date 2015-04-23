@@ -15,7 +15,6 @@
  */
 package org.modeshape.jboss.service;
 
-import org.infinispan.manager.CacheContainer;
 import org.infinispan.schematic.Schematic;
 import org.infinispan.schematic.document.EditableDocument;
 import org.modeshape.jcr.RepositoryConfiguration;
@@ -26,8 +25,7 @@ import org.modeshape.jcr.RepositoryConfiguration;
 public class BinaryStorage {
 
     private final EditableDocument binaryConfig;
-    private CacheContainer cacheContainer;
-
+    
     BinaryStorage( EditableDocument binaryConfig ) {
         this.binaryConfig = binaryConfig;
     }
@@ -36,20 +34,12 @@ public class BinaryStorage {
         return binaryConfig;
     }
 
-    CacheContainer getCacheContainer() {
-        return cacheContainer;
-    }
-
-    void setCacheContainer( CacheContainer cacheContainer ) {
-        this.cacheContainer = cacheContainer;
-    }
-
     /**
      * Creates a default storage configuration, which will be used whenever no specific binary store is configured.
      * @return a {@link org.modeshape.jboss.service.BinaryStorage} instance, never {@code null}
      */
     static BinaryStorage defaultConfig() {
-        // By default, store the binaries in the data directory ...
+        // By default binaries are not stored on disk
         EditableDocument binaries = Schematic.newDocument();
         binaries.set(RepositoryConfiguration.FieldName.TYPE, RepositoryConfiguration.FieldValue.BINARY_STORAGE_TYPE_TRANSIENT);
         return new BinaryStorage(binaries);
