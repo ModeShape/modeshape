@@ -229,7 +229,7 @@ public class RepositoryService implements Service<JcrRepository>, Environment {
             if (LOG.isDebugEnabled()) {
                 LOG.debugv("ModeShape configuration for '{0}' repository: {1}", repositoryName, config);
                 Problems problems = repositoryConfiguration.validate();
-                if (problems.isEmpty()) {
+                if (!problems.isEmpty()) {
                     LOG.debugv("Problems with configuration for '{0}' repository: {1}", repositoryName, problems);
                 }
             }
