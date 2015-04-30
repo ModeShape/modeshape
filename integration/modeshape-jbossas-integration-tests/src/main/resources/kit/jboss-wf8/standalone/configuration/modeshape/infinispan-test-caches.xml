@@ -1,213 +1,174 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <infinispan xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-            xsi:schemaLocation="urn:infinispan:config:6.0 http://www.infinispan.org/schemas/infinispan-config-6.0.xsd"
-            xmlns="urn:infinispan:config:6.0">
+            xsi:schemaLocation="urn:infinispan:config:7.0 http://www.infinispan.org/schemas/infinispan-config-7.0.xsd
+                            urn:infinispan:config:store:jdbc:7.0 http://www.infinispan.org/schemas/infinispan-cachestore-jdbc-config-7.0.xsd"
+            xmlns="urn:infinispan:config:7.0">
     <!--
         Various Infinispan caches used by the ModeShape integration tests
     -->
-    <global>
-        <globalJmxStatistics enabled="false" allowDuplicateDomains="true"/>
-    </global>
-
-    <namedCache name="artifacts">
-        <transaction
-                transactionManagerLookupClass="org.infinispan.transaction.lookup.GenericTransactionManagerLookup"
-                transactionMode="TRANSACTIONAL"
-                lockingMode="PESSIMISTIC"/>
-        <persistence
-                passivation="false">
-            <singleFile
-                    shared="false"
-                    preload="false"
-                    fetchPersistentState="false"
-                    purgeOnStartup="false"
-                    location="${jboss.server.data.dir}/modeshape/store/artifacts">
-            </singleFile>
-        </persistence>
-    </namedCache>
-    
-    <namedCache name="preconfiguredRepository">
-        <transaction
-                transactionManagerLookupClass="org.infinispan.transaction.lookup.GenericTransactionManagerLookup"
-                transactionMode="TRANSACTIONAL"
-                lockingMode="PESSIMISTIC"/>
-        <persistence
-                passivation="false">
-            <singleFile
-                    shared="false"
-                    preload="false"
-                    fetchPersistentState="false"
-                    purgeOnStartup="false"
-                    location="${jboss.server.data.dir}/modeshape/store/preconfiguredRepository">
-            </singleFile>
-        </persistence>
-    </namedCache> 
-    <namedCache name="federatedRepository">
-        <transaction
-                transactionManagerLookupClass="org.infinispan.transaction.lookup.GenericTransactionManagerLookup"
-                transactionMode="TRANSACTIONAL"
-                lockingMode="PESSIMISTIC"/>
-    </namedCache>
-    <namedCache name="journalingRepository">
-        <transaction
-                transactionManagerLookupClass="org.infinispan.transaction.lookup.GenericTransactionManagerLookup"
-                transactionMode="TRANSACTIONAL"
-                lockingMode="PESSIMISTIC"/>
-        <persistence
-                passivation="false">
-            <singleFile
-                    shared="false"
-                    preload="false"
-                    fetchPersistentState="false"
-                    purgeOnStartup="false"
-                    location="${jboss.server.data.dir}/modeshape/store/journalingRepository">
-            </singleFile>
-        </persistence>
-    </namedCache>  
-    <namedCache name="optimizationRepository">
-        <transaction
-                transactionManagerLookupClass="org.infinispan.transaction.lookup.GenericTransactionManagerLookup"
-                transactionMode="TRANSACTIONAL"
-                lockingMode="PESSIMISTIC"/>
-        <persistence
-                passivation="false">
-            <singleFile
-                    shared="false"
-                    preload="false"
-                    fetchPersistentState="false"
-                    purgeOnStartup="false"
-                    location="${jboss.server.data.dir}/modeshape/store/optimizationRepository">
-            </singleFile>
-        </persistence>
-    </namedCache>
-    <namedCache name="jdbcRepository">
-        <transaction
-                transactionManagerLookupClass="org.infinispan.transaction.lookup.GenericTransactionManagerLookup"
-                transactionMode="TRANSACTIONAL"
-                lockingMode="PESSIMISTIC"/>
-        <persistence passivation="false">
-            <stringKeyedJdbcStore xmlns="urn:infinispan:config:jdbc:6.0"
-                                  fetchPersistentState="false"
-                                  ignoreModifications="false"
-                                  purgeOnStartup="false">
-                <dataSource jndiUrl="java:jboss/datasources/ModeshapeJDBCStoreDS"/>
-                <stringKeyedTable
-                        prefix="ISPN_"
-                        createOnStart="true"
-                        dropOnExit="false">
-                    <idColumn name="ID_COLUMN" type="VARCHAR(200)"/>
-                    <dataColumn name="DATA_COLUMN" type="BYTEA"/>
-                    <timestampColumn name="TIMESTAMP_COLUMN" type="BIGINT"/>
-                </stringKeyedTable>
-            </stringKeyedJdbcStore>
-        </persistence>
-    </namedCache>
-    <namedCache name="jdbcRepositoryWithEviction">
-        <eviction maxEntries="100" strategy="LRU"/>
-        <transaction
-                transactionManagerLookupClass="org.infinispan.transaction.lookup.GenericTransactionManagerLookup"
-                transactionMode="TRANSACTIONAL"
-                lockingMode="PESSIMISTIC"/>
-        <persistence passivation="false">
-            <stringKeyedJdbcStore xmlns="urn:infinispan:config:jdbc:6.0"
-                                  fetchPersistentState="false"
-                                  ignoreModifications="false"
-                                  purgeOnStartup="false">
-                <dataSource jndiUrl="java:jboss/datasources/ModeshapeJDBCStoreDS"/>
-                <stringKeyedTable
-                        prefix="ISPN_"
-                        createOnStart="true"
-                        dropOnExit="false">
-                    <idColumn name="ID_COLUMN" type="VARCHAR(200)"/>
-                    <dataColumn name="DATA_COLUMN" type="BYTEA"/>
-                    <timestampColumn name="TIMESTAMP_COLUMN" type="BIGINT"/>
-                </stringKeyedTable>
-            </stringKeyedJdbcStore>
-        </persistence>
-    </namedCache>
-    <namedCache name="infinispanRepository">
-        <transaction
-                transactionManagerLookupClass="org.infinispan.transaction.lookup.GenericTransactionManagerLookup"
-                transactionMode="TRANSACTIONAL"
-                lockingMode="PESSIMISTIC"/>
-        <persistence
-                passivation="false">
-            <singleFile
-                    shared="false"
-                    preload="false"
-                    fetchPersistentState="false"
-                    purgeOnStartup="false"
-                    location="${jboss.server.data.dir}/modeshape/store/infinispanRepository">
-            </singleFile>
-        </persistence>
-    </namedCache>
-    <namedCache name="binaryJDBCRepository">
-        <transaction
-                transactionManagerLookupClass="org.infinispan.transaction.lookup.GenericTransactionManagerLookup"
-                transactionMode="TRANSACTIONAL"
-                lockingMode="PESSIMISTIC"/>
-    </namedCache>
-    <namedCache name="dbBinaryJDBCRepository">
-        <transaction
-                transactionManagerLookupClass="org.infinispan.transaction.lookup.GenericTransactionManagerLookup"
-                transactionMode="TRANSACTIONAL"
-                lockingMode="PESSIMISTIC"/>
-    </namedCache>
-    <namedCache name="binaryIndexingJDBCRepository">
-        <transaction
-                transactionManagerLookupClass="org.infinispan.transaction.lookup.GenericTransactionManagerLookup"
-                transactionMode="TRANSACTIONAL"
-                lockingMode="PESSIMISTIC"/>
-    </namedCache>
-    <namedCache name="compositeBinaryStoreRepository">
-        <transaction
-                transactionManagerLookupClass="org.infinispan.transaction.lookup.GenericTransactionManagerLookup"
-                transactionMode="TRANSACTIONAL"
-                lockingMode="PESSIMISTIC"/>
-    </namedCache>
-    <namedCache name="anonymousRepository">
-        <transaction
-                transactionManagerLookupClass="org.infinispan.transaction.lookup.GenericTransactionManagerLookup"
-                transactionMode="TRANSACTIONAL"
-                lockingMode="PESSIMISTIC"/>
-    </namedCache>
-    <namedCache name="defaultAnonymousRepository">
-        <transaction
-                transactionManagerLookupClass="org.infinispan.transaction.lookup.GenericTransactionManagerLookup"
-                transactionMode="TRANSACTIONAL"
-                lockingMode="PESSIMISTIC"/>
-    </namedCache>
-    <namedCache name="binary-fs">
-        <transaction
-                transactionManagerLookupClass="org.infinispan.transaction.lookup.GenericTransactionManagerLookup"
-                transactionMode="TRANSACTIONAL"
-                lockingMode="PESSIMISTIC"/>
-        <persistence
-                passivation="false">
-            <singleFile
-                    shared="false"
-                    preload="false"
-                    fetchPersistentState="false"
-                    purgeOnStartup="false"
-                    location="${jboss.server.data.dir}/modeshape/binary-store/ispn-data">
-            </singleFile>
-        </persistence>
-    </namedCache>
-
-    <namedCache name="binary-fs-meta">
-        <transaction
-                transactionManagerLookupClass="org.infinispan.transaction.lookup.GenericTransactionManagerLookup"
-                transactionMode="TRANSACTIONAL"
-                lockingMode="PESSIMISTIC"/>
-        <persistence
-                passivation="false">
-            <singleFile
-                    shared="false"
-                    preload="false"
-                    fetchPersistentState="false"
-                    purgeOnStartup="false"
-                    location="${jboss.server.data.dir}/modeshape/binary-store/binary-fs-meta">
-            </singleFile>
-        </persistence>
-    </namedCache>
+    <cache-container default-cache="artifacts" statistics="false">
+        <jmx duplicate-domains="true"/>
+        <local-cache name="artifacts">
+            <transaction
+                    mode="NON_XA"
+                    locking="PESSIMISTIC"/>
+            <persistence>
+                <file-store fetch-state="false"
+                            shared="false"
+                            preload="false"
+                            purge="false"
+                            path="${jboss.server.data.dir}/modeshape/store/artifacts"/>
+            </persistence>
+        </local-cache> 
+        <local-cache name="preconfiguredRepository">
+            <transaction
+                    mode="NON_XA"
+                    locking="PESSIMISTIC"/>
+            <persistence>
+                <file-store fetch-state="false"
+                            shared="false"
+                            preload="false"
+                            purge="false"
+                            path="${jboss.server.data.dir}/modeshape/store/preconfiguredRepository"/>
+            </persistence>
+        </local-cache> 
+        <local-cache name="federatedRepository">
+            <transaction
+                    mode="NON_XA"
+                    locking="PESSIMISTIC"/>
+        </local-cache>    
+        <local-cache name="journalingRepository">
+            <transaction
+                    mode="NON_XA"
+                    locking="PESSIMISTIC"/>
+            <persistence>
+                <file-store fetch-state="false"
+                            shared="false"
+                            preload="false"
+                            purge="false"
+                            path="${jboss.server.data.dir}/modeshape/store/journalingRepository"/>
+            </persistence>
+        </local-cache>  
+        <local-cache name="optimizationRepository">
+            <transaction
+                    mode="NON_XA"
+                    locking="PESSIMISTIC"/>
+            <persistence>
+                <file-store fetch-state="false"
+                            shared="false"
+                            preload="false"
+                            purge="false"
+                            path="${jboss.server.data.dir}/modeshape/store/optimizationRepository"/>
+            </persistence>
+        </local-cache>
+        <local-cache name="jdbcRepository">
+            <transaction
+                    mode="NON_XA"
+                    locking="PESSIMISTIC"/>
+            <persistence>
+                <string-keyed-jdbc-store xmlns="urn:infinispan:config:store:jdbc:7.0"
+                                         fetch-state="false"
+                                         read-only="false"
+                                         purge="false">
+                    <data-source jndi-url="java:jboss/datasources/ModeshapeJDBCStoreDS"/>
+                    <string-keyed-table
+                            prefix="ISPN_"
+                            create-on-start="true"
+                            drop-on-exit="false">
+                        <id-column name="ID_COLUMN" type="VARCHAR(200)"/>
+                        <data-column name="DATA_COLUMN" type="BYTEA"/>
+                        <timestamp-column name="TIMESTAMP_COLUMN" type="BIGINT"/>
+                    </string-keyed-table>
+                </string-keyed-jdbc-store>
+            </persistence>
+        </local-cache>  
+        <local-cache name="jdbcRepositoryWithEviction">
+            <transaction
+                    mode="NON_XA"
+                    locking="PESSIMISTIC"/>
+            <eviction max-entries="100" strategy="LRU"/>
+            <persistence>
+                <string-keyed-jdbc-store xmlns="urn:infinispan:config:store:jdbc:7.0"
+                                         fetch-state="false"
+                                         read-only="false"
+                                         purge="false">
+                    <data-source jndi-url="java:jboss/datasources/ModeshapeJDBCStoreDS"/>
+                    <string-keyed-table
+                            prefix="ISPN_"
+                            create-on-start="true"
+                            drop-on-exit="false">
+                        <id-column name="ID_COLUMN" type="VARCHAR(200)"/>
+                        <data-column name="DATA_COLUMN" type="BYTEA"/>
+                        <timestamp-column name="TIMESTAMP_COLUMN" type="BIGINT"/>
+                    </string-keyed-table>
+                </string-keyed-jdbc-store>
+            </persistence>
+        </local-cache>
+        <local-cache name="infinispanRepository">
+            <transaction
+                    mode="NON_XA"
+                    locking="PESSIMISTIC"/>
+            <persistence>
+                <file-store fetch-state="false"
+                            shared="false"
+                            preload="false"
+                            purge="false"
+                            path="${jboss.server.data.dir}/modeshape/store/infinispanRepository"/>
+            </persistence>
+        </local-cache>
+        <local-cache name="binaryJDBCRepository">
+            <transaction
+                    mode="NON_XA"
+                    locking="PESSIMISTIC"/>
+        </local-cache>
+        <local-cache name="dbBinaryJDBCRepository">
+            <transaction
+                    mode="NON_XA"
+                    locking="PESSIMISTIC"/>
+        </local-cache>
+        <local-cache name="binaryIndexingJDBCRepository">
+            <transaction
+                    mode="NON_XA"
+                    locking="PESSIMISTIC"/>
+        </local-cache>
+        <local-cache name="compositeBinaryStoreRepository">
+            <transaction
+                    mode="NON_XA"
+                    locking="PESSIMISTIC"/>
+        </local-cache>  
+        <local-cache name="anonymousRepository">
+            <transaction
+                    mode="NON_XA"
+                    locking="PESSIMISTIC"/>
+        </local-cache>     
+        <local-cache name="defaultAnonymousRepository">
+            <transaction
+                    mode="NON_XA"
+                    locking="PESSIMISTIC"/>
+        </local-cache>
+        <local-cache name="binary-fs">
+            <transaction
+                    mode="NON_XA"
+                    locking="PESSIMISTIC"/>
+            <persistence>
+                <file-store fetch-state="false"
+                            shared="false"
+                            preload="false"
+                            purge="false"
+                            path="${jboss.server.data.dir}/modeshape/binary-store/binary-fs"/>
+            </persistence>
+        </local-cache> 
+        <local-cache name="binary-fs-meta">
+            <transaction
+                    mode="NON_XA"
+                    locking="PESSIMISTIC"/>
+            <persistence>
+                <file-store fetch-state="false"
+                            shared="false"
+                            preload="false"
+                            purge="false"
+                            path="${jboss.server.data.dir}/modeshape/binary-store/binary-fs-meta"/>
+            </persistence>
+        </local-cache>
+    </cache-container>
 </infinispan>

@@ -43,7 +43,7 @@
     <!--<entry key="ObjectStoreEnvironmentBean.transactionSync">ON</entry>-->
 
     <!-- (Must be unique across all Arjuna instances.) -->
-    <!--<entry key="CoreEnvironmentBean.nodeIdentifier">1</entry>-->
+    <entry key="CoreEnvironmentBean.nodeIdentifier">1</entry>
 
     <!-- Which Xid types to recover -->
     <!--<entry key="JTAEnvironmentBean.xaRecoveryNodes">1</entry>-->

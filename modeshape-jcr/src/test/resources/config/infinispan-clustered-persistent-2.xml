@@ -1,74 +1,69 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <infinispan xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-            xsi:schemaLocation="urn:infinispan:config:6.0 http://www.infinispan.org/schemas/infinispan-config-6.0.xsd"
-            xmlns="urn:infinispan:config:6.0">
-
-    <global>
-        <globalJmxStatistics enabled="false" allowDuplicateDomains="true"/>
-        <transport clusterName="modeshape-cluster">
-            <properties>
-                <property name="configurationFile" value="config/jgroups-test-config.xml"/>
-            </properties>
-        </transport>
-    </global>
-
-    <namedCache name="persistentRepository">
-        <eviction strategy="LIRS" maxEntries="600"/>
-
-        <!-- Configure a synchronous replication cache -->
-        <clustering mode="replication">
-            <sync/>
-        </clustering>
-
-        <transaction transactionManagerLookupClass="org.infinispan.transaction.lookup.GenericTransactionManagerLookup"
-                     transactionMode="TRANSACTIONAL"
-                     lockingMode="PESSIMISTIC"/>
-        <persistence passivation="false">
-            <singleFile
-                    shared="false"
-                    preload="false"
-                    fetchPersistentState="true"
-                    purgeOnStartup="true"
-                    location="target/clustered/repository_2/store">
-            </singleFile>
-        </persistence>
-    </namedCache>
-    <namedCache name="binary-data">
-        <!-- Configure a synchronous replication cache -->
-        <clustering mode="replication">
-            <sync/>
-        </clustering>
-
-        <transaction transactionManagerLookupClass="org.infinispan.transaction.lookup.GenericTransactionManagerLookup"
-                     transactionMode="TRANSACTIONAL"
-                     lockingMode="PESSIMISTIC"/>
-        <persistence passivation="false">
-            <singleFile
-                    shared="false"
-                    preload="false"
-                    fetchPersistentState="true"
-                    purgeOnStartup="true"
-                    location="target/clustered/repository_2/binary">
-            </singleFile>
-        </persistence>
-    </namedCache>
-    <namedCache name="binary-meta-data">
-        <!-- Configure a synchronous replication cache -->
-        <clustering mode="replication">
-            <sync/>
-        </clustering>
-
-        <transaction transactionManagerLookupClass="org.infinispan.transaction.lookup.GenericTransactionManagerLookup"
-                     transactionMode="TRANSACTIONAL"
-                     lockingMode="PESSIMISTIC"/>
-        <persistence passivation="false">
-            <singleFile
-                    shared="false"
-                    preload="false"
-                    fetchPersistentState="true"
-                    purgeOnStartup="true"
-                    location="target/clustered/repository_2/binary">
-            </singleFile>
-        </persistence>
-    </namedCache>
+            xsi:schemaLocation="urn:infinispan:config:7.0 http://www.infinispan.org/schemas/infinispan-config-7.0.xsd"
+            xmlns="urn:infinispan:config:7.0">
+    <jgroups>
+        <stack-file name="tcp" path="config/jgroups-test-config.xml"/>
+    </jgroups>
+    <cache-container default-cache="persistentRepository" statistics="false">
+        <jmx duplicate-domains="true"/>
+        <transport
+                cluster="modeshape-cluster"
+                stack="tcp"/>
+        <!-- 
+            Repo cache
+        -->
+        <replicated-cache name="persistentRepository" mode="SYNC">
+            <eviction strategy="LIRS" max-entries="600"/>
+            <locking
+                    isolation="READ_COMMITTED"
+                    acquire-timeout="1000"/>
+            <transaction
+                    mode="NON_XA"
+                    locking="PESSIMISTIC"/>
+            <persistence>
+                <file-store 
+                            shared="false"
+                            preload="false"
+                            purge="true"
+                            path="target/clustered/repository_2/store"/>
+            </persistence>
+        </replicated-cache>
+        <!-- 
+            Binary data
+        -->
+        <replicated-cache name="binary-data" mode="SYNC">
+            <locking
+                    isolation="READ_COMMITTED"
+                    acquire-timeout="1000"/>
+            <transaction
+                    mode="NON_XA"
+                    locking="PESSIMISTIC"/>
+            <persistence>
+                <file-store 
+                            shared="false"
+                            preload="false"
+                            purge="true"
+                            path="target/clustered/repository_2/binary"/>
+            </persistence>
+        </replicated-cache>
+        <!-- 
+            Binary metadata 
+        -->
+        <replicated-cache name="binary-meta-data" mode="SYNC">
+            <locking
+                    isolation="READ_COMMITTED"
+                    acquire-timeout="1000"/>
+            <transaction
+                    mode="NON_XA"
+                    locking="PESSIMISTIC"/>
+            <persistence>
+                <file-store
+                            shared="false"
+                            preload="false"
+                            purge="true"
+                            path="target/clustered/repository_2/binary"/>
+            </persistence>
+        </replicated-cache>
+    </cache-container>
 </infinispan>

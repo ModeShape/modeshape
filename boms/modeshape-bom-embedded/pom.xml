@@ -50,8 +50,8 @@
 
     <properties>
         <jcr.version>2.0</jcr.version>
-        <infinispan.version>6.0.2.Final</infinispan.version>
-        <jgroups.version>3.4.3.Final</jgroups.version>
+        <infinispan.version>7.2.0.CR1</infinispan.version>
+        <jgroups.version>3.6.2.Final</jgroups.version>
         <c3p0.version>0.9.1.2</c3p0.version>  <!-- same as the one used by Infinispan's JDBC cache store -->
         <picketbox.version>4.0.21.Final</picketbox.version>
         <atomikos.version>3.8.0</atomikos.version>
@@ -347,16 +347,6 @@
             <dependency>
                 <groupId>org.infinispan</groupId>
                 <artifactId>infinispan-cachestore-remote</artifactId>
-                <version>${infinispan.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.infinispan</groupId>
-                <artifactId>infinispan-cachestore-cloud</artifactId>
-                <version>${infinispan.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.infinispan</groupId>
-                <artifactId>infinispan-cachestore-s3</artifactId>
                 <version>${infinispan.version}</version>
             </dependency>
             <dependency>

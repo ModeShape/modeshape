@@ -28,7 +28,6 @@ import org.infinispan.Cache;
 import org.infinispan.notifications.Listener;
 import org.infinispan.notifications.cachelistener.annotation.TransactionCompleted;
 import org.infinispan.notifications.cachelistener.event.TransactionCompletedEvent;
-import org.infinispan.transaction.LocalTransaction;
 import org.infinispan.transaction.TransactionTable;
 import org.infinispan.transaction.xa.GlobalTransaction;
 import org.modeshape.jcr.cache.change.ChangeSet;
@@ -61,7 +60,7 @@ public final class SynchronizedTransactions extends Transactions {
         this.localCache = localCache;
         assert this.localCache != null;
 
-        this.transactionTable = localCache.getAdvancedCache().getComponentRegistry().getComponent(TransactionTable.class);
+        this.transactionTable = localCache.getAdvancedCache().getComponentRegistry().getTransactionTable();
         assert this.transactionTable != null;
     }
 
@@ -101,10 +100,9 @@ public final class SynchronizedTransactions extends Transactions {
                     this.localCache.addListener(this.transactionListener.get());
                 }
             }
-            //TODO author=Horia Chiorean date=17-Nov-14 description=non ISPN 7 compatible
             // find the ISPN tx id for the current transaction
-            LocalTransaction localTransaction = transactionTable.getLocalTransaction(txn);
-            if (localTransaction == null) {
+            GlobalTransaction globalTransaction = transactionTable.getGlobalTransaction(txn);
+            if (globalTransaction == null) {
                 // there's an existing user transaction which hasn't enrolled the ISPN cache. So we'll suspend it and start a 
                 // regular transaction instead
                 logger.debug("Active transaction detected, but the Infinispan cache isn't aware of it. Suspending it for the duration of the ModeShape transaction..." );
@@ -127,7 +125,7 @@ public final class SynchronizedTransactions extends Transactions {
                 });
             } else {
                 // create our internal wrapper which will be set thread-local active
-                result = new SynchronizedTransaction(txnMgr, localTransaction.getGlobalTransaction());
+                result = new SynchronizedTransaction(txnMgr, globalTransaction);
             }
         }
         // Store it

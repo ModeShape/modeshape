@@ -238,17 +238,17 @@
         <mapdb.version>1.0.6</mapdb.version>
         <jackrabbit.jcr.tck.version>2.6.0</jackrabbit.jcr.tck.version>
         <jackrabbit.lucene.version>3.6.0</jackrabbit.lucene.version>
-        <jbossjta.version>5.0.0.Final</jbossjta.version>
+        <jbossjta.version>5.1.0.Final</jbossjta.version>
         <atomikos.version>3.8.0</atomikos.version>
         <picketbox.version>4.0.21.Final</picketbox.version>
         <lucene.version>3.6.2</lucene.version>
         <lucene.regex.version>3.0.3</lucene.regex.version>
 
-        <infinispan.version>6.0.2.Final</infinispan.version>
-        <infinispan.module.slot>6.0</infinispan.module.slot>
+        <infinispan.version>7.2.0.CR1</infinispan.version>
+        <infinispan.module.slot>ispn-7.2</infinispan.module.slot>
         <!--Make sure the jgroups version is the same as the one used by ISPN -->
-        <jgroups.version>3.4.3.Final</jgroups.version>
-        <jgroups.module.slot>3.4</jgroups.module.slot>
+        <jgroups.version>3.6.2.Final</jgroups.version>
+        <jgroups.module.slot>ispn-7.2</jgroups.module.slot>
         <c3p0.version>0.9.1.2</c3p0.version>
         <jboss.logging.version>3.1.4.GA</jboss.logging.version>
 
@@ -1349,7 +1349,7 @@
             -->
             <dependency>
                 <groupId>org.infinispan</groupId>
-                <artifactId>infinispan-as-modules</artifactId>
+                <artifactId>infinispan-as-embedded-modules</artifactId>
                 <version>${infinispan.version}</version>
                 <type>zip</type>
             </dependency>
