@@ -132,7 +132,7 @@
 
         <dependency>
             <groupId>org.infinispan</groupId>
-            <artifactId>infinispan-as-modules</artifactId>
+            <artifactId>infinispan-as-embedded-modules</artifactId>
             <type>zip</type>
         </dependency>
 

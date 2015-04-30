@@ -36,7 +36,7 @@
 
         <!-- Include the JDBC & LevelDB modules-->
         <module name="org.infinispan.persistence.jdbc" services="export" export="true" slot="${infinispan.module.slot}"/>
-        <!--<module name="org.infinispan.persistence.leveldb" services="export" export="true" slot="${infinispan.module.slot}"/>-->
+        <module name="org.infinispan.persistence.leveldb" services="export" export="true" slot="${infinispan.module.slot}"/>
 
         <module name="org.jgroups" slot="${jgroups.module.slot}"/>
 
@@ -60,10 +60,7 @@
         <module name="org.jboss.msc"/>
         <module name="org.jboss.as.server"/>
         <!-- For security -->
-        <module name="org.picketbox"/>        
-
-        <!--Needed for indexing via JMS-->
-        <module name="javax.jms.api"/>
+        <module name="org.picketbox"/>
     </dependencies>
 
 </module>

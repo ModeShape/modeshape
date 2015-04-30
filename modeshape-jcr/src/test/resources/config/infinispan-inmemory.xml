@@ -1,16 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <infinispan xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-            xsi:schemaLocation="urn:infinispan:config:6.0 http://www.infinispan.org/schemas/infinispan-config-6.0.xsd"
-            xmlns="urn:infinispan:config:6.0">
+            xsi:schemaLocation="urn:infinispan:config:7.0 http://www.infinispan.org/schemas/infinispan-config-7.0.xsd"
+            xmlns="urn:infinispan:config:7.0">
 
-    <global>
-        <globalJmxStatistics enabled="false" allowDuplicateDomains="true"/>
-    </global>
-
-    <namedCache name="inmemoryRepository">
-        <transaction
-                transactionManagerLookupClass="org.infinispan.transaction.lookup.GenericTransactionManagerLookup"
-                transactionMode="TRANSACTIONAL"
-                lockingMode="PESSIMISTIC"/>
-    </namedCache>
+    <cache-container default-cache="inmemoryRepository" statistics="false">
+        <jmx duplicate-domains="true"/>
+        <local-cache name="inmemoryRepository">
+            <transaction
+                    mode="NON_XA"
+                    locking="PESSIMISTIC"/>
+        </local-cache>
+    </cache-container>
 </infinispan>

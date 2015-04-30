@@ -40,6 +40,7 @@ import org.infinispan.distexec.mapreduce.Collector;
 import org.infinispan.distexec.mapreduce.MapReduceTask;
 import org.infinispan.distexec.mapreduce.Mapper;
 import org.infinispan.distexec.mapreduce.Reducer;
+import org.infinispan.filter.KeyFilter;
 import org.infinispan.manager.CacheContainer;
 import org.infinispan.marshall.core.MarshalledEntry;
 import org.infinispan.persistence.manager.PersistenceManager;
@@ -424,7 +425,7 @@ public final class InfinispanBinaryStore extends AbstractBinaryStore {
                         }
                     }
                 };
-                persistenceManager.processOnAllStores(AdvancedCacheLoader.KeyFilter.LOAD_ALL_FILTER, task, false, false);
+                persistenceManager.processOnAllStores(KeyFilter.ACCEPT_ALL_FILTER, task, false, false);
 
             }
         }
@@ -604,7 +605,7 @@ public final class InfinispanBinaryStore extends AbstractBinaryStore {
                         }
                     }
                 };
-                persistenceManager.processOnAllStores(AdvancedCacheLoader.KeyFilter.LOAD_ALL_FILTER, task, false, false);
+                persistenceManager.processOnAllStores(KeyFilter.ACCEPT_ALL_FILTER, task, false, false);
             }
         } catch (Exception ex) {
             throw new BinaryStoreException(JcrI18n.problemsGettingBinaryKeysFromBinaryStore.text(ex.getCause().getMessage()));

@@ -82,7 +82,7 @@
             <useProjectArtifact>false</useProjectArtifact>
             <outputDirectory>${jboss.kit.modules.location}</outputDirectory>
             <includes>
-                <include>org.infinispan:infinispan-as-modules</include>
+                <include>org.infinispan:infinispan-as-embedded-modules</include>
             </includes>
             <unpack>true</unpack>
         </dependencySet>
