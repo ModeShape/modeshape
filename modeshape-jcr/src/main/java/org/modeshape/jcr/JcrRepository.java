@@ -1599,7 +1599,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                     }
                     if (provider instanceof EnvironmentAuthenticationProvider) {
                         EnvironmentAuthenticationProvider envProvider = (EnvironmentAuthenticationProvider) provider;
-                        String securityDomain = component.getDocument().getString(FieldName.DOMAIN_NAME);
+                        String securityDomain = component.getDocument().getString(FieldName.SECURITY_DOMAIN);
                         envProvider.setSecurityDomain(securityDomain);
                         envProvider.setEnvironment(environment());
                         envProvider.initialize();
