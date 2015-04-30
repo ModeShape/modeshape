@@ -321,7 +321,7 @@ public class AddRepository extends AbstractAddStepHandler {
         String securityDomain = attribute(context, model, ModelAttributes.SECURITY_DOMAIN).asString();
         EditableDocument jboss = Schematic.newDocument();
         jboss.set(FieldName.CLASSNAME, JBossDomainAuthenticationProvider.class.getName());
-        jboss.set(FieldName.DOMAIN_NAME, securityDomain);
+        jboss.set(FieldName.SECURITY_DOMAIN, securityDomain);
         providers.add(jboss);
 
         // Servlet authenticator ...
