@@ -1091,19 +1091,26 @@ public class VdbManifest implements Comparable<VdbManifest> {
                                  final Context context ) throws Exception {
             VdbManifest manifest = null;
             final XMLInputFactory factory = XMLInputFactory.newInstance();
-            final XMLStreamReader streamReader = factory.createXMLStreamReader(stream);
+            XMLStreamReader streamReader = null;
 
-            if (streamReader.hasNext()) {
-                if (streamReader.next() == XMLStreamConstants.START_ELEMENT) {
-                    final String elementName = streamReader.getLocalName();
+            try {
+                streamReader = factory.createXMLStreamReader(stream);
 
-                    if (VdbLexicon.ManifestIds.VDB.equals(elementName)) {
-                        manifest = parseVdb(streamReader);
-                        assert (manifest != null) : "manifest is null";
-                    } else {
-                        LOGGER.debug("**** unhandled vdb read element ****");
+                if (streamReader.hasNext()) {
+                    if (streamReader.next() == XMLStreamConstants.START_ELEMENT) {
+                        final String elementName = streamReader.getLocalName();
+
+                        if (VdbLexicon.ManifestIds.VDB.equals(elementName)) {
+                            manifest = parseVdb(streamReader);
+                            assert (manifest != null) : "manifest is null";
+                        } else {
+                            LOGGER.debug("**** unhandled vdb read element ****");
+                        }
                     }
                 }
+            } finally {
+                if (streamReader != null)
+                    streamReader.close();
             }
 
             return manifest;
