@@ -34,10 +34,14 @@ public class VdbDynamicSequencer extends VdbSequencer {
         final Binary binaryValue = inputProperty.getBinary();
         CheckArg.isNotNull(binaryValue, "binary");
 
-        InputStream stream = binaryValue.getStream();
-        VdbManifest manifest = readManifest(binaryValue, stream, outputNode, context);
-        if (manifest == null) {
-            throw new Exception("VdbDynamicSequencer.execute failed. The xml cannot be read.");
+        try (final InputStream stream = binaryValue.getStream()) {
+
+            VdbManifest manifest = readManifest(binaryValue, stream, outputNode, context);
+            if (manifest == null) {
+                throw new Exception("VdbDynamicSequencer.execute failed. The xml cannot be read.");
+            }
+        } catch (final Exception e) {
+            throw new RuntimeException(TeiidI18n.errorReadingVdbFile.text(inputProperty.getPath(), e.getMessage()), e);
         }
 
         return true;
