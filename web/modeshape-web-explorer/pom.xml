@@ -55,8 +55,8 @@
         <dependency>
             <groupId>com.google.gwt</groupId>
             <artifactId>gwt-user</artifactId>
-            <scope>provided</scope>
         </dependency>
+        
         <dependency>
             <groupId>com.googlecode.gwtmosaic</groupId>
             <artifactId>gwt-incubator</artifactId>
@@ -71,10 +71,17 @@
             <groupId>com.smartgwt</groupId>
             <artifactId>smartgwt-skins</artifactId>
         </dependency>
+        
         <dependency>
             <groupId>commons-fileupload</groupId>
             <artifactId>commons-fileupload</artifactId>
         </dependency>
+
+        <dependency>
+            <groupId>com.google.gwt</groupId>
+            <artifactId>gwt-servlet</artifactId>
+        </dependency>
+
     </dependencies>
     <build>
         <finalName>modeshape-explorer-${project.version}</finalName>
