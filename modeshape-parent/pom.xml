@@ -1505,19 +1505,16 @@
                 <groupId>com.google.gwt</groupId>
                 <artifactId>gwt-user</artifactId>
                 <version>${gwt.version}</version>
-                <scope>provided</scope>
             </dependency>
             <dependency>
                 <groupId>com.smartgwt</groupId>
                 <artifactId>smartgwt</artifactId>
                 <version>${smartgwt.version}</version>
-                <type>jar</type>
             </dependency>
             <dependency>
                 <groupId>com.smartgwt</groupId>
                 <artifactId>smartgwt-skins</artifactId>
                 <version>${smartgwt.version}</version>
-                <type>jar</type>
             </dependency>
             <dependency>
                 <groupId>com.googlecode.gwtmosaic</groupId>
