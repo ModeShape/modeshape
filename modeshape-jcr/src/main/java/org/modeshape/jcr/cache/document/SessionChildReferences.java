@@ -16,6 +16,7 @@
 package org.modeshape.jcr.cache.document;
 
 import java.util.Iterator;
+import java.util.Set;
 import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.jcr.cache.ChildReference;
 import org.modeshape.jcr.cache.ChildReferences;
@@ -146,8 +147,21 @@ public class SessionChildReferences extends AbstractChildReferences {
                         // There were some persisted with the same name, and we didn't find these
                         // when looking in the persisted node above. So adjust the SNS index ...
 
-                        //we need to take into account that the same node might be removed (in case of an reorder to the end)
-                        int numSnsInRemoved = (changedChildren != null && changedChildren.getRemovals().contains(key)) ? 1 : 0;
+                        int numSnsInRemoved = 0;
+                        if (changedChildren != null) {
+                            Set<NodeKey> removals = changedChildren.getRemovals();
+                            //we need to take into account that the same node might be removed (in case of an reorder to the end)
+                            if (removals.contains(key)) {
+                                numSnsInRemoved = 1;
+                            } 
+                            // for each of the existing (persisted) SNS we need to see if any of them were already removed
+                            for (int i = 1; i <= numSnsInPersisted; i++) {
+                                NodeKey persistedChildKey = persisted.getChild(ref.getName(), i).getKey();
+                                if (!key.equals(persistedChildKey) && removals.contains(persistedChildKey)) {
+                                    numSnsInRemoved++;
+                                }
+                            }
+                        }
                         ref = ref.with(numSnsInPersisted + ref.getSnsIndex() - numSnsInRemoved);
                     }
                 } else if (changedChildren != null && changedChildren.insertionCount() > 0) {

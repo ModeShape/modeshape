@@ -34,6 +34,7 @@ import javax.jcr.AccessDeniedException;
 import javax.jcr.ImportUUIDBehavior;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
+import javax.jcr.PathNotFoundException;
 import javax.jcr.Property;
 import javax.jcr.PropertyIterator;
 import javax.jcr.RepositoryException;
@@ -814,6 +815,60 @@ public class JcrNodeTest extends MultiUseAbstractTest {
         } finally {
             parent.remove();
             session.save();
+        }
+    }
+    
+    @Test
+    @FixFor( "MODE-2463" )
+    public void transientRemovalAndAdditionOfTheSameNodeShouldNotCorruptPaths() throws Exception {
+        session.logout();
+        
+        String name = "testNode";
+
+        JcrSession session1 = repository().login();
+        Node rootNode = session1.getRootNode();
+        Node testNode = rootNode.addNode(name);
+        assertNotNull(testNode);
+        String testNodePath = testNode.getPath();
+        session1.save();
+        session1.logout();
+
+        JcrSession session2 = repository().login();
+        rootNode = session2.getRootNode();
+        assertNotNull(rootNode);
+        testNode = session2.getNode(testNodePath);
+        
+        testNode.remove();
+        assertFalse(rootNode.hasNode(name));
+        try {
+            session2.getNode(testNodePath);
+            fail("This should throw a PathNotFoundException since testNode has been removed");
+        } catch (PathNotFoundException ex) {
+            // Exception thrown good to continue
+        }
+
+        Node newTestNode = rootNode.addNode(name);
+        assertEquals(testNodePath, newTestNode.getPath());
+        Node node = session2.getNode(testNodePath);
+        assertEquals("Node path should equal " + testNodePath, testNodePath, node.getPath());
+
+        try {
+            session2.getNode(testNodePath + "[2]");
+            fail("There shouldn't be any SNS node");
+        } catch (PathNotFoundException ex) {
+            //expected
+        }
+        session2.save();
+        session2.logout();
+        
+        JcrSession session3 = repository().login();
+        node = session3.getNode("/" + testNodePath);
+        assertNotNull(node);
+        try {
+            session3.getNode(testNodePath + "[2]");
+            fail("There shouldn't be any SNS node");
+        } catch (PathNotFoundException ex) {
+            //expected
         }
     }
 }
