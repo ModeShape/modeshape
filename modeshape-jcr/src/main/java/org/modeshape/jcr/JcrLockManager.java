@@ -28,6 +28,7 @@ import javax.jcr.lock.LockException;
 import javax.jcr.lock.LockManager;
 import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.util.CheckArg;
+import org.modeshape.common.util.StringUtil;
 import org.modeshape.jcr.RepositoryLockManager.ModeShapeLock;
 import org.modeshape.jcr.cache.CachedNode;
 import org.modeshape.jcr.cache.LockFailureException;
@@ -53,7 +54,7 @@ class JcrLockManager implements LockManager {
     }
 
     boolean hasLockToken( String token ) {
-        return lockTokens.contains(token);
+        return !StringUtil.isBlank(token) && lockTokens.contains(token);
     }
 
     /**
