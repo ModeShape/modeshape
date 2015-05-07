@@ -50,9 +50,9 @@
 
     <properties>
         <jcr.version>2.0</jcr.version>
-        <infinispan.version>7.2.0.CR1</infinispan.version>
+        <infinispan.version>7.2.0.Final</infinispan.version>
         <jgroups.version>3.6.2.Final</jgroups.version>
-        <c3p0.version>0.9.1.2</c3p0.version>  <!-- same as the one used by Infinispan's JDBC cache store -->
+        <c3p0.version>0.9.5</c3p0.version>  <!-- same as the one used by Infinispan's JDBC cache store -->
         <picketbox.version>4.0.21.Final</picketbox.version>
         <atomikos.version>3.8.0</atomikos.version>
         <jbossjta.version>5.0.0.Final</jbossjta.version>
@@ -366,7 +366,7 @@
             </dependency>
             <!--Required by infinispan-cachestore-jdbc -->
             <dependency>
-                <groupId>c3p0</groupId>
+                <groupId>com.mchange</groupId>
                 <artifactId>c3p0</artifactId>
                 <version>${c3p0.version}</version>
             </dependency>

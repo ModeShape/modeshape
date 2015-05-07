@@ -244,12 +244,12 @@
         <lucene.version>3.6.2</lucene.version>
         <lucene.regex.version>3.0.3</lucene.regex.version>
 
-        <infinispan.version>7.2.0.CR1</infinispan.version>
+        <infinispan.version>7.2.0.Final</infinispan.version>
         <infinispan.module.slot>ispn-7.2</infinispan.module.slot>
         <!--Make sure the jgroups version is the same as the one used by ISPN -->
         <jgroups.version>3.6.2.Final</jgroups.version>
         <jgroups.module.slot>ispn-7.2</jgroups.module.slot>
-        <c3p0.version>0.9.1.2</c3p0.version>
+        <c3p0.version>0.9.5</c3p0.version>
         <jboss.logging.version>3.1.4.GA</jboss.logging.version>
 
         <sun.xml.bind.jaxbimpl.version>2.2.5</sun.xml.bind.jaxbimpl.version>
@@ -1378,7 +1378,7 @@
 
             <!--Required by infinispan-cachestore-jdbc -->
             <dependency>
-                <groupId>c3p0</groupId>
+                <groupId>com.mchange</groupId>
                 <artifactId>c3p0</artifactId>
                 <version>${c3p0.version}</version>
             </dependency>
