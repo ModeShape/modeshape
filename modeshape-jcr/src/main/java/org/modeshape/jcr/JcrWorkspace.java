@@ -189,8 +189,9 @@ class JcrWorkspace implements org.modeshape.jcr.api.Workspace {
              */
             JcrSession sourceSession = session.spawnSession(srcWorkspace, true);
             AbstractJcrNode sourceNode = sourceSession.node(srcPath);
-            if (session.lockManager().isLocked(sourceNode)
-                && !session.lockManager().hasLockToken(sourceNode.getLock().getLockToken())) {
+            JcrLockManager lockManager = session.lockManager();
+            javax.jcr.lock.Lock lock = lockManager.getLockIfExists(sourceNode);
+            if (lock != null && !lock.isLockOwningSession()) {
                 throw new LockException(srcAbsPath);
             }
 
@@ -360,8 +361,9 @@ class JcrWorkspace implements org.modeshape.jcr.api.Workspace {
                 sourceSession = session.spawnSession(srcWorkspace, true);
             }
             AbstractJcrNode sourceNode = sourceSession.node(srcPath);
-            if (session.lockManager().isLocked(sourceNode)
-                && !session.lockManager().hasLockToken(sourceNode.getLock().getLockToken())) {
+            JcrLockManager lockManager = session.lockManager();
+            javax.jcr.lock.Lock lock = lockManager.getLockIfExists(sourceNode);
+            if (lock != null && !lock.isLockOwningSession()) {
                 throw new LockException(srcAbsPath);
             }
 

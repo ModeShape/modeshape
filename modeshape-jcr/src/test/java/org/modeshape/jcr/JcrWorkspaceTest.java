@@ -15,13 +15,15 @@
  */
 package org.modeshape.jcr;
 
-import static com.mongodb.util.MyAsserts.assertNotEquals;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
@@ -38,6 +40,7 @@ import javax.jcr.NodeIterator;
 import javax.jcr.PathNotFoundException;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
+import javax.jcr.lock.LockException;
 import javax.jcr.query.Query;
 import javax.jcr.query.QueryManager;
 import org.junit.Before;
@@ -513,6 +516,56 @@ public class JcrWorkspaceTest extends SingleUseAbstractTest {
         assertEquals(folder2CreatedTs, otherFolder2.getProperty("jcr:created").getDate().getTimeInMillis());
     }
 
+    @Test
+    @FixFor( "MODE-2457")
+    public void onlyOwningSessionShouldCopyLockedNode() throws Exception {
+        Node node = session.getRootNode().addNode("lockable");
+        node.addMixin("mix:lockable");
+        session.save();
+        JcrLockManager lockManager = session.lockManager();
+        lockManager.lock("/lockable", true, true, Long.MAX_VALUE, null);
+
+        // this should succeed because this is the lock owning session
+        session.getWorkspace().copy("/lockable", "/lockable_copy");
+        assertNotNull(session.getNode("/lockable_copy"));
+        assertTrue("Original node should still be locked", lockManager.isLocked("/lockable"));
+        assertFalse("Copied node should not be locked", lockManager.isLocked("/lockable_copy"));
+
+        JcrSession session1 = repository().login();
+        try {
+            session1.getWorkspace().copy("/lockable", "/lockable_copy1");
+            fail("Copy should not succeed because the session does not own the lock");
+        } catch (LockException e) {
+            //expected
+        } finally {
+            session1.logout();
+            lockManager.unlock("/lockable");
+        }
+    }
+
+    @Test
+    @FixFor( "MODE-2457")
+    public void shouldNotCloneLockedNode() throws Exception {
+        Node node = session.getRootNode().addNode("lockable");
+        node.addMixin("mix:lockable");
+        session.save();
+        JcrLockManager lockManager = session.lockManager();
+        lockManager.lock("/lockable", true, true, Long.MAX_VALUE, null);
+
+        try {
+            // this should fail because the session to the other workspace does not own the lock
+            otherWorkspace.clone(workspaceName, "/lockable", "/lockable_clone", false);
+            fail("Copy should not succeed because the session does not own the lock");
+        } catch (LockException e) {
+            //expected
+        } finally {
+            lockManager.unlock("/lockable");
+        }
+
+        otherWorkspace.clone(workspaceName, "/lockable", "/lockable_clone", false);
+        assertNotNull(otherSession.getNode("/lockable_clone"));
+    }
+    
     @SkipLongRunning
     @FixFor( "MODE-2012" )
     @Test
