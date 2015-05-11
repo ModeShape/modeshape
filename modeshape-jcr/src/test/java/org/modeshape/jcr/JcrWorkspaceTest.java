@@ -43,6 +43,9 @@ import javax.jcr.Session;
 import javax.jcr.lock.LockException;
 import javax.jcr.query.Query;
 import javax.jcr.query.QueryManager;
+import javax.jcr.security.AccessControlList;
+import javax.jcr.security.AccessControlManager;
+import javax.jcr.security.Privilege;
 import org.junit.Before;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
@@ -53,6 +56,7 @@ import org.modeshape.jcr.cache.change.Change;
 import org.modeshape.jcr.cache.change.ChangeSet;
 import org.modeshape.jcr.cache.change.ChangeSetListener;
 import org.modeshape.jcr.cache.change.WorkspaceRemoved;
+import org.modeshape.jcr.security.SimplePrincipal;
 
 /**
  * @author jverhaeg
@@ -514,6 +518,77 @@ public class JcrWorkspaceTest extends SingleUseAbstractTest {
         Node otherFolder2 = otherSession.getNode("/parent/folder2");
         assertEquals(folder2.getIdentifier(), otherFolder2.getIdentifier());
         assertEquals(folder2CreatedTs, otherFolder2.getProperty("jcr:created").getDate().getTimeInMillis());
+    }
+  
+    @Test
+    @FixFor( "MODE-2456")
+    public void copyingShouldKeepCorrectACLCount() throws Exception {
+        AccessControlManager accessControlManager = session.getAccessControlManager();
+        
+        session.getRootNode().addNode("aclNode");
+        AccessControlList acl = acl("/aclNode");
+        acl.addAccessControlEntry(SimplePrincipal.EVERYONE, new Privilege[] {accessControlManager.privilegeFromName(Privilege.JCR_ALL)});
+        accessControlManager.setPolicy("/aclNode", acl);
+        session.save();
+        
+        assertTrue(repository().repositoryCache().isAccessControlEnabled());
+
+        // copy the node and check that the ACLs were copied
+        session.getWorkspace().copy("/aclNode", "/aclNodeCopy");
+        assertEquals(1, accessControlManager.getPolicies("/aclNodeCopy").length);
+        Privilege[] privileges = accessControlManager.getPrivileges("/aclNodeCopy");
+        assertEquals(1, privileges.length);
+        assertEquals("jcr:all", privileges[0].getName());
+        
+        // remove the ACLs from the copied node and check that the original ACLs are unaffected
+        accessControlManager.removePolicy("/aclNodeCopy", null);
+        session.save();
+        
+        assertEquals(0, accessControlManager.getPolicies("/aclNodeCopy").length);
+        assertEquals(1, accessControlManager.getPrivileges("/aclNode").length);
+        assertTrue("ACLs should not be disabled", repository().repositoryCache().isAccessControlEnabled());
+
+        // remove the original ACLs as well
+        accessControlManager.removePolicy("/aclNode", null);
+        session.save();
+        assertFalse("ACLs should be disabled", repository().repositoryCache().isAccessControlEnabled());
+    }
+   
+    @Test
+    @FixFor( "MODE-2456")
+    public void cloningShouldKeepCorrectACLCount() throws Exception {
+        AccessControlManager accessControlManager = session.getAccessControlManager();
+        
+        session.getRootNode().addNode("aclNode");
+        AccessControlList acl = acl("/aclNode");
+        acl.addAccessControlEntry(SimplePrincipal.EVERYONE, new Privilege[] { accessControlManager.privilegeFromName(
+                Privilege.JCR_ALL) });
+        accessControlManager.setPolicy("/aclNode", acl);
+        session.save();
+        
+        assertTrue(repository().repositoryCache().isAccessControlEnabled());
+
+        // clone the node into another workspace
+        otherWorkspace.clone(workspaceName, "/aclNode", "/aclNodeClone", false);
+        AccessControlManager otherAccessControlManager = otherSession.getAccessControlManager();
+        
+        assertEquals(1, otherAccessControlManager.getPolicies("/aclNodeClone").length);
+        Privilege[] privileges = otherAccessControlManager.getPrivileges("/aclNodeClone");
+        assertEquals(1, privileges.length);
+        assertEquals("jcr:all", privileges[0].getName());
+        
+        // remove the ACLs from the copied node and check that the original ACLs are unaffected
+        otherAccessControlManager.removePolicy("/aclNodeClone", null);
+        otherSession.save();
+        
+        assertEquals(0, otherAccessControlManager.getPolicies("/aclNodeClone").length);
+        assertEquals(1, accessControlManager.getPrivileges("/aclNode").length);
+        assertTrue("ACLs should not be disabled", repository().repositoryCache().isAccessControlEnabled());
+
+        // remove the original ACLs as well
+        accessControlManager.removePolicy("/aclNode", null);
+        session.save();
+        assertFalse("ACLs should be disabled", repository().repositoryCache().isAccessControlEnabled());
     }
 
     @Test
