@@ -374,7 +374,6 @@ public class DdlTokenStream extends TokenStream {
                     case '+':
                     case '%':
                     case '?':
-                    case '$':
                     case '[':
                     case ']':
                     case '!':
@@ -474,7 +473,7 @@ public class DdlTokenStream extends TokenStream {
                         startIndex = input.index();
                         Position startPosition = input.position(startIndex);
                         // Read until another whitespace/symbol/decimal/slash is found
-                        while (input.hasNext() && !(input.isNextWhitespace() || input.isNextAnyOf("/.-(){}*,;+%?$[]!<>|=:"))) {
+                        while (input.hasNext() && !(input.isNextWhitespace() || input.isNextAnyOf("/.-(){}*,;+%?[]!<>|=:"))) {
                             c = input.next();
                         }
                         endIndex = input.index() + 1; // beyond last character that was included
