@@ -26,6 +26,7 @@ import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.hamcrest.core.IsSame.sameInstance;
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -51,6 +52,7 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
+import java.util.TreeSet;
 import javax.jcr.ImportUUIDBehavior;
 import javax.jcr.NamespaceRegistry;
 import javax.jcr.Node;
@@ -4765,15 +4767,30 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
     @Test
     @FixFor( "MODE-2401" )
     public void shouldNotReturnNonQueryableNodeTypes() throws Exception {
-        session.getRootNode().addNode("folder1", "test:noQueryFolder");
-        session.getRootNode().addNode("folder2", "nt:folder"); 
+        Node folder1 = session.getRootNode().addNode("folder1", "test:noQueryFolder");
+        Node folder2 = session.getRootNode().addNode("folder2", "nt:folder");
+        Node folder3 = session.getRootNode().addNode("folder3", "test:noQueryFolder");
+        Node folder31 = folder3.addNode("folder3_1", "nt:folder");
+        Node folder311 = folder31.addNode("folder3_1", "test:noQueryFolder");
+        folder311.addNode("folder3_1_1", "nt:folder");
         session.save();
 
-        String sql = "SELECT folder.[jcr:name] FROM [nt:folder] AS folder";
-        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
-        NodeIterator nodes = query.execute().getNodes();
-        assertEquals(1, nodes.getSize());
-        assertEquals("folder2", nodes.nextNode().getName());
+        try {
+            String sql = "SELECT folder.[jcr:name] FROM [nt:folder] AS folder";
+            Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+            NodeIterator nodes = query.execute().getNodes();
+            assertEquals(3, nodes.getSize());
+            Set<String> names = new TreeSet<>();
+            while (nodes.hasNext()) {
+                names.add(nodes.nextNode().getName());
+            }
+            assertArrayEquals(new String[] { "folder2", "folder3_1", "folder3_1_1" }, names.toArray(new String[0]));
+        } finally {
+            folder1.remove();
+            folder2.remove();
+            folder3.remove();
+            session.save();
+        }
     }
 
     private void registerNodeType( String typeName ) throws RepositoryException {

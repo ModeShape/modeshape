@@ -94,6 +94,12 @@ public class QuerySources {
             public String toString() {
                 return "(queryable nodes)";
             }
+
+            @Override
+            public boolean continueProcessingChildren( CachedNode node, NodeCache cache ) {
+                Name nodePrimaryType = node.getPrimaryType(cache);
+                return node.isQueryable(cache) && !nodeTypes.isQueryable(nodePrimaryType);
+            }
         };
         if (!this.includeSystemContent) {
             final String systemWorkspaceKey = repo.getSystemWorkspaceKey();
@@ -111,6 +117,14 @@ public class QuerySources {
                 @Override
                 public String toString() {
                     return "(queryable nodes not in workspace)";
+                }
+
+                @Override
+                public boolean continueProcessingChildren( CachedNode node, NodeCache cache ) {
+                    Name nodePrimaryType = node.getPrimaryType(cache);
+                    return  node.isQueryable(cache) &&
+                            !node.getKey().getWorkspaceKey().equals(systemWorkspaceKey) && 
+                            !nodeTypes.isQueryable(nodePrimaryType);
                 }
             };
         } else {
@@ -503,6 +517,16 @@ public class QuerySources {
         }
 
         @Override
+        public boolean continueProcessingChildren( CachedNode node, NodeCache cache ) {
+            for (NodeFilter filter : filters) {
+                if (!filter.continueProcessingChildren(node, cache)) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        @Override
         public String toString() {
             return filters.isEmpty() ? "" : filters.toString();
         }
@@ -531,6 +555,11 @@ public class QuerySources {
                     return true;
                 }
                 return true;
+            }
+
+            @Override
+            public boolean continueProcessingChildren( CachedNode node, NodeCache cache ) {
+                return !shareableNodeKeys.contains(node.getKey());
             }
 
             @Override

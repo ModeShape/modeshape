@@ -1075,17 +1075,25 @@ public class LocalIndexProviderTest extends AbstractLocalIndexProviderTest {
         waitForIndexes();
 
         session.getRootNode().addNode("nonQueryableFolder", typeName);
-        session.getRootNode().addNode("regularFolder", "nt:folder");
+        session.getRootNode().addNode("regularFolder1", "nt:folder");
+        Node folder2 = session.getRootNode().addNode("regularFolder2", typeName);
+        folder2.addNode("subFolder", "nt:folder");
         session.save();
 
         waitForIndexes();
-
+        final List<String> expectedResults = new ArrayList<>(Arrays.asList("/regularFolder1", "/regularFolder2/subFolder"));
         Query query = jcrSql2Query("select folder.[jcr:name] FROM [nt:folder] as folder");
         validateQuery()
-                .rowCount(1L)
+                .rowCount(2L)
                 .useIndex("typesIndex")
-                .hasNodesAtPaths("/regularFolder")
+                .onEachRow(new ValidateQuery.Predicate() {
+                    @Override
+                    public void validate( int rowNumber, Row row ) throws RepositoryException {
+                        expectedResults.remove(row.getPath());
+                    }
+                })
                 .validate(query, query.execute());
+        assertTrue("Not all expected nodes found: " + expectedResults, expectedResults.isEmpty());
     }
 
     @FixFor( "MODE-2432 ")
