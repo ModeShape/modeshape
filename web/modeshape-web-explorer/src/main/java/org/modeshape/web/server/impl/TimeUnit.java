@@ -25,11 +25,11 @@ import org.modeshape.jcr.api.monitor.Window;
  */
 public class TimeUnit implements Serializable {
     private static final TimeUnit UNITS[] = {
-        new TimeUnit(Window.PREVIOUS_60_SECONDS, "Last minute"),
-        new TimeUnit(Window.PREVIOUS_60_MINUTES, "Last hour"),
-        new TimeUnit(Window.PREVIOUS_24_HOURS, "Last day"),
-        new TimeUnit(Window.PREVIOUS_7_DAYS, "Last weak"),
-        new TimeUnit(Window.PREVIOUS_52_WEEKS, "Last half year"),
+        new TimeUnit(Window.PREVIOUS_60_SECONDS, "Previous 60 seconds"),
+        new TimeUnit(Window.PREVIOUS_60_MINUTES, "Previous 60 minutes"),
+        new TimeUnit(Window.PREVIOUS_24_HOURS, "Previous 24 hours"),
+        new TimeUnit(Window.PREVIOUS_7_DAYS, "Previous 7 days"),
+        new TimeUnit(Window.PREVIOUS_52_WEEKS, "Previous 52 weeks"),
     }; 
     
     private Window window;
