@@ -27,9 +27,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import javax.transaction.NotSupportedException;
 import javax.transaction.SystemException;
-import javax.transaction.TransactionManager;
-import org.infinispan.AdvancedCache;
 import org.infinispan.Cache;
+import org.infinispan.configuration.cache.Configuration;
+import org.infinispan.eviction.EvictionStrategy;
 import org.infinispan.lifecycle.ComponentStatus;
 import org.infinispan.manager.CacheContainer;
 import org.infinispan.manager.EmbeddedCacheManager;
@@ -37,6 +37,7 @@ import org.infinispan.schematic.Schematic;
 import org.infinispan.schematic.SchematicEntry;
 import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.document.EditableDocument;
+import org.infinispan.transaction.TransactionMode;
 import org.modeshape.common.SystemFailureException;
 import org.modeshape.common.collection.Collections;
 import org.modeshape.common.i18n.I18n;
@@ -118,7 +119,7 @@ public class RepositoryCache {
     protected final Logger logger;
     private final SessionEnvironment sessionContext;
     private final String processKey;
-    private final CacheContainer workspaceCacheManager;
+    private final EmbeddedCacheManager workspaceCacheManager;
     protected final Upgrades upgrades;
     private volatile boolean initializingRepository = false;
     private volatile boolean upgradingRepository = false;
@@ -144,7 +145,10 @@ public class RepositoryCache {
         this.translator = new DocumentTranslator(this.context, this.documentStore, this.minimumStringLengthForBinaryStorage.get());
         this.sessionContext = sessionContext;
         this.processKey = context.getProcessId();
-        this.workspaceCacheManager = workspaceCacheContainer;
+        if (! (workspaceCacheContainer instanceof EmbeddedCacheManager)) {
+            throw new ConfigurationException(JcrI18n.workspaceCacheShouldBeEmbedded.text());
+        }
+        this.workspaceCacheManager = (EmbeddedCacheManager)workspaceCacheContainer;
         this.logger = Logger.getLogger(getClass());
         this.rootNodeId = RepositoryConfiguration.ROOT_NODE_ID;
         this.name = configuration.getName();
@@ -524,12 +528,9 @@ public class RepositoryCache {
             // Tell the workspace cache intance that it's closed ...
             entry.getValue().signalClosed();
             // Remove the infinispan cache from the manager ...
-            if (workspaceCacheManager instanceof EmbeddedCacheManager) {
-                EmbeddedCacheManager embeddedCacheManager = (EmbeddedCacheManager)workspaceCacheManager;
-                if (embeddedCacheManager.getStatus().equals(ComponentStatus.RUNNING)) {
-                    String cacheName = cacheNameForWorkspace(workspaceName);
-                    ((EmbeddedCacheManager)workspaceCacheManager).removeCache(cacheName);
-                }
+            if (workspaceCacheManager.getStatus().equals(ComponentStatus.RUNNING)) {
+                String cacheName = cacheNameForWorkspace(workspaceName);
+                workspaceCacheManager.removeCache(cacheName);
             }
         }
     }
@@ -866,16 +867,38 @@ public class RepositoryCache {
     }
 
     protected Cache<NodeKey, CachedNode> cacheForWorkspace( String name ) {
-        Cache<NodeKey, CachedNode> cache = workspaceCacheManager.getCache(cacheNameForWorkspace(name));
-        if (cache instanceof AdvancedCache) {
-            TransactionManager txManager = ((AdvancedCache<?, ?>)cache).getTransactionManager();
-            if (txManager != null) {
-                throw new ConfigurationException(JcrI18n.workspaceCacheShouldNotBeTransactional.text(name));
+        String cacheName = cacheNameForWorkspace(name);
+        if (LOGGER.isDebugEnabled()) {
+            Set<String> cacheNames = workspaceCacheManager.getCacheNames();
+            if (!cacheNames.contains(cacheName)) {
+                // there is no explicit ws cache defined for this cache 
+                LOGGER.debug(
+                        "There is no explicit cache named '{0}' defined in the workspace cache container, using a default cache",
+                        cacheName);
             }
         }
+        Cache<NodeKey, CachedNode> cache = workspaceCacheManager.getCache(cacheName);
+        Configuration cacheConfiguration = cache.getCacheConfiguration();
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("The '{0}' workspace cache is using the cache configuration: '{1}'", cacheName,
+                         cacheConfiguration);
+        }
+        validateWorkspaceCacheConfig(cacheName, cacheConfiguration);
         return cache;
     }
 
+    private void validateWorkspaceCacheConfig( String cacheName, Configuration cacheConfiguration ) {
+        if (cacheConfiguration.transaction() != null &&
+            cacheConfiguration.transaction().transactionMode() != TransactionMode.NON_TRANSACTIONAL) {
+            throw new ConfigurationException(JcrI18n.workspaceCacheShouldNotBeTransactional.text(cacheName));
+        }
+        if (cacheConfiguration.eviction() == null || cacheConfiguration.eviction().strategy() == EvictionStrategy.NONE) {
+            throw new ConfigurationException(JcrI18n.workspaceCacheShouldUseEviction.text(cacheName));
+        }
+        if (cacheConfiguration.persistence() != null && cacheConfiguration.persistence().usingStores()) {
+            throw new ConfigurationException(JcrI18n.workspaceCacheShouldNotUseLoaders.text(cacheName));
+        }
+    }
     protected final String cacheNameForWorkspace( String workspaceName ) {
         return this.name + "/" + workspaceName;
     }
@@ -893,9 +916,7 @@ public class RepositoryCache {
                 removed.signalDeleted();
                 sessionContext.getTransactionalWorkspaceCacheFactory().remove(name);
             } finally {
-                if (workspaceCacheManager instanceof EmbeddedCacheManager) {
-                    ((EmbeddedCacheManager)workspaceCacheManager).removeCache(cacheNameForWorkspace(name));
-                }
+                workspaceCacheManager.removeCache(cacheNameForWorkspace(name));
             }
         }
     }
