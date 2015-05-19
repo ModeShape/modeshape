@@ -28,7 +28,7 @@ public class TimeUnit implements Serializable {
         new TimeUnit(Window.PREVIOUS_60_SECONDS, "Last minute"),
         new TimeUnit(Window.PREVIOUS_60_MINUTES, "Last hour"),
         new TimeUnit(Window.PREVIOUS_24_HOURS, "Last day"),
-        new TimeUnit(Window.PREVIOUS_7_DAYS, "Last weak"),
+        new TimeUnit(Window.PREVIOUS_7_DAYS, "Last week"),
         new TimeUnit(Window.PREVIOUS_52_WEEKS, "Last half year"),
     }; 
     
