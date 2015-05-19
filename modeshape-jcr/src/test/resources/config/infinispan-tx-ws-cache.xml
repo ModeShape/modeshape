@@ -5,11 +5,25 @@
 
     <cache-container default-cache="test_repo/default" statistics="false">
         <jmx duplicate-domains="true"/>
-        <local-cache name="test_repo/default"/>
+        <local-cache name="test_repo/system">
+            <eviction strategy="LIRS" max-entries="1"/>
+        </local-cache>
+        <local-cache name="test_repo/default">
+            <eviction strategy="LIRS" max-entries="2"/>
+        </local-cache>
         <local-cache name="test_repo/ws1">
             <transaction
                     mode="NON_XA"
                     locking="PESSIMISTIC"/>
+        </local-cache>
+        <local-cache name="test_repo/ws2">
+            <eviction strategy="NONE" max-entries="0"/>
+        </local-cache>
+        <local-cache name="test_repo/ws3">
+            <eviction strategy="LIRS" max-entries="3"/>
+            <persistence passivation="false">
+                <file-store fetch-state="false" preload="false" path="target/persistent_repository/store"/> 
+            </persistence>
         </local-cache>
     </cache-container>
 </infinispan>

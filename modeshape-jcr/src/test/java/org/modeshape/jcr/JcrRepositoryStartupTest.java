@@ -207,6 +207,42 @@ public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
         }, "config/invalid-repo-config-tx-ws-cache.json");
     }
 
+    @FixFor( "MODE-2466" )
+    @Test
+    public void shouldFailWhenCreatingWorkspaceWithCacheWithoutEviction() throws Exception {
+        startRunStop(new RepositoryOperation() {
+            @Override
+            public Void call() throws Exception {
+                Session session = repository.login();
+                try {
+                    session.getWorkspace().createWorkspace("ws2");
+                    fail("It should not be possible to create a workspace which has a cache configured without eviction");
+                } catch (ConfigurationException e) {
+                    //expected
+                }
+                return null;
+            }
+        }, "config/invalid-repo-config-tx-ws-cache.json");
+    }
+
+    @FixFor( "MODE-2466" )
+    @Test
+    public void shouldFailWhenCreatingWorkspaceWithCacheWithLoader() throws Exception {
+        startRunStop(new RepositoryOperation() {
+            @Override
+            public Void call() throws Exception {
+                Session session = repository.login();
+                try {
+                    session.getWorkspace().createWorkspace("ws3");
+                    fail("It should not be possible to create a workspace which has a cache with a loader configured");
+                } catch (ConfigurationException e) {
+                    //expected
+                }
+                return null;
+            }
+        }, "config/invalid-repo-config-tx-ws-cache.json");
+    }
+
     @Test
     @FixFor( "MODE-1716" )
     public void shouldPersistExternalProjectionToFederatedNodeMappings() throws Exception {
