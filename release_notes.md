@@ -5,19 +5,23 @@ We hope you enjoy it!
 
 ## What's new
 
-&version; provides a fast, elastic, distributed hierarchical database that clients
-work with via the standard JCR 2.0 (JSR-283) API. ModeShape 4 is a major upgrade over 3.x
-and offers significant improvements in clustering, performance, query, and events.
-All JCR 2.0 features are supported, and ModeShape 4 has complete integration with
-Wildfly 8, allowing deployed applications to simply lookup and use repositories managed 
-by ModeShape's service.
+ModeShape 4 is a major upgrade over 3.x and offers significant improvements in clustering, performance, query, and events.
+All JCR 2.0 (JSR-283) features are supported, and ModeShape 4 has complete integration with Wildfly 8, allowing deployed applications 
+to simply lookup and use repositories managed by ModeShape's service.
 
 ModeShape &version; is licensed under the Apache Software License, 2.0.
 
-This release addresses 36 bugs and 9 enhancements, including several related to our Teiid and DDL sequencers. Our Wildfly kit
-now integrates directly with Wildfly's security services meaning that if a security domain is configured to use caching, ModeShape
-will take full advantage of this whenever session authentication operations are performed. Also, the local index provider now exposes several
-MapDB configuration options allowing for advanced performance tuning when this provider is used.
+This release addresses 18 bugs and 11 enhancements, the most important of which being that of moving to Infinispan 7.2.0.Final.
+This version of Infinispan has serveral fixes and improvements since Infinispan 6, including a fix for [MODE-2280](https://issues.jboss.org/browse/MODE-2280).
+This change meant, however, that our Wildfly integration kit had to be adapted in order to be able to integrate with Infinispan 
+in library mode rather than via the Wildfly subsystem.
+
+** If you're using the Wildfly kit, when moving to ModeShape &version; you will have to update your cache configuration 
+as described [in this section of the documentation](https://docs.jboss.org/author/display/MODE40/Configuring+ModeShape+in+Wildfly#ConfiguringModeShapeinWildfly-MigratingfromModeShape4.2%28orlower%29toModeShape4.3%28orgreater%29)**
+
+In addition to the Infinispan related changes, we've enhanced the [Backup & Restore API](https://docs.jboss.org/author/display/MODE40/Backup+and+restore)
+allowing a more fine-grained control over what parts of a repository are backed up and then restored. We've also added the ability
+to perform a full repository backup & restore [via the REST Service](https://docs.jboss.org/author/display/MODE40/REST+Service#RESTService-26.Backuparepository)
 
 ## Features
 
