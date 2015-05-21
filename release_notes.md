@@ -30,7 +30,7 @@ ModeShape &version; has these features:
 - ModeShape uses Infinispan for all caching and storage, giving a powerful and flexible
 foundation for creating JCR repositories that are fast, scalable, and highly available.
 Infinispan offers a great deal of storage options (via cache loaders), but using Infinispan 
-as a distributed, mulit-site, in-memory data grid provides incredible scalability and performance.
+as a distributed, multi-site, in-memory data grid provides incredible scalability and performance.
 - Strongly consistent. ModeShape is atomic, consistent, isolated and durable (ACID), so writing
 applications is very natural. Applications can even use JTA transactions.
 - Fast. ModeShape 4 is just plain seriously fast, and performance is all-around
