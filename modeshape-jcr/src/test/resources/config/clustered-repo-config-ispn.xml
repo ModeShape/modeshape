@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <infinispan xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xsi:schemaLocation="urn:infinispan:config:7.0 http://www.infinispan.org/schemas/infinispan-config-7.0.xsd"
-        xmlns="urn:infinispan:config:7.0">
+        xsi:schemaLocation="urn:infinispan:config:7.2 http://www.infinispan.org/schemas/infinispan-config-7.2.xsd"
+        xmlns="urn:infinispan:config:7.2">
     <jgroups>
         <stack-file name="tcp" path="config/jgroups-test-config.xml"/>
     </jgroups>
@@ -10,7 +10,7 @@
         <transport 
                 cluster="modeshape-cluster" 
                 stack="tcp"/>
-        <replicated-cache name="repo_cache" mode="SYNC">
+        <replicated-cache name="repo_cache" mode="SYNC" statistics="false">
             <state-transfer timeout="2000"/> 
             <locking 
                     isolation="READ_COMMITTED"  

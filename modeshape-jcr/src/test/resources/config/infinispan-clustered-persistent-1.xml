@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <infinispan xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-            xsi:schemaLocation="urn:infinispan:config:7.0 http://www.infinispan.org/schemas/infinispan-config-7.0.xsd"
-            xmlns="urn:infinispan:config:7.0">
+            xsi:schemaLocation="urn:infinispan:config:7.2 http://www.infinispan.org/schemas/infinispan-config-7.2.xsd"
+            xmlns="urn:infinispan:config:7.2">
     <jgroups>
         <stack-file name="tcp" path="config/jgroups-test-config.xml"/>
     </jgroups>
@@ -13,7 +13,7 @@
         <!-- 
             Repo cache
         -->
-        <replicated-cache name="persistentRepository" mode="SYNC">
+        <replicated-cache name="persistentRepository" mode="SYNC" statistics="false">
             <eviction strategy="LIRS" max-entries="600"/>
             <locking
                     isolation="READ_COMMITTED"
@@ -21,7 +21,8 @@
             <transaction
                     mode="NON_XA"
                     locking="PESSIMISTIC"/>
-            <persistence>
+            <persistence
+                    passivation="false">
                 <file-store 
                             shared="false"
                             preload="false"
@@ -32,14 +33,15 @@
         <!-- 
             Binary data
         -->
-        <replicated-cache name="binary-data" mode="SYNC">
+        <replicated-cache name="binary-data" mode="SYNC" statistics="false">
             <locking
                     isolation="READ_COMMITTED"
                     acquire-timeout="1000"/>
             <transaction
                     mode="NON_XA"
                     locking="PESSIMISTIC"/>
-            <persistence>
+            <persistence
+                    passivation="false">
                 <file-store 
                             shared="false"
                             preload="false"
@@ -50,14 +52,15 @@
         <!-- 
             Binary metadata 
         -->
-        <replicated-cache name="binary-meta-data" mode="SYNC">
+        <replicated-cache name="binary-meta-data" mode="SYNC" statistics="false">
             <locking
                     isolation="READ_COMMITTED"
                     acquire-timeout="1000"/>
             <transaction
                     mode="NON_XA"
                     locking="PESSIMISTIC"/>
-            <persistence>
+            <persistence
+                    passivation="false">
                 <file-store
                             shared="false"
                             preload="false"

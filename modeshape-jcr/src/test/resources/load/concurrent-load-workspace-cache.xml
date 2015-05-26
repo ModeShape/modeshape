@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <infinispan xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-            xsi:schemaLocation="urn:infinispan:config:7.0 http://www.infinispan.org/schemas/infinispan-config-7.0.xsd"
-            xmlns="urn:infinispan:config:7.0">
+            xsi:schemaLocation="urn:infinispan:config:7.2 http://www.infinispan.org/schemas/infinispan-config-7.2.xsd"
+            xmlns="urn:infinispan:config:7.2">
     <!--
       Define the configuration for each workspace cache. This configuration will be used if there is no "namedCache"
       definition for the workspace name. Note that the names of caches following the convention 
@@ -10,7 +10,7 @@
     <cache-container default-cache="workspaces" statistics="false">
         <jmx duplicate-domains="true"/>
         <!-- Local in-memory caches with no persistence. -->
-        <local-cache name="workspaces">
+        <local-cache name="workspaces" statistics="false">
             <!-- No more that 10K entries per cache, with LIRS eviction. -->
             <eviction max-entries="10" strategy="LIRS"/>
             <!-- Expire entries after 120 seconds or after 60 seconds of not being used (whichever comes first). -->

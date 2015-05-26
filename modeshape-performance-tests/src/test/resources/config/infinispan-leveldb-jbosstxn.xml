@@ -1,17 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <infinispan
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xsi:schemaLocation="urn:infinispan:config:7.0 http://www.infinispan.org/schemas/infinispan-config-7.0.xsd
-                            urn:infinispan:config:store:leveldb:7.0 http://www.infinispan.org/schemas/infinispan-cachestore-leveldb-config-7.0.xsd"
-        xmlns="urn:infinispan:config:7.0">
+        xsi:schemaLocation="urn:infinispan:config:7.2 http://www.infinispan.org/schemas/infinispan-config-7.2.xsd
+                            urn:infinispan:config:store:leveldb:7.2 http://www.infinispan.org/schemas/infinispan-cachestore-leveldb-config-7.2.xsd"
+        xmlns="urn:infinispan:config:7.2">
     <cache-container default-cache="levelDBRepository">
-        <local-cache name="levelDBRepository">
+        <local-cache name="levelDBRepository" statistics="false">
             <eviction strategy="LIRS" max-entries="50000"/>
             <transaction
                     mode="NON_XA"
                     transaction-manager-lookup="org.infinispan.transaction.lookup.JBossStandaloneJTAManagerLookup"
                     locking="PESSIMISTIC"/>
-            <leveldb-store xmlns="urn:infinispan:config:store:leveldb:7.0"
+            <leveldb-store xmlns="urn:infinispan:config:store:leveldb:7.2"
                            path="target/leveldb/content"
                            fetch-state="false"
                            shared="false"

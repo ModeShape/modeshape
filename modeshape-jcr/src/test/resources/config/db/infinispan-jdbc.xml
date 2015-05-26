@@ -1,18 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <infinispan
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xsi:schemaLocation="urn:infinispan:config:7.0 http://www.infinispan.org/schemas/infinispan-config-7.0.xsd
-                            urn:infinispan:config:store:jdbc:7.0 http://www.infinispan.org/schemas/infinispan-cachestore-jdbc-config-7.0.xsd"
+        xsi:schemaLocation="urn:infinispan:config:7.2 http://www.infinispan.org/schemas/infinispan-config-7.2.xsd
+                            urn:infinispan:config:store:jdbc:7.2 http://www.infinispan.org/schemas/infinispan-cachestore-jdbc-config-7.2.xsd"
         xmlns="urn:infinispan:config:7.0">
     <cache-container default-cache="db_repository">
         <jmx duplicate-domains="true"/>
-        <local-cache name="db_repository">
+        <local-cache name="db_repository" statistics="false">
             <transaction
                     mode="NON_XA"
                     transaction-manager-lookup="org.infinispan.transaction.lookup.JBossStandaloneJTAManagerLookup"
                     locking="PESSIMISTIC"/>
-            <persistence>
-                <string-keyed-jdbc-store xmlns="urn:infinispan:config:store:jdbc:7.0"
+            <persistence
+                    passivation="false">
+                <string-keyed-jdbc-store xmlns="urn:infinispan:config:store:jdbc:7.2"
                                          fetch-state="false"
                                          read-only="false"
                                          purge="false">
