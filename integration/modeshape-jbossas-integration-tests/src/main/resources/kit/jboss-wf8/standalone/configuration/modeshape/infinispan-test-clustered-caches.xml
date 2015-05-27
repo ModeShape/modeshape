@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <infinispan xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-            xsi:schemaLocation="urn:infinispan:config:7.0 http://www.infinispan.org/schemas/infinispan-config-7.0.xsd"
-            xmlns="urn:infinispan:config:7.0">
+            xsi:schemaLocation="urn:infinispan:config:7.2 http://www.infinispan.org/schemas/infinispan-config-7.2.xsd"
+            xmlns="urn:infinispan:config:7.2">
     <jgroups>
         <stack-file name="tcp" path="${jboss.server.config.dir}/modeshape/jgroups-config.xml"/>
     </jgroups>
@@ -10,14 +10,15 @@
         <transport
                 cluster="modeshape-cluster"
                 stack="tcp"/>
-        <replicated-cache name="repo-clustered1" mode="SYNC">
+        <replicated-cache name="repo-clustered1" mode="SYNC" statistics="false">
             <locking
                     isolation="READ_COMMITTED"
                     acquire-timeout="1000"/>
             <transaction
                     mode="NON_XA"
                     locking="PESSIMISTIC"/>
-            <persistence>
+            <persistence
+                    passivation="false">
                 <file-store
                         shared="false"
                         preload="false"
@@ -25,14 +26,15 @@
                         path="${jboss.server.data.dir}/modeshape/store/repo-clustered1"/>
             </persistence>
         </replicated-cache>
-        <replicated-cache name="repo-clustered2" mode="SYNC">
+        <replicated-cache name="repo-clustered2" mode="SYNC" statistics="false">
             <locking
                     isolation="READ_COMMITTED"
                     acquire-timeout="1000"/>
             <transaction
                     mode="NON_XA"
                     locking="PESSIMISTIC"/>
-            <persistence>
+            <persistence
+                    passivation="false">
                 <file-store
                         shared="false"
                         preload="false"

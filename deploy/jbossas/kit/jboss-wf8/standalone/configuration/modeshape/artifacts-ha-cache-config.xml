@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <infinispan xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-            xsi:schemaLocation="urn:infinispan:config:7.0 http://www.infinispan.org/schemas/infinispan-config-7.0.xsd"
-            xmlns="urn:infinispan:config:7.0">
+            xsi:schemaLocation="urn:infinispan:config:7.2 http://www.infinispan.org/schemas/infinispan-config-7.2.xsd"
+            xmlns="urn:infinispan:config:7.2">
     <jgroups>
         <stack-file name="tcp" path="${jboss.server.config.dir}/modeshape/jgroups-config.xml"/>
     </jgroups>
@@ -13,14 +13,15 @@
         <!-- 
             Repo cache
         -->
-        <replicated-cache name="artifacts" mode="SYNC">
+        <replicated-cache name="artifacts" mode="SYNC" statistics="false">
             <locking
                     isolation="READ_COMMITTED"
                     acquire-timeout="1000"/>
             <transaction
                     mode="NON_XA"
                     locking="PESSIMISTIC"/>
-            <persistence>
+            <persistence
+                    passivation="false">
                 <file-store
                         shared="false"
                         preload="false"
@@ -31,14 +32,15 @@
         <!-- 
             Binary data
         -->
-        <replicated-cache name="artifacts-binary-fs" mode="SYNC">
+        <replicated-cache name="artifacts-binary-fs" mode="SYNC" statistics="false">
             <locking
                     isolation="READ_COMMITTED"
                     acquire-timeout="6000"/>
             <transaction
                     mode="NON_XA"
                     locking="PESSIMISTIC"/>
-            <persistence>
+            <persistence
+                    passivation="false">
                 <file-store
                         shared="false"
                         preload="false"
@@ -49,14 +51,15 @@
         <!-- 
             Binary metadata 
         -->
-        <replicated-cache name="artifacts-binary-fs-meta" mode="SYNC">
+        <replicated-cache name="artifacts-binary-fs-meta" mode="SYNC" statistics="false">
             <locking
                     isolation="READ_COMMITTED"
                     acquire-timeout="1000"/>
             <transaction
                     mode="NON_XA"
                     locking="PESSIMISTIC"/>
-            <persistence>
+            <persistence
+                    passivation="false">
                 <file-store
                         shared="false"
                         preload="false"
