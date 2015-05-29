@@ -37,9 +37,8 @@ public class NodeMoved extends AbstractNodeChange {
                       NodeKey oldParent,
                       NodeKey newParent,
                       Path newPath,
-                      Path oldPath,
-                      boolean queryable ) {
-        super(key, newPath, primaryType, mixinTypes, queryable);
+                      Path oldPath ) {
+        super(key, newPath, primaryType, mixinTypes);
         this.oldParent = oldParent;
         this.newParent = newParent;
         this.oldPath = oldPath;

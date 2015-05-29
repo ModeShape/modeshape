@@ -24,6 +24,7 @@ import static org.junit.Assert.fail;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
@@ -1069,7 +1070,7 @@ public class LocalIndexProviderTest extends AbstractLocalIndexProviderTest {
     @Test
     public void shouldNotConsiderNonQueryableNodeTypes() throws RepositoryException, InterruptedException {
         String typeName = "nt:nonQueryableFolder";
-        registerNodeType(typeName, false, "nt:folder");
+        registerNodeType(typeName, false, false, "nt:folder");
         registerNodeTypeIndex("typesIndex", "nt:folder", null, "*", "jcr:primaryType", PropertyType.STRING);
         
         waitForIndexes();
@@ -1094,6 +1095,68 @@ public class LocalIndexProviderTest extends AbstractLocalIndexProviderTest {
                 })
                 .validate(query, query.execute());
         assertTrue("Not all expected nodes found: " + expectedResults, expectedResults.isEmpty());
+    }
+
+
+    @FixFor( "MODE-2401" )
+    @Test
+    public void shouldNotConsiderNonQueryableMixins() throws RepositoryException, InterruptedException {
+        String mixinName = "nt:nonQueryableFolderMixin";
+        registerNodeType(mixinName, false, true);
+        registerNodeTypeIndex("typesIndex", "nt:folder", null, "*", "jcr:primaryType", PropertyType.STRING);
+
+        waitForIndexes();
+
+        Node folder1 = session.getRootNode().addNode("folder1", "nt:folder");
+        Node folder2 = session.getRootNode().addNode("folder2", "nt:folder");
+        folder2.addMixin(mixinName);
+        session.save();
+        waitForIndexes();
+        
+        // test with the initial node config
+        final List<String> expectedResults = new ArrayList<>(Collections.singletonList("/folder1"));
+        Query query = jcrSql2Query("select folder.[jcr:name] FROM [nt:folder] as folder");
+        validateQuery()
+                .rowCount(1L)
+                .useIndex("typesIndex")
+                .onEachRow(new ValidateQuery.Predicate() {
+                    @Override
+                    public void validate( int rowNumber, Row row ) throws RepositoryException {
+                        expectedResults.remove(row.getPath());
+                    }
+                })
+                .validate(query, query.execute());
+        assertTrue("Not all expected nodes found: " + expectedResults, expectedResults.isEmpty());
+        
+        // add the mixin on the 1st node and reindex
+        folder1.addMixin(mixinName);
+        session.save();
+        session.getWorkspace().reindex("/");
+        query = jcrSql2Query("select folder.[jcr:name] FROM [nt:folder] as folder");
+        validateQuery()
+                .rowCount(0L)
+                .useIndex("typesIndex")
+                .validate(query, query.execute());
+        
+        // remove both mixins and reindex
+        folder1.removeMixin(mixinName);
+        folder2.removeMixin(mixinName);
+        session.save();
+        session.getWorkspace().reindex("/");
+
+        final List<String> expectedResults2 = new ArrayList<>(Arrays.asList("/folder1", "/folder2"));
+        query = jcrSql2Query("select folder.[jcr:name] FROM [nt:folder] as folder");
+        validateQuery()
+                .rowCount(2L)
+                .useIndex("typesIndex")
+                .onEachRow(new ValidateQuery.Predicate() {
+                    @Override
+                    public void validate( int rowNumber, Row row ) throws RepositoryException {
+                        expectedResults2.remove(row.getPath());
+                    }
+                })
+                .validate(query, query.execute());
+        assertTrue("Not all expected nodes found: " + expectedResults2, expectedResults2.isEmpty());
     }
 
     @FixFor( "MODE-2432 ")

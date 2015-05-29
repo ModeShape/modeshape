@@ -54,8 +54,7 @@ public final class NoOpChanges implements Changes {
                              Path path,
                              Name primaryType,
                              Set<Name> mixinTypes,
-                             Map<Name, Property> properties,
-                             boolean queryable ) {
+                             Map<Name, Property> properties ) {
     }
 
     @Override
@@ -64,8 +63,7 @@ public final class NoOpChanges implements Changes {
                              Path path,
                              Name primaryType,
                              Set<Name> mixinTypes,
-                             boolean queryable, 
-                             Name parentPrimaryType, 
+                             Name parentPrimaryType,
                              Set<Name> parentMixinTypes ) {
     }
 
@@ -74,8 +72,7 @@ public final class NoOpChanges implements Changes {
                              Path newPath,
                              Segment oldName,
                              Name primaryType,
-                             Set<Name> mixinTypes,
-                             boolean queryable ) {
+                             Set<Name> mixinTypes ) {
     }
 
     @Override
@@ -85,8 +82,7 @@ public final class NoOpChanges implements Changes {
                            NodeKey newParent,
                            NodeKey oldParent,
                            Path newPath,
-                           Path oldPath,
-                           boolean queryable ) {
+                           Path oldPath ) {
     }
 
     @Override
@@ -96,16 +92,14 @@ public final class NoOpChanges implements Changes {
                                NodeKey parent,
                                Path newPath,
                                Path oldPath,
-                               Path reorderedBeforePath,
-                               boolean queryable ) {
+                               Path reorderedBeforePath ) {
     }
 
     @Override
     public void nodeChanged( NodeKey key,
                              Path path,
                              Name primaryType,
-                             Set<Name> mixinTypes,
-                             boolean queryable ) {
+                             Set<Name> mixinTypes ) {
     }
 
     @Override
@@ -118,8 +112,7 @@ public final class NoOpChanges implements Changes {
                                String outputPath,
                                String userId,
                                String selectedPath,
-                               String sequencerName,
-                               boolean queryable ) {
+                               String sequencerName ) {
     }
 
     @Override
@@ -131,7 +124,6 @@ public final class NoOpChanges implements Changes {
                                        String userId,
                                        String selectedPath,
                                        String sequencerName,
-                                       boolean queryable,
                                        Throwable cause ) {
     }
 
@@ -140,8 +132,7 @@ public final class NoOpChanges implements Changes {
                                Name nodePrimaryType,
                                Set<Name> nodeMixinTypes,
                                Path nodePath,
-                               Property property,
-                               boolean queryable ) {
+                               Property property ) {
     }
 
     @Override
@@ -149,8 +140,7 @@ public final class NoOpChanges implements Changes {
                                  Name nodePrimaryType,
                                  Set<Name> nodeMixinTypes,
                                  Path nodePath,
-                                 Property property,
-                                 boolean queryable ) {
+                                 Property property ) {
     }
 
     @Override
@@ -159,8 +149,7 @@ public final class NoOpChanges implements Changes {
                                  Set<Name> nodeMixinTypes,
                                  Path nodePath,
                                  Property newProperty,
-                                 Property oldProperty,
-                                 boolean queryable ) {
+                                 Property oldProperty ) {
     }
 
     @Override

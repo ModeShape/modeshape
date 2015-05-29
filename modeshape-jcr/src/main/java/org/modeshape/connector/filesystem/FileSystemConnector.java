@@ -924,7 +924,7 @@ public class FileSystemConnector extends WritableConnector implements Pageable {
                                                                            connector.lastModifiedTimeFor(file));
             // there is no way to observe the previous value, so fire <null>
             connectorChangeSet.propertyChanged(contentId, JcrNtLexicon.RESOURCE, Collections.<Name>emptySet(), contentId, null,
-                                               modifiedProperty, queryable);
+                                               modifiedProperty);
 
             // fire PROPERTY_CHANGED for nt:file/jcr:content/jcr:data/jcr:lastModifiedBy
             String owner = connector.ownerFor(file);
@@ -932,7 +932,7 @@ public class FileSystemConnector extends WritableConnector implements Pageable {
                 Property modifiedByProperty = connector.propertyFactory().create(JcrLexicon.LAST_MODIFIED_BY, owner);
                 // there is no way to observe the previous value, so fire <null>
                 connectorChangeSet.propertyChanged(contentId, JcrNtLexicon.RESOURCE, Collections.<Name>emptySet(), contentId,
-                                                   null, modifiedByProperty, queryable);
+                                                   null, modifiedByProperty);
             }
 
             try {
@@ -940,7 +940,7 @@ public class FileSystemConnector extends WritableConnector implements Pageable {
                 BinaryValue binaryValue = connector.binaryFor(file);
                 Property binaryProperty = connector.propertyFactory().create(JcrLexicon.DATA, binaryValue);
                 connectorChangeSet.propertyChanged(contentId, JcrNtLexicon.RESOURCE, Collections.<Name>emptySet(), contentId,
-                                                   null, binaryProperty, queryable);
+                                                   null, binaryProperty);
 
                 if (connector.addMimeTypeMixin) {
                     try {
@@ -948,7 +948,7 @@ public class FileSystemConnector extends WritableConnector implements Pageable {
                         String mimeType = binaryValue.getMimeType();
                         Property mimeTypeProperty = connector.propertyFactory().create(JcrLexicon.MIMETYPE, mimeType);
                         connectorChangeSet.propertyChanged(contentId, JcrNtLexicon.RESOURCE, Collections.<Name>emptySet(),
-                                                           contentId, null, mimeTypeProperty, queryable);
+                                                           contentId, null, mimeTypeProperty);
 
                     } catch (Throwable e) {
                         connector.getLogger().error(e, JcrI18n.couldNotGetMimeType, connector.getSourceName(), contentId,
@@ -982,7 +982,7 @@ public class FileSystemConnector extends WritableConnector implements Pageable {
             }
 
             connectorChangeSet.nodeRemoved(id, connector.idFor(parentPath.toFile()), id, primaryType,
-                                           Collections.<Name>emptySet(), queryable, parentPrimaryType, 
+                                           Collections.<Name>emptySet(), parentPrimaryType, 
                                            Collections.<Name>emptySet());
         }
 
@@ -1005,37 +1005,37 @@ public class FileSystemConnector extends WritableConnector implements Pageable {
             boolean queryable = connector.isQueryable();
             // fire NODE_ADDED for nt:file
             connectorChangeSet.nodeCreated(docId, connector.idFor(resolvedPath.getParent().toFile()), docId, primaryType,
-                                           Collections.<Name>emptySet(), Collections.<Name, Property>emptyMap(), queryable);
+                                           Collections.<Name>emptySet(), Collections.<Name, Property>emptyMap());
             // fire PROPERTY_ADDED for nt:file/jcr:created
             Property createdProperty = connector.propertyFactory().create(JcrLexicon.CREATED, connector.createdTimeFor(file));
-            connectorChangeSet.propertyAdded(docId, primaryType, Collections.<Name>emptySet(), docId, createdProperty, queryable);
+            connectorChangeSet.propertyAdded(docId, primaryType, Collections.<Name>emptySet(), docId, createdProperty);
 
             String owner = connector.ownerFor(file);
             if (owner != null) {
                 // fire PROPERTY_ADDED for nt:file/jcr:createdBy
                 Property createdByProperty = connector.propertyFactory().create(JcrLexicon.CREATED_BY, owner);
-                connectorChangeSet.propertyAdded(docId, primaryType, Collections.<Name>emptySet(), docId, createdByProperty,
-                                                 queryable);
+                connectorChangeSet.propertyAdded(docId, primaryType, Collections.<Name>emptySet(), docId, createdByProperty
+                                                );
             }
             if (Files.isRegularFile(resolvedPath, LinkOption.NOFOLLOW_LINKS)) {
                 // for files we need to fire extra events for their content
                 String contentId = connector.contentChildId(docId, false);
                 // fire NODE_ADDED for the nt:file/jcr:content
                 connectorChangeSet.nodeCreated(contentId, docId, contentId, JcrNtLexicon.RESOURCE, Collections.<Name>emptySet(),
-                                               Collections.<Name, Property>emptyMap(), queryable);
+                                               Collections.<Name, Property>emptyMap());
                 try {
                     // fire PROPERTY_ADDED for nt:file/jcr:content/jcr:data
                     BinaryValue binaryValue = connector.binaryFor(file);
                     Property dataProperty = connector.propertyFactory().create(JcrLexicon.DATA, binaryValue);
                     connectorChangeSet.propertyAdded(contentId, JcrNtLexicon.RESOURCE, Collections.<Name>emptySet(), contentId,
-                                                     dataProperty, queryable);
+                                                     dataProperty);
                     if (connector.addMimeTypeMixin) {
                         try {
                             // fire PROPERTY_ADDED for nt:file/jcr:content/jcr:mimetype
                             String mimeType = binaryValue.getMimeType();
                             Property mimeTypeProperty = connector.propertyFactory().create(JcrLexicon.MIMETYPE, mimeType);
                             connectorChangeSet.propertyAdded(contentId, JcrNtLexicon.RESOURCE, Collections.<Name>emptySet(),
-                                                             contentId, mimeTypeProperty, queryable);
+                                                             contentId, mimeTypeProperty);
 
                         } catch (Throwable e) {
                             connector.getLogger().error(e, JcrI18n.couldNotGetMimeType, connector.getSourceName(), contentId,
@@ -1050,12 +1050,12 @@ public class FileSystemConnector extends WritableConnector implements Pageable {
                 Property lastModified = connector.propertyFactory().create(JcrLexicon.LAST_MODIFIED,
                                                                            connector.lastModifiedTimeFor(file));
                 connectorChangeSet.propertyAdded(contentId, JcrNtLexicon.RESOURCE, Collections.<Name>emptySet(), contentId,
-                                                 lastModified, queryable);
+                                                 lastModified);
                 if (owner != null) {
                     // fire PROPERTY_ADDED for nt:file/jcr:content/jcr:lastModifiedBy
                     Property lastModifiedBy = connector.propertyFactory().create(JcrLexicon.LAST_MODIFIED_BY, owner);
                     connectorChangeSet.propertyAdded(contentId, JcrNtLexicon.RESOURCE, Collections.<Name>emptySet(), contentId,
-                                                     lastModifiedBy, queryable);
+                                                     lastModifiedBy);
                 }
             }
         }

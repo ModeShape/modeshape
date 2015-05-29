@@ -107,9 +107,8 @@ public class RecordingChanges implements Changes, ChangeSet {
                              Path path,
                              Name primaryType,
                              Set<Name> mixinTypes,
-                             Map<Name, Property> properties,
-                             boolean queryable ) {
-        events.add(new NodeAdded(key, parentKey, path, filterName(primaryType), filterNameSet(mixinTypes), properties, queryable));
+                             Map<Name, Property> properties ) {
+        events.add(new NodeAdded(key, parentKey, path, filterName(primaryType), filterNameSet(mixinTypes), properties));
     }
 
     @Override
@@ -118,10 +117,9 @@ public class RecordingChanges implements Changes, ChangeSet {
                              Path path,
                              Name primaryType,
                              Set<Name> mixinTypes,
-                             boolean queryable, 
-                             Name parentPrimaryType, 
+                             Name parentPrimaryType,
                              Set<Name> parentMixinTypes ) {
-        events.add(new NodeRemoved(key, parentKey, path, filterName(primaryType), filterNameSet(mixinTypes), queryable, parentPrimaryType, 
+        events.add(new NodeRemoved(key, parentKey, path, filterName(primaryType), filterNameSet(mixinTypes), parentPrimaryType, 
                                    parentMixinTypes));
     }
 
@@ -130,9 +128,8 @@ public class RecordingChanges implements Changes, ChangeSet {
                              Path newPath,
                              Segment oldName,
                              Name primaryType,
-                             Set<Name> mixinTypes,
-                             boolean queryable ) {
-        events.add(new NodeRenamed(key, newPath, oldName, filterName(primaryType), filterNameSet(mixinTypes), queryable));
+                             Set<Name> mixinTypes ) {
+        events.add(new NodeRenamed(key, newPath, oldName, filterName(primaryType), filterNameSet(mixinTypes)));
     }
 
     @Override
@@ -142,10 +139,9 @@ public class RecordingChanges implements Changes, ChangeSet {
                            NodeKey newParent,
                            NodeKey oldParent,
                            Path newPath,
-                           Path oldPath,
-                           boolean queryable ) {
-        events.add(new NodeMoved(key, filterName(primaryType), filterNameSet(mixinTypes), newParent, oldParent, newPath, oldPath,
-                                 queryable));
+                           Path oldPath ) {
+        events.add(new NodeMoved(key, filterName(primaryType), filterNameSet(mixinTypes), newParent, oldParent, newPath, oldPath
+        ));
     }
 
     @Override
@@ -155,19 +151,17 @@ public class RecordingChanges implements Changes, ChangeSet {
                                NodeKey parent,
                                Path newPath,
                                Path oldPath,
-                               Path reorderedBeforePath,
-                               boolean queryable ) {
+                               Path reorderedBeforePath ) {
         events.add(new NodeReordered(key, filterName(primaryType), filterNameSet(mixinTypes), parent, newPath, oldPath,
-                                     reorderedBeforePath, queryable));
+                                     reorderedBeforePath));
     }
 
     @Override
     public void nodeChanged( NodeKey key,
                              Path path,
                              Name primaryType,
-                             Set<Name> mixinTypes,
-                             boolean queryable ) {
-        events.add(new NodeChanged(key, path, filterName(primaryType), filterNameSet(mixinTypes), queryable));
+                             Set<Name> mixinTypes ) {
+        events.add(new NodeChanged(key, path, filterName(primaryType), filterNameSet(mixinTypes)));
     }
 
     @Override
@@ -180,11 +174,10 @@ public class RecordingChanges implements Changes, ChangeSet {
                                String outputPath,
                                String userId,
                                String selectedPath,
-                               String sequencerName,
-                               boolean queryable ) {
+                               String sequencerName ) {
         events.add(new NodeSequenced(sequencedNodeKey, sequencedNodePath, filterName(sequencedNodePrimaryType),
                                      filterNameSet(sequencedNodeMixinTypes), outputNodeKey, outputNodePath, outputPath, userId,
-                                     selectedPath, sequencerName, queryable));
+                                     selectedPath, sequencerName));
     }
 
     @Override
@@ -196,11 +189,10 @@ public class RecordingChanges implements Changes, ChangeSet {
                                        String userId,
                                        String selectedPath,
                                        String sequencerName,
-                                       boolean queryable,
                                        Throwable cause ) {
         events.add(new NodeSequencingFailure(sequencedNodeKey, sequencedNodePath, filterName(sequencedNodePrimaryType),
                                              filterNameSet(sequencedNodeMixinTypes), outputPath, userId, selectedPath,
-                                             sequencerName, queryable, cause));
+                                             sequencerName, cause));
     }
 
     @Override
@@ -208,10 +200,9 @@ public class RecordingChanges implements Changes, ChangeSet {
                                Name nodePrimaryType,
                                Set<Name> nodeMixinTypes,
                                Path nodePath,
-                               Property property,
-                               boolean queryable ) {
-        events.add(new PropertyAdded(key, filterName(nodePrimaryType), filterNameSet(nodeMixinTypes), nodePath, property,
-                                     queryable));
+                               Property property ) {
+        events.add(new PropertyAdded(key, filterName(nodePrimaryType), filterNameSet(nodeMixinTypes), nodePath, property
+        ));
     }
 
     @Override
@@ -219,10 +210,9 @@ public class RecordingChanges implements Changes, ChangeSet {
                                  Name nodePrimaryType,
                                  Set<Name> nodeMixinTypes,
                                  Path nodePath,
-                                 Property property,
-                                 boolean queryable ) {
-        events.add(new PropertyRemoved(key, filterName(nodePrimaryType), filterNameSet(nodeMixinTypes), nodePath, property,
-                                       queryable));
+                                 Property property ) {
+        events.add(new PropertyRemoved(key, filterName(nodePrimaryType), filterNameSet(nodeMixinTypes), nodePath, property
+        ));
     }
 
     @Override
@@ -231,10 +221,9 @@ public class RecordingChanges implements Changes, ChangeSet {
                                  Set<Name> nodeMixinTypes,
                                  Path nodePath,
                                  Property newProperty,
-                                 Property oldProperty,
-                                 boolean queryable ) {
+                                 Property oldProperty ) {
         events.add(new PropertyChanged(key, filterName(nodePrimaryType), filterNameSet(nodeMixinTypes), nodePath, newProperty,
-                                       oldProperty, queryable));
+                                       oldProperty));
     }
 
     @Override
