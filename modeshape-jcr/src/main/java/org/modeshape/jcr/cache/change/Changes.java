@@ -49,32 +49,27 @@ public interface Changes {
 
     /**
      * Signal that a new node was created.
-     * 
      * @param key the key for the new node; may not be null
      * @param parentKey the key for the parent of the new node; may not be null
      * @param path the path to the new node; may not be null
      * @param primaryType the primary type of the node; may not be null
      * @param mixinTypes the mixin types of the node; may not be null
      * @param properties the properties in the new node, or null if there are none
-     * @param queryable true if this node is queryable, or false otherwise
      */
     void nodeCreated( NodeKey key,
                       NodeKey parentKey,
                       Path path,
                       Name primaryType,
                       Set<Name> mixinTypes,
-                      Map<Name, Property> properties,
-                      boolean queryable );
+                      Map<Name, Property> properties );
 
     /**
      * Signal that a node was removed.
-     * 
      * @param key the key for the removed node; may not be null
      * @param parentKey the key for the old parent of the removed node; may not be null
      * @param path the path to the removed node; may not be null
      * @param primaryType the primary type of the node; may not be null
      * @param mixinTypes the mixin types of the node; may not be null
-     * @param queryable true if this node is queryable, or false otherwise
      * @param parentPrimaryType the primary type of the parent of the node; may be null if this information is not available
      * @param parentMixinTypes the mixin types of the parent of the node; may be null if this information is not available
      */
@@ -83,30 +78,25 @@ public interface Changes {
                       Path path,
                       Name primaryType,
                       Set<Name> mixinTypes,
-                      boolean queryable, 
-                      Name parentPrimaryType, 
+                      Name parentPrimaryType,
                       Set<Name> parentMixinTypes );
 
     /**
      * Signal that a node was renamed (but still has the same parent)
-     * 
      * @param key the key for the node; may not be null
      * @param newPath the new path for the node; may not be null
      * @param oldName the old name (including SNS index); may not be null
      * @param primaryType the primary type of the node; may not be null
      * @param mixinTypes the mixin types of the node; may not be null
-     * @param queryable true if this node is queryable, or false otherwise
      */
     void nodeRenamed( NodeKey key,
                       Path newPath,
                       Path.Segment oldName,
                       Name primaryType,
-                      Set<Name> mixinTypes,
-                      boolean queryable );
+                      Set<Name> mixinTypes );
 
     /**
      * Signal that a node was moved from one parent to another, and may have also been renamed.
-     * 
      * @param key the key for the node; may not be null
      * @param primaryType the primary type of the node; may not be null
      * @param mixinTypes the mixin types of the node; may not be null
@@ -114,7 +104,6 @@ public interface Changes {
      * @param oldParent the old parent for the node; may not be null
      * @param newPath the new path for the node after it has been moved; may not be null
      * @param oldPath the old path for the node before it was moved; may not be null
-     * @param queryable true if this node is queryable, or false otherwise
      */
     void nodeMoved( NodeKey key,
                     Name primaryType,
@@ -122,12 +111,11 @@ public interface Changes {
                     NodeKey newParent,
                     NodeKey oldParent,
                     Path newPath,
-                    Path oldPath,
-                    boolean queryable );
+                    Path oldPath );
 
     /**
      * Signal that a node was placed into a new location within the same parent.
-     * 
+     *
      * @param key the key for the node; may not be null
      * @param primaryType the primary type of the node; may not be null
      * @param mixinTypes the mixin types of the node; may not be null
@@ -135,7 +123,6 @@ public interface Changes {
      * @param newPath the new path for the node after it has been reordered; may not be null
      * @param oldPath the old path for the node before it was reordered; may be null in the case of transient reorderings
      * @param reorderedBeforePath the path of the node before which the node was moved; or null if the node was reordered to the
-     * @param queryable true if this node is queryable, or false otherwise
      */
     void nodeReordered( NodeKey key,
                         Name primaryType,
@@ -143,27 +130,23 @@ public interface Changes {
                         NodeKey parent,
                         Path newPath,
                         Path oldPath,
-                        Path reorderedBeforePath,
-                        boolean queryable );
+                        Path reorderedBeforePath );
 
     /**
      * Create an event signifying that something about the node (other than the properties or location) changed.
-     * 
      * @param key the node key; may not be null
      * @param path the path
      * @param primaryType the primary type of the node; may not be null
      * @param mixinTypes the mixin types of the node; may not be null
-     * @param queryable true if this node is queryable, or false otherwise
      */
     void nodeChanged( NodeKey key,
                       Path path,
                       Name primaryType,
-                      Set<Name> mixinTypes,
-                      boolean queryable );
+                      Set<Name> mixinTypes );
 
     /**
      * Signal that a node was successfully sequenced.
-     * 
+     *
      * @param sequencedNodeKey the key of the node that was used as input and sequenced; may not be null
      * @param sequencedNodePath the path of the node that was used as input and sequenced; may not be null
      * @param sequencedNodePrimaryType the primary type of the node that was used as input and sequenced; may not be null
@@ -175,7 +158,6 @@ public interface Changes {
      * @param selectedPath the string representation of the path that led to the sequencing operation (which may or may not be the
      *        same as the sequenced node path); may not be null
      * @param sequencerName the name of the sequencer; may not be null
-     * @param queryable true if this node is queryable, or false otherwise
      */
     void nodeSequenced( NodeKey sequencedNodeKey,
                         Path sequencedNodePath,
@@ -186,12 +168,10 @@ public interface Changes {
                         String outputPath,
                         String userId,
                         String selectedPath,
-                        String sequencerName,
-                        boolean queryable );
+                        String sequencerName );
 
     /**
      * Signal that a node was not sequenced successfully.
-     * 
      * @param sequencedNodeKey the key of the node that was used as input and sequenced; may not be null
      * @param sequencedNodePath the path of the node that was used as input and sequenced; may not be null
      * @param sequencedNodePrimaryType the primary type of the node that was used as input and sequenced; may not be null
@@ -201,7 +181,6 @@ public interface Changes {
      * @param selectedPath the string representation of the path that led to the (failed) sequencing operation (which may or may
      *        not be the same as the sequenced node path); may not be null
      * @param sequencerName the name of the sequencer; may not be null
-     * @param queryable true if this node is queryable, or false otherwise
      * @param cause the exception that caused the failure; may not be null
      */
     void nodeSequencingFailure( NodeKey sequencedNodeKey,
@@ -212,61 +191,51 @@ public interface Changes {
                                 String userId,
                                 String selectedPath,
                                 String sequencerName,
-                                boolean queryable,
                                 Throwable cause );
 
     /**
      * Signal that a property was added to a node.
-     * 
      * @param key the key of the node that was changed; may not be null
      * @param nodePrimaryType the primary type of the node; may not be null
      * @param nodeMixinTypes the mixin types of the node; may not be null
      * @param nodePath the path of the node that was changed
      * @param property the new property, with name and value(s); may not be null
-     * @param queryable true if this node is queryable, or false otherwise
      */
     void propertyAdded( NodeKey key,
                         Name nodePrimaryType,
                         Set<Name> nodeMixinTypes,
                         Path nodePath,
-                        Property property,
-                        boolean queryable );
+                        Property property );
 
     /**
      * Signal that a property was removed from a node.
-     * 
      * @param key the key of the node that was changed; may not be null
      * @param nodePrimaryType the primary type of the node; may not be null
      * @param nodeMixinTypes the mixin types of the node; may not be null
      * @param nodePath the path of the node that was changed
      * @param property the property that was removed, with name and value(s); may not be null
-     * @param queryable true if this node is queryable, or false otherwise
      */
     void propertyRemoved( NodeKey key,
                           Name nodePrimaryType,
                           Set<Name> nodeMixinTypes,
                           Path nodePath,
-                          Property property,
-                          boolean queryable );
+                          Property property );
 
     /**
      * Signal that a property was changed on a node.
-     * 
      * @param key the key of the node that was changed; may not be null
      * @param nodePrimaryType the primary type of the node; may not be null
      * @param nodeMixinTypes the mixin types of the node; may not be null
      * @param nodePath the path of the node that was changed
      * @param newProperty the new property, with name and value(s); may not be null
      * @param oldProperty the old property, with name and value(s); may not be null
-     * @param queryable true if this node is queryable, or false otherwise
      */
     void propertyChanged( NodeKey key,
                           Name nodePrimaryType,
                           Set<Name> nodeMixinTypes,
                           Path nodePath,
                           Property newProperty,
-                          Property oldProperty,
-                          boolean queryable );
+                          Property oldProperty );
 
     /**
      * Signal that the binary with the given key is not longer used by any properties.

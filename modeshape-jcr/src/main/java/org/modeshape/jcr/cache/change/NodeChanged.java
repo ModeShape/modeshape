@@ -30,9 +30,8 @@ public class NodeChanged extends AbstractNodeChange {
     public NodeChanged( NodeKey key,
                         Path path,
                         Name primaryType,
-                        Set<Name> mixinTypes,
-                        boolean queryable ) {
-        super(key, path, primaryType, mixinTypes, queryable);
+                        Set<Name> mixinTypes ) {
+        super(key, path, primaryType, mixinTypes);
     }
 
     @Override

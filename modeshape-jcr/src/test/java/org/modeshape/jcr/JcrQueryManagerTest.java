@@ -301,7 +301,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
     private static int countAllNodesBelow( NodeKey nodeKey,
                                            NodeCache cache ) throws RepositoryException {
         CachedNode node = cache.getNode(nodeKey);
-        if (!node.isQueryable(cache)) return 0;
+        if (node.isExcludedFromSearch(cache)) return 0;
         int result = 1;
         ChildReferences childReferences = node.getChildReferences(cache);
         for (Iterator<NodeKey> nodeKeyIterator = childReferences.getAllKeys(); nodeKeyIterator.hasNext();) {
@@ -4789,6 +4789,54 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
             folder1.remove();
             folder2.remove();
             folder3.remove();
+            session.save();
+        }
+    } 
+    
+    @Test
+    @FixFor( "MODE-2401" )
+    public void shouldNotReturnNodeWithNoQueryMixin() throws Exception {
+        Node folder1 = session.getRootNode().addNode("folder1", "nt:folder");
+        folder1.addMixin("test:noQueryMixin");
+        Node folder2 = session.getRootNode().addNode("folder2", "nt:folder");
+        session.save();
+
+        String sql = "SELECT folder.[jcr:name] FROM [nt:folder] AS folder";
+
+        try {
+            Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+            NodeIterator nodes = query.execute().getNodes();
+            assertEquals(1, nodes.getSize());
+            Set<String> names = new TreeSet<>();
+            while (nodes.hasNext()) {
+                names.add(nodes.nextNode().getName());
+            }
+            assertArrayEquals(new String[] { "folder2" }, names.toArray(new String[0]));
+            
+            //add a mixin on the 2nd node and reindex
+            folder2.addMixin("test:noQueryMixin");
+            session.save();
+            
+            query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+            nodes = query.execute().getNodes();
+            assertEquals(0, nodes.getSize());
+            
+            //remove the mixins from both nodesx
+            folder1.removeMixin("test:noQueryMixin");
+            folder2.removeMixin("test:noQueryMixin");
+            session.save();
+            
+            query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+            nodes = query.execute().getNodes();
+            assertEquals(2, nodes.getSize());
+            names = new TreeSet<>();
+            while (nodes.hasNext()) {
+                names.add(nodes.nextNode().getName());
+            }
+            assertArrayEquals(new String[] { "folder1", "folder2" }, names.toArray(new String[0]));
+        } finally {
+            folder1.remove();
+            folder2.remove();
             session.save();
         }
     }

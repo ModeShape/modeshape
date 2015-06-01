@@ -409,11 +409,9 @@ public interface MutableCachedNode extends CachedNode {
     public boolean hasOnlyChangesToAdditionalParents();
 
     /**
-     * Sets a flag indicating if this node should be queryable or not.
-     * 
-     * @param queryable a {@code boolean}.
+     * Sets a flag indicating if this node and anything below it should be excluded from all searches and indexing operations.
      */
-    public void setQueryable( boolean queryable );
+    public void excludeFromSearch();
 
     /**
      * Returns an object encapsulating all the different changes that this session node contains.

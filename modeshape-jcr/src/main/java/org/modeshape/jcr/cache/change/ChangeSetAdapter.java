@@ -43,11 +43,20 @@ public abstract class ChangeSetAdapter implements ChangeSetListener {
          * Determine if the given primary type and mixin types satisfies the node type requirements of an event.
          *
          * @param primaryType the primary type of the event
-         * @param mixinTypes
+         * @param mixinTypes the set of nodes mixins; never null but possibly empty
          * @return true if the event should be processed, or false otherwise
          */
         boolean matchesType( Name primaryType,
                              Set<Name> mixinTypes );
+
+        /**
+         * Determine if the given primary type and mixin types are queryable according to this predicate, in the JSR-283 sense.
+         * 
+         * @param primaryType the primary type of a node
+         * @param mixinTypes the set of nodes mixins; never null but possibly empty
+         * @return false if there's at least one type which is marked as 'noquery', true otherwise.
+         */
+        boolean isQueryable(Name primaryType, Set<Name> mixinTypes);
     }
 
     protected final ExecutionContext context;
@@ -79,18 +88,21 @@ public abstract class ChangeSetAdapter implements ChangeSetListener {
                     for (Change change : changeSet) {
                         if (change instanceof AbstractNodeChange) {
                             AbstractNodeChange anc = (AbstractNodeChange)change;
-                            if (!matchesType(anc.getPrimaryType(), anc.getMixinTypes())) continue;
+                            Name primaryType = anc.getPrimaryType();
+                            Set<Name> mixinTypes = anc.getMixinTypes();
+                            if (!matchesType(primaryType, mixinTypes)) continue;
+                            if (!isQueryable(primaryType, mixinTypes)) continue;
 
                             if (change instanceof NodeAdded) {
                                 firePropertyChanges(lastKey, propChanges);
                                 NodeAdded added = (NodeAdded)change;
                                 addNode(workspaceName, added.getKey(), added.getPath(), added.getPrimaryType(),
-                                        added.getMixinTypes(), props(added.getProperties()), added.isQueryable());
+                                        added.getMixinTypes(), props(added.getProperties()));
                             } else if (change instanceof NodeRemoved) {
                                 firePropertyChanges(lastKey, propChanges);
                                 NodeRemoved removed = (NodeRemoved)change;
                                 removeNode(workspaceName, removed.getKey(), removed.getParentKey(), removed.getPath(),
-                                           removed.getPrimaryType(), removed.getMixinTypes(), removed.isQueryable());
+                                           removed.getPrimaryType(), removed.getMixinTypes());
                             } else if (change instanceof AbstractPropertyChange) {
                                 AbstractPropertyChange propChange = (AbstractPropertyChange)change;
                                 if (!propChange.getKey().equals(lastKey)) firePropertyChanges(lastKey, propChanges);
@@ -99,36 +111,36 @@ public abstract class ChangeSetAdapter implements ChangeSetListener {
                                 firePropertyChanges(lastKey, propChanges);
                                 NodeChanged nodeChanged = (NodeChanged)change;
                                 changeNode(workspaceName, nodeChanged.getKey(), nodeChanged.getPath(),
-                                           nodeChanged.getPrimaryType(), nodeChanged.getMixinTypes(), nodeChanged.isQueryable());
+                                           nodeChanged.getPrimaryType(), nodeChanged.getMixinTypes());
                             } else if (change instanceof NodeMoved) {
                                 firePropertyChanges(lastKey, propChanges);
                                 NodeMoved moved = (NodeMoved)change;
                                 moveNode(workspaceName, moved.getKey(), moved.getPrimaryType(), moved.getMixinTypes(),
-                                         moved.getNewParent(), moved.getOldParent(), moved.getNewPath(), moved.getOldPath(),
-                                         moved.isQueryable());
+                                         moved.getNewParent(), moved.getOldParent(), moved.getNewPath(), moved.getOldPath()
+                                        );
                             } else if (change instanceof NodeRenamed) {
                                 firePropertyChanges(lastKey, propChanges);
                                 NodeRenamed renamed = (NodeRenamed)change;
                                 renameNode(workspaceName, renamed.getKey(), renamed.getPath(), renamed.getOldSegment(),
-                                           renamed.getPrimaryType(), renamed.getMixinTypes(), renamed.isQueryable());
+                                           renamed.getPrimaryType(), renamed.getMixinTypes());
                             } else if (change instanceof NodeReordered) {
                                 firePropertyChanges(lastKey, propChanges);
                                 NodeReordered reordered = (NodeReordered)change;
                                 reorderNode(workspaceName, reordered.getKey(), reordered.getPrimaryType(),
                                             reordered.getMixinTypes(), reordered.getParent(), reordered.getPath(),
-                                            reordered.getOldPath(), reordered.getReorderedBeforePath(), reordered.isQueryable());
+                                            reordered.getOldPath(), reordered.getReorderedBeforePath());
                             } else if (change instanceof NodeSequenced) {
                                 firePropertyChanges(lastKey, propChanges);
                                 NodeSequenced s = (NodeSequenced)change;
                                 sequenced(workspaceName, s.getKey(), s.getPath(), s.getPrimaryType(), s.getMixinTypes(),
                                           s.getOutputNodeKey(), s.getOutputNodePath(), s.getOutputPath(), s.getUserId(),
-                                          s.getSelectedPath(), s.getSequencerName(), s.isQueryable());
+                                          s.getSelectedPath(), s.getSequencerName());
                             } else if (change instanceof NodeSequencingFailure) {
                                 firePropertyChanges(lastKey, propChanges);
                                 NodeSequencingFailure f = (NodeSequencingFailure)change;
                                 sequenceFailure(workspaceName, f.getKey(), f.getPath(), f.getPrimaryType(), f.getMixinTypes(),
                                                 f.getOutputPath(), f.getUserId(), f.getSelectedPath(), f.getSequencerName(),
-                                                f.isQueryable(), f.getCause());
+                                                f.getCause());
                             }
                             lastKey = ((AbstractNodeChange)change).getKey();
                         }
@@ -163,6 +175,11 @@ public abstract class ChangeSetAdapter implements ChangeSetListener {
     private boolean matchesType( Name primaryType,
                                  Set<Name> mixinTypes ) {
         return predicate == null || predicate.matchesType(primaryType, mixinTypes);
+    }
+
+    private boolean isQueryable( Name primaryType,
+                                 Set<Name> mixinTypes ) {
+        return predicate == null || predicate.isQueryable(primaryType, mixinTypes);
     }
 
     /**
@@ -245,22 +262,19 @@ public abstract class ChangeSetAdapter implements ChangeSetListener {
 
     /**
      * Handle the addition of a node.
-     * 
      * @param workspaceName the workspace in which the node information should be available; may not be null
      * @param key the unique key for the node; may not be null
      * @param path the path of the node; may not be null
      * @param primaryType the primary type of the node; may not be null
      * @param mixinTypes the mixin types for the node; may not be null but may be empty
      * @param properties the properties of the node; may not be null but may be empty
-     * @param queryable true if the node is queryable, false otherwise
      */
     protected void addNode( String workspaceName,
                             NodeKey key,
                             Path path,
                             Name primaryType,
                             Set<Name> mixinTypes,
-                            Properties properties,
-                            boolean queryable ) {
+                            Properties properties ) {
     }
 
     /**
@@ -285,47 +299,39 @@ public abstract class ChangeSetAdapter implements ChangeSetListener {
 
     /**
      * Handle the removal of a node.
-     *
      * @param workspaceName the workspace in which the node information should be available; may not be null
      * @param key the unique key for the node; may not be null
      * @param parentKey the unique key for the parent of the node; may not be null
      * @param path the path of the node; may not be null
      * @param primaryType the primary type of the node; may not be null
      * @param mixinTypes the mixin types for the node; may not be null but may be empty
-     * @param queryable true if the node is queryable, false otherwise
      */
     protected void removeNode( String workspaceName,
                                NodeKey key,
                                NodeKey parentKey,
                                Path path,
                                Name primaryType,
-                               Set<Name> mixinTypes,
-                               boolean queryable ) {
+                               Set<Name> mixinTypes ) {
 
     }
 
     /**
      * Handle the change of a node.
-     * 
      * @param workspaceName the workspace in which the node information should be available; may not be null
      * @param key the unique key for the node; may not be null
      * @param path the path of the node; may not be null
      * @param primaryType the primary type of the node; may not be null
      * @param mixinTypes the mixin types for the node; may not be null but may be empty
-     * @param queryable true if the node is queryable, false otherwise
      */
     protected void changeNode( String workspaceName,
                                NodeKey key,
                                Path path,
                                Name primaryType,
-                               Set<Name> mixinTypes,
-                               boolean queryable ) {
-
+                               Set<Name> mixinTypes ) {
     }
 
     /**
      * Handle the move of a node.
-     * 
      * @param workspaceName the workspace in which the node information should be available; may not be null
      * @param key the unique key for the node; may not be null
      * @param primaryType the primary type of the node; may not be null
@@ -334,7 +340,6 @@ public abstract class ChangeSetAdapter implements ChangeSetListener {
      * @param newParent the key of the node's parent after it was moved; may not be null
      * @param newPath the new path of the node after it was moved; may not be null
      * @param oldPath the old path of the node before it was moved; may not be null
-     * @param queryable true if the node is queryable, false otherwise
      */
     protected void moveNode( String workspaceName,
                              NodeKey key,
@@ -343,35 +348,31 @@ public abstract class ChangeSetAdapter implements ChangeSetListener {
                              NodeKey oldParent,
                              NodeKey newParent,
                              Path newPath,
-                             Path oldPath,
-                             boolean queryable ) {
+                             Path oldPath ) {
 
     }
 
     /**
      * Handle the renaming of a node.
-     * 
      * @param workspaceName the workspace in which the node information should be available; may not be null
      * @param key the unique key for the node; may not be null
      * @param newPath the new path of the node after it was moved; may not be null
      * @param oldSegment the old segment of the node before it was moved; may not be null
      * @param primaryType the primary type of the node; may not be null
      * @param mixinTypes the mixin types for the node; may not be null but may be empty
-     * @param queryable true if the node is queryable, false otherwise
      */
     protected void renameNode( String workspaceName,
                                NodeKey key,
                                Path newPath,
                                Segment oldSegment,
                                Name primaryType,
-                               Set<Name> mixinTypes,
-                               boolean queryable ) {
+                               Set<Name> mixinTypes ) {
 
     }
 
     /**
      * Handle the reordering of a node.
-     * 
+     *
      * @param workspaceName the workspace in which the node information should be available; may not be null
      * @param key the unique key for the node; may not be null
      * @param primaryType the primary type of the node; may not be null
@@ -380,7 +381,6 @@ public abstract class ChangeSetAdapter implements ChangeSetListener {
      * @param newPath the new path of the node after it was moved; may not be null
      * @param oldPath the old path of the node before it was moved; may not be null
      * @param reorderedBeforePath the path of the node before which the node was placed; null if it was moved to the end
-     * @param queryable true if the node is queryable, false otherwise
      */
     protected void reorderNode( String workspaceName,
                                 NodeKey key,
@@ -389,8 +389,7 @@ public abstract class ChangeSetAdapter implements ChangeSetListener {
                                 NodeKey parent,
                                 Path newPath,
                                 Path oldPath,
-                                Path reorderedBeforePath,
-                                boolean queryable ) {
+                                Path reorderedBeforePath ) {
 
     }
 
@@ -404,8 +403,7 @@ public abstract class ChangeSetAdapter implements ChangeSetListener {
                               String outputPath,
                               String userId,
                               String selectedPath,
-                              String sequencerName,
-                              boolean queryable ) {
+                              String sequencerName ) {
 
     }
 
@@ -418,7 +416,6 @@ public abstract class ChangeSetAdapter implements ChangeSetListener {
                                     String userId,
                                     String selectedPath,
                                     String sequencerName,
-                                    boolean queryable,
                                     Throwable cause ) {
 
     }

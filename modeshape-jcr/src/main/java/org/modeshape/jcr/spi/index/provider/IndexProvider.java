@@ -815,7 +815,7 @@ public abstract class IndexProvider {
                              Properties properties ) {
                 Collection<IndexChangeAdapter> adapters = adaptersByWorkspaceName.get(workspace);
                 if (adapters != null) {
-                    boolean queryable = nodeTypesSupplier.getNodeTypes().isQueryable(primaryType);
+                    boolean queryable = nodeTypesSupplier.getNodeTypes().isQueryable(primaryType, mixinTypes);
                     // There are adapters for this workspace ...
                     for (IndexChangeAdapter adapter : adaptersByWorkspaceName.get(workspace)) {
                         if (adapter != null) {
@@ -1022,7 +1022,7 @@ public abstract class IndexProvider {
                                      IndexDefinition newDefinition,
                                      NodeTypeMatcher matcher ) {
             this.managedIndex = managedIndex;
-            this.defn = defn;
+            this.defn = newDefinition;
             this.matcher.use(matcher);
         }
     }

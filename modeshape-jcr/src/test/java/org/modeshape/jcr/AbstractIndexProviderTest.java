@@ -124,10 +124,10 @@ public abstract class AbstractIndexProviderTest extends SingleUseAbstractTest {
     }
 
     protected void registerNodeType( String typeName ) throws RepositoryException {
-        registerNodeType(typeName, true, "nt:unstructured");
+        registerNodeType(typeName, true, false, "nt:unstructured");
     }
     
-    protected void registerNodeType( String typeName, boolean queryable, String...declaredSuperTypes) throws RepositoryException {
+    protected void registerNodeType( String typeName, boolean queryable, boolean mixin, String...declaredSuperTypes) throws RepositoryException {
         NodeTypeManager mgr = session.getWorkspace().getNodeTypeManager();
 
         // Create a template for the node type ...
@@ -136,7 +136,7 @@ public abstract class AbstractIndexProviderTest extends SingleUseAbstractTest {
         type.setDeclaredSuperTypeNames(declaredSuperTypes);
         type.setAbstract(false);
         type.setOrderableChildNodes(true);
-        type.setMixin(false);
+        type.setMixin(mixin);
         type.setQueryable(queryable);
         mgr.registerNodeType(type, true);
     }

@@ -252,13 +252,13 @@ public interface CachedNode {
                          Path path );
 
     /**
-     * Determine if this node should be indexed and therefore available for querying. By default, every node is queryable, so only
-     * in certain cases can a node be made non-queryable.
+     * Determine if this node and *all* of its children should be taken into account when searching/indexing or not. 
+     * A node which should be excluded from search will be completely ignored when indexing, together with all its children.
      * 
      * @param cache the cache to which this node belongs, required in case this node needs to use the cache; may not be null
      * @return {@code true} if the node should be indexed, {@code false} otherwise
      */
-    boolean isQueryable( NodeCache cache );
+    boolean isExcludedFromSearch( NodeCache cache );
 
     /**
      * Determine if there is an access control list for this node only, not taking into account any possible parents.

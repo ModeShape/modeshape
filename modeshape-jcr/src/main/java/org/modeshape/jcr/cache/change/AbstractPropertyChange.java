@@ -34,9 +34,8 @@ public abstract class AbstractPropertyChange extends AbstractNodeChange {
                                       Name nodePrimaryType,
                                       Set<Name> nodeMixinTypes,
                                       Path nodePath,
-                                      Property property,
-                                      boolean queryable ) {
-        super(key, nodePath, nodePrimaryType, nodeMixinTypes, queryable);
+                                      Property property ) {
+        super(key, nodePath, nodePrimaryType, nodeMixinTypes);
         this.property = property;
     }
 

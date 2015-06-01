@@ -424,7 +424,7 @@ class RepositoryQueryManager implements ChangeSetListener {
                                    final IndexWriter indexes ) {
         assert indexes != null;
         if (indexes.canBeSkipped()) return;
-        if (!node.isQueryable(cache)) {
+        if (node.isExcludedFromSearch(cache)) {
             return;
         }
 
@@ -483,7 +483,7 @@ class RepositoryQueryManager implements ChangeSetListener {
     
                 // Look up the node and find the path ...
                 node = cache.getNode(key);
-                if (node == null || !node.isQueryable(cache)) {
+                if (node == null || node.isExcludedFromSearch(cache)) {
                     continue;
                 }
                 nodePath = paths.getPath(node);

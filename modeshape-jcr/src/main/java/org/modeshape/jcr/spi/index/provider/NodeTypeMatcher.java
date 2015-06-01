@@ -34,9 +34,9 @@ public abstract class NodeTypeMatcher implements NodeTypePredicate {
         if (nodeTypeNames == null || nodeTypeNames.isEmpty()) {
             delegate = MatchNonePredicate.INSTANCE;
         } else if (nodeTypeNames.contains(JcrNtLexicon.BASE)) {
-            delegate = NtBaseMatchPredicate.INSTANCE;
+            delegate = new NtBaseMatchPredicate(nodeTypes);
         } else {
-            delegate = new NodeTypeSetMatcher(nodeTypeNames);
+            delegate = new NodeTypeSetMatcher(nodeTypeNames, nodeTypes);
         }
         return new MutableNodeTypeMatcher(delegate, nodeTypes);
     }
@@ -56,7 +56,7 @@ public abstract class NodeTypeMatcher implements NodeTypePredicate {
         @Override
         public boolean matchesType( Name primaryType,
                                     Set<Name> mixinTypes ) {
-            return delegate.matchesType(primaryType, mixinTypes) && nodeTypes.isQueryable(primaryType);
+            return delegate.matchesType(primaryType, mixinTypes);
         }
 
         @Override
@@ -64,10 +64,15 @@ public abstract class NodeTypeMatcher implements NodeTypePredicate {
             if (other instanceof MatchNonePredicate) {
                 delegate = MatchNonePredicate.INSTANCE;
             } else if (other instanceof NtBaseMatchPredicate) {
-                delegate = NtBaseMatchPredicate.INSTANCE;
+                delegate = new NtBaseMatchPredicate(nodeTypes);
             }
             assert other instanceof MutableNodeTypeMatcher;
             delegate = ((MutableNodeTypeMatcher)other).delegate;
+        }
+
+        @Override
+        public boolean isQueryable( Name primaryType, Set<Name> mixinTypes ) {
+            return nodeTypes.isQueryable(primaryType, mixinTypes);
         }
 
         @Override
@@ -78,9 +83,11 @@ public abstract class NodeTypeMatcher implements NodeTypePredicate {
 
     private static final class NodeTypeSetMatcher implements NodeTypePredicate {
         private final Set<Name> allNodeTypes;
+        private final NodeTypes nodeTypes;
 
-        protected NodeTypeSetMatcher( final Set<Name> allNodeTypes ) {
+        protected NodeTypeSetMatcher( final Set<Name> allNodeTypes, NodeTypes nodeTypes ) {
             this.allNodeTypes = allNodeTypes;
+            this.nodeTypes = nodeTypes;
         }
 
         @Override
@@ -96,18 +103,32 @@ public abstract class NodeTypeMatcher implements NodeTypePredicate {
         }
 
         @Override
+        public boolean isQueryable( Name primaryType, Set<Name> mixinTypes ) {
+            return nodeTypes.isQueryable(primaryType, mixinTypes);
+        }
+
+        @Override
         public String toString() {
             return "<Match=" + allNodeTypes + ">";
         }
     }
 
     private static final class NtBaseMatchPredicate implements NodeTypePredicate {
-        protected static final NtBaseMatchPredicate INSTANCE = new NtBaseMatchPredicate();
+        private final NodeTypes nodeTypes;
+
+        protected NtBaseMatchPredicate( NodeTypes nodeTypes ) {
+            this.nodeTypes = nodeTypes;
+        }
 
         @Override
         public boolean matchesType( Name primaryType,
                                     Set<Name> mixinTypes ) {
             return true;
+        }
+
+        @Override
+        public boolean isQueryable( Name primaryType, Set<Name> mixinTypes ) {
+            return nodeTypes.isQueryable(primaryType, mixinTypes);
         }
 
         @Override
@@ -122,6 +143,11 @@ public abstract class NodeTypeMatcher implements NodeTypePredicate {
         @Override
         public boolean matchesType( Name primaryType,
                                     Set<Name> mixinTypes ) {
+            return false;
+        }
+
+        @Override
+        public boolean isQueryable( Name primaryType, Set<Name> mixinTypes ) {
             return false;
         }
 

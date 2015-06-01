@@ -40,9 +40,8 @@ public class NodeAdded extends AbstractNodeChange {
                       Path path,
                       Name primaryType,
                       Set<Name> mixinTypes,
-                      Map<Name, Property> properties,
-                      boolean queryable ) {
-        super(key, path, primaryType, mixinTypes, queryable);
+                      Map<Name, Property> properties ) {
+        super(key, path, primaryType, mixinTypes);
         this.parentKey = parentKey;
         assert this.parentKey != null;
         if (properties == null || properties.isEmpty()) {

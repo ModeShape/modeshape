@@ -100,7 +100,7 @@ public class SessionNode implements MutableCachedNode {
     private final AtomicReference<MutableChildReferences> appended = new AtomicReference<MutableChildReferences>();
     private final AtomicReference<MixinChanges> mixinChanges = new AtomicReference<MixinChanges>();
     private final AtomicReference<ReferrerChanges> referrerChanges = new AtomicReference<ReferrerChanges>();
-    private final AtomicReference<Boolean> isQueryable = new AtomicReference<Boolean>();
+    private final AtomicReference<Boolean> excludeFromSearch = new AtomicReference<Boolean>();
     private final boolean isNew;
     private volatile LockChange lockChange;
     private final AtomicReference<PermissionChanges> permissionChanges = new AtomicReference<>();
@@ -1405,19 +1405,18 @@ public class SessionNode implements MutableCachedNode {
     }
 
     @Override
-    public boolean isQueryable( NodeCache cache ) {
-        Boolean isQueryable = this.isQueryable.get();
-        if (isQueryable != null) {
-            return isQueryable;
+    public boolean isExcludedFromSearch( NodeCache cache ) {
+        Boolean isExcludedFromSearch = this.excludeFromSearch.get();
+        if (isExcludedFromSearch != null) {
+            return isExcludedFromSearch;
         }
         CachedNode persistedNode = nodeInWorkspace(session(cache));
         // if the node does not exist yet, it is queryable by default
-        return persistedNode == null || persistedNode.isQueryable(cache);
+        return persistedNode != null && persistedNode.isExcludedFromSearch(cache);
     }
 
-    @Override
-    public void setQueryable( boolean queryable ) {
-        this.isQueryable.set(queryable);
+    public void excludeFromSearch() {
+        this.excludeFromSearch.set(Boolean.TRUE);
     }
 
     @Override

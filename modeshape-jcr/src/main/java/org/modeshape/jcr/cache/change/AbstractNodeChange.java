@@ -40,13 +40,10 @@ public abstract class AbstractNodeChange extends Change {
 
     protected final Path path;
 
-    private final boolean queryable;
-
     protected AbstractNodeChange( NodeKey key,
                                   Path path,
                                   Name primaryType,
-                                  Set<Name> mixinTypes,
-                                  boolean queryable ) {
+                                  Set<Name> mixinTypes ) {
         assert key != null;
         assert path != null;
 
@@ -59,7 +56,6 @@ public abstract class AbstractNodeChange extends Change {
             assert mixinTypes != null;
             System.arraycopy(mixinTypes.toArray(new Name[0]), 0, types, 1, mixinTypes.size());
         }
-        this.queryable = queryable;
     }
 
     /**
@@ -112,12 +108,4 @@ public abstract class AbstractNodeChange extends Change {
         return nodeTypes.isTypeOrSubtype(types, nodeTypeName);
     }
 
-    /**
-     * Return whether this node is queryable.
-     * 
-     * @return true if this node is queryable, or false otherwise
-     */
-    public boolean isQueryable() {
-        return queryable;
-    }
 }

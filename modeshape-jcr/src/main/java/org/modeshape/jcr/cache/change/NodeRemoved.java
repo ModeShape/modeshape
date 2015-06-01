@@ -36,10 +36,9 @@ public class NodeRemoved extends AbstractNodeChange {
                         Path path,
                         Name primaryType,
                         Set<Name> mixinTypes,
-                        boolean queryable, 
-                        Name parentPrimaryType, 
+                        Name parentPrimaryType,
                         Set<Name> parentMixinTypes ) {
-        super(key, path, primaryType, mixinTypes, queryable);
+        super(key, path, primaryType, mixinTypes);
         this.parentKey = parentKey;
         this.parentPrimaryType = parentPrimaryType;
         this.parentMixinTypes = parentMixinTypes;

@@ -278,8 +278,7 @@ public class IndexChangeAdapters {
                                 Path path,
                                 Name primaryType,
                                 Set<Name> mixinTypes,
-                                Properties properties,
-                                boolean queryable ) {
+                                Properties properties ) {
             if (path.isRoot() && includeRoot) {
                 index.add(nodeKey(key), convertRoot(path));
             } else {
@@ -317,8 +316,7 @@ public class IndexChangeAdapters {
                                  NodeKey oldParent,
                                  NodeKey newParent,
                                  Path newPath,
-                                 Path oldPath,
-                                 boolean queryable ) {
+                                 Path oldPath ) {
             String nodeKey = nodeKey(key);
             if (includeRoot) {
                 if (oldPath.isRoot()) index.remove(nodeKey);
@@ -335,8 +333,7 @@ public class IndexChangeAdapters {
                                    NodeKey parentKey,
                                    Path path,
                                    Name primaryType,
-                                   Set<Name> mixinTypes,
-                                   boolean queryable ) {
+                                   Set<Name> mixinTypes ) {
             if (includeRoot || path.isRoot()) {
                 index.remove(nodeKey(key));
             }
@@ -472,8 +469,7 @@ public class IndexChangeAdapters {
                                 Path path,
                                 Name primaryType,
                                 Set<Name> mixinTypes,
-                                Properties properties,
-                                boolean queryable ) {
+                                Properties properties ) {
             // Properties on new nodes are always represented as 'PropertyAdded' events, and handled via 'modifyProperties' ...
         }
 
@@ -520,8 +516,7 @@ public class IndexChangeAdapters {
                                    NodeKey parentKey,
                                    Path path,
                                    Name primaryType,
-                                   Set<Name> mixinTypes,
-                                   boolean queryable ) {
+                                   Set<Name> mixinTypes ) {
             removeValues(key);
         }
     }
@@ -618,8 +613,7 @@ public class IndexChangeAdapters {
                                 Path path,
                                 Name primaryType,
                                 Set<Name> mixinTypes,
-                                Properties properties,
-                                boolean queryable ) {
+                                Properties properties ) {
             addValue(key, primaryType);
         }
     }
@@ -638,8 +632,7 @@ public class IndexChangeAdapters {
                                 Path path,
                                 Name primaryType,
                                 Set<Name> mixinTypes,
-                                Properties properties,
-                                boolean queryable ) {
+                                Properties properties ) {
             if (mixinTypes != null && !mixinTypes.isEmpty()) {
                 for (Name mixinType : mixinTypes) {
                     addValue(key, mixinType);
@@ -798,8 +791,7 @@ public class IndexChangeAdapters {
                                 Path path,
                                 Name primaryType,
                                 Set<Name> mixinTypes,
-                                Properties properties,
-                                boolean queryable ) {
+                                Properties properties ) {
             addValue(key, primaryType);
             if (!mixinTypes.isEmpty()) {
                 for (Name mixinType : mixinTypes) {
@@ -831,8 +823,7 @@ public class IndexChangeAdapters {
                                    NodeKey parentKey,
                                    Path path,
                                    Name primaryType,
-                                   Set<Name> mixinTypes,
-                                   boolean queryable ) {
+                                   Set<Name> mixinTypes ) {
             removeValues(key);
         }
 
