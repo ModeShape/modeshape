@@ -56,12 +56,6 @@ public class SchematicEntryLiteral implements SchematicEntry {
     }
 
     private volatile MutableDocument value;
-    volatile boolean copied = false;
-    volatile boolean removed = false;
-
-    public SchematicEntryLiteral() {
-        value = new BasicDocument(FieldName.METADATA, new BasicDocument(), FieldName.CONTENT, new BasicDocument());
-    }
 
     public SchematicEntryLiteral( String key ) {
         this(key, new BasicDocument());
@@ -106,10 +100,6 @@ public class SchematicEntryLiteral implements SchematicEntry {
     @Override
     public String toString() {
         return "SchematicEntryLiteral" + value;
-    }
-
-    public void markRemoved( boolean b ) {
-        removed = b;
     }
 
     @Override

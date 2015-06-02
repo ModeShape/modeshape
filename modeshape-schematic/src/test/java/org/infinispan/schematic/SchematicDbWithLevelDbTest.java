@@ -65,8 +65,7 @@ public class SchematicDbWithLevelDbTest extends AbstractSchematicDbTest {
     public void shouldStoreDocumentWithUnusedKeyAndWithNullMetadata() {
         Document doc = Schematic.newDocument("k1", "value1", "k2", 2);
         String key = "can be anything";
-        SchematicEntry prior = db.put(key, doc);
-        assert prior == null : "Should not have found a prior entry";
+        db.put(key, doc);
         SchematicEntry entry = db.get(key);
         assert entry != null : "Should have found the entry";
 
@@ -88,9 +87,8 @@ public class SchematicDbWithLevelDbTest extends AbstractSchematicDbTest {
     public void shouldStoreDocumentWithUnusedKeyAndWithNonNullMetadata() {
         Document doc = Schematic.newDocument("k1", "value1", "k2", 2);
         String key = "can be anything";
-        SchematicEntry prior = db.put(key, doc);
-        assert prior == null : "Should not have found a prior entry";
-
+        db.put(key, doc);
+        
         // Read back from the database ...
         SchematicEntry entry = db.get(key);
         assert entry != null : "Should have found the entry";
@@ -114,9 +112,8 @@ public class SchematicDbWithLevelDbTest extends AbstractSchematicDbTest {
         // Store the document ...
         Document doc = Schematic.newDocument("k1", "value1", "k2", 2);
         String key = "can be anything";
-        SchematicEntry prior = db.put(key, doc);
-        assert prior == null : "Should not have found a prior entry";
-
+        db.put(key, doc);
+        
         // Read back from the database ...
         SchematicEntry entry = db.get(key);
         assert entry != null : "Should have found the entry";

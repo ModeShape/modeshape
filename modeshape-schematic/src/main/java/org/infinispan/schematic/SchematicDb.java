@@ -94,20 +94,18 @@ public interface SchematicDb extends Lifecycle {
      *
      * @param key the key or identifier for the document
      * @param document the document that is to be stored
-     * @return the entry previously stored at this key, or null if there was no entry with the supplied key
      * @see #putIfAbsent(String, Document)
      */
-    SchematicEntry put( String key,
-                        Document document );
+    void put( String key,
+              Document document );
 
     /**
      * Store the supplied document and metadata at the given key.
      * 
      * @param entryDocument the document that contains the metadata document, content document, and key
-     * @return the entry previously stored at this key, or null if there was no entry with the supplied key
      * @see #putIfAbsent(String, Document)
      */
-    SchematicEntry put( Document entryDocument );
+    void put( Document entryDocument );
 
     /**
      * Store the supplied document and metadata at the given key.
@@ -125,10 +123,9 @@ public interface SchematicDb extends Lifecycle {
      *
      * @param key the key or identifier for the document
      * @param document the new document that is to replace the existing document (or binary content)
-     * @return the entry that was replaced, or null if nothing was replaced
      */
-    SchematicEntry replace( String key,
-                            Document document );
+    void replace( String key,
+                  Document document );
 
     /**
      * Remove the existing document at the given key.

@@ -17,7 +17,6 @@ package org.infinispan.schematic;
 
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
-import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertThat;
 import java.io.InputStream;
 import java.util.concurrent.Callable;
@@ -48,9 +47,8 @@ public class SchematicDbTest extends AbstractSchematicDbTest {
     @Test
     public void shouldStoreDocumentWithUnusedKeyAndWithNullMetadata() {
         Document doc = Schematic.newDocument("k1", "value1", "k2", 2);
-        String key = "can be anything";
-        SchematicEntry prior = db.put(key, doc);
-        assertThat("Should not have found a prior entry", prior, is(nullValue()));
+        String key = "can be anything"; 
+        db.put(key, doc);
         SchematicEntry entry = db.get(key);
         assertThat("Should have found the entry", entry, is(notNullValue()));
 
@@ -72,8 +70,7 @@ public class SchematicDbTest extends AbstractSchematicDbTest {
     public void shouldStoreDocumentWithUnusedKeyAndWithNonNullMetadata() {
         Document doc = Schematic.newDocument("k1", "value1", "k2", 2);
         String key = "can be anything";
-        SchematicEntry prior = db.put(key, doc);
-        assertThat("Should not have found a prior entry", prior, is(nullValue()));
+        db.put(key, doc);
 
         // Read back from the database ...
         SchematicEntry entry = db.get(key);
@@ -98,9 +95,8 @@ public class SchematicDbTest extends AbstractSchematicDbTest {
         // Store the document ...
         Document doc = Schematic.newDocument("k1", "value1", "k2", 2);
         String key = "can be anything";
-        SchematicEntry prior = db.put(key, doc);
-        assertThat("Should not have found a prior entry", prior, is(nullValue()));
-
+        db.put(key, doc);
+        
         // Read back from the database ...
         SchematicEntry entry = db.get(key);
         assertThat("Should have found the entry", entry, is(notNullValue()));
@@ -139,9 +135,8 @@ public class SchematicDbTest extends AbstractSchematicDbTest {
         // Store the document ...
         Document doc = Schematic.newDocument("k1", "value1", "k2", 2);
         String key = "can be anything";
-        SchematicEntry prior = db.put(key, doc);
-        assertThat("Should not have found a prior entry", prior, is(nullValue()));
-
+        db.put(key, doc);
+        
         // Read back from the database ...
         SchematicEntry entry = db.get(key);
         assertThat("Should have found the entry", entry, is(notNullValue()));
@@ -180,8 +175,7 @@ public class SchematicDbTest extends AbstractSchematicDbTest {
     public void shouldAllowMultipleConcurrentWritersToUpdateEntryInSerialFashion() throws Exception {
         Document doc = Schematic.newDocument("k1", "value1", "k2", 2);
         final String key = "can be anything";
-        SchematicEntry prior = db.put(key, doc);
-        assertThat("Should not have found a prior entry", prior, is(nullValue()));
+        db.put(key, doc);
         SchematicEntry entry = db.get(key);
         assertThat("Should have found the entry", entry, is(notNullValue()));
         // Start two threads that each attempt to edit the document ...
