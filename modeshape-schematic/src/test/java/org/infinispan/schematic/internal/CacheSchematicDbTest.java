@@ -68,8 +68,7 @@ public class CacheSchematicDbTest {
         doc.put("k1", "value1");
         doc.put("k2", 2);
         String key = "can be anything";
-        SchematicEntry prior = db.put(key, doc);
-        assert prior == null : "Should not have found a prior entry";
+        db.put(key, doc);
         SchematicEntry entry = db.get(key);
         assert entry != null : "Should have found the entry";
         Document read = entry.getContent();
