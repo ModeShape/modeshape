@@ -329,6 +329,10 @@ public class VdbSequencer extends Sequencer {
                         sourceNode.setProperty(VdbLexicon.Source.JNDI_NAME, source.getJndiName());
                     }
                 }
+
+                for (Map.Entry<String, String> entry : model.getProperties().entrySet()) {
+                    setProperty(modelNode, entry.getKey(), entry.getValue());
+                }
             }
         }
     }
