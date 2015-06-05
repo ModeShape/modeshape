@@ -6,6 +6,8 @@
         "allowCreation" : true
     },
     "textExtraction": {
+        "threadPool" : "test-text-extractors",
+        "maxPoolSize" : 5,
         "extractors" : {
             "tikaExtractor":{
                 "name" : "Tika content-based extractor",

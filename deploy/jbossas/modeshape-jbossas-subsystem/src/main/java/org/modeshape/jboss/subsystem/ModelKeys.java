@@ -73,6 +73,10 @@ public class ModelKeys {
     static final String STORE_NAME = "store-name";
     static final String NESTED_STORES = "nested-stores";
     static final String USE_ANONYMOUS_IF_AUTH_FAILED = "use-anonymous-upon-failed-authentication";
+    static final String SEQUENCERS_THREAD_POOL_NAME = "sequencers-thread-pool-name";
+    static final String SEQUENCERS_MAX_POOL_SIZE = "sequencers-max-pool-size";
+    static final String TEXT_EXTRACTORS_THREAD_POOL_NAME = "text-extractors-thread-pool-name";
+    static final String TEXT_EXTRACTORS_MAX_POOL_SIZE = "text-extractors-max-pool-size";
 
     static final String AUTHENTICATOR = "authenticator";
     static final String AUTHENTICATOR_CLASSNAME = "classname";
@@ -85,7 +89,9 @@ public class ModelKeys {
     static final String CUSTOM_BINARY_STORAGE = "custom-binary-storage";
 
     static final String SEQUENCER = "sequencer";
+    static final String SEQUENCERS = "sequencers";
     static final String SOURCE = "source";
+    static final String EXTRACTORS = "text-extractors";
     static final String TEXT_EXTRACTOR = "text-extractor";
 
     static final String INDEX = "index";

@@ -338,7 +338,17 @@ public class ModeShapeSubsystemXMLWriter implements XMLStreamConstants, XMLEleme
                                   ModelNode repository ) throws XMLStreamException {
         if (has(repository, ModelKeys.SEQUENCER)) {
             writer.writeStartElement(Element.SEQUENCERS.getLocalName());
+            if (repository.hasDefined(ModelKeys.SEQUENCERS_THREAD_POOL_NAME)) {
+                writer.writeAttribute(Attribute.THREAD_POOL_NAME.getLocalName(), repository.get(
+                        ModelKeys.SEQUENCERS_THREAD_POOL_NAME).asString());
+            }
+            if (repository.hasDefined(ModelKeys.SEQUENCERS_MAX_POOL_SIZE)) {
+                writer.writeAttribute(Attribute.MAX_POOL_SIZE.getLocalName(), repository.get(ModelKeys.SEQUENCERS_MAX_POOL_SIZE)
+                                                                                        .asString());
+            }
+
             ModelNode sequencerNode = repository.get(ModelKeys.SEQUENCER);
+
             for (Property sequencer : sequencerNode.asPropertyList()) {
                 writer.writeStartElement(Element.SEQUENCER.getLocalName());
                 writer.writeAttribute(Attribute.NAME.getLocalName(), sequencer.getName());
@@ -477,6 +487,14 @@ public class ModeShapeSubsystemXMLWriter implements XMLStreamConstants, XMLEleme
                                       ModelNode repository ) throws XMLStreamException {
         if (has(repository, ModelKeys.TEXT_EXTRACTOR)) {
             writer.writeStartElement(Element.TEXT_EXTRACTORS.getLocalName());
+            if (repository.hasDefined(ModelKeys.TEXT_EXTRACTORS_THREAD_POOL_NAME)) {
+                writer.writeAttribute(Attribute.THREAD_POOL_NAME.getLocalName(), repository.get(
+                        ModelKeys.TEXT_EXTRACTORS_THREAD_POOL_NAME).asString());
+            }
+            if (repository.hasDefined(ModelKeys.TEXT_EXTRACTORS_MAX_POOL_SIZE)) {
+                writer.writeAttribute(Attribute.MAX_POOL_SIZE.getLocalName(), repository.get(ModelKeys.TEXT_EXTRACTORS_MAX_POOL_SIZE)
+                                                                                        .asString());
+            }
             for (Property extractor : repository.get(ModelKeys.TEXT_EXTRACTOR).asPropertyList()) {
                 writer.writeStartElement(Element.TEXT_EXTRACTOR.getLocalName());
                 writer.writeAttribute(Attribute.NAME.getLocalName(), extractor.getName());

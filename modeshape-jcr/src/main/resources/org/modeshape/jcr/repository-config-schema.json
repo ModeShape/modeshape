@@ -793,6 +793,11 @@
                     "default" : "modeshape-workers",
                     "description" : "Name of the thread pool that should be used for text extracting. Thread pools are named globally within a single ModeShape engine, and by default all repositories use the same thread pool for sequencing and indexing."
                 },
+                "maxPoolSize" : {
+                    "type" : "integer",
+                    "default" : 4,
+                    "description" : "The maximum number of threads that can be spawned at the same time to perform text extraction"
+                },
                 "extractors" : {
                     "type" : "object",
                     "description" : "The container for the list of configured text extractors",
@@ -841,6 +846,11 @@
                     "type" : "string",
                     "default" : "modeshape-workers",
                     "description" : "Name of the thread pool that should be used for sequencing. Thread pools are named globally within a single ModeShape engine, and by default all repositories use the same thread pool for sequencing and indexing."
+                },
+                "maxPoolSize" : {
+                    "type" : "integer",
+                    "default" : 10,
+                    "description" : "The maximum number of threads that can be spawned at the same time to perform sequencing"
                 },
                 "sequencers" : {
                     "type" : "object",

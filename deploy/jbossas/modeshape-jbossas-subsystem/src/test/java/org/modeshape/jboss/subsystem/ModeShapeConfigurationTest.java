@@ -271,6 +271,11 @@ public class ModeShapeConfigurationTest extends AbstractSubsystemBaseTest {
     public void testSequencingConfiguration() throws Exception {
         standardSubsystemTest("sequencing");
     }
+   
+    @Test
+    public void testTextExtractionConfiguration() throws Exception {
+        standardSubsystemTest("text-extraction");
+    }
 
     @Test
     public void testSchema() throws Exception {

@@ -533,6 +533,16 @@
                 </xs:annotation>
             </xs:element>
         </xs:sequence>
+        <xs:attribute name="thread-pool-name" type="xs:string" use="optional" default="modeshape-sequencer">
+            <xs:annotation>
+                <xs:documentation>The name of the thread pool that generates sequencing threads.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="max-pool-size" type="xs:integer" use="optional" default="10">
+            <xs:annotation>
+                <xs:documentation>The maximum number of sequencing threads that can be spawned at the same time</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
     </xs:complexType>
 
     <xs:complexType name="sequencer">
@@ -630,6 +640,16 @@
                 </xs:annotation>
             </xs:element>
         </xs:sequence>
+        <xs:attribute name="thread-pool-name" type="xs:string" use="optional" default="modeshape-text-extractor">
+            <xs:annotation>
+                <xs:documentation>The name of the thread pool that generates text extraction threads.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="max-pool-size" type="xs:integer" use="optional" default="5">
+            <xs:annotation>
+                <xs:documentation>The maximum number of text extraction threads that can be spawned at the same time</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
     </xs:complexType>
 
     <xs:complexType name="text-extractor">
