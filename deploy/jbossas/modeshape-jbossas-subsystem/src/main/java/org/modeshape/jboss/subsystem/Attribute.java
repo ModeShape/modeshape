@@ -79,11 +79,12 @@ public enum Attribute {
     JOURNAL_GC_INITIAL_TIME("journal-gc-initial-time"),
     JOURNAL_PATH("journal-path"),
     JOURNAL_RELATIVE_TO("journal-relative-to"),
-
     INDEX_KIND("kind"),
     SYNCHRONOUS("synchronous"),
     PROVIDER_NAME("provider-name"),
     NODE_TYPE("node-type"),
+    THREAD_POOL_NAME("thread-pool-name"),
+    MAX_POOL_SIZE("max-pool-size"),
     COLUMNS("columns");
 
     private final String name;

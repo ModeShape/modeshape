@@ -393,8 +393,8 @@ public final class ExecutionContext implements ThreadPoolFactory, Cloneable, Nam
     }
 
     @Override
-    public ExecutorService getCachedTreadPool( String name ) {
-        return this.threadPools.getCachedTreadPool(name);
+    public ExecutorService getCachedTreadPool( String name, int maxPoolSize ) {
+        return this.threadPools.getCachedTreadPool(name, maxPoolSize);
     }
 
     @Override

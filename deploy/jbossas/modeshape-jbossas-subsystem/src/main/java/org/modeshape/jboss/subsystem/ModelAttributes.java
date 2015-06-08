@@ -308,14 +308,6 @@ public class ModelAttributes {
                                                                                                                     .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                                                                                                                     .build();
 
-    public static final SimpleAttributeDefinition LOCK_CACHE_NAME = new MappedAttributeDefinitionBuilder(
-                                                                                                         ModelKeys.LOCK_CACHE_NAME,
-                                                                                                         ModelType.STRING).setXmlName(Attribute.LOCK_CACHE_NAME.getLocalName())
-                                                                                                                          .setAllowExpression(false)
-                                                                                                                          .setAllowNull(true)
-                                                                                                                          .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
-                                                                                                                          .build();
-
     public static final SimpleAttributeDefinition METADATA_CACHE_NAME = new MappedAttributeDefinitionBuilder(
                                                                                                              ModelKeys.METADATA_CACHE_NAME,
                                                                                                              ModelType.STRING).setXmlName(Attribute.META_CACHE_NAME.getLocalName())
@@ -534,6 +526,31 @@ public class ModelAttributes {
                                                                                                                                                                      FieldName.SEQUENCERS,
                                                                                                                                                                      FieldName.CLASSNAME)
                                                                                                                               .build();
+    public static final SimpleAttributeDefinition SEQUENCER_THREAD_POOL_NAME = new MappedAttributeDefinitionBuilder(ModelKeys.SEQUENCERS_THREAD_POOL_NAME, 
+                                                                                                                    ModelType.STRING).setXmlName(Attribute.THREAD_POOL_NAME.getLocalName())
+                                                                                                                                     .setAllowExpression(false)
+                                                                                                                                     .setAllowNull(true)
+                                                                                                                                     .setFlags(AttributeAccess.Flag.RESTART_NONE)
+                                                                                                                                     .setDefaultValue(new ModelNode().set(RepositoryConfiguration.Default.SEQUENCING_POOL))
+                                                                                                                                     .setFieldPathInRepositoryConfiguration(
+                                                                                                                                             FieldName.SEQUENCING,
+                                                                                                                                             FieldName.SEQUENCERS,
+                                                                                                                                             FieldName.THREAD_POOL)
+                                                                                                                                     .build();
+    
+    public static final SimpleAttributeDefinition SEQUENCER_MAX_POOL_SIZE = new MappedAttributeDefinitionBuilder(ModelKeys.SEQUENCERS_MAX_POOL_SIZE, 
+                                                                                                                    ModelType.STRING).setXmlName(Attribute.MAX_POOL_SIZE.getLocalName())
+                                                                                                                                     .setAllowExpression(false)
+                                                                                                                                     .setAllowNull(true)
+                                                                                                                                     .setFlags(AttributeAccess.Flag.RESTART_NONE)
+                                                                                                                                     .setDefaultValue(new ModelNode().set(
+                                                                                                                                             RepositoryConfiguration.Default.SEQUENCING_MAX_POOL_SIZE))
+                                                                                                                                     .setFieldPathInRepositoryConfiguration(
+                                                                                                                                             FieldName.SEQUENCING,
+                                                                                                                                             FieldName.SEQUENCERS,
+                                                                                                                                             FieldName.MAX_POOL_SIZE)
+                                                                                                                                     .build();
+
     public static final SimpleAttributeDefinition STORE_NAME = new MappedAttributeDefinitionBuilder(ModelKeys.STORE_NAME,
                                                                                                     ModelType.STRING).setXmlName(Attribute.STORE_NAME.getLocalName())
                                                                                                                      .setAllowExpression(false)
@@ -562,6 +579,31 @@ public class ModelAttributes {
                                                                                                                                                                           FieldName.EXTRACTORS,
                                                                                                                                                                           FieldName.CLASSNAME)
                                                                                                                                    .build();
+    public static final SimpleAttributeDefinition TEXT_EXTRACTOR_THREAD_POOL_NAME = new MappedAttributeDefinitionBuilder(ModelKeys.TEXT_EXTRACTORS_THREAD_POOL_NAME,
+                                                                                                                    ModelType.STRING).setXmlName(Attribute.THREAD_POOL_NAME.getLocalName())
+                                                                                                                                     .setAllowExpression(false)
+                                                                                                                                     .setAllowNull(true)
+                                                                                                                                     .setFlags(AttributeAccess.Flag.RESTART_NONE)
+                                                                                                                                     .setDefaultValue(new ModelNode().set(RepositoryConfiguration.Default.TEXT_EXTRACTION_POOL))
+                                                                                                                                     .setFieldPathInRepositoryConfiguration(
+                                                                                                                                             FieldName.TEXT_EXTRACTION,
+                                                                                                                                             FieldName.EXTRACTORS,
+                                                                                                                                             FieldName.THREAD_POOL)
+                                                                                                                                     .build();
+
+    public static final SimpleAttributeDefinition TEXT_EXTRACTOR_MAX_POOL_SIZE = new MappedAttributeDefinitionBuilder(ModelKeys.TEXT_EXTRACTORS_MAX_POOL_SIZE,
+                                                                                                                 ModelType.STRING).setXmlName(Attribute.MAX_POOL_SIZE.getLocalName())
+                                                                                                                                  .setAllowExpression(false)
+                                                                                                                                  .setAllowNull(true)
+                                                                                                                                  .setFlags(AttributeAccess.Flag.RESTART_NONE)
+                                                                                                                                  .setDefaultValue(new ModelNode().set(
+                                                                                                                                          RepositoryConfiguration.Default.TEXT_EXTRACTION_MAX_POOL_SIZE))
+                                                                                                                                  .setFieldPathInRepositoryConfiguration(
+                                                                                                                                          FieldName.TEXT_EXTRACTION,
+                                                                                                                                          FieldName.EXTRACTORS,
+                                                                                                                                          FieldName.MAX_POOL_SIZE)
+                                                                                                                                  .build();
+
 
     public static final SimpleAttributeDefinition SECURITY_DOMAIN = new MappedAttributeDefinitionBuilder(
                                                                                                          ModelKeys.SECURITY_DOMAIN,
@@ -575,22 +617,6 @@ public class ModelAttributes {
                                                                                                                                                                  FieldName.JAAS,
                                                                                                                                                                  FieldName.JAAS_POLICY_NAME)
                                                                                                                           .build();
-
-    public static final SimpleAttributeDefinition SOURCE_PATH = new MappedAttributeDefinitionBuilder(ModelKeys.SOURCE_PATH,
-                                                                                                     ModelType.STRING).setXmlName(Attribute.SOURCE_PATH.getLocalName())
-                                                                                                                      .setAllowExpression(true)
-                                                                                                                      .setAllowNull(false)
-                                                                                                                      .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
-                                                                                                                      .build();
-
-    public static final SimpleAttributeDefinition SOURCE_RELATIVE_TO = new MappedAttributeDefinitionBuilder(
-                                                                                                            ModelKeys.SOURCE_RELATIVE_TO,
-                                                                                                            ModelType.STRING).setXmlName(Attribute.SOURCE_RELATIVE_TO.getLocalName())
-                                                                                                                             .setAllowExpression(true)
-                                                                                                                             .setAllowNull(true)
-                                                                                                                             .setDefaultValue(new ModelNode().set(JBOSS_DATA_DIR_VARIABLE))
-                                                                                                                             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
-                                                                                                                             .build();
 
     public static final SimpleAttributeDefinition USE_ANONYMOUS_IF_AUTH_FAILED = new MappedAttributeDefinitionBuilder(
                                                                                                                       ModelKeys.USE_ANONYMOUS_IF_AUTH_FAILED,
@@ -683,7 +709,8 @@ public class ModelAttributes {
         GARBAGE_COLLECTION_INITIAL_TIME, GARBAGE_COLLECTION_INTERVAL, DOCUMENT_OPTIMIZATION_THREAD_POOL,
         DOCUMENT_OPTIMIZATION_INITIAL_TIME, DOCUMENT_OPTIMIZATION_INTERVAL, DOCUMENT_OPTIMIZATION_CHILD_COUNT_TARGET,
         DOCUMENT_OPTIMIZATION_CHILD_COUNT_TOLERANCE, JOURNAL_PATH, JOURNAL_RELATIVE_TO, MAX_DAYS_TO_KEEP_RECORDS,
-        JOURNAL_GC_INITIAL_TIME, JOURNAL_GC_THREAD_POOL, ASYNC_WRITES, JOURNALING};
+        JOURNAL_GC_INITIAL_TIME, JOURNAL_GC_THREAD_POOL, ASYNC_WRITES, JOURNALING, SEQUENCER_THREAD_POOL_NAME, SEQUENCER_MAX_POOL_SIZE, 
+        TEXT_EXTRACTOR_THREAD_POOL_NAME, TEXT_EXTRACTOR_MAX_POOL_SIZE};
 
     public static final AttributeDefinition[] FILE_BINARY_STORAGE_ATTRIBUTES = {MINIMUM_BINARY_SIZE, MINIMUM_STRING_SIZE, PATH,
         RELATIVE_TO, STORE_NAME};

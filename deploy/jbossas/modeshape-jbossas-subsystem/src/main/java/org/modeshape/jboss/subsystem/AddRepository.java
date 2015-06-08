@@ -176,6 +176,12 @@ public class AddRepository extends AbstractAddStepHandler {
         RepositoryService repositoryService = new RepositoryService(repositoryConfig, infinispanConfig, configRelativeTo);
         ServiceName repositoryServiceName = ModeShapeServiceNames.repositoryServiceName(repositoryName);
 
+        // Sequencing
+        parseSequencing(model, configDoc);
+
+        // Text Extraction
+        parseTextExtraction(model, configDoc);
+        
         // Journaling
         parseJournaling(repositoryService, context, model, configDoc);
 
@@ -291,6 +297,33 @@ public class AddRepository extends AbstractAddStepHandler {
         newControllers.add(binderBuilder.install());
         newControllers.add(binaryStorageBuilder.install());
         newControllers.add(monitorBuilder.install());
+    }
+
+    private void parseTextExtraction( ModelNode model, EditableDocument configDoc ) {
+        if (model.hasDefined(ModelKeys.TEXT_EXTRACTORS_THREAD_POOL_NAME)) {
+            EditableDocument extractors = configDoc.getOrCreateDocument(FieldName.TEXT_EXTRACTION);
+            String poolName = model.get(ModelKeys.TEXT_EXTRACTORS_THREAD_POOL_NAME).asString();
+            extractors.set(FieldName.THREAD_POOL, poolName);
+        }
+        if (model.hasDefined(ModelKeys.TEXT_EXTRACTORS_MAX_POOL_SIZE)) {
+            EditableDocument sequencing = configDoc.getOrCreateDocument(FieldName.TEXT_EXTRACTION);
+            int maxPoolSize = model.get(ModelKeys.TEXT_EXTRACTORS_MAX_POOL_SIZE).asInt();
+            sequencing.set(FieldName.MAX_POOL_SIZE, maxPoolSize);
+        }
+    }
+
+    private void parseSequencing( ModelNode model,
+                                  EditableDocument configDoc ) {
+        if (model.hasDefined(ModelKeys.SEQUENCERS_THREAD_POOL_NAME)) {
+            EditableDocument sequencing = configDoc.getOrCreateDocument(FieldName.SEQUENCING);
+            String sequencingThreadPool = model.get(ModelKeys.SEQUENCERS_THREAD_POOL_NAME).asString();
+            sequencing.set(FieldName.THREAD_POOL, sequencingThreadPool);
+        }            
+        if (model.hasDefined(ModelKeys.SEQUENCERS_MAX_POOL_SIZE)) {
+            EditableDocument sequencing = configDoc.getOrCreateDocument(FieldName.SEQUENCING);
+            int maxPoolSize = model.get(ModelKeys.SEQUENCERS_MAX_POOL_SIZE).asInt();
+            sequencing.set(FieldName.MAX_POOL_SIZE, maxPoolSize);
+        }            
     }
 
     private void parseSecurity( OperationContext context,

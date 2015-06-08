@@ -462,56 +462,15 @@ public class RepositoryConfiguration {
         public static final String OPTIMIZATION_CHILD_COUNT_TOLERANCE = "childCountTolerance";
 
         /**
-         * The name for the field (under "sequencing" and "query") specifying the thread pool that should be used for sequencing.
-         * By default, all repository instances will use the same thread pool within the engine. To use a dedicated thread pool
-         * for a single repository, simply use a name that is unique from all other repositories.
+         * The name for the field (under "sequencing" and "textExtraction") specifying the thread pool that should be used for sequencing.
          */
         public static final String THREAD_POOL = "threadPool";
 
-        @Deprecated
-        public static final String REMOVE_DERIVED_CONTENT_WITH_ORIGINAL = "removeDerivedContentWithOriginal";
-
-        public static final String INDEXING_ANALYZER = "analyzer";
-        public static final String INDEXING_ANALYZER_CLASSPATH = "analyzerClasspath";
-        public static final String INDEXING_SIMILARITY = "similarity";
-        public static final String INDEXING_BATCH_SIZE = "batchSize";
-        public static final String INDEXING_INDEX_FORMAT = "indexFormat";
-        public static final String INDEXING_READER_STRATEGY = "readerStrategy";
-        public static final String INDEXING_MODE = "mode";
-        public static final String INDEXING_ASYNC_THREAD_POOL_SIZE = "asyncThreadPoolSize";
-        public static final String INDEXING_ASYNC_MAX_QUEUE_SIZE = "asyncMaxQueueSize";
-
-        public static final String INDEX_STORAGE_LOCATION = "location";
-        public static final String INDEX_STORAGE_SOURCE_LOCATION = "sourceLocation";
-        public static final String INDEX_STORAGE_LOCKING_STRATEGY = "lockingStrategy";
-        public static final String INDEX_STORAGE_FILE_SYSTEM_ACCESS_TYPE = "fileSystemAccessType";
-        public static final String INDEX_STORAGE_REFRESH_IN_SECONDS = "refreshInSeconds";
-        public static final String INDEX_STORAGE_COPY_BUFFER_SIZE_IN_MEGABYTES = "copyBufferSizeInMegabytes";
-        public static final String INDEX_STORAGE_RETRY_MARKER_LOOKUP = "retryMarkerLookup";
-        public static final String INDEX_STORAGE_RETRY_INITIALIZE_PERIOD_IN_SECONDS = "retryInitializePeriodInSeconds";
-
-        public static final String INDEXING_BACKEND_JMS_CONNECTION_FACTORY_JNDI_NAME = "connectionFactoryJndiName";
-        public static final String INDEXING_BACKEND_JMS_QUEUE_JNDI_NAME = "queueJndiName";
-        public static final String INDEXING_BACKEND_JGROUPS_CHANNEL_NAME = "channelName";
-        public static final String INDEXING_BACKEND_JGROUPS_CHANNEL_CONFIGURATION = "channelConfiguration";
-
         /**
-         * @deprecated use REBUILD_ON_STARTUP document
+         * The name of the field which allows the configuration of the maximum number of threads that can be spawned by a pool
          */
-        @Deprecated
-        public static final String REBUILD_UPON_STARTUP = "rebuildUponStartup";
-
-        /**
-         * @deprecated use REBUILD_ON_STARTUP document
-         */
-        @Deprecated
-        public static final String INDEXING_MODE_SYSTEM_CONTENT = "systemContentMode";
-
-        public static final String REBUILD_ON_STARTUP = "rebuildOnStartup";
-        public static final String REBUILD_WHEN = "when";
-        public static final String REBUILD_INCLUDE_SYSTEM_CONTENT = "includeSystemContent";
-        public static final String REBUILD_MODE = "mode";
-
+        public static final String MAX_POOL_SIZE = "maxPoolSize";
+        
         /**
          * The name of the journaling schema field.
          */
@@ -577,21 +536,13 @@ public class RepositoryConfiguration {
 
         public static final String ANONYMOUS_USERNAME = "<anonymous>";
 
-        public static final boolean QUERY_ENABLED = true;
-        public static final boolean FULL_TEXT_SEARCH_ENABLED = true;
-
         public static final boolean MONITORING_ENABLED = true;
 
-        @Deprecated
-        public static final boolean REMOVE_DERIVED_CONTENT_WITH_ORIGINAL = true;
-
         public static final String SEQUENCING_POOL = "modeshape-sequencer";
-        public static final String QUERY_THREAD_POOL = "modeshape-indexer";
+        public static final String TEXT_EXTRACTION_POOL = "modeshape-text-extractor";
         public static final String GARBAGE_COLLECTION_POOL = "modeshape-gc";
         public static final String OPTIMIZATION_POOL = "modeshape-opt";
         public static final String JOURNALING_POOL = "modeshape-journaling-gc";
-
-        public static final String CLUSTER_NAME = "ModeShape-JCR";
 
         public static final String GARBAGE_COLLECTION_INITIAL_TIME = "00:00";
         public static final int GARBAGE_COLLECTION_INTERVAL_IN_HOURS = 24;
@@ -608,6 +559,9 @@ public class RepositoryConfiguration {
         public static final String NODE_TYPE = "nt:base";
         public static final boolean SYNCHRONOUS = true;
         public static final String WORKSPACES = "*";
+
+        public static final int SEQUENCING_MAX_POOL_SIZE = 10;
+        public static final int TEXT_EXTRACTION_MAX_POOL_SIZE = 5;
     }
 
     public static final class FieldValue {
@@ -1944,8 +1898,18 @@ public class RepositoryConfiguration {
          * @return the thread pool name; never null
          */
         public String getThreadPoolName() {
-            return textExtracting.getString(FieldName.THREAD_POOL, "modeshape-text-extractor");
+            return textExtracting.getString(FieldName.THREAD_POOL, Default.TEXT_EXTRACTION_POOL);
         }
+
+        /**
+         * Get the maximum number of threads that can be spawned for sequencing at the same time
+         *
+         * @return the max number of threads
+         */
+        public int getMaxPoolSize() {
+            return textExtracting.getInteger(FieldName.MAX_POOL_SIZE, Default.TEXT_EXTRACTION_MAX_POOL_SIZE);
+        }
+
 
         /**
          * Get the ordered list of text extractors. All text extractors are configured with this list.
@@ -2136,25 +2100,21 @@ public class RepositoryConfiguration {
         }
 
         /**
-         * Determine whether the derived content originally produced by a sequencer upon sequencing some specific input should be
-         * removed if that input is updated and the sequencer re-run.
-         *
-         * @return true if the original derived content should be removed upon subsequent sequencing of the same input.
-         * @deprecated because it was never used
-         */
-        @Deprecated
-        public boolean removeDerivedContentWithOriginal() {
-            return sequencing.getBoolean(FieldName.REMOVE_DERIVED_CONTENT_WITH_ORIGINAL,
-                                         Default.REMOVE_DERIVED_CONTENT_WITH_ORIGINAL);
-        }
-
-        /**
          * Get the name of the thread pool that should be used for sequencing work.
          *
          * @return the thread pool name; never null
          */
         public String getThreadPoolName() {
             return sequencing.getString(FieldName.THREAD_POOL, Default.SEQUENCING_POOL);
+        }
+
+        /**
+         * Get the maximum number of threads that can be spawned for sequencing at the same time
+         * 
+         * @return the max number of threads
+         */
+        public int getMaxPoolSize() { 
+            return sequencing.getInteger(FieldName.MAX_POOL_SIZE, Default.SEQUENCING_MAX_POOL_SIZE);
         }
 
         /**

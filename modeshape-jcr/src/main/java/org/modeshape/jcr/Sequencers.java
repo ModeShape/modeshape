@@ -97,7 +97,8 @@ public class Sequencers implements ChangeSetListener {
                           RepositoryConfiguration config,
                           Iterable<String> workspaceNames ) {
         this.repository = repository;
-        this.components = config.getSequencing().getSequencers(repository.problems());
+        RepositoryConfiguration.Sequencing sequencing = config.getSequencing();
+        this.components = sequencing.getSequencers(repository.problems());
         this.systemWorkspaceKey = repository.repositoryCache().getSystemKey().getWorkspaceKey();
         if (components.isEmpty()) {
             this.processId = null;
@@ -110,8 +111,9 @@ public class Sequencers implements ChangeSetListener {
             this.initialized = true;
             this.sequencersByName = Collections.emptyMap();
         } else {
-            String threadPoolName = config.getSequencing().getThreadPoolName();
-            this.sequencingExecutor = repository.context().getCachedTreadPool(threadPoolName);
+            int maxThreadCount = sequencing.getMaxPoolSize();
+            String threadPoolName = sequencing.getThreadPoolName();
+            this.sequencingExecutor = repository.context().getCachedTreadPool(threadPoolName, maxThreadCount);
             this.workQueue = new SequencingWorkQueue();
             this.processId = repository.context().getProcessId();
             ExecutionContext context = this.repository.context();

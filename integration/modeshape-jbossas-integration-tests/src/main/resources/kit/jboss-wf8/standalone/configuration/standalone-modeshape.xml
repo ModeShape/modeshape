@@ -372,7 +372,7 @@
                 The sequencer names are unique identifiers within the configuration, and should not contain spaces.
                 Also, some of the sequencer configurations use the fully-qualified classname, while other use the
                 short alias (which only works for the sequencer provided by ModeShape). -->
-                <sequencers>
+                <sequencers max-pool-size="5" thread-pool-name="test-sequencer">
                     <sequencer name="delimited-text-sequencer" classname="org.modeshape.sequencer.text.DelimitedTextSequencer"
                                module="org.modeshape.sequencer.text" splitPattern=",">
                         <path-expression>/files(//*.csv[*])/jcr:content[@jcr:data] => /derived/text/delimited/$1
@@ -437,7 +437,7 @@
                     </sequencer>
                     <sequencer name="zip-sequencer-manual" classname="zip" module="org.modeshape.sequencer.zip"/>
                 </sequencers>
-                <text-extractors>
+                <text-extractors max-pool-size="5" thread-pool-name="test-text-extractor">
                     <text-extractor name="tika-extractor" classname="tika" module="org.modeshape.extractor.tika"/>
                 </text-extractors>
                 <file-binary-storage/>

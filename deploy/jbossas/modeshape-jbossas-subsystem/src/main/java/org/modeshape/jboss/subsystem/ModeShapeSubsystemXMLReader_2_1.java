@@ -248,7 +248,7 @@ public class ModeShapeSubsystemXMLReader_2_1 implements XMLStreamConstants, XMLE
 
                 // Sequencing ...
                 case SEQUENCERS:
-                    sequencers = parseSequencers(reader, address, repositoryName);
+                    sequencers = parseSequencers(reader, repository, address, repositoryName);
                     break;
 
                 // Index providers ...
@@ -268,7 +268,7 @@ public class ModeShapeSubsystemXMLReader_2_1 implements XMLStreamConstants, XMLE
 
                 // Text extracting ...
                 case TEXT_EXTRACTORS:
-                    textExtractors = parseTextExtracting(reader, repositoryName);
+                    textExtractors = parseTextExtracting(reader, repository, repositoryName);
                     break;
 
                 default:
@@ -770,9 +770,26 @@ public class ModeShapeSubsystemXMLReader_2_1 implements XMLStreamConstants, XMLE
     }
 
     private List<ModelNode> parseSequencers( final XMLExtendedStreamReader reader,
+                                             final ModelNode repository, 
                                              final ModelNode parentAddress,
                                              final String repositoryName ) throws XMLStreamException {
-        requireNoAttributes(reader);
+        if (reader.getAttributeCount() > 0) {
+            for (int i = 0; i < reader.getAttributeCount(); i++) {
+                String attrName = reader.getAttributeLocalName(i);
+                String attrValue = reader.getAttributeValue(i);
+                Attribute attribute = Attribute.forName(attrName);
+                switch (attribute) {
+                    case THREAD_POOL_NAME:
+                        ModelAttributes.SEQUENCER_THREAD_POOL_NAME.parseAndSetParameter(attrValue, repository, reader);
+                        break;
+                    case MAX_POOL_SIZE:
+                        ModelAttributes.SEQUENCER_MAX_POOL_SIZE.parseAndSetParameter(attrValue, repository, reader);
+                        break;
+                    default:
+                        throw ParseUtils.unexpectedAttribute(reader, i);
+                }
+            }
+        }
 
         List<ModelNode> sequencers = new ArrayList<ModelNode>();
         while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {
@@ -1073,8 +1090,25 @@ public class ModeShapeSubsystemXMLReader_2_1 implements XMLStreamConstants, XMLE
     }
 
     private List<ModelNode> parseTextExtracting( final XMLExtendedStreamReader reader,
+                                                 final ModelNode repository, 
                                                  final String repositoryName ) throws XMLStreamException {
-        requireNoAttributes(reader);
+        if (reader.getAttributeCount() > 0) {
+            for (int i = 0; i < reader.getAttributeCount(); i++) {
+                String attrName = reader.getAttributeLocalName(i);
+                String attrValue = reader.getAttributeValue(i);
+                Attribute attribute = Attribute.forName(attrName);
+                switch (attribute) {
+                    case THREAD_POOL_NAME:
+                        ModelAttributes.TEXT_EXTRACTOR_THREAD_POOL_NAME.parseAndSetParameter(attrValue, repository, reader);
+                        break;
+                    case MAX_POOL_SIZE:
+                        ModelAttributes.TEXT_EXTRACTOR_MAX_POOL_SIZE.parseAndSetParameter(attrValue, repository, reader);
+                        break;
+                    default:
+                        throw ParseUtils.unexpectedAttribute(reader, i);
+                }
+            }
+        }
 
         List<ModelNode> extractors = new ArrayList<ModelNode>();
         while (reader.hasNext() && reader.nextTag() != END_ELEMENT) {

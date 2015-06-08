@@ -1,0 +1,9 @@
+<subsystem xmlns="urn:jboss:domain:modeshape:2.1">
+    <repository name="sample">
+        <text-extractors thread-pool-name="test-text-extractor" max-pool-size="2">
+            <text-extractor classname="tika" name="tika-extractor1"/>
+            <text-extractor
+                    classname="org.modeshape.extractor.tika.TikaTextExtractor" name="tika-extractor2"/>
+        </text-extractors>
+    </repository>
+</subsystem>

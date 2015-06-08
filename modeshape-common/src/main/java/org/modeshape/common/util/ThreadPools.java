@@ -22,6 +22,8 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import org.modeshape.common.annotation.ThreadSafe;
 
@@ -42,8 +44,12 @@ public class ThreadPools implements ThreadPoolFactory {
     }
 
     @Override
-    public ExecutorService getCachedTreadPool( String name ) {
-        return getOrCreateNewPool(name, Executors.newCachedThreadPool(new NamedThreadFactory(name)));
+    public ExecutorService getCachedTreadPool( String name, int maxPoolSize ) {
+        NamedThreadFactory threadFactory = new NamedThreadFactory(name);
+        ExecutorService executorService = new ThreadPoolExecutor(0, maxPoolSize, 60L, TimeUnit.SECONDS, 
+                                                                 new SynchronousQueue<Runnable>(), 
+                                                                 threadFactory);
+        return getOrCreateNewPool(name, executorService);
     }
 
     @Override

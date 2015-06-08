@@ -1,6 +1,8 @@
 {
     "name" : "ImageSequencer Test Repository",
     "sequencing" : {
+        "maxPoolSize" : 4,
+        "threadPool" : "test-sequencer",
         "sequencers" : {
             "Images in separate location" : {
                 "classname" : "ImageSequencer",

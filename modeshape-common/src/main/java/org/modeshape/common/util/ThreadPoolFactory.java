@@ -38,10 +38,11 @@ public interface ThreadPoolFactory {
      * return one if no thread pool exists with that name. When finished with the thread pool, it should be
      * {@link #releaseThreadPool released}.
      * 
+     * @param maxPoolSize the maximum number of threads that can be spawned by this pool.
      * @param name the name of the thread pool; may not be null
      * @return the thread pool executor; never null
      */
-    ExecutorService getCachedTreadPool( String name );
+    ExecutorService getCachedTreadPool( String name, int maxPoolSize );
 
     /**
      * Obtain a scheduled thread pool with the supplied name, or create and return one if no thread pool exists with that name.
