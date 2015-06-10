@@ -21,7 +21,6 @@ import java.util.Map;
 import javax.jcr.Session;
 import javax.jcr.Workspace;
 import javax.jcr.lock.Lock;
-import javax.jcr.observation.Event;
 import javax.jcr.observation.EventListener;
 import javax.jcr.query.Query;
 import javax.jcr.version.VersionManager;
@@ -41,24 +40,30 @@ public enum ValueMetric {
      */
     QUERY_COUNT("query-count", true, "Active queries", "The number of queries that are executing during the window"),
     /**
-     * The metric that records the number of {@link Workspace workspaces} in existance during the window.
+     * The metric that records the number of {@link Workspace workspaces} in existence during the window.
      */
     WORKSPACE_COUNT("workspace-count", true, "Workspace count", "The number of workspaces that exist during the window"),
     /**
-     * The metric that records the number of {@link EventListener observation listeners} in existance during the window.
+     * The metric that records the number of {@link EventListener listeners} in existence during the window.
      */
     LISTENER_COUNT("listener-count", true, "Active listeners", "The number of listeners registered during the window."),
     /**
-     * The metric that records the number of {@link Event observation events} that are in the queue and awaiting processing (and
-     * still have yet to be sent to the liseners).
+     * The metric that records the number of events that the slowest repository listener still has to process, based on the 
+     * ring buffer implementation.
      */
     EVENT_QUEUE_SIZE("event-queue-size", true, "Event queue size",
-                     "The number of events at the end of the window that have yet to be processed and sent to listeners"),
+                     "The number of events that still have to be processed by the slowest repository listener in the given window"),
     /**
-     * The metric that records the number of {@link Event observation events} that have been sent to at least one listener.
+     * The metric that records the total number of events that have been submitted to the repository during the window.
      */
-    EVENT_COUNT("event-count", false, "Event count",
-                "The number of events that have been sent to at least one listener during the window."),
+    EVENT_COUNT("event-count", false, "Total event count",
+                "The total number of events that have been submitted to the repository during the window."),
+    /**
+     * The metric that records the total number of events that have been submitted to the repository change bus during a 
+     * window.
+     */
+    EVENT_BUFFER_AVAILABILITY("event-buffer-availability", true, "Event buffer availability",
+                "The number of free (empty) slots where events can still be published by the repository without blocking"),
     /**
      * The metric that records the number of {@link Lock#isSessionScoped() session-scoped} {@link Lock JCR locks} in existence
      * during the window.
@@ -69,7 +74,7 @@ public enum ValueMetric {
                               "Session-scoped locks",
                               "The number of session-scoped locks that were held by clients during the window. The values go up or down from one window to the next as clients lock and unlock nodes."),
     /**
-     * The metric that records the number of {@link Lock#isSessionScoped() non-session-scoped} {@link Lock JCR locks} in existance
+     * The metric that records the number of {@link Lock#isSessionScoped() non-session-scoped} {@link Lock JCR locks} in existence
      * during the window.
      */
     OPEN_SCOPED_LOCK_COUNT(
