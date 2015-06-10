@@ -104,6 +104,10 @@ public class SingleProducerCursor implements Cursor {
         return Pointers.getMinimum(stayBehinds, minimumPosition);
     }
 
+    protected long positionOfSlowestConsumer() {
+        return slowestConsumerPosition;
+    }
+    
     @Override
     public boolean publish( long position ) {
         if (finalPosition != Long.MAX_VALUE) return false;

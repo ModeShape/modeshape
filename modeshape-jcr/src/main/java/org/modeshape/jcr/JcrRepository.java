@@ -1107,7 +1107,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                     // Create clustering service and event bus
                     this.changeDispatchingQueue = this.context().getCachedTreadPool("modeshape-event-dispatcher", 
                                                                                     Integer.MAX_VALUE);
-                    ChangeBus localBus = new RepositoryChangeBus(name(), changeDispatchingQueue);
+                    ChangeBus localBus = new RepositoryChangeBus(name(), changeDispatchingQueue, statistics(), RepositoryChangeBus.DEFAULT_RING_BUFFER_SIZE);
                     this.changeBus = clusteringService != null ? new ClusteredChangeBus(localBus, clusteringService) : localBus;
                     this.changeBus.start();
 

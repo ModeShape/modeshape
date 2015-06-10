@@ -303,7 +303,7 @@ public class RepositoryStatistics implements RepositoryMonitor, ChangeSetListene
      * @see #decrement(ValueMetric)
      * @see #recordDuration(DurationMetric, long, TimeUnit, Map)
      */
-    void increment( ValueMetric metric,
+    public void increment( ValueMetric metric,
                     long incrementalValue ) {
         assert metric != null;
         ValueHistory history = values.get(metric);
@@ -318,7 +318,7 @@ public class RepositoryStatistics implements RepositoryMonitor, ChangeSetListene
      * @see #decrement(ValueMetric)
      * @see #recordDuration(DurationMetric, long, TimeUnit, Map)
      */
-    void increment( ValueMetric metric ) {
+    public void increment( ValueMetric metric ) {
         assert metric != null;
         ValueHistory history = values.get(metric);
         if (history != null) history.recordIncrement(1L);
@@ -333,11 +333,11 @@ public class RepositoryStatistics implements RepositoryMonitor, ChangeSetListene
      * @see #decrement(ValueMetric)
      * @see #recordDuration(DurationMetric, long, TimeUnit, Map)
      */
-    void set( ValueMetric metric,
-              long value ) {
+    public void set( ValueMetric metric,
+                     long value ) {
         assert metric != null;
         ValueHistory history = values.get(metric);
-        if (history != null) history.recordNewValue(1L);
+        if (history != null) history.recordNewValue(value);
     }
 
     /**
@@ -348,7 +348,7 @@ public class RepositoryStatistics implements RepositoryMonitor, ChangeSetListene
      * @see #increment(ValueMetric, long)
      * @see #recordDuration(DurationMetric, long, TimeUnit, Map)
      */
-    void decrement( ValueMetric metric ) {
+    public void decrement( ValueMetric metric ) {
         assert metric != null;
         ValueHistory history = values.get(metric);
         if (history != null) history.recordIncrement(-1L);
