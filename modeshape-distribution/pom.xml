@@ -32,7 +32,7 @@
 
         <!-- 
         Both 'modeshape-jcr' and 'modeshape-extractor-tika' depend on Tika, but have different transitive dependencies
-        (due to exclusions). Therefore, depend on this directly to pull in all transitive dependences defined in the parent POM.
+        (due to exclusions). Therefore, depend on this directly to pull in all transitive dependencies defined in the parent POM.
         And do this before 'modeshape-jcr' pulls in only a subset.
         -->
         <dependency>
