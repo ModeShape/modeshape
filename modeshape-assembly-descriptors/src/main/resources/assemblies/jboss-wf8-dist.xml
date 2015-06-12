@@ -145,11 +145,11 @@
                 <include>org.apache.poi:*:jar</include>
                 <include>org.apache.xmlbeans:*:jar</include>
                 <include>commons-codec:commons-codec:jar</include>
-                <include>com.googlecode.juniversalchardet:juniversalchardet:jar</include>
+                <include>*:juniversalchardet:jar</include>
                 <include>org.ccil.cowan.tagsoup:*:jar</include>
                 <include>org.gagravarr:*:jar</include>
                 <include>com.googlecode.mp4parser:*:jar</include>
-                <include>com.uwyn:jhighlight:jar</include>
+                <include>*:jhighlight:jar</include>
                 <!-- 
                 The following are not currently included by default; see ModeShape's parent POM
                 <include>org.bouncycastle:*:jar</include>

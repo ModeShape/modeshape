@@ -301,7 +301,7 @@
         <eclipse.emf.ecore.version>2.4.2</eclipse.emf.ecore.version>
         <eclipse.emf.ecorechange.version>2.2.3</eclipse.emf.ecorechange.version>
         <eclipse.emf.ecorexmi.version>2.4.1</eclipse.emf.ecorexmi.version>
-        <tika.version>1.6</tika.version>
+        <tika.version>1.8</tika.version>
         <image.metadata.extractor>2.6.2</image.metadata.extractor>
 
         <!-- Apache chemistry version -->
@@ -1851,13 +1851,45 @@
                 <artifactId>tika-parsers</artifactId>
                 <version>${tika.version}</version>
                 <exclusions>
+                    <exclusion>
+                        <groupId>com.github.junrar</groupId>
+                        <artifactId>junrar</artifactId>
+                    </exclusion> 
+                    <exclusion>
+                        <groupId>org.apache.commons</groupId>
+                        <artifactId>commons-csv</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.ow2.asm</groupId>
+                        <artifactId>asm-debug-all</artifactId>
+                    </exclusion> 
+                    <exclusion>
+                        <groupId>org.xerial</groupId>
+                        <artifactId>sqlite-jdbc</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>com.google.guava</groupId>
+                        <artifactId>guava</artifactId>
+                    </exclusion>
                     <!--
                     The NetCDF and HDF files are often used in the scientific community, so we exclude this
                     library (and the Commons HTTP Client library) by default.
                     -->
                     <exclusion>
                         <groupId>edu.ucar</groupId>
-                        <artifactId>netcdf</artifactId>
+                        <artifactId>netcdf4</artifactId>
+                    </exclusion>   
+                    <exclusion>
+                        <groupId>edu.ucar</groupId>
+                        <artifactId>grib</artifactId>
+                    </exclusion>    
+                    <exclusion>
+                        <groupId>edu.ucar</groupId>
+                        <artifactId>cdm</artifactId>
+                    </exclusion>  
+                    <exclusion>
+                        <groupId>edu.ucar</groupId>
+                        <artifactId>httpservices</artifactId>
                     </exclusion>
                     <exclusion>
                         <groupId>commons-httpclient</groupId>
@@ -1896,11 +1928,11 @@
                     -->
                     <exclusion>
                       <groupId>org.bouncycastle</groupId>
-                      <artifactId>bcmail-jdk15</artifactId>
+                      <artifactId>bcmail-jdk15on</artifactId>
                     </exclusion>
                     <exclusion>
                       <groupId>org.bouncycastle</groupId>
-                      <artifactId>bcprov-jdk15</artifactId>
+                      <artifactId>bcprov-jdk15on</artifactId>
                     </exclusion>
                     <!--
                     Outlook PST files for emails are likely not used,

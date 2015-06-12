@@ -59,7 +59,7 @@
         <mongo.driver.version>2.7.3</mongo.driver.version>
         <embedmongo.version>1.28</embedmongo.version>
         <cassandra-cql-driver>2.0.0-rc2</cassandra-cql-driver>
-        <tika.version>1.6</tika.version>
+        <tika.version>1.8</tika.version>
         <eclipse.equinox.common.version>3.3.0-v20070426</eclipse.equinox.common.version>
         <eclipse.jdt.core.version>3.3.0-v_771</eclipse.jdt.core.version>
         <eclipse.core.resources.version>3.3.0-v20070604</eclipse.core.resources.version>
@@ -375,6 +375,11 @@
                 Optional dependencies for modeshape-jcr which are present here so that clients of the BOM use the same version
                 of those dependencies, in case certain features are used.
             -->
+            <dependency>
+                <groupId>org.apache.tika</groupId>
+                <artifactId>tika-core</artifactId>
+                <version>${tika.version}</version>
+            </dependency>
             <dependency>
                 <groupId>org.apache.tika</groupId>
                 <artifactId>tika-parsers</artifactId>
