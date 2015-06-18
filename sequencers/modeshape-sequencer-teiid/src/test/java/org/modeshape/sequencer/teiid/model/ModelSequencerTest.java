@@ -31,6 +31,7 @@ import javax.jcr.query.QueryManager;
 import javax.jcr.query.QueryResult;
 import javax.jcr.query.RowIterator;
 import org.junit.Test;
+import org.modeshape.common.FixFor;
 import org.modeshape.common.junit.SkipLongRunning;
 import org.modeshape.jcr.JcrMixLexicon;
 import org.modeshape.jcr.JcrRepository;
@@ -1020,5 +1021,18 @@ public class ModelSequencerTest extends AbstractSequencerTest {
             final RowIterator itr = result.getRows();
             assertThat(itr.getSize(), is(2L));
         }
+    }
+    
+    @Test
+    @FixFor( "MODE-2476" )
+    public void shouldSequenceSuccessiveModels() throws Exception {
+        createNodeWithContentFromFile("first.xmi", "model/BQT1.xmi");
+        assertNotNull(getOutputNode(this.rootNode, "models/first.xmi"));
+
+        createNodeWithContentFromFile("second.xmi", "model/Source.xmi");
+        assertNotNull(getOutputNode(this.rootNode, "models/second.xmi"));
+        
+        createNodeWithContentFromFile("third.xmi", "model/BQT1.xmi");
+        assertNotNull(getOutputNode(this.rootNode, "models/third.xmi"));
     }
 }

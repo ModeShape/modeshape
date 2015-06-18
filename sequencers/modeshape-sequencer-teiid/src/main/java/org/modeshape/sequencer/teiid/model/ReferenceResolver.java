@@ -23,8 +23,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 import javax.jcr.Node;
+import org.modeshape.common.annotation.NotThreadSafe;
 import org.modeshape.common.collection.ArrayListMultimap;
 import org.modeshape.common.collection.Multimap;
 import org.modeshape.common.logging.Logger;
@@ -36,7 +36,8 @@ import org.modeshape.sequencer.teiid.xmi.XmiElement;
 
 /**
  * Records nodes and unresolved references.
- */
+ */ 
+@NotThreadSafe
 public class ReferenceResolver {
 
     static final Logger LOGGER = Logger.getLogger(ReferenceResolver.class);
@@ -134,7 +135,7 @@ public class ReferenceResolver {
     }
 
     // key = uuid, value = UnresolvedReference
-    private final Map<String, UnresolvedReference> unresolved = new ConcurrentHashMap<String, ReferenceResolver.UnresolvedReference>();
+    private final Map<String, UnresolvedReference> unresolved = new HashMap<String, UnresolvedReference>();
 
     // key = uuid, value = Node
     private final Map<String, Node> uuidToNode = new HashMap<String, Node>();
