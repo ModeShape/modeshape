@@ -25,6 +25,7 @@ import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.Value;
 import org.junit.Test;
+import org.modeshape.common.FixFor;
 import org.modeshape.common.junit.SkipLongRunning;
 import org.modeshape.jcr.sequencer.AbstractSequencerTest;
 import org.modeshape.sequencer.teiid.lexicon.CoreLexicon;
@@ -659,11 +660,25 @@ public class VdbSequencerTest extends AbstractSequencerTest {
         }
     }
 
+    @Test
+    @FixFor( "MODE-2476" )
+    public void shouldSequenceSuccessiveVDBs() throws Exception {
+        createNodeWithContentFromFile("first.vdb", "vdb/BooksVdb.vdb");
+        assertNotNull(getOutputNode(this.rootNode, "vdbs/first.vdb"));
+
+        createNodeWithContentFromFile("second.vdb", "vdb/FirstParts.vdb");
+        assertNotNull(getOutputNode(this.rootNode, "vdbs/second.vdb"));
+
+        createNodeWithContentFromFile("third.vdb", "vdb/BooksVdb.vdb");
+        assertNotNull(getOutputNode(this.rootNode, "vdbs/third.vdb"));
+    }
+
+
     protected void assertVersionInfo( String fileNameWithoutExtension,
                                       String expectedName,
                                       int expectedVersion ) {
         AtomicInteger actual = new AtomicInteger(1);
-        String name = VdbSequencer.extractVersionInfomation(fileNameWithoutExtension, actual);
+        String name = VdbSequencer.extractVersionInformation(fileNameWithoutExtension, actual);
         assertThat(name, is(expectedName));
         assertThat(actual.get(), is(expectedVersion));
     }
