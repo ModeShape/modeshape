@@ -44,13 +44,20 @@ import org.modeshape.jcr.query.engine.IndexPlanners;
  * {@link LocalIndexProviderAsynchronousTest} for verification of the asynchronous cases.
  *
  * @author Randall Hauch (rhauch@redhat.com)
+ * @author Horia Chiorean (hchiorea@redhat.com)
+ * 
  * @see LocalIndexProviderAsynchronousTest
  */
-public class LocalIndexProviderTest extends AbstractLocalIndexProviderTest {
+public class LocalIndexProviderTest extends AbstractIndexProviderTest {
 
     @Override
     protected boolean useSynchronousIndexes() {
         return true;
+    }
+    
+    @Override
+    protected String providerName() {
+        return LOCAL_PROVIDER_NAME;
     }
 
     // ---------------------------------------------------------------
@@ -1167,29 +1174,29 @@ public class LocalIndexProviderTest extends AbstractLocalIndexProviderTest {
         waitForIndexes();
 
         assertEquals(IndexManager.IndexStatus.NON_EXISTENT, indexManager().getIndexStatus("unknown", indexName, "default"));
-        assertEquals(IndexManager.IndexStatus.NON_EXISTENT, indexManager().getIndexStatus(PROVIDER_NAME, "invalid_name", "default"));
-        assertEquals(IndexManager.IndexStatus.NON_EXISTENT, indexManager().getIndexStatus(PROVIDER_NAME, indexName, "invalid_ws"));
+        assertEquals(IndexManager.IndexStatus.NON_EXISTENT, indexManager().getIndexStatus(LOCAL_PROVIDER_NAME, "invalid_name", "default"));
+        assertEquals(IndexManager.IndexStatus.NON_EXISTENT, indexManager().getIndexStatus(LOCAL_PROVIDER_NAME, indexName, "invalid_ws"));
 
-        assertEquals(IndexManager.IndexStatus.ENABLED, indexManager().getIndexStatus(PROVIDER_NAME, indexName, "default")); 
+        assertEquals(IndexManager.IndexStatus.ENABLED, indexManager().getIndexStatus(LOCAL_PROVIDER_NAME, indexName, "default")); 
         int nodeCount = 100;
         for (int i = 0; i < nodeCount; i++) {
             Node node = session.getRootNode().addNode("node_" + i);
             node.setProperty("foo", UUID.randomUUID().toString());
         }
         session.save();
-        assertEquals(IndexManager.IndexStatus.ENABLED, indexManager().getIndexStatus(PROVIDER_NAME, indexName, "default"));
+        assertEquals(IndexManager.IndexStatus.ENABLED, indexManager().getIndexStatus(LOCAL_PROVIDER_NAME, indexName, "default"));
         Future<Boolean> reindexingResult = session.getWorkspace().reindexAsync();
         Thread.sleep(10);
         if (!reindexingResult.isDone()) {
-            assertEquals(IndexManager.IndexStatus.REINDEXING, indexManager().getIndexStatus(PROVIDER_NAME, indexName, "default"));
+            assertEquals(IndexManager.IndexStatus.REINDEXING, indexManager().getIndexStatus(LOCAL_PROVIDER_NAME, indexName, "default"));
         }
         assertEquals(true, reindexingResult.get());
-        assertEquals(IndexManager.IndexStatus.ENABLED, indexManager().getIndexStatus(PROVIDER_NAME, indexName, "default"));
+        assertEquals(IndexManager.IndexStatus.ENABLED, indexManager().getIndexStatus(LOCAL_PROVIDER_NAME, indexName, "default"));
         
         indexManager().unregisterIndexes(indexName);
         // removing the actual index is async (event based)
         Thread.sleep(100);
-        assertEquals(IndexManager.IndexStatus.NON_EXISTENT, indexManager().getIndexStatus(PROVIDER_NAME, indexName, "default"));
+        assertEquals(IndexManager.IndexStatus.NON_EXISTENT, indexManager().getIndexStatus(LOCAL_PROVIDER_NAME, indexName, "default"));
     }
     
     @Test
@@ -1198,10 +1205,10 @@ public class LocalIndexProviderTest extends AbstractLocalIndexProviderTest {
         registerValueIndex("index1", "nt:unstructured", "Foo index", "*", "foo", PropertyType.STRING);
         registerValueIndex("index2", "nt:unstructured", "Bar index", "*", "bar", PropertyType.STRING);
         waitForIndexes();
-        assertEquals(Arrays.asList("index1", "index2"), indexManager().getIndexNames(PROVIDER_NAME, "default",
+        assertEquals(Arrays.asList("index1", "index2"), indexManager().getIndexNames(LOCAL_PROVIDER_NAME, "default",
                                                                                      IndexManager.IndexStatus.ENABLED));
-        assertTrue(indexManager().getIndexNames(PROVIDER_NAME, "default", IndexManager.IndexStatus.REINDEXING).isEmpty());
+        assertTrue(indexManager().getIndexNames(LOCAL_PROVIDER_NAME, "default", IndexManager.IndexStatus.REINDEXING).isEmpty());
         assertTrue(indexManager().getIndexNames("missing", "default", IndexManager.IndexStatus.ENABLED).isEmpty());
-        assertTrue(indexManager().getIndexNames(PROVIDER_NAME, "missing", IndexManager.IndexStatus.ENABLED).isEmpty());
+        assertTrue(indexManager().getIndexNames(LOCAL_PROVIDER_NAME, "missing", IndexManager.IndexStatus.ENABLED).isEmpty());
     }
 }

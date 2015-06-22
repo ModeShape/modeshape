@@ -24,13 +24,20 @@ import org.junit.Test;
  * since we have to wait an unknown amount of time after saving changes before we can issue the query.)
  *
  * @author Randall Hauch (rhauch@redhat.com)
+ * @author Horia Chiorean (hchiorea@redhat.com)
+ * 
  * @see LocalIndexProviderTest
  */
-public class LocalIndexProviderAsynchronousTest extends AbstractLocalIndexProviderTest {
+public class LocalIndexProviderAsynchronousTest extends AbstractIndexProviderTest {
 
     @Override
     protected boolean useSynchronousIndexes() {
         return false;
+    }
+    
+    @Override
+    protected String providerName() {
+        return LOCAL_PROVIDER_NAME;
     }
 
     // ---------------------------------------------------------------
@@ -47,5 +54,10 @@ public class LocalIndexProviderAsynchronousTest extends AbstractLocalIndexProvid
     @Test
     public void shouldUseSingleColumnStringIndexInQueryAgainstSameNodeType() throws Exception {
         super.shouldUseSingleColumnStringIndexInQueryAgainstSameNodeType();
+    }
+
+    @Override
+    public void shouldSkipEntireBatches() throws Exception {
+        super.shouldSkipEntireBatches();
     }
 }
