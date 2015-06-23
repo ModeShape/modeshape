@@ -253,7 +253,7 @@ public class JcrQueryResult implements org.modeshape.jcr.api.query.QueryResult {
         }
 
         protected Batch findNextBatch() {
-            if (currentBatch == null) {
+            if (currentBatch == null || !currentBatch.hasNext()) {
                 currentBatch = sequence.nextBatch();
             }
             return currentBatch;

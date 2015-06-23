@@ -181,7 +181,7 @@ public class IndexQueryEngine extends ScanningQueryEngine {
             Index index = provider.getIndex(indexPlan.getName(), indexPlan.getWorkspaceName());
             if (index != null) {
                 return sources.fromIndex(index, indexPlan.getConstraints(), context.getVariables(), indexPlan.getParameters(),
-                                         context.getExecutionContext().getValueFactories(), 100);
+                                         context.getExecutionContext().getValueFactories(), provider.batchSize());
             }
         }
         return null;
