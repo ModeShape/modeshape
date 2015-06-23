@@ -241,10 +241,8 @@
         <jbossjta.version>5.1.0.Final</jbossjta.version>
         <atomikos.version>3.8.0</atomikos.version>
         <picketbox.version>4.0.21.Final</picketbox.version>
-        <lucene.version>3.6.2</lucene.version>
-        <lucene.regex.version>3.0.3</lucene.regex.version>
 
-        <infinispan.version>7.2.0.Final</infinispan.version>
+        <infinispan.version>7.2.3.Final</infinispan.version>
         <infinispan.module.slot>ispn-7.2</infinispan.module.slot>
         <!--Make sure the jgroups version is the same as the one used by ISPN -->
         <jgroups.version>3.6.2.Final</jgroups.version>
