@@ -15,17 +15,17 @@
  */
 package org.modeshape.jcr.cache.document;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import org.modeshape.common.annotation.ThreadSafe;
-import org.modeshape.common.collection.LinkedListMultimap;
-import org.modeshape.common.collection.ListMultimap;
 import org.modeshape.jcr.cache.ChildReference;
 import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.value.Name;
@@ -37,12 +37,12 @@ import org.modeshape.jcr.value.Name;
 public class MutableChildReferences extends AbstractChildReferences {
 
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
-    private final ListMultimap<Name, ChildReference> childReferences;
+    private final Map<Name, List<NodeKey>> childReferenceKeysByName;
     private final Map<NodeKey, ChildReference> childReferencesByKey;
 
     protected MutableChildReferences() {
-        this.childReferences = LinkedListMultimap.create();
-        this.childReferencesByKey = new HashMap<NodeKey, ChildReference>();
+        this.childReferenceKeysByName = new HashMap<>();
+        this.childReferencesByKey = new LinkedHashMap<>();
     }
 
     @Override
@@ -61,7 +61,8 @@ public class MutableChildReferences extends AbstractChildReferences {
         Lock lock = this.lock.readLock();
         try {
             lock.lock();
-            return childReferences.get(name).size();
+            List<NodeKey> nodeKeys = childReferenceKeysByName.get(name);
+            return nodeKeys != null ? nodeKeys.size() : 0;
         } finally {
             lock.unlock();
         }
@@ -75,14 +76,15 @@ public class MutableChildReferences extends AbstractChildReferences {
         Lock lock = this.lock.readLock();
         try {
             lock.lock();
-            List<ChildReference> childrenWithSameName = this.childReferences.get(name);
-            if (childrenWithSameName.isEmpty()) {
+            List<NodeKey> childrenKeysWithSameName = this.childReferenceKeysByName.get(name);
+            if (childrenKeysWithSameName == null || childrenKeysWithSameName.isEmpty()) {
                 // This segment contains no nodes with the supplied name ...
                 return null;
             }
 
             // We have at least one SNS in this list ...
-            for (ChildReference childWithSameName : childrenWithSameName) {
+            for (NodeKey childKey : childrenKeysWithSameName) {
+                ChildReference childWithSameName = this.childReferencesByKey.get(childKey);
                 int index = context.consume(childWithSameName.getName(), childWithSameName.getKey());
                 if (index == snsIndex) return childWithSameName.with(index);
             }
@@ -102,12 +104,13 @@ public class MutableChildReferences extends AbstractChildReferences {
 
             ChildReference ref = childReferencesByKey.get(key);
             if (ref != null) {
-                // It's in this list but there are no changes ...
-                List<ChildReference> childrenWithSameName = this.childReferences.get(ref.getName());
-                assert childrenWithSameName != null;
-                assert childrenWithSameName.size() != 0;
+                // It's in this list but there may be changes ...
+                List<NodeKey> childrenKeysWithSameName = this.childReferenceKeysByName.get(ref.getName());
+                assert childrenKeysWithSameName != null;
+                assert childrenKeysWithSameName.size() != 0;
                 // Consume the child references until we find the reference ...
-                for (ChildReference child : childrenWithSameName) {
+                for (NodeKey childKey : childrenKeysWithSameName) {
+                    ChildReference child = this.childReferencesByKey.get(childKey);
                     int index = context.consume(child.getName(), child.getKey());
                     if (key.equals(child.getKey())) return child.with(index);
                 }
@@ -139,8 +142,7 @@ public class MutableChildReferences extends AbstractChildReferences {
         Lock lock = this.lock.readLock();
         try {
             lock.lock();
-            // TODO: should this be a copy?
-            return childReferences.values().iterator();
+            return childReferencesByKey.values().iterator();
         } finally {
             lock.unlock();
         }
@@ -151,8 +153,28 @@ public class MutableChildReferences extends AbstractChildReferences {
         Lock lock = this.lock.readLock();
         try {
             lock.lock();
-            // TODO: should this be a copy?
-            return childReferences.get(name).iterator();
+
+            final List<NodeKey> nodeKeys = childReferenceKeysByName.get(name);
+            if (nodeKeys == null || nodeKeys.isEmpty()) {
+                return Collections.emptyIterator();
+            }
+            final Iterator<NodeKey> nodeKeysIterator = nodeKeys.iterator();
+            return new Iterator<ChildReference>() {
+                @Override
+                public boolean hasNext() {
+                    return nodeKeysIterator.hasNext();
+                }
+
+                @Override
+                public ChildReference next() {
+                    return childReferencesByKey.get(nodeKeysIterator.next());
+                }
+
+                @Override
+                public void remove() {
+                    throw new UnsupportedOperationException();
+                }
+            };
         } finally {
             lock.unlock();
         }
@@ -163,7 +185,7 @@ public class MutableChildReferences extends AbstractChildReferences {
         Lock lock = this.lock.readLock();
         try {
             lock.lock();
-            return new HashSet<NodeKey>(childReferencesByKey.keySet()).iterator();
+            return childReferencesByKey.keySet().iterator();
         } finally {
             lock.unlock();
         }
@@ -175,7 +197,7 @@ public class MutableChildReferences extends AbstractChildReferences {
         Lock lock = this.lock.writeLock();
         try {
             lock.lock();
-            ChildReference old = this.childReferencesByKey.put(reference.getKey(), reference);
+            ChildReference old = this.childReferencesByKey.put(key, reference);
             if (old != null && old.getName().equals(name)) {
                 // We already have this key/name pair, so we don't need to add it again ...
                 return;
@@ -183,17 +205,27 @@ public class MutableChildReferences extends AbstractChildReferences {
             // We've not seen this node key yet, so it is okay. In fact, we should not see any
             // node key more than once, since that is clearly an unexpected condition (as a child
             // may not appear more than once in its parent's list of child nodes). See MODE-2120.
-            this.childReferences.put(reference.getName(), reference);
+            List<NodeKey> nodeKeysWithSameName = this.childReferenceKeysByName.get(name);
+            if (nodeKeysWithSameName == null) {
+                nodeKeysWithSameName = new ArrayList<>();
+                this.childReferenceKeysByName.put(name, nodeKeysWithSameName);
+            }
+            nodeKeysWithSameName.add(key);
         } finally {
             lock.unlock();
         }
     }
 
     public void append( Iterable<ChildReference> references ) {
+        Iterator<ChildReference> childReferenceIterator = references.iterator();
+        if (!childReferenceIterator.hasNext()) {
+            return;
+        }
         Lock lock = this.lock.writeLock();
         try {
             lock.lock();
-            for (ChildReference reference : references) {
+            while (childReferenceIterator.hasNext()) {
+                ChildReference reference = childReferenceIterator.next();
                 reference = reference.with(1);
                 ChildReference old = this.childReferencesByKey.put(reference.getKey(), reference);
                 if (old != null && old.getName().equals(reference.getName())) {
@@ -203,7 +235,13 @@ public class MutableChildReferences extends AbstractChildReferences {
                 // We've not seen this node key yet, so it is okay. In fact, we should not see any
                 // node key more than once, since that is clearly an unexpected condition (as a child
                 // may not appear more than once in its parent's list of child nodes). See MODE-2120.
-                this.childReferences.put(reference.getName(), reference);
+                Name name = reference.getName();
+                List<NodeKey> nodeKeysWithSameName = this.childReferenceKeysByName.get(name);
+                if (nodeKeysWithSameName == null) {
+                    nodeKeysWithSameName = new ArrayList<>();
+                    this.childReferenceKeysByName.put(name, nodeKeysWithSameName);
+                }
+                nodeKeysWithSameName.add(reference.getKey());
             }
         } finally {
             lock.unlock();
@@ -216,7 +254,9 @@ public class MutableChildReferences extends AbstractChildReferences {
             lock.lock();
             ChildReference existing = this.childReferencesByKey.remove(key);
             if (existing != null) {
-                this.childReferences.remove(existing.getName(), existing);
+                List<NodeKey> nodeKeys = this.childReferenceKeysByName.get(existing.getName());
+                assert nodeKeys != null;
+                nodeKeys.remove(key);
             }
             return existing;
         } finally {
@@ -230,7 +270,7 @@ public class MutableChildReferences extends AbstractChildReferences {
         Lock lock = this.lock.readLock();
         try {
             lock.lock();
-            Iterator<ChildReference> iter = childReferences.values().iterator();
+            Iterator<ChildReference> iter = this.childReferencesByKey.values().iterator();
             if (iter.hasNext()) {
                 sb.append(iter.next());
                 while (iter.hasNext()) {
