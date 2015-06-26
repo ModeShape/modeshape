@@ -199,6 +199,12 @@ public interface ChildReferences extends Iterable<ChildReference> {
     Iterator<ChildReference> iterator( Context context,
                                        Collection<?> namePatterns,
                                        NamespaceRegistry registry );
+    /**
+     * Determine if the child references instance should support SNS or not.
+     * 
+     * @return {@code true} if the child reference instance supports SNS
+     */
+    boolean allowsSNS();
 
     /**
      * Get the keys for all of the children. The resulting iterator is lazy where possible, but it may be an expensive call if
@@ -354,7 +360,7 @@ public interface ChildReferences extends Iterable<ChildReference> {
      * with the same names, since it always returns '1' for the SNS index.
      */
     public static final class NoContext implements Context {
-        protected static final Context INSTANCE = new NoContext();
+        public static final Context INSTANCE = new NoContext();
 
         private NoContext() {
         }

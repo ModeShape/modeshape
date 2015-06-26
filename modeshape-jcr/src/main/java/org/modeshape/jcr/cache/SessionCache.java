@@ -18,6 +18,7 @@ package org.modeshape.jcr.cache;
 import java.util.Set;
 import org.modeshape.jcr.ExecutionContext;
 import org.modeshape.jcr.api.value.DateTime;
+import org.modeshape.jcr.cache.document.WorkspaceCache;
 
 /**
  * 
@@ -46,7 +47,7 @@ public interface SessionCache extends NodeCache {
 
     /**
      * The definition of a callback that can be implemented and passed to {@link SessionCache#save(SessionCache, PreSave)} and
-     * {@link SessionCache#save(Set, SessionCache, PreSave)}, allowing the caller to recieve a hook where they can interrogate
+     * {@link SessionCache#save(Set, SessionCache, PreSave)}, allowing the caller to receive a hook where they can interrogate
      * each of the changed nodes and perform additional logic prior to the actual persisting of the changes. Note that
      * implementations are free to make additional modifications to the supplied nodes, and even create additional nodes or change
      * persistent but unchanged nodes, as long as these operations are done within the same calling thread.
@@ -188,7 +189,7 @@ public interface SessionCache extends NodeCache {
      * 
      * @return the workspace cache; never null
      */
-    public NodeCache getWorkspace();
+    public WorkspaceCache getWorkspace();
 
     /**
      * Get a mutable form of the node with the supplied key. If this session already has a mutable node in its cache, that

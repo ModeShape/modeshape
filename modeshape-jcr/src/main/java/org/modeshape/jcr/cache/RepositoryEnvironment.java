@@ -15,13 +15,14 @@
  */
 package org.modeshape.jcr.cache;
 
+import org.modeshape.jcr.NodeTypes;
 import org.modeshape.jcr.cache.document.TransactionalWorkspaceCaches;
 import org.modeshape.jcr.txn.Transactions;
 
 /**
  * Interface which exposes global repository subsystems/configuration to running sessions.
  */
-public interface SessionEnvironment {
+public interface RepositoryEnvironment {
 
     /**
      * Get the interface for working with transactions.
@@ -43,4 +44,12 @@ public interface SessionEnvironment {
      * @return either a {@link String} or {@code null} if no journal is configured.
      */
     String journalId();
+
+    /**
+     * Returns the {@link NodeTypes} instance for this repository.
+     *
+     * @return a {@link NodeTypes} instance or {@code null} if no such information is available yet (e.g. the node types have not
+     * been initialized yet).
+     */
+    NodeTypes nodeTypes();
 }

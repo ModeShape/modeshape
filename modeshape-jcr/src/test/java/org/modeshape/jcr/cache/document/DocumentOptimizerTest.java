@@ -31,8 +31,8 @@ import org.modeshape.jcr.ExecutionContext;
 import org.modeshape.jcr.cache.ChildReference;
 import org.modeshape.jcr.cache.MutableCachedNode;
 import org.modeshape.jcr.cache.NodeKey;
+import org.modeshape.jcr.cache.RepositoryEnvironment;
 import org.modeshape.jcr.cache.SessionCache;
-import org.modeshape.jcr.cache.SessionEnvironment;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.Path.Segment;
 
@@ -50,8 +50,8 @@ public class DocumentOptimizerTest extends AbstractSessionCacheTest {
     @Override
     protected SessionCache createSessionCache( ExecutionContext context,
                                                WorkspaceCache cache,
-                                               SessionEnvironment sessionEnv ) {
-        return new WritableSessionCache(context, workspaceCache, sessionEnv);
+                                               RepositoryEnvironment repositoryEnvironment ) {
+        return new WritableSessionCache(context, workspaceCache, repositoryEnvironment);
     }
 
     @Test

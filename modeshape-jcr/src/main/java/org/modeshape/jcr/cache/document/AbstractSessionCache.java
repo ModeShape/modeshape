@@ -32,10 +32,9 @@ import org.modeshape.jcr.JcrI18n;
 import org.modeshape.jcr.api.value.DateTime;
 import org.modeshape.jcr.cache.CachedNode;
 import org.modeshape.jcr.cache.ChildReference;
-import org.modeshape.jcr.cache.NodeCache;
 import org.modeshape.jcr.cache.NodeKey;
+import org.modeshape.jcr.cache.RepositoryEnvironment;
 import org.modeshape.jcr.cache.SessionCache;
-import org.modeshape.jcr.cache.SessionEnvironment;
 import org.modeshape.jcr.txn.Transactions;
 import org.modeshape.jcr.value.NameFactory;
 import org.modeshape.jcr.value.Path;
@@ -73,14 +72,14 @@ public abstract class AbstractSessionCache implements SessionCache, DocumentCach
     private final NameFactory nameFactory;
     private final PathFactory pathFactory;
     private final Path rootPath;
-    private final SessionEnvironment sessionContext;
+    private final RepositoryEnvironment repositoryEnvironment;
 
     private ExecutionContext context;
     private AtomicReference<Transactions.TransactionFunction> completeTransactionFunction = new AtomicReference<>();
 
     protected AbstractSessionCache( ExecutionContext context,
                                     WorkspaceCache sharedWorkspaceCache,
-                                    SessionEnvironment sessionContext ) {
+                                    RepositoryEnvironment repositoryEnvironment ) {
         this.context = context;
         this.sharedWorkspaceCache = sharedWorkspaceCache;
         this.workspaceCache.set(sharedWorkspaceCache);
@@ -88,8 +87,8 @@ public abstract class AbstractSessionCache implements SessionCache, DocumentCach
         this.nameFactory = factories.getNameFactory();
         this.pathFactory = factories.getPathFactory();
         this.rootPath = this.pathFactory.createRootPath();
-        this.sessionContext = sessionContext;
-        assert this.sessionContext != null;
+        this.repositoryEnvironment = repositoryEnvironment;
+        assert this.repositoryEnvironment != null;
         checkForTransaction();
     }
 
@@ -104,11 +103,11 @@ public abstract class AbstractSessionCache implements SessionCache, DocumentCach
     @Override
     public void checkForTransaction() {
         try {
-            Transactions transactions = sessionContext.getTransactions();
+            Transactions transactions = repositoryEnvironment.getTransactions();
             Transaction txn = transactions.getTransactionManager().getTransaction();
             if (txn != null && txn.getStatus() == Status.STATUS_ACTIVE) {
                 // There is an active transaction, so we need a transaction-specific workspace cache ...
-                workspaceCache.set(sessionContext.getTransactionalWorkspaceCacheFactory()
+                workspaceCache.set(repositoryEnvironment.getTransactionalWorkspaceCacheFactory()
                                                  .getTransactionalWorkspaceCache(sharedWorkspaceCache));
                 // only register the function if there's an active ModeShape transaction because we need to run the
                 // function *only after* ISPN has committed its transaction & updated the cache
@@ -187,8 +186,8 @@ public abstract class AbstractSessionCache implements SessionCache, DocumentCach
         return rootPath;
     }
 
-    SessionEnvironment sessionContext() {
-        return sessionContext;
+    RepositoryEnvironment sessionContext() {
+        return repositoryEnvironment;
     }
 
     @Override
@@ -231,7 +230,7 @@ public abstract class AbstractSessionCache implements SessionCache, DocumentCach
     }
 
     @Override
-    public NodeCache getWorkspace() {
+    public WorkspaceCache getWorkspace() {
         return workspaceCache();
     }
 

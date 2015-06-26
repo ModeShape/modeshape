@@ -117,7 +117,7 @@ public class RepositoryCache {
     protected final Set<String> workspaceNames;
     protected final String systemWorkspaceName;
     protected final Logger logger;
-    private final SessionEnvironment sessionContext;
+    private final RepositoryEnvironment repositoryEnvironment;
     private final String processKey;
     private final EmbeddedCacheManager workspaceCacheManager;
     protected final Upgrades upgrades;
@@ -133,7 +133,7 @@ public class RepositoryCache {
                             ClusteringService clusteringService,
                             RepositoryConfiguration configuration,
                             ContentInitializer initializer,
-                            SessionEnvironment sessionContext,
+                            RepositoryEnvironment repositoryEnvironment,
                             ChangeBus changeBus,
                             CacheContainer workspaceCacheContainer,
                             Upgrades upgradeFunctions ) {
@@ -143,7 +143,7 @@ public class RepositoryCache {
         this.clusteringService = clusteringService;
         this.minimumStringLengthForBinaryStorage.set(configuration.getBinaryStorage().getMinimumStringSize());
         this.translator = new DocumentTranslator(this.context, this.documentStore, this.minimumStringLengthForBinaryStorage.get());
-        this.sessionContext = sessionContext;
+        this.repositoryEnvironment = repositoryEnvironment;
         this.processKey = context.getProcessId();
         if (! (workspaceCacheContainer instanceof EmbeddedCacheManager)) {
             throw new ConfigurationException(JcrI18n.workspaceCacheShouldBeEmbedded.text());
@@ -387,8 +387,8 @@ public class RepositoryCache {
         return changeBus;
     }
 
-    protected final SessionEnvironment sessionContext() {
-        return sessionContext;
+    protected final RepositoryEnvironment repositoryEnvironment() {
+        return repositoryEnvironment;
     }
 
     protected final String processKey() {
@@ -416,7 +416,7 @@ public class RepositoryCache {
             Map<String, String> userData = context.getData();
             DateTime timestamp = context.getValueFactories().getDateFactory().create();
             RecordingChanges changes = new RecordingChanges(context.getId(), context.getProcessId(), this.getKey(), null,
-                                                            sessionContext.journalId());
+                                                            repositoryEnvironment.journalId());
             changes.repositoryMetadataChanged();
             changes.freeze(userId, userData, timestamp);
             this.changeBus.notify(changes);
@@ -494,7 +494,7 @@ public class RepositoryCache {
 
     private <V> V runInTransaction( Callable<V> operation ) {
         // Start a transaction ...
-        Transactions txns = sessionContext.getTransactions();
+        Transactions txns = repositoryEnvironment.getTransactions();
         try {
             Transaction txn = txns.begin();
             try {
@@ -843,13 +843,14 @@ public class RepositoryCache {
 
                         WorkspaceCache workspaceCache = new WorkspaceCache(context, getKey(), name, systemWorkspaceCache,
                                                                            documentStore, translator, rootKey, nodeCache,
-                                                                           changeBus);
+                                                                           changeBus, repositoryEnvironment());
 
                         if (documentStore.localStore().putIfAbsent(rootKey.toString(), rootDoc) == null) {
                             // we are the first node to perform the initialization, so we need to link the system node
                             if (!RepositoryCache.this.systemWorkspaceName.equals(name)) {
                                 logger.debug("Creating '{0}' workspace in repository '{1}'", name, getName());
-                                SessionCache workspaceSession = new WritableSessionCache(context, workspaceCache, sessionContext);
+                                SessionCache workspaceSession = new WritableSessionCache(context, workspaceCache,
+                                                                                         repositoryEnvironment);
                                 MutableCachedNode workspaceRootNode = workspaceSession.mutable(workspaceSession.getRootKey());
                                 workspaceRootNode.linkChild(workspaceSession, RepositoryCache.this.systemKey, JcrLexicon.SYSTEM);
 
@@ -914,7 +915,7 @@ public class RepositoryCache {
         if (removed != null) {
             try {
                 removed.signalDeleted();
-                sessionContext.getTransactionalWorkspaceCacheFactory().remove(name);
+                repositoryEnvironment.getTransactionalWorkspaceCacheFactory().remove(name);
             } finally {
                 workspaceCacheManager.removeCache(cacheNameForWorkspace(name));
             }
@@ -972,7 +973,7 @@ public class RepositoryCache {
             Map<String, String> userData = context.getData();
             DateTime timestamp = context.getValueFactories().getDateFactory().create();
             RecordingChanges changes = new RecordingChanges(context.getId(), context.getProcessId(), this.getKey(), null,
-                                                            sessionContext.journalId());
+                                                            repositoryEnvironment.journalId());
             changes.workspaceAdded(name);
             changes.freeze(userId, userData, timestamp);
             this.changeBus.notify(changes);
@@ -1029,7 +1030,7 @@ public class RepositoryCache {
             Map<String, String> userData = context.getData();
             DateTime timestamp = context.getValueFactories().getDateFactory().create();
             RecordingChanges changes = new RecordingChanges(context.getId(), context.getProcessId(), this.getKey(), null,
-                                                            sessionContext.journalId());
+                                                            repositoryEnvironment.journalId());
             changes.workspaceRemoved(name);
             changes.freeze(userId, userData, timestamp);
             this.changeBus.notify(changes);
@@ -1092,7 +1093,7 @@ public class RepositoryCache {
         final WorkspaceCache systemWorkspaceCache = workspaceCachesByName.get(systemWorkspaceName);
         
         WorkspaceCache workspaceCache = new WorkspaceCache(context, getKey(), 
-                wsName, systemWorkspaceCache, documentStore, translator, rootKey, nodeCache, changeBus);
+                wsName, systemWorkspaceCache, documentStore, translator, rootKey, nodeCache, changeBus, repositoryEnvironment());
         workspaceCachesByName.put(wsName, workspaceCache);
 
         return workspace(wsName);
@@ -1112,9 +1113,9 @@ public class RepositoryCache {
             boolean readOnly) {
         WorkspaceCache workspaceCache = workspace(workspaceName);
         if (readOnly || workspaceCache.isExternal()) {
-            return new ReadOnlySessionCache(context, workspaceCache, sessionContext);
+            return new ReadOnlySessionCache(context, workspaceCache, repositoryEnvironment);
         }
-        return new WritableSessionCache(context, workspaceCache, sessionContext);
+        return new WritableSessionCache(context, workspaceCache, repositoryEnvironment);
     }
 
     /**

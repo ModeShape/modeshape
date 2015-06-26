@@ -103,8 +103,8 @@ import org.modeshape.jcr.bus.RepositoryChangeBus;
 import org.modeshape.jcr.cache.NodeCache;
 import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.cache.RepositoryCache;
+import org.modeshape.jcr.cache.RepositoryEnvironment;
 import org.modeshape.jcr.cache.SessionCache;
-import org.modeshape.jcr.cache.SessionEnvironment;
 import org.modeshape.jcr.cache.WorkspaceNotFoundException;
 import org.modeshape.jcr.cache.document.DocumentStore;
 import org.modeshape.jcr.cache.document.LocalDocumentStore;
@@ -1131,11 +1131,10 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                     }
 
                     // Set up the repository cache ...
-                    String journalId = this.journal != null ? this.journal.journalId() : null;
-                    final SessionEnvironment sessionEnv = new RepositorySessionEnvironment(this.transactions, journalId);
+                    final RepositoryEnvironment repositoryEnvironment = new JcrRepositoryEnvironment(this.transactions, journalId());
                     CacheContainer workspaceCacheContainer = this.config.getWorkspaceContentCacheContainer();
                     this.cache = new RepositoryCache(context, documentStore, clusteringService, config, systemContentInitializer,
-                                                     sessionEnv, changeBus, workspaceCacheContainer, Upgrades.STANDARD_UPGRADES);
+                                                     repositoryEnvironment, changeBus, workspaceCacheContainer, Upgrades.STANDARD_UPGRADES);
 
                     // Set up the node type manager ...
                     this.nodeTypes = new RepositoryNodeTypeManager(this, true, true);
@@ -1891,17 +1890,13 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         }
     }
 
-    protected static class RepositorySessionEnvironment implements SessionEnvironment {
-        private final Transactions transactions;
+    protected class JcrRepositoryEnvironment implements RepositoryEnvironment {
         private final TransactionalWorkspaceCaches transactionalWorkspaceCacheFactory;
+        private final Transactions transactions;
         private final String journalId;
 
-        protected RepositorySessionEnvironment( Transactions transactions ) {
-            this(transactions, null);
-        }
-
-        protected RepositorySessionEnvironment( Transactions transactions,
-                                                String journalId ) {
+        protected JcrRepositoryEnvironment( Transactions transactions,
+                                            String journalId ) {
             this.transactions = transactions;
             this.transactionalWorkspaceCacheFactory = new TransactionalWorkspaceCaches(transactions);
             this.journalId = journalId;
@@ -1920,6 +1915,15 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         @Override
         public String journalId() {
             return journalId;
+        }
+
+        @Override
+        public NodeTypes nodeTypes() {
+            if (runningState.get() == null) {
+                // not initialized yet
+                return null;
+            }
+            return runningState().nodeTypeManager().getNodeTypes();
         }
     }
 

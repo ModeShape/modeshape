@@ -18,6 +18,7 @@ package org.modeshape.jcr.cache;
 import java.util.Iterator;
 import java.util.Set;
 import org.modeshape.jcr.ExecutionContext;
+import org.modeshape.jcr.cache.document.WorkspaceCache;
 
 /**
  * A {@link SessionCache} implementation that wraps another and is suitable to extend and overwrite only those methods that are
@@ -121,7 +122,7 @@ public class SessionCacheWrapper implements SessionCache {
     }
 
     @Override
-    public NodeCache getWorkspace() {
+    public WorkspaceCache getWorkspace() {
         return delegate.getWorkspace();
     }
 

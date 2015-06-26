@@ -2343,20 +2343,19 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
             // We actually can avoid this altogether if certain conditions are met ...
             final Name primaryType = modifiedNode.getPrimaryType(cache);
             final Set<Name> mixinTypes = modifiedNode.getMixinTypes(cache);
-            if (!nodeTypeCapabilities.disallowsSameNameSiblings(primaryType, mixinTypes)) return;
+            if (nodeTypeCapabilities.allowsNameSiblings(primaryType, mixinTypes)) return;
 
             MutableCachedNode.NodeChanges changes = modifiedNode.getNodeChanges();
-            Map<NodeKey, Name> appendedChildren = changes.appendedChildren();
-            Map<NodeKey, Name> renamedChildren = changes.renamedChildren();
-            if (appendedChildren.isEmpty() && renamedChildren.isEmpty()) {
-                // no appended or renamed children so nothing more to compute
+            Map<NodeKey, Name> appendedOrRenamedChildrenByKey = new HashMap<>();
+            appendedOrRenamedChildrenByKey.putAll(changes.appendedChildren());
+            appendedOrRenamedChildrenByKey.putAll(changes.renamedChildren());
+            if (appendedOrRenamedChildrenByKey.isEmpty()) {
                 return;
             }
-            Set<NodeKey> removedChildren = changes.removedChildren();
+            
             Map<Name, List<NodeKey>> appendedOrRenamedChildrenByName = new HashMap<>();
-
-            if (!appendedChildren.isEmpty()) {
-                for (Map.Entry<NodeKey, Name> appended : appendedChildren.entrySet()) {
+            if (!appendedOrRenamedChildrenByKey.isEmpty()) {
+                for (Map.Entry<NodeKey, Name> appended : appendedOrRenamedChildrenByKey.entrySet()) {
                     Name name = appended.getValue();
                     NodeKey key = appended.getKey();
                     List<NodeKey> childKeys = appendedOrRenamedChildrenByName.get(name);
@@ -2368,20 +2367,9 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
                 }
             }
             
-            if (!renamedChildren.isEmpty()) {
-                for (Map.Entry<NodeKey, Name> renamed : renamedChildren.entrySet()) {
-                    Name name = renamed.getValue();
-                    NodeKey key = renamed.getKey();
-                    List<NodeKey> childKeys = appendedOrRenamedChildrenByName.get(name);
-                    if (childKeys == null) {
-                        childKeys = new ArrayList<>();
-                        appendedOrRenamedChildrenByName.put(name, childKeys);
-                    }
-                    childKeys.add(key);
-                }
-            }
-
             assert !appendedOrRenamedChildrenByName.isEmpty();
+
+            Set<NodeKey> removedChildren = changes.removedChildren();
 
             // look at the information that was already persisted to determine whether some other thread has already
             // created a child with the same name
@@ -2420,7 +2408,7 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
                 // We were NOT able to find a definition that allows SNS for this name, but we need to make sure that
                 // the node that already exists (persisted) isn't the one that's being changed
                 NodeKey persistedChildKey = persistedChildReferences.getChild(childName).getKey();
-                if (appendedChildren.containsKey(persistedChildKey) || renamedChildren.containsKey(persistedChildKey)) {
+                if (appendedOrRenamedChildrenByKey.containsKey(persistedChildKey)) {
                     // The persisted node is being changed, so it's okay ...
                     continue;
                 }

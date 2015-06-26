@@ -46,10 +46,10 @@ import org.modeshape.jcr.JcrLexicon;
 import org.modeshape.jcr.JcrNtLexicon;
 import org.modeshape.jcr.JcrSession;
 import org.modeshape.jcr.ModeShapeLexicon;
+import org.modeshape.jcr.NodeTypes;
 import org.modeshape.jcr.cache.CachedNode;
 import org.modeshape.jcr.cache.ChildReference;
 import org.modeshape.jcr.cache.ChildReferences;
-import org.modeshape.jcr.cache.ChildReferences.BasicContext;
 import org.modeshape.jcr.cache.ChildReferences.ChildInsertions;
 import org.modeshape.jcr.cache.MutableCachedNode;
 import org.modeshape.jcr.cache.NodeCache;
@@ -59,6 +59,7 @@ import org.modeshape.jcr.cache.NodeNotFoundInParentException;
 import org.modeshape.jcr.cache.PathCache;
 import org.modeshape.jcr.cache.ReferrerCounts;
 import org.modeshape.jcr.cache.ReferrerCounts.MutableReferrerCounts;
+import org.modeshape.jcr.cache.RepositoryEnvironment;
 import org.modeshape.jcr.cache.SessionCache;
 import org.modeshape.jcr.cache.WrappedException;
 import org.modeshape.jcr.value.BinaryValue;
@@ -420,7 +421,7 @@ public class SessionNode implements MutableCachedNode {
     protected final Segment getSegment( NodeCache cache,
                                         CachedNode parent ) {
         if (parent != null) {
-            ChildReference ref = parent.getChildReferences(cache).getChild(key, new BasicContext());
+            ChildReference ref = parent.getChildReferences(cache).getChild(key);
             if (ref == null) {
                 // This node doesn't exist in the parent
                 throw new NodeNotFoundInParentException(key, parent.getKey());
@@ -1070,18 +1071,30 @@ public class SessionNode implements MutableCachedNode {
 
     @Override
     public ChildReferences getChildReferences( NodeCache cache ) {
+        boolean allowsSNS = allowsSNS(cache);
         if (isNew) {
             // Then this node was created in this session. Note that it is possible that there still may be a persisted node,
             // meaning that the persisted node was likely removed in this session and (without saving) a new node was created
             // using the same key as the persisted node. Therefore, we do NOT want to use the persisted node in this case ...
-            return new SessionChildReferences(null, appended.get(), changedChildren);
+            return new SessionChildReferences(null, appended.get(), changedChildren, allowsSNS);
         }
         // Find the persisted information, since the info we have is relative to it ...
         CachedNode persistedNode = nodeInWorkspace(session(cache));
         ChildReferences persisted = persistedNode != null ? persistedNode.getChildReferences(cache) : null;
 
         // And create a transient implementation ...
-        return new SessionChildReferences(persisted, appended.get(), changedChildren);
+        return new SessionChildReferences(persisted, appended.get(), changedChildren, allowsSNS);
+    }
+
+    private boolean allowsSNS( NodeCache cache ) {
+        Name primaryType = getPrimaryType(cache);
+        Set<Name> mixinTypes = getMixinTypes(cache);
+        RepositoryEnvironment repositoryEnvironment = workspace(cache).repositoryEnvironment();
+        if ( repositoryEnvironment == null) {
+            return true;
+        }
+        NodeTypes nodeTypes = repositoryEnvironment.nodeTypes();
+        return nodeTypes == null || nodeTypes.allowsNameSiblings(primaryType, mixinTypes);
     }
 
     @Override

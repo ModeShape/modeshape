@@ -82,13 +82,13 @@ public class MutableChildReferences extends AbstractChildReferences {
                 return null;
             }
 
-            // We have at least one SNS in this list ...
-            for (NodeKey childKey : childrenKeysWithSameName) {
-                ChildReference childWithSameName = this.childReferencesByKey.get(childKey);
-                int index = context.consume(childWithSameName.getName(), childWithSameName.getKey());
-                if (index == snsIndex) return childWithSameName.with(index);
+            // there are no changes, so we can optimize this lookup
+            if (snsIndex > childrenKeysWithSameName.size()) {
+                return null;
+            } else {
+                NodeKey nodeKey = childrenKeysWithSameName.get(snsIndex - 1);
+                return this.childReferencesByKey.get(nodeKey).with(snsIndex);
             }
-            return null;
         } finally {
             lock.unlock();
         }
@@ -108,14 +108,10 @@ public class MutableChildReferences extends AbstractChildReferences {
                 List<NodeKey> childrenKeysWithSameName = this.childReferenceKeysByName.get(ref.getName());
                 assert childrenKeysWithSameName != null;
                 assert childrenKeysWithSameName.size() != 0;
-                // Consume the child references until we find the reference ...
-                for (NodeKey childKey : childrenKeysWithSameName) {
-                    ChildReference child = this.childReferencesByKey.get(childKey);
-                    int index = context.consume(child.getName(), child.getKey());
-                    if (key.equals(child.getKey())) return child.with(index);
-                }
+                int index = childrenKeysWithSameName.indexOf(key);
+                return ref.with(index + 1);
             }
-            return ref;
+            return null;
         } finally {
             lock.unlock();
         }
@@ -141,8 +137,9 @@ public class MutableChildReferences extends AbstractChildReferences {
     public Iterator<ChildReference> iterator() {
         Lock lock = this.lock.readLock();
         try {
-            lock.lock();
-            return childReferencesByKey.values().iterator();
+            lock.lock();   
+            // we need to copy to be thread safe
+            return new ArrayList<>(childReferencesByKey.values()).iterator();
         } finally {
             lock.unlock();
         }
@@ -153,28 +150,17 @@ public class MutableChildReferences extends AbstractChildReferences {
         Lock lock = this.lock.readLock();
         try {
             lock.lock();
-
             final List<NodeKey> nodeKeys = childReferenceKeysByName.get(name);
             if (nodeKeys == null || nodeKeys.isEmpty()) {
                 return Collections.emptyIterator();
             }
-            final Iterator<NodeKey> nodeKeysIterator = nodeKeys.iterator();
-            return new Iterator<ChildReference>() {
-                @Override
-                public boolean hasNext() {
-                    return nodeKeysIterator.hasNext();
+            List<ChildReference> childReferences = new ArrayList<>(nodeKeys.size());
+            for (ChildReference childReference : childReferencesByKey.values()) {
+                if (name.equals(childReference.getName())) {
+                    childReferences.add(childReference);
                 }
-
-                @Override
-                public ChildReference next() {
-                    return childReferencesByKey.get(nodeKeysIterator.next());
-                }
-
-                @Override
-                public void remove() {
-                    throw new UnsupportedOperationException();
-                }
-            };
+            }
+            return childReferences.iterator();
         } finally {
             lock.unlock();
         }
@@ -185,7 +171,8 @@ public class MutableChildReferences extends AbstractChildReferences {
         Lock lock = this.lock.readLock();
         try {
             lock.lock();
-            return childReferencesByKey.keySet().iterator();
+            //we need to copy to be thread safe
+            return new ArrayList<>(childReferencesByKey.keySet()).iterator();
         } finally {
             lock.unlock();
         }
@@ -282,5 +269,11 @@ public class MutableChildReferences extends AbstractChildReferences {
             lock.unlock();
         }
         return sb;
+    }
+
+    @Override
+    public boolean allowsSNS() {
+        // we don't really have any way of knowing SNS information here, so assume true to cover all cases
+        return true;
     }
 }

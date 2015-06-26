@@ -46,11 +46,13 @@ import org.modeshape.common.text.TextEncoder;
 import org.modeshape.common.util.StringUtil;
 import org.modeshape.jcr.ExecutionContext;
 import org.modeshape.jcr.JcrLexicon;
+import org.modeshape.jcr.NodeTypes;
 import org.modeshape.jcr.api.value.DateTime;
 import org.modeshape.jcr.cache.CachedNode.ReferenceType;
 import org.modeshape.jcr.cache.ChildReference;
 import org.modeshape.jcr.cache.ChildReferences;
 import org.modeshape.jcr.cache.NodeKey;
+import org.modeshape.jcr.cache.RepositoryEnvironment;
 import org.modeshape.jcr.cache.document.SessionNode.ChangedAdditionalParents;
 import org.modeshape.jcr.cache.document.SessionNode.ChangedChildren;
 import org.modeshape.jcr.cache.document.SessionNode.Insertions;
@@ -336,7 +338,8 @@ public class DocumentTranslator implements DocumentConstants {
     }
 
     public Name getPrimaryType( Document document ) {
-        return names.create(getProperty(document, JcrLexicon.PRIMARY_TYPE).getFirstValue());
+        Property primaryType = getProperty(document, JcrLexicon.PRIMARY_TYPE);
+        return primaryType != null ? names.create(primaryType.getFirstValue()) : null;
     }
 
     public String getPrimaryTypeName( Document document ) {
@@ -870,32 +873,46 @@ public class DocumentTranslator implements DocumentConstants {
         if (!hasChildren && !hasFederatedSegments) {
             return ImmutableChildReferences.EMPTY_CHILD_REFERENCES;
         }
-        ChildReferences internalChildRefs = hasChildren ? ImmutableChildReferences.create(this, document, CHILDREN) : ImmutableChildReferences.EMPTY_CHILD_REFERENCES;
+        
+        Name primaryType = getPrimaryType(document);
+        Set<Name> mixinTypes = getMixinTypes(document);
+        NodeTypes nodeTypes = getNodeTypes(cache);
+        boolean allowsSNS = nodeTypes == null || nodeTypes.allowsNameSiblings(primaryType, mixinTypes);
+        ChildReferences internalChildRefs = hasChildren ? ImmutableChildReferences.create(this, document, CHILDREN, allowsSNS) : ImmutableChildReferences.EMPTY_CHILD_REFERENCES;
         ChildReferences externalChildRefs = hasFederatedSegments ? ImmutableChildReferences.create(this, document,
-                                                                                                   FEDERATED_SEGMENTS) : ImmutableChildReferences.EMPTY_CHILD_REFERENCES;
+                                                                                                   FEDERATED_SEGMENTS, allowsSNS) : ImmutableChildReferences.EMPTY_CHILD_REFERENCES;
 
         // Now look at the 'childrenInfo' document for info about the next block of children ...
         ChildReferencesInfo info = getChildReferencesInfo(document);
         if (!hasChildren) {
-            return ImmutableChildReferences.create(externalChildRefs, info, cache);
+            return ImmutableChildReferences.create(externalChildRefs, info, cache, allowsSNS);
         } else if (!hasFederatedSegments) {
-            return ImmutableChildReferences.create(internalChildRefs, info, cache);
+            return ImmutableChildReferences.create(internalChildRefs, info, cache, allowsSNS);
         } else {
-            return ImmutableChildReferences.create(internalChildRefs, info, externalChildRefs, cache);
+            return ImmutableChildReferences.create(internalChildRefs, info, externalChildRefs, cache, allowsSNS);
         }
+    }
+
+    protected NodeTypes getNodeTypes( WorkspaceCache cache ) {
+        RepositoryEnvironment repositoryEnvironment = cache.repositoryEnvironment();
+        if (repositoryEnvironment == null) {
+            return null;
+        }
+        return repositoryEnvironment.nodeTypes();
     }
 
     /**
      * Reads the children of the given block and returns a {@link ChildReferences} instance.
      * 
      * @param block a {@code non-null} {@link Document} representing a block of children
+     * @param allowsSNS {@code true} if the child references instance should be SNS aware, {@code false} otherwise
      * @return a {@code non-null} child references instance
      */
-    public ChildReferences getChildReferencesFromBlock( Document block ) {
+    protected ChildReferences getChildReferencesFromBlock( Document block, boolean allowsSNS ) {
         if (!block.containsField(CHILDREN)) {
             return ImmutableChildReferences.EMPTY_CHILD_REFERENCES;
         }
-        return ImmutableChildReferences.create(this, block, CHILDREN);
+        return ImmutableChildReferences.create(this, block, CHILDREN, allowsSNS);
     }
 
     public ChildReferencesInfo getChildReferencesInfo( Document document ) {
