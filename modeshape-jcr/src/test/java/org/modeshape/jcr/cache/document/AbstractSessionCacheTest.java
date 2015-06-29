@@ -21,12 +21,13 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import javax.transaction.TransactionManager;
 import org.modeshape.jcr.ExecutionContext;
+import org.modeshape.jcr.NodeTypes;
 import org.modeshape.jcr.bus.RepositoryChangeBus;
 import org.modeshape.jcr.cache.CachedNode;
 import org.modeshape.jcr.cache.NodeCache;
 import org.modeshape.jcr.cache.NodeKey;
+import org.modeshape.jcr.cache.RepositoryEnvironment;
 import org.modeshape.jcr.cache.SessionCache;
-import org.modeshape.jcr.cache.SessionEnvironment;
 import org.modeshape.jcr.cache.change.PrintingChangeSetListener;
 import org.modeshape.jcr.txn.NoClientTransactions;
 import org.modeshape.jcr.txn.Transactions;
@@ -54,9 +55,9 @@ public abstract class AbstractSessionCacheTest extends AbstractNodeCacheTest {
         DocumentStore documentStore = new LocalDocumentStore(schematicDb);
         DocumentTranslator translator = new DocumentTranslator(context, documentStore, 100L);
         workspaceCache = new WorkspaceCache(context, "repo", "ws", null, documentStore, translator, ROOT_KEY_WS1, nodeCache,
-                                            changeBus);
+                                            changeBus, null);
         loadJsonDocuments(resource(resourceNameForWorkspaceContentDocument()));
-        SessionEnvironment sessionEnv = createSessionContext();
+        RepositoryEnvironment sessionEnv = createRepositoryEnvironment();
         session1 = createSessionCache(context, workspaceCache, sessionEnv);
         session2 = createSessionCache(context, workspaceCache, sessionEnv);
         return session1;
@@ -70,11 +71,11 @@ public abstract class AbstractSessionCacheTest extends AbstractNodeCacheTest {
 
     protected abstract SessionCache createSessionCache( ExecutionContext context,
                                                         WorkspaceCache cache,
-                                                        SessionEnvironment sessionEnv );
+                                                        RepositoryEnvironment sessionEnv );
 
-    protected SessionEnvironment createSessionContext() {
+    protected RepositoryEnvironment createRepositoryEnvironment() {
         final TransactionManager txnMgr = txnManager();
-        return new SessionEnvironment() {
+        return new RepositoryEnvironment() {
             private final Transactions transactions = new NoClientTransactions(txnMgr);
             private final TransactionalWorkspaceCaches transactionalWorkspaceCacheFactory = new TransactionalWorkspaceCaches(
                                                                                                                              transactions);
@@ -93,6 +94,11 @@ public abstract class AbstractSessionCacheTest extends AbstractNodeCacheTest {
             public String journalId() {
                 return null;
             }
+
+            @Override
+            public NodeTypes nodeTypes() {
+                return null;
+            }
         };
     }
 
@@ -101,8 +107,6 @@ public abstract class AbstractSessionCacheTest extends AbstractNodeCacheTest {
     }
 
     /**
-     * {@inheritDoc}
-     * 
      * @see org.modeshape.jcr.cache.document.AbstractNodeCacheTest#print(boolean)
      */
     @Override

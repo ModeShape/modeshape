@@ -286,7 +286,7 @@ public class NodeTypes {
                         // fullDefined = false;
                     }
                     if (childDefn.allowsSameNameSiblings()) {
-                        if (childDefn.isResidual() && !childDefn.hasRequiredPrimaryTypes()) {
+                        if (childDefn.isResidual()) {
                             allowsResidualWithSameNameSiblings = true;
                         }
                     } else {
@@ -575,11 +575,22 @@ public class NodeTypes {
         return false;
     }
 
-    public boolean disallowsSameNameSiblings( Name primaryType,
-                                              Set<Name> mixinTypes ) {
-        if (!nodeTypeNamesThatAllowSameNameSiblings.contains(primaryType)) return true;
-        for (Name mixinType : mixinTypes) {
-            if (!nodeTypeNamesThatAllowSameNameSiblings.contains(mixinType)) return true;
+    /**
+     * Determine if either the primary type or any of the mixin types allows SNS.
+     *
+     * @param primaryType the primary type name; may not be null
+     * @param mixinTypes the mixin type names; may be null or empty
+     * @return {@code true} if either the primary type or any of the mixin types allows SNS. If neither allow SNS,
+     * this will return {@code false}
+     */
+    public boolean allowsNameSiblings( Name primaryType,
+                                       Set<Name> mixinTypes ) {
+        if (nodeTypeNamesThatAllowSameNameSiblings.contains(primaryType)) return true;
+        if (mixinTypes != null && !mixinTypes.isEmpty()) {
+            for (Name mixinType : mixinTypes) {
+                if (nodeTypeNamesThatAllowSameNameSiblings.contains(mixinType))
+                    return true;
+            }
         }
         return false;
     }

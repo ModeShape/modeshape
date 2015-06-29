@@ -37,7 +37,7 @@ public class WorkspaceCacheTest extends AbstractNodeCacheTest {
         DocumentStore documentStore = new LocalDocumentStore(schematicDb);
         DocumentTranslator translator = new DocumentTranslator(context, documentStore, 100L);
         WorkspaceCache workspaceCache = new WorkspaceCache(context, "repo", "ws", null, documentStore, translator, ROOT_KEY_WS1,
-                                                           nodeCache, changeBus);
+                                                           nodeCache, changeBus,  null);
         loadJsonDocuments(resource(resourceNameForWorkspaceContentDocument()));
         return workspaceCache;
     }

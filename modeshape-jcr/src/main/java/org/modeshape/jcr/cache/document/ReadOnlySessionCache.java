@@ -22,8 +22,8 @@ import org.modeshape.common.logging.Logger;
 import org.modeshape.jcr.ExecutionContext;
 import org.modeshape.jcr.cache.CachedNode;
 import org.modeshape.jcr.cache.NodeKey;
+import org.modeshape.jcr.cache.RepositoryEnvironment;
 import org.modeshape.jcr.cache.SessionCache;
-import org.modeshape.jcr.cache.SessionEnvironment;
 
 /**
  * A read-only {@link SessionCache} implementation.
@@ -35,8 +35,8 @@ public class ReadOnlySessionCache extends AbstractSessionCache {
 
     public ReadOnlySessionCache( ExecutionContext context,
                                  WorkspaceCache workspaceCache,
-                                 SessionEnvironment sessionContext ) {
-        super(context, workspaceCache, sessionContext);
+                                 RepositoryEnvironment repositoryEnvironment ) {
+        super(context, workspaceCache, repositoryEnvironment);
     }
 
     @Override

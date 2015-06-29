@@ -41,13 +41,16 @@ public class SessionChildReferences extends AbstractChildReferences {
     private final ChildReferences persisted;
     private final MutableChildReferences appended;
     private final SessionNode.ChangedChildren changedChildren;
+    private final boolean allowsSNS;
 
     public SessionChildReferences( ChildReferences persisted,
                                    MutableChildReferences appended,
-                                   SessionNode.ChangedChildren changedChildren ) {
+                                   SessionNode.ChangedChildren changedChildren,
+                                   boolean allowsSNS) {
         this.persisted = persisted != null ? persisted : ImmutableChildReferences.EMPTY_CHILD_REFERENCES;
         this.appended = appended;
         this.changedChildren = changedChildren;
+        this.allowsSNS = allowsSNS;
     }
 
     @Override
@@ -94,7 +97,10 @@ public class SessionChildReferences extends AbstractChildReferences {
     public ChildReference getChild( Name name,
                                     int snsIndex,
                                     Context context ) {
-        if (changedChildren != null) context = new WithChanges(context, changedChildren);
+        if (!allowsSNS && snsIndex > 1) {
+            return null;
+        }
+        if (changedChildren != null && !changedChildren.isEmpty()) context = new WithChanges(context, changedChildren);
         // First look in the delegate references ...
         ChildReference ref = persisted.getChild(name, snsIndex, context);
         if (ref == null) {
@@ -119,18 +125,20 @@ public class SessionChildReferences extends AbstractChildReferences {
 
     @Override
     public boolean hasChild( NodeKey key ) {
-        return getChild(key, new BasicContext()) != null;
+        return persisted.hasChild(key) ||
+               (appended != null && appended.hasChild(key)) ||
+               (changedChildren != null && changedChildren.inserted(key) != null);
     }
 
     @Override
     public ChildReference getChild( NodeKey key ) {
-        return getChild(key, new BasicContext());
+        return getChild(key, defaultContext());
     }
 
     @Override
     public ChildReference getChild( NodeKey key,
                                     Context context ) {
-        if (changedChildren != null) context = new WithChanges(context, changedChildren);
+        if (changedChildren != null && !changedChildren.isEmpty()) context = new WithChanges(context, changedChildren);
         // First look in the delegate references ...
         // Note that we don't know the name of the child yet, so we'll have to come back
         // to the persisted node after we know the name ...
@@ -148,7 +156,7 @@ public class SessionChildReferences extends AbstractChildReferences {
                         // when looking in the persisted node above. So adjust the SNS index ...
 
                         int numSnsInRemoved = 0;
-                        if (changedChildren != null) {
+                        if (changedChildren != null && !changedChildren.isEmpty()) {
                             Set<NodeKey> removals = changedChildren.getRemovals();
                             //we need to take into account that the same node might be removed (in case of an reorder to the end)
                             if (removals.contains(key)) {
@@ -177,7 +185,7 @@ public class SessionChildReferences extends AbstractChildReferences {
     @Override
     public Iterator<ChildReference> iterator( Name name,
                                               Context context ) {
-        if (changedChildren != null) context = new WithChanges(context, changedChildren);
+        if (changedChildren != null && !changedChildren.isEmpty()) context = new WithChanges(context, changedChildren);
         return createIterator(name, context);
     }
 
@@ -196,7 +204,7 @@ public class SessionChildReferences extends AbstractChildReferences {
 
     @Override
     public Iterator<ChildReference> iterator( Context context ) {
-        if (changedChildren != null) context = new WithChanges(context, changedChildren);
+        if (changedChildren != null && !changedChildren.isEmpty()) context = new WithChanges(context, changedChildren);
         return createIterator(context);
     }
 
@@ -236,5 +244,10 @@ public class SessionChildReferences extends AbstractChildReferences {
             }
         }
         return sb;
+    }
+
+    @Override
+    public boolean allowsSNS() {
+        return allowsSNS;
     }
 }

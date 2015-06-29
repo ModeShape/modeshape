@@ -24,6 +24,7 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -60,8 +61,6 @@ import javax.jcr.version.Version;
 import javax.jcr.version.VersionException;
 import javax.jcr.version.VersionIterator;
 import org.infinispan.schematic.SchematicEntry;
-import org.modeshape.common.collection.LinkedListMultimap;
-import org.modeshape.common.collection.Multimap;
 import org.modeshape.common.i18n.I18n;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.common.text.TextDecoder;
@@ -2344,83 +2343,92 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
             // We actually can avoid this altogether if certain conditions are met ...
             final Name primaryType = modifiedNode.getPrimaryType(cache);
             final Set<Name> mixinTypes = modifiedNode.getMixinTypes(cache);
-            if (!nodeTypeCapabilities.disallowsSameNameSiblings(primaryType, mixinTypes)) return;
+            if (nodeTypeCapabilities.allowsNameSiblings(primaryType, mixinTypes)) return;
 
             MutableCachedNode.NodeChanges changes = modifiedNode.getNodeChanges();
-            Map<NodeKey, Name> appendedChildren = changes.appendedChildren();
-            Map<NodeKey, Name> renamedChildren = changes.renamedChildren();
+            Map<NodeKey, Name> appendedOrRenamedChildrenByKey = new HashMap<>();
+            appendedOrRenamedChildrenByKey.putAll(changes.appendedChildren());
+            appendedOrRenamedChildrenByKey.putAll(changes.renamedChildren());
+            if (appendedOrRenamedChildrenByKey.isEmpty()) {
+                return;
+            }
+            
+            Map<Name, List<NodeKey>> appendedOrRenamedChildrenByName = new HashMap<>();
+            if (!appendedOrRenamedChildrenByKey.isEmpty()) {
+                for (Map.Entry<NodeKey, Name> appended : appendedOrRenamedChildrenByKey.entrySet()) {
+                    Name name = appended.getValue();
+                    NodeKey key = appended.getKey();
+                    List<NodeKey> childKeys = appendedOrRenamedChildrenByName.get(name);
+                    if (childKeys == null) {
+                        childKeys = new ArrayList<>();
+                        appendedOrRenamedChildrenByName.put(name, childKeys);
+                    }
+                    childKeys.add(key);
+                }
+            }
+            
+            assert !appendedOrRenamedChildrenByName.isEmpty();
+
             Set<NodeKey> removedChildren = changes.removedChildren();
-            if (!appendedChildren.isEmpty() || !renamedChildren.isEmpty()) {
 
-                Multimap<Name, NodeKey> appendedOrRenamedChildrenByName = LinkedListMultimap.create();
-                for (Map.Entry<NodeKey, Name> appended : appendedChildren.entrySet()) {
-                    appendedOrRenamedChildrenByName.put(appended.getValue(), appended.getKey());
+            // look at the information that was already persisted to determine whether some other thread has already
+            // created a child with the same name
+            CachedNode persistentNode = persistentNodeCache.getNode(modifiedNode.getKey());
+            final ChildReferences persistedChildReferences = persistentNode.getChildReferences(persistentNodeCache);
+            final SiblingCounter siblingCounter = SiblingCounter.create(persistedChildReferences);
+
+            // process appended/renamed children
+            for (Name childName : appendedOrRenamedChildrenByName.keySet()) {
+                int existingChildrenWithSameName = persistedChildReferences.getChildCount(childName);
+                if (existingChildrenWithSameName == 0) {
+                    continue;
                 }
-                for (Map.Entry<NodeKey, Name> renamed : renamedChildren.entrySet()) {
-                    appendedOrRenamedChildrenByName.put(renamed.getValue(), renamed.getKey());
-                }
-
-                assert appendedOrRenamedChildrenByName.isEmpty() == false;
-
-                // look at the information that was already persisted to determine whether some other thread has already
-                // created a child with the same name
-                CachedNode persistentNode = persistentNodeCache.getNode(modifiedNode.getKey());
-                final ChildReferences persistedChildReferences = persistentNode.getChildReferences(persistentNodeCache);
-                final SiblingCounter siblingCounter = SiblingCounter.create(persistedChildReferences);
-
-                // process appended/renamed children
-                for (Name childName : appendedOrRenamedChildrenByName.keySet()) {
-                    int existingChildrenWithSameName = persistedChildReferences.getChildCount(childName);
-                    if (existingChildrenWithSameName == 0) {
-                        continue;
-                    }
-                    if (existingChildrenWithSameName == 1) {
-                        // See if the existing same-name sibling is removed ...
-                        NodeKey persistedChildKey = persistedChildReferences.getChild(childName).getKey();
-                        if (removedChildren.contains(persistedChildKey)) {
-                            // the sole existing child with this name is being removed, so we can ignore it ...
-                            // existingChildrenWithSameName = 0;
-                            continue;
-                        }
-                    }
-
-                    // There is at least one persisted child with the same name, and we're adding a new child
-                    // or renaming an existing child to this name. Therefore, we have to find a child node definition
-                    // that allows SNS. Look for one ignoring the child node type (this is faster than finding the
-                    // child node primary types) ...
-                    NodeDefinitionSet childDefns = nodeTypeCapabilities.findChildNodeDefinitions(primaryType, mixinTypes);
-                    JcrNodeDefinition childNodeDefinition = childDefns.findBestDefinitionForChild(childName, null, true,
-                                                                                                  siblingCounter);
-                    if (childNodeDefinition != null) {
-                        // found the one child node definition that applies, so it's okay ...
-                        continue;
-                    }
-
-                    // We were NOT able to find a definition that allows SNS for this name, but we need to make sure that
-                    // the node that already exists (persisted) isn't the one that's being changed
+                if (existingChildrenWithSameName == 1) {
+                    // See if the existing same-name sibling is removed ...
                     NodeKey persistedChildKey = persistedChildReferences.getChild(childName).getKey();
-                    if (appendedChildren.containsKey(persistedChildKey) || renamedChildren.containsKey(persistedChildKey)) {
-                        // The persisted node is being changed, so it's okay ...
+                    if (removedChildren.contains(persistedChildKey)) {
+                        // the sole existing child with this name is being removed, so we can ignore it ...
+                        // existingChildrenWithSameName = 0;
                         continue;
                     }
+                }
 
-                    // We still were NOT able to find a definition that allows SNS for this name WITHOUT considering the
-                    // specific child node type. This likely means there is either 0 or more than 1 (possibly residual)
-                    // child node definitions. We need to find all of the added/renamed child nodes and use their specific
-                    // primary types. The first to fail will result in an exception ...
-                    final SessionCache session = cache();
-                    for (NodeKey appendedOrRenamedKey : appendedOrRenamedChildrenByName.get(childName)) {
-                        MutableCachedNode appendedOrRenamedChild = session.mutable(appendedOrRenamedKey);
-                        if (appendedOrRenamedChild == null) continue;
-                        Name childPrimaryType = appendedOrRenamedChild.getPrimaryType(session);
-                        childDefns = nodeTypeCapabilities.findChildNodeDefinitions(primaryType, mixinTypes);
-                        childNodeDefinition = childDefns.findBestDefinitionForChild(childName, childPrimaryType, true,
-                                                                                    siblingCounter);
-                        if (childNodeDefinition == null) {
-                            // Could not find a valid child node definition that allows SNS given the child's primary type and
-                            // name plus the parent's primary type and mixin types.
-                            throw new ItemExistsException(JcrI18n.noSnsDefinitionForNode.text(childName, workspaceName()));
-                        }
+                // There is at least one persisted child with the same name, and we're adding a new child
+                // or renaming an existing child to this name. Therefore, we have to find a child node definition
+                // that allows SNS. Look for one ignoring the child node type (this is faster than finding the
+                // child node primary types) ...
+                NodeDefinitionSet childDefns = nodeTypeCapabilities.findChildNodeDefinitions(primaryType, mixinTypes);
+                JcrNodeDefinition childNodeDefinition = childDefns.findBestDefinitionForChild(childName, null, true,
+                                                                                              siblingCounter);
+                if (childNodeDefinition != null) {
+                    // found the one child node definition that applies, so it's okay ...
+                    continue;
+                }
+
+                // We were NOT able to find a definition that allows SNS for this name, but we need to make sure that
+                // the node that already exists (persisted) isn't the one that's being changed
+                NodeKey persistedChildKey = persistedChildReferences.getChild(childName).getKey();
+                if (appendedOrRenamedChildrenByKey.containsKey(persistedChildKey)) {
+                    // The persisted node is being changed, so it's okay ...
+                    continue;
+                }
+
+                // We still were NOT able to find a definition that allows SNS for this name WITHOUT considering the
+                // specific child node type. This likely means there is either 0 or more than 1 (possibly residual)
+                // child node definitions. We need to find all of the added/renamed child nodes and use their specific
+                // primary types. The first to fail will result in an exception ...
+                final SessionCache session = cache();
+                for (NodeKey appendedOrRenamedKey : appendedOrRenamedChildrenByName.get(childName)) {
+                    MutableCachedNode appendedOrRenamedChild = session.mutable(appendedOrRenamedKey);
+                    if (appendedOrRenamedChild == null) { continue; }
+                    Name childPrimaryType = appendedOrRenamedChild.getPrimaryType(session);
+                    childDefns = nodeTypeCapabilities.findChildNodeDefinitions(primaryType, mixinTypes);
+                    childNodeDefinition = childDefns.findBestDefinitionForChild(childName, childPrimaryType, true,
+                                                                                siblingCounter);
+                    if (childNodeDefinition == null) {
+                        // Could not find a valid child node definition that allows SNS given the child's primary type and
+                        // name plus the parent's primary type and mixin types.
+                        throw new ItemExistsException(JcrI18n.noSnsDefinitionForNode.text(childName, workspaceName()));
                     }
                 }
             }

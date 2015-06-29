@@ -29,8 +29,8 @@ import org.modeshape.jcr.ExecutionContext;
 import org.modeshape.jcr.cache.CachedNode;
 import org.modeshape.jcr.cache.MutableCachedNode;
 import org.modeshape.jcr.cache.NodeKey;
+import org.modeshape.jcr.cache.RepositoryEnvironment;
 import org.modeshape.jcr.cache.SessionCache;
-import org.modeshape.jcr.cache.SessionEnvironment;
 
 /**
  * Tests that operate against a {@link WritableSessionCache}. Each test method starts with a clean slate of content
@@ -49,8 +49,8 @@ public class WritableSessionCacheTest extends AbstractSessionCacheTest {
     @Override
     protected SessionCache createSessionCache( ExecutionContext context,
                                                WorkspaceCache cache,
-                                               SessionEnvironment sessionEnv ) {
-        return new WritableSessionCache(context, workspaceCache, sessionEnv);
+                                               RepositoryEnvironment repositoryEnvironment ) {
+        return new WritableSessionCache(context, workspaceCache, repositoryEnvironment);
     }
 
     @Test

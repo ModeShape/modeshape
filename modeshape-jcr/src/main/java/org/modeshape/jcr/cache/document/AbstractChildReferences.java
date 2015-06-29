@@ -42,28 +42,28 @@ public abstract class AbstractChildReferences implements ChildReferences {
 
     @Override
     public ChildReference getChild( Name name ) {
-        return getChild(name, 1, new BasicContext());
+        return getChild(name, 1, defaultContext());
     }
 
     @Override
     public ChildReference getChild( Segment segment ) {
-        return getChild(segment.getName(), segment.getIndex(), new BasicContext());
+        return getChild(segment.getName(), segment.getIndex(), defaultContext());
     }
 
     @Override
     public ChildReference getChild( Name name,
                                     int snsIndex ) {
-        return getChild(name, snsIndex, new BasicContext());
+        return getChild(name, snsIndex, defaultContext());
     }
 
     @Override
     public Iterator<ChildReference> iterator( Name name ) {
-        return iterator(name, new BasicContext());
+        return iterator(name, defaultContext());
     }
 
     @Override
     public Iterator<ChildReference> iterator() {
-        return iterator(new BasicContext());
+        return iterator(defaultContext());
     }
 
     @Override
@@ -181,7 +181,7 @@ public abstract class AbstractChildReferences implements ChildReferences {
     public Iterator<ChildReference> iterator( Collection<?> namePatterns,
                                               final NamespaceRegistry registry ) {
         //we don't care about SNSs here
-        return iterator(new BasicContext(), namePatterns, registry);
+        return iterator(defaultContext(), namePatterns, registry);
     }
 
     @Override
@@ -205,6 +205,10 @@ public abstract class AbstractChildReferences implements ChildReferences {
     @Override
     public String toString() {
         return toString(new StringBuilder()).toString();
+    }   
+    
+    protected Context defaultContext() {
+        return allowsSNS() ? new BasicContext() : NoContext.INSTANCE;
     }
 
     public abstract StringBuilder toString( StringBuilder sb );

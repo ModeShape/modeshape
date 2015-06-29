@@ -66,8 +66,8 @@ import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.cache.NodeNotFoundException;
 import org.modeshape.jcr.cache.PathCache;
 import org.modeshape.jcr.cache.ReferentialIntegrityException;
+import org.modeshape.jcr.cache.RepositoryEnvironment;
 import org.modeshape.jcr.cache.SessionCache;
-import org.modeshape.jcr.cache.SessionEnvironment;
 import org.modeshape.jcr.cache.WrappedException;
 import org.modeshape.jcr.cache.change.ChangeSet;
 import org.modeshape.jcr.cache.change.RecordingChanges;
@@ -123,16 +123,16 @@ public class WritableSessionCache extends AbstractSessionCache {
      *
      * @param context the execution context; may not be null
      * @param workspaceCache the (shared) workspace cache; may not be null
-     * @param sessionContext the context for the session; may not be null
+     * @param repositoryEnvironment the context for the session; may not be null
      */
     public WritableSessionCache( ExecutionContext context,
                                  WorkspaceCache workspaceCache,
-                                 SessionEnvironment sessionContext ) {
-        super(context, workspaceCache, sessionContext);
+                                 RepositoryEnvironment repositoryEnvironment ) {
+        super(context, workspaceCache, repositoryEnvironment);
         this.changedNodes = new HashMap<NodeKey, SessionNode>();
         this.changedNodesInOrder = new LinkedHashSet<NodeKey>();
         this.referrerChangesForRemovedNodes = new HashMap<NodeKey, ReferrerChanges>();
-        this.txns = sessionContext.getTransactions();
+        this.txns = repositoryEnvironment.getTransactions();
     }
 
     protected final void assertInSession( SessionNode node ) {
