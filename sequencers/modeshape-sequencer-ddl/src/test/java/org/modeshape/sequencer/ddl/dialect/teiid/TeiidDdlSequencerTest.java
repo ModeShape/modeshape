@@ -23,6 +23,7 @@ import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import org.junit.After;
 import org.junit.Test;
+import org.modeshape.common.FixFor;
 import org.modeshape.common.junit.SkipLongRunning;
 import org.modeshape.sequencer.ddl.AbstractDdlSequencerTest;
 import org.modeshape.sequencer.ddl.DdlConstants;
@@ -672,6 +673,28 @@ public class TeiidDdlSequencerTest extends AbstractDdlSequencerTest {
             verifyMixinType(optionNode, StandardDdlLexicon.TYPE_STATEMENT_OPTION);
             verifyProperty(optionNode, StandardDdlLexicon.VALUE, "\"Products\".\"product:info\"");
         }
+    }
+
+    @Test
+    @FixFor( "MODE-2445" )
+    @SkipLongRunning
+    public void shouldVerifyForeignKeyReferences() throws Exception {
+        this.statementsNode = sequenceDdl("ddl/dialect/teiid/sfddl.ddl");
+        assertThat(this.statementsNode.getNodes().getSize(), is(1026L));
+
+        // make sure foreign references exist
+        final Node tblAccount = this.statementsNode.getNode("Account");
+        final Node fk = tblAccount.getNode("FK_CDH_Party__c_CDH_Party_Name__c");
+
+        assertThat(fk.getProperty(TeiidDdlLexicon.Constraint.REFERENCES).getValues().length, is(1));
+        verifyReference(fk,
+                        fk.getProperty(TeiidDdlLexicon.Constraint.REFERENCES).getValues()[0].getString(),
+                        "/ddl/sfddl.ddl/ddl:statements/Account/CDH_Party_Name__c");
+
+        assertThat(fk.getProperty(TeiidDdlLexicon.Constraint.TABLE_REFERENCE_REFERENCES).getValues().length, is(1));
+        verifyReference(fk,
+                        fk.getProperty(TeiidDdlLexicon.Constraint.TABLE_REFERENCE_REFERENCES).getValues()[0].getString(),
+                        "/ddl/sfddl.ddl/ddl:statements/CDH_Party__c/Id");
     }
 
 }

@@ -310,7 +310,7 @@ public class VdbDataRole implements Comparable<VdbDataRole> {
         }
 
         /**
-         * @param the constraint flag
+         * @param constraint the constraint flag
          */
         public void setConstraint(boolean constraint) {
             this.constraint = constraint;
@@ -349,7 +349,7 @@ public class VdbDataRole implements Comparable<VdbDataRole> {
         }
 
         /**
-         * @param the order value
+         * @param order the order value
          */
         public void setOrder(int order) {
             this.order = order;

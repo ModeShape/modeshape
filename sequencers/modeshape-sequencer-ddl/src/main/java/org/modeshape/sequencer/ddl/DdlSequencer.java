@@ -26,6 +26,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Queue;
 import javax.jcr.Binary;
 import javax.jcr.NamespaceRegistry;
@@ -203,14 +204,19 @@ public class DdlSequencer extends Sequencer {
         queue.add(rootNode);
         while (queue.peek() != null) {
             AstNode astNode = queue.poll();
-            Node sequenceNode = createFromAstNode(outputNode, astNode);
-            appendNodeProperties(astNode, sequenceNode);
+            createFromAstNode(outputNode, astNode);
 
             // Add the children to the queue ...
             for (AstNode child : astNode.getChildren()) {
                 queue.add(child);
             }
         }
+
+        // second pass to lookup references (this allows for DDL to have forward references)
+        for (final Entry<AstNode, Node> entry : this.nodeMap.entrySet()) {
+            appendNodeProperties(entry.getKey(), entry.getValue());
+        }
+
         return true;
     }
 

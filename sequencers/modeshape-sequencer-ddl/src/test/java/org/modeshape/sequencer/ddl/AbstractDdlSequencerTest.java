@@ -36,6 +36,7 @@ import java.util.TreeSet;
 import javax.jcr.Node;
 import javax.jcr.Property;
 import javax.jcr.RepositoryException;
+import javax.jcr.Session;
 import javax.jcr.Value;
 import org.modeshape.jcr.sequencer.AbstractSequencerTest;
 
@@ -45,6 +46,21 @@ import org.modeshape.jcr.sequencer.AbstractSequencerTest;
  * @author Horia Chiorean
  */
 public abstract class AbstractDdlSequencerTest extends AbstractSequencerTest {
+
+    /**
+     * @param node the node that has a reference to another node (cannot be <code>null</code>)
+     * @param uuid the identifier of the referenced node (cannot be empty)
+     * @param resolvedPath the path of the referenced node (cannot be empty)
+     * @throws RepositoryException if an error occurs
+     * @throws AssertionError if the resolved path does not equal the path of the referenced node
+     */
+    protected void verifyReference( final Node node,
+                                    final String uuid,
+                                    final String resolvedPath ) throws RepositoryException {
+        final Session session = node.getSession();
+        final Node referencedNode = session.getNodeByIdentifier(uuid);
+        assertEquals(resolvedPath, referencedNode.getPath());
+    }
 
     protected void verifyProperty( Node node,
                                    String propertyName,
