@@ -71,7 +71,7 @@
 
 [vdb:marker] > nt:unstructured
  - vdb:severity (string) = 'WARNING' autocreated < 'WARNING','ERROR','INFO'
- - vdb:path (string) mandatory
+ - vdb:path (string) // if no value then marker is for model
  - vdb:message (string) mandatory
  
 [vdb:translators] > nt:unstructured
