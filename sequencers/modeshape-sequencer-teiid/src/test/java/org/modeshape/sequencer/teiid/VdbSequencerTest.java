@@ -673,6 +673,12 @@ public class VdbSequencerTest extends AbstractSequencerTest {
         assertNotNull(getOutputNode(this.rootNode, "vdbs/third.vdb"));
     }
 
+    @Test
+    @FixFor( "MODE-2477" )
+    public void shouldSequenceModelValidationErrorsWithNoPath() throws Exception {
+        createNodeWithContentFromFile("QT_Vanilla_Hive_Push.vdb", "vdb/QT_Vanilla_Hive_Push.vdb");
+        assertNotNull(getOutputNode(this.rootNode, "vdbs/QT_Vanilla_Hive_Push.vdb"));
+    }
 
     protected void assertVersionInfo( String fileNameWithoutExtension,
                                       String expectedName,
