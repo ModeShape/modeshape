@@ -132,6 +132,7 @@ public class ModelSequencer extends Sequencer {
      * @param vdbModel the VDB model associated with the input stream (cannot be <code>null</code>)
      * @param resolver a {@link ReferenceResolver} instance; may not be {@code null}
      * @param context the sequencer context (cannot be <code>null</code>)  @return <code>true</code> if the model file input stream was successfully sequenced
+     * @return <code>true</code> if the model was sequenced successfully
      * @throws Exception if there is a problem during sequencing
      */
     private boolean sequenceModel( final InputStream modelStream,
