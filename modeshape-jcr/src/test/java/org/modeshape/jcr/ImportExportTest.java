@@ -18,6 +18,7 @@ package org.modeshape.jcr;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.IsNull.notNullValue;
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -31,6 +32,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 import javax.jcr.ImportUUIDBehavior;
 import javax.jcr.ItemExistsException;
@@ -49,6 +52,7 @@ import javax.jcr.version.Version;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
 import org.modeshape.common.junit.SkipLongRunning;
+import org.modeshape.common.util.FileUtil;
 import org.modeshape.jcr.api.Binary;
 import org.modeshape.jcr.api.JcrTools;
 import org.modeshape.jcr.api.Workspace;
@@ -714,7 +718,7 @@ public class ImportExportTest extends SingleUseAbstractTest {
 
         session.save();
 
-        File exportFile = export("/a");
+        File exportFile = exportSystemView("/a");
         try {
 
             nodeA.remove();
@@ -1295,6 +1299,64 @@ public class ImportExportTest extends SingleUseAbstractTest {
         // We must not lose the referrer from node referrerOne.
         assertEquals(2, session.getNode("/testRoot/referenceable").getReferences().getSize());
     }
+    
+    @Test
+    @FixFor( "MODE-2482" )
+    public void shouldSupportMultiValuedPropertiesInDocumentView() throws Exception {
+        Node test = session.getRootNode().addNode("testRoot");
+        test.setProperty("prop1", "value 1");
+        String[] values = { "value 1", "value 2", "value 3" };
+        test.setProperty("prop2", values);
+        session.save();
+
+        File file = new File("target/test-classes/document_view_multi_prop.xml");
+        FileUtil.delete(file);
+        FileOutputStream outputStream = new FileOutputStream(file);
+        exportDocumentView("/testRoot", outputStream);
+        
+        session.getNode("/testRoot").remove();
+        session.save();
+        
+        importFile("/", file.getName(), ImportUUIDBehavior.IMPORT_UUID_CREATE_NEW);
+        assertNotNull(session.getNode("/testRoot"));
+        Property p1 = (Property)session.getItem("/testRoot/prop1");
+        assertFalse(p1.isMultiple());
+        assertEquals("value 1", p1.getString());
+        Property p2 = (Property)session.getItem("/testRoot/prop2");
+        assertTrue(p2.isMultiple());
+        Value[] jcrValues = p2.getValues();
+        List<String> actualValues = new ArrayList<>(jcrValues.length);
+        for (Value jcrValue : jcrValues) {
+            actualValues.add(jcrValue.getString());
+        }
+        assertArrayEquals(values, actualValues.toArray());
+    }
+
+    @Test
+    @FixFor( "MODE-2482 ")
+    public void shouldSupportMultipleMixinsInDocumentView() throws Exception {
+        registerNodeTypes("cnd/mixins.cnd");
+
+        Node test = session.getRootNode().addNode("a", "nt:set");
+        test.addMixin("mix:a");
+        test.addMixin("mix:b");
+        test.setProperty("jcr:a", "a");
+        test.setProperty("jcr:b", "b");
+        session.save();
+
+        File file = new File("target/test-classes/document_view_mode_2482.xml");
+        FileUtil.delete(file);
+        FileOutputStream outputStream = new FileOutputStream(file);
+        exportDocumentView("/a", outputStream);
+        
+        session.getRootNode().addNode("b", "nt:folder");
+        session.save();
+        importFile("/b", file.getName(), ImportUUIDBehavior.IMPORT_UUID_CREATE_NEW);
+        
+        assertNotNull("/b/a");
+        assertEquals("a", ((Property)session.getItem("/b/a/jcr:a")).getString());
+        assertEquals("b", ((Property) session.getItem("/b/a/jcr:b")).getString());
+    }
 
     // ----------------------------------------------------------------------------------------------------------------
     // Utilities
@@ -1386,7 +1448,7 @@ public class ImportExportTest extends SingleUseAbstractTest {
         return node;
     }
 
-    protected File export( String pathToParent ) throws IOException, RepositoryException {
+    protected File exportSystemView( String pathToParent ) throws IOException, RepositoryException {
         assertNode(pathToParent);
 
         // Export to a string ...

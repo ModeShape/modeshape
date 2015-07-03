@@ -18,6 +18,7 @@ package org.modeshape.jcr;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -668,37 +669,48 @@ class JcrContentHandler extends DefaultHandler {
                         values = new ArrayList<>();
                         properties.put(name, values);
                     }
-                    if (propertyType == PropertyType.BINARY) {
-                        Base64.InputStream is = new Base64.InputStream(new ByteArrayInputStream(value.getBytes("UTF-8")));
-                        values.add(valueFor(is));
-                    } else {
-                        if (decoder != null) value = decoder.decode(value);
-                        if (value != null && propertyType == PropertyType.STRING) {
-                            // Strings and binaries can be empty -- other data types cannot
-                            values.add(valueFor(value, propertyType));
-                        } else if (!StringUtil.isBlank(value) && isReference(propertyType)) {
-                            try {
-                                boolean isInternalReference = isInternal(name);
-                                if (!isInternalReference) {
-                                    // we only prepend the parent information for non-internal references
-                                    value = parentHandler().node().key().withId(value).toString();
-                                }
-                                // we only have the identifier of the node, so try to use the parent to determine the workspace &
-                                // source key
-                                values.add(valueFor(value, propertyType));
-                            } catch (SAXException e) {
-                                throw new EnclosingSAXException(e);
-                            }
-                        } else if (!StringUtil.isBlank(value)) {
-                            values.add(valueFor(value, propertyType));
+                    if (forceMultiValued && value.indexOf(" ") > 0) {
+                        String[] stringValues = value.split(" ");
+                        for (String stringValue : stringValues) {
+                            processPropertyValue(name, stringValue, propertyType, decoder, values);                            
                         }
+                    }
+                    else {
+                        processPropertyValue(name, value, propertyType, decoder, values);
                     }
                 }
                 if (!postProcessed && PROPERTIES_FOR_POST_PROCESSING.contains(name)) {
                     postProcessed = true;
                 }
-            } catch (IOException | RepositoryException ioe) {
+            } catch (IOException | SAXException | RepositoryException ioe) {
                 throw new EnclosingSAXException(ioe);
+            }
+        }
+
+        private void processPropertyValue( Name name, String value, int propertyType, TextDecoder decoder,
+                                           List<Value> values ) throws UnsupportedEncodingException, RepositoryException, SAXException {
+            if (propertyType == PropertyType.BINARY) {
+                Base64.InputStream is = new Base64.InputStream(new ByteArrayInputStream(value.getBytes("UTF-8")));
+                values.add(valueFor(is));
+            } else {
+                if (decoder != null) value = decoder.decode(value);
+                if (value != null && propertyType == PropertyType.STRING) {
+                    // Strings and binaries can be empty -- other data types cannot
+                    values.add(valueFor(value, propertyType));
+                } else if (!StringUtil.isBlank(value) && isReference(propertyType)) {
+                    
+                        boolean isInternalReference = isInternal(name);
+                        if (!isInternalReference) {
+                            // we only prepend the parent information for non-internal references
+                            value = parentHandler().node().key().withId(value).toString();
+                        }
+                        // we only have the identifier of the node, so try to use the parent to determine the workspace &
+                        // source key
+                        values.add(valueFor(value, propertyType));
+                    
+                } else if (!StringUtil.isBlank(value)) {
+                    values.add(valueFor(value, propertyType));
+                }
             }
         }
 
@@ -1171,7 +1183,9 @@ class JcrContentHandler extends DefaultHandler {
                 Name propertyName = entry.getKey();
                 Integer propertyDefinitionType = propertyTypes.get(propertyName);
                 int propertyType = propertyDefinitionType != null ? propertyDefinitionType : PropertyType.STRING;
-                current.addPropertyValue(propertyName, entry.getValue(), false, propertyType, DOCUMENT_VIEW_VALUE_DECODER);
+                String value = entry.getValue();
+                boolean isMultiValued = value.indexOf(" ") > 0; 
+                current.addPropertyValue(propertyName, value, isMultiValued, propertyType, DOCUMENT_VIEW_VALUE_DECODER);
             }
 
             // Now create the node ...
