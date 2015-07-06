@@ -80,36 +80,38 @@ public interface DocumentStore {
                                   Name documentPrimaryType );
 
     /**
-     * Prepare to update all of the documents with the given keys.
+     * Attempts to lock all of the documents with the given keys.
      *
      * @param keys the set of keys identifying the documents that are to be updated via
      *        {@link #updateDocument(String, Document, SessionNode)} or via {@link #edit(String,boolean)}.
      * @return true if the documents were locked, or false if not all of the documents could be locked
-     * @throws DocumentStoreException if there is an error or problem while obtaining the locks
-     */
-    public boolean prepareDocumentsForUpdate( Collection<String> keys );
+|    */
+    public boolean lockDocuments( Collection<String> keys );
 
     /**
-     * Remove the existing document at the given key.
+     * Edit the existing document at the given key after attempting to lock it first.
      *
      * @param key the key or identifier for the document
      * @param createIfMissing true if a new entry should be created and added to the database if an existing entry does not exist
      * @return true if a document was removed, or false if there was no document with that key
      * @throws DocumentStoreException if there is a problem removing the document
+     * @throws org.infinispan.util.concurrent.TimeoutException if the lock cannot be acquired within the configured lock acquisition time.
      */
     public EditableDocument edit( String key,
                                   boolean createIfMissing );
 
     /**
-     * Edits the existing document at the given key, and optionally explicitly locking the entry before returning the editor.
+     * Edit the existing document at the given key, and optionally explicitly locking the entry before returning the editor.
      *
      * @param key the key or identifier for the document
      * @param createIfMissing true if a new entry should be created and added to the database if an existing entry does not exist.
      * Implementations are free to ignore this flag.
      * @param acquireLock true if the lock for the entry should be obtained before returning, or false if the lock was already
-     *        obtained via {@link #prepareDocumentsForUpdate(Collection)} within the current transaction.
+     *        obtained via {@link #lockDocuments(Collection)} within the current transaction.
      * @return true if a document was removed, or false if there was no document with that key
      * @throws DocumentStoreException if there is a problem removing the document
+     * @throws org.infinispan.util.concurrent.TimeoutException if {@code aquireLock} is true and 
+     * the lock cannot be acquired within the configured lock acquisition time.
      */
     public EditableDocument edit( String key,
                                   boolean createIfMissing,

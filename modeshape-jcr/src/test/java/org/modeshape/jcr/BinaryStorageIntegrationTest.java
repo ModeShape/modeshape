@@ -23,8 +23,18 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.Random;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import javax.jcr.Node;
 import javax.jcr.Property;
 import javax.jcr.PropertyType;
@@ -213,6 +223,143 @@ public class BinaryStorageIntegrationTest extends SingleUseAbstractTest {
         startRepositoryWithConfiguration(resourceStream("config/repo-config-jdbc-binary-storage.json"));
         checkBinaryUsageAfterSaving();
     }
+    
+    @Test
+    @FixFor( "MODE-2484 ")
+    public void shouldModifyTheSameBinaryPropertiesFromMultipleThreadsWithoutDeadlocking() throws Exception {
+        startRepositoryWithConfiguration(resourceStream("config/repo-config-persistent-disk.json"));
+        //verify we have no binaries yet (see afterEach)
+        assertEquals(0, binariesCount());
+        int threadCount = 7;
+        final List<String> filesToUpload = Arrays.asList("data/large-file1.png", "data/large-file2.jpg",
+                                                         "data/move-initial-data.xml");
+        
+        // create some folders which will each contain files
+        for (int i = 1; i < threadCount; i++) {
+            session.getRootNode().addNode("folder_" + i, "nt:folder");
+        }
+        session.save();
+
+        // now fire a number of different threads which should all link the same files in a different order from different (disjoint)
+        // nodes
+        ExecutorService executorService = Executors.newFixedThreadPool(threadCount);
+        final CyclicBarrier barrier = new CyclicBarrier(threadCount);
+        final List<Future> results = new ArrayList<Future>();
+        final AtomicInteger folderCounter = new AtomicInteger(1);
+        for (int i = 0; i < threadCount; i++) {
+            results.add(executorService.submit(new Callable<Void>() {
+                @Override
+                public Void call() throws Exception {
+                    JcrSession session = repository.login();
+                    List<String> localFilesToUpload = new ArrayList<String>(filesToUpload);
+                    Collections.shuffle(localFilesToUpload);
+                    try {
+                        int folderIdx = folderCounter.getAndIncrement();
+                        for (int i = 0; i < localFilesToUpload.size(); i++) {
+                            tools.uploadFile(session, "/folder_" + folderIdx + "/file_" + (i + 1), resourceStream(localFilesToUpload.get(i)));
+                        }
+                        barrier.await();
+                        session.save();
+                        return null;
+                    } finally {
+                        session.logout();
+                    }
+                }
+            }));
+        }
+
+        try {
+            // the ISPN cache is configured with 2 seconds timeout, so we shouldn't wait a lot more
+            for (Future result : results) {
+                result.get(3, TimeUnit.SECONDS);
+            }
+
+            // check that the correct number of binaries is stored
+            assertEquals(filesToUpload.size(), binariesCount());
+
+            // now fire the same number of threads to remove the root nodes and therefore decrement the binary usage  
+            results.clear();
+            folderCounter.set(1);
+            barrier.reset();
+            for (int i = 0; i < threadCount; i++) {
+                results.add(executorService.submit(new Callable<Void>() {
+                    @Override
+                    public Void call() throws Exception {
+                        JcrSession session = repository.login();
+                        try {
+                            int folderIdx = folderCounter.getAndIncrement();
+                            session.getNode("/folder_" + folderIdx).remove();
+                            barrier.await();
+                            session.save();
+                            return null;
+                        } finally {
+                            session.logout();
+                        }
+                    }
+                }));
+            }
+            // the remove should be a lot faster...
+            for (Future result : results) {
+                result.get(1, TimeUnit.SECONDS);
+            }
+            
+            // force a binary prune to validate that the binary values have been indeed marked as unused....
+            Thread.sleep(100);
+            binaryStore().removeValuesUnusedLongerThan(1, TimeUnit.MILLISECONDS);
+            
+            // we should've removed all the binaries since we marked them all as unused first....
+            assertEquals(0, binariesCount());
+        } finally {
+            executorService.shutdownNow();
+        }
+    }
+
+    @Test
+    @FixFor( "MODE-2484 ")
+    public void shouldUpdateBinaryReferencesWhenChangingProperties() throws Exception {
+        startRepositoryWithConfiguration(resourceStream("config/repo-config-persistent-disk.json"));
+        registerNodeTypes("cnd/multi_binary.cnd");
+        // verify we have no binaries yet (see afterEach)
+        assertEquals(0, binariesCount());
+
+        Node multiBinaryNode = session.getRootNode().addNode("multiBinary", "test:multiBinary");
+        Binary binary1 = session.getValueFactory().createBinary(resourceStream("data/large-file1.png"));
+        multiBinaryNode.setProperty("binary1", binary1);
+        Binary binary2 = session.getValueFactory().createBinary(resourceStream("data/large-file2.jpg"));
+        multiBinaryNode.setProperty("binary2", binary2);
+        Binary binary3 = session.getValueFactory().createBinary(resourceStream("data/move-initial-data.xml"));
+        multiBinaryNode.setProperty("binary3", binary3);
+        session.save();
+        
+        // we should have 3 binary properties
+        assertEquals(3, binariesCount());
+        
+        // set the first binary property to the same value as the third and force a cleanup to check one binary was marked as unused
+        session.getNode("/multiBinary").setProperty("binary1", session.getValueFactory().createBinary(resourceStream(
+                "data/move-initial-data.xml")));
+        session.save();
+        Thread.sleep(10);
+        binaryStore().removeValuesUnusedLongerThan(1, TimeUnit.MILLISECONDS);
+        assertEquals(2, binariesCount());
+
+        // set the second binary property to the same value as the third and force a cleanup to check one binary was marked as unused
+        session.getNode("/multiBinary").setProperty("binary2", session.getValueFactory().createBinary(resourceStream(
+                "data/move-initial-data.xml")));
+        session.save();
+        Thread.sleep(10);
+        binaryStore().removeValuesUnusedLongerThan(1, TimeUnit.MILLISECONDS);
+        assertEquals(1, binariesCount());
+        
+        // now remove each property by setting it to null and check all binaries are removed
+        session.getItem("/multiBinary/binary1").remove();
+        session.getItem("/multiBinary/binary2").remove();
+        session.getItem("/multiBinary/binary3").remove();
+        session.save();
+        Thread.sleep(10);
+        binaryStore().removeValuesUnusedLongerThan(1, TimeUnit.MILLISECONDS);
+        assertEquals(0, binariesCount());
+    }
+
 
     private String randomString(long size) {
         StringBuilder builder = new StringBuilder("");

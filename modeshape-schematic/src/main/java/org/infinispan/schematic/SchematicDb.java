@@ -60,6 +60,7 @@ public interface SchematicDb extends Lifecycle {
      * @param key the key or identifier for the document
      * @param createIfMissing true if a new entry should be created and added to the database if an existing entry does not exist
      * @return the entry, or null if there was no document with the supplied key
+     * @throws org.infinispan.util.concurrent.TimeoutException if a lock cannot be obtained on the requested document
      * @see #editContent(String, boolean, boolean)
      */
     EditableDocument editContent( String key,
@@ -76,6 +77,8 @@ public interface SchematicDb extends Lifecycle {
      * @param acquireLock true if the lock should be acquired for this entry, or false if the lock is known to have already been
      *        acquired for the current transaction
      * @return the entry, or null if there was no document with the supplied key
+     * @throws org.infinispan.util.concurrent.TimeoutException if {@code aquireLock} is {@code true}
+     * and the lock cannot be acquired within the configured lock acquisition time.
      */
     EditableDocument editContent( String key,
                                   boolean createIfMissing,

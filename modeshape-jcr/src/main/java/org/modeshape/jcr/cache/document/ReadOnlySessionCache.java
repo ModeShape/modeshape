@@ -24,6 +24,7 @@ import org.modeshape.jcr.cache.CachedNode;
 import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.cache.RepositoryEnvironment;
 import org.modeshape.jcr.cache.SessionCache;
+import org.modeshape.jcr.value.BinaryKey;
 
 /**
  * A read-only {@link SessionCache} implementation.
@@ -66,6 +67,11 @@ public class ReadOnlySessionCache extends AbstractSessionCache {
 
     @Override
     protected void doClear( CachedNode node ) {
+        // do nothing
+    }
+
+    @Override
+    protected void addBinaryReference( NodeKey nodeKey, BinaryKey... binaryKeys ) {
         // do nothing
     }
 

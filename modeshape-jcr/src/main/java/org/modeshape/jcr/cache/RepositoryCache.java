@@ -15,7 +15,9 @@
  */
 package org.modeshape.jcr.cache;
 
+import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -38,6 +40,7 @@ import org.infinispan.schematic.SchematicEntry;
 import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.document.EditableDocument;
 import org.infinispan.transaction.TransactionMode;
+import org.infinispan.util.concurrent.TimeoutException;
 import org.modeshape.common.SystemFailureException;
 import org.modeshape.common.collection.Collections;
 import org.modeshape.common.i18n.I18n;
@@ -228,8 +231,8 @@ public class RepositoryCache {
                     @Override
                     public Boolean call() throws Exception {
                         LocalDocumentStore store = documentStore().localStore();
-                        store.prepareDocumentsForUpdate(Collections.unmodifiableSet(REPOSITORY_INFO_KEY));
-                        EditableDocument editor = store.edit(REPOSITORY_INFO_KEY, true);
+                        store.lockDocuments(Collections.unmodifiableSet(REPOSITORY_INFO_KEY));
+                        EditableDocument editor = store.edit(REPOSITORY_INFO_KEY, true, false);
                         if (editor.get(REPOSITORY_UPGRADER_FIELD_NAME) == null) {
                             // Make sure that some other process didn't sneak in and already upgrade ...
                             int lastUpgradeId = editor.getInteger(REPOSITORY_UPGRADE_ID_FIELD_NAME, 0);
@@ -243,7 +246,7 @@ public class RepositoryCache {
                         // Another process is upgrading (or has already upgraded) the repository ...
                         return false;
                     }
-                });
+                }, 1, REPOSITORY_INFO_KEY);
                 if (this.upgradingRepository) {
                     LOGGER.debug("This process will upgrade the content in repository '{0}'", name);
                 } else {
@@ -439,15 +442,15 @@ public class RepositoryCache {
                     @Override
                     public Void call() throws Exception {
                         LocalDocumentStore store = documentStore().localStore();
-                        store.prepareDocumentsForUpdate(Collections.unmodifiableSet(REPOSITORY_INFO_KEY));
-                        EditableDocument editor = store.edit(REPOSITORY_INFO_KEY, true);
-                        if (editor.get(REPOSITORY_INITIALIZED_AT_FIELD_NAME) == null) {
+                        store.lockDocuments(Collections.unmodifiableSet(REPOSITORY_INFO_KEY));
+                        EditableDocument repositoryInfo = store.edit(REPOSITORY_INFO_KEY, true, false);
+                        if (repositoryInfo.get(REPOSITORY_INITIALIZED_AT_FIELD_NAME) == null) {
                             DateTime now = context().getValueFactories().getDateFactory().create();
-                            editor.setDate(REPOSITORY_INITIALIZED_AT_FIELD_NAME, now.toDate());
+                            repositoryInfo.setDate(REPOSITORY_INITIALIZED_AT_FIELD_NAME, now.toDate());
                         }
                         return null;
                     }
-                });
+                }, 1, REPOSITORY_INFO_KEY);
                 LOGGER.debug("Repository '{0}' is fully initialized", name);
             }
             return this;
@@ -472,15 +475,14 @@ public class RepositoryCache {
                         LOGGER.debug("Recording upgrade completion in repository '{0}'", name);
 
                         LocalDocumentStore store = documentStore().localStore();
-                        store.prepareDocumentsForUpdate(Collections.unmodifiableSet(REPOSITORY_INFO_KEY));
-                        EditableDocument editor = store.edit(REPOSITORY_INFO_KEY, true);
+                        EditableDocument editor = store.edit(REPOSITORY_INFO_KEY, true, false);
                         DateTime now = context().getValueFactories().getDateFactory().create();
                         editor.setDate(REPOSITORY_UPGRADED_AT_FIELD_NAME, now.toDate());
                         editor.setNumber(REPOSITORY_UPGRADE_ID_FIELD_NAME, lastUpgradeId);
                         editor.remove(REPOSITORY_UPGRADER_FIELD_NAME);
                         return null;
                     }
-                });
+                }, 1, REPOSITORY_INFO_KEY);
                 LOGGER.debug("Repository '{0}' is fully upgraded", name);
             } catch (Throwable err) {
                 // We do NOT want an error during upgrade to prevent the repository from coming online.
@@ -492,24 +494,43 @@ public class RepositoryCache {
         return this;
     }
 
-    private <V> V runInTransaction( Callable<V> operation ) {
+    private <V> V runInTransaction( Callable<V> operation, int retryCountOnLockTimeout, String... keysToLock ) {
         // Start a transaction ...
         Transactions txns = repositoryEnvironment.getTransactions();
         try {
             Transaction txn = txns.begin();
+            if (keysToLock.length > 0) {
+                List<String> keysList = Arrays.asList(keysToLock);
+                boolean locksAquired = false;
+                while (!locksAquired && retryCountOnLockTimeout > 0) {
+                    locksAquired = documentStore().localStore().lockDocuments(keysList);
+                    --retryCountOnLockTimeout;
+                }
+                if (!locksAquired) {
+                    txn.rollback();
+                    throw new org.modeshape.jcr.TimeoutException(
+                            "Cannot aquire lock on " + keysToLock + " after " + retryCountOnLockTimeout + " attempts");
+                }
+            }
             try {
                 V result = operation.call();
                 txn.commit();
                 return result;
             } catch (Exception e) {
+                // always rollback
                 txn.rollback();
-                throw (e instanceof RuntimeException) ? (RuntimeException)e : new RuntimeException(e);
+                // throw as is (see below)
+                throw e;
             }
         } catch (IllegalStateException | SystemException err) {
             throw new SystemFailureException(err);
         } catch (NotSupportedException e) {
             logger.debug(e, "nested transactions not supported");
             return null;
+        } catch (RuntimeException re) {
+            throw re;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -615,14 +636,14 @@ public class RepositoryCache {
                             entry = documentStore().localStore().get(systemMetadataKeyStr);
                         }
                     }
-                    EditableDocument doc = documentStore().localStore().edit(systemMetadataKeyStr, true);
+                    EditableDocument doc = documentStore().localStore().edit(systemMetadataKeyStr, true, false);
                     PropertyFactory propFactory = context().getPropertyFactory();
                     translator.setProperty(doc, propFactory.create(name("workspaces"), workspaceNames), null, null);
                     translator.setProperty(doc, propFactory.create(name("accessControl"), accessControlEnabled), null, null);
 
                     return null;
                 }
-            });
+            }, 2, systemMetadataKeyStr);
         } catch (RuntimeException re) {
             LOGGER.error(JcrI18n.errorUpdatingRepositoryMetadata, name, re.getMessage());
             throw re;
@@ -860,7 +881,7 @@ public class RepositoryCache {
                         }
                         return workspaceCache;
                     }
-                });
+                }, 0);
                 workspaceCachesByName.put(name, initializedWsCache);
             }
         }
@@ -1023,7 +1044,7 @@ public class RepositoryCache {
 
                     return null;
                 }
-            });
+            }, 0);
 
             // And notify the others - this notification will clear & close the WS cache via the local listener
             String userId = context.getSecurityContext().getUserName();
@@ -1157,6 +1178,12 @@ public class RepositoryCache {
             sw.stop();
             logger.info(JcrI18n.completeChildrenOptimization, getName(), sw.getTotalDuration().toSimpleString(), results);
             return results;
+        } catch (TimeoutException te) {
+            // we were unable to obtain some locks in ISPN while trying to do optimize so we'll just log this since the operation
+            // will be retried later and the transaction should've been rolled back
+            if (logger.isDebugEnabled()) {
+                logger.debug(te, "Unable to obtain ISPN locks while trying to perform document optimization");
+            }
         } catch (Throwable e) {
             logger.info(JcrI18n.errorDuringChildrenOptimization, getName(), sw.getTotalDuration().toSimpleString(), e);
         }

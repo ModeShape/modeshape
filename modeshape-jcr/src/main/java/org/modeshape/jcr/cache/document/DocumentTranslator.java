@@ -1236,7 +1236,8 @@ public class DocumentTranslator implements DocumentConstants {
         // Find the document metadata and increment the usage count ...
         String sha1 = binaryKey.toString();
         String key = keyForBinaryReferenceDocument(sha1);
-        EditableDocument entry = documentStore.edit(key, false);
+        // don't acquire a lock since we've already done this at the beginning of the #save
+        EditableDocument entry = documentStore.edit(key, false, false);
         if (entry == null) {
             // The document doesn't yet exist, so create it ...
             Document content = Schematic.newDocument(SHA1, sha1, REFERENCE_COUNT, 1L);
@@ -1286,7 +1287,8 @@ public class DocumentTranslator implements DocumentConstants {
             if (sha1 != null) {
                 BinaryKey binaryKey = new BinaryKey(sha1);
                 // Find the document metadata and decrement the usage count ...
-                EditableDocument sha1Usage = documentStore.edit(keyForBinaryReferenceDocument(sha1), false);
+                // Don't acquire a lock since we should've done so at the beginning of the #save method
+                EditableDocument sha1Usage = documentStore.edit(keyForBinaryReferenceDocument(sha1), false, false);
                 if (sha1Usage != null) {
                     Long countValue = sha1Usage.getLong(REFERENCE_COUNT);
                     assert countValue != null;

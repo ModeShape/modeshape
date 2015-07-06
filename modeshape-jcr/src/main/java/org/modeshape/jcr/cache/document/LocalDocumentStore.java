@@ -144,7 +144,7 @@ public class LocalDocumentStore implements DocumentStore {
     }
 
     @Override
-    public boolean prepareDocumentsForUpdate( Collection<String> keys ) {
+    public boolean lockDocuments( Collection<String> keys ) {
         return database.lock(keys);
     }
 

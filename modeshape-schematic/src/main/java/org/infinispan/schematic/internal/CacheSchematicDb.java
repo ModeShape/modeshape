@@ -44,6 +44,8 @@ public class CacheSchematicDb implements SchematicDb {
         this.name = store.getName();
         this.explicitLocking = store.getCacheConfiguration().transaction().lockingMode() == LockingMode.PESSIMISTIC;
         if (this.explicitLocking) {
+            // the FAIL SILENTLY flag is required here because without it ISPN will rollback the active transaction on the first
+            // TimeoutException, while ModeShape has built-in logic for retrying....
             this.lockingStore = store.withFlags(Flag.FAIL_SILENTLY).getAdvancedCache();
         } else {
             this.lockingStore = store;

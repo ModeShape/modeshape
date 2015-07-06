@@ -36,6 +36,7 @@ import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.cache.RepositoryEnvironment;
 import org.modeshape.jcr.cache.SessionCache;
 import org.modeshape.jcr.txn.Transactions;
+import org.modeshape.jcr.value.BinaryKey;
 import org.modeshape.jcr.value.NameFactory;
 import org.modeshape.jcr.value.Path;
 import org.modeshape.jcr.value.PathFactory;
@@ -296,5 +297,13 @@ public abstract class AbstractSessionCache implements SessionCache, DocumentCach
     protected abstract void doClear( CachedNode node );
 
     protected abstract void doClear();
+
+    /**
+     * Register the fact that one or more binary values are being used or not used anymore by a node.
+     *
+     * @param nodeKey a {@link NodeKey} instance; may not be null.
+     * @param binaryKeys an array of {@link BinaryKey} instances; may not be null.
+     */
+    protected abstract void addBinaryReference( NodeKey nodeKey, BinaryKey... binaryKeys );
 
 }
