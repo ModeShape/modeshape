@@ -1059,7 +1059,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                     this.changeBus = other.changeBus;
                     this.internalWorkerContext = other.internalWorkerContext;
                     this.nodeTypes = other.nodeTypes.with(this, true, true);
-                    this.lockManager = other.lockManager.with(this);
+                    this.lockManager = other.lockManager.with(this, other.config.getGarbageCollection());
                     // We have to register new components that depend on this instance ...
                     this.changeBus.unregister(other.nodeTypes);
                     this.changeBus.unregister(other.lockManager);
@@ -1141,7 +1141,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                     this.changeBus.register(this.nodeTypes);
 
                     // Set up the lock manager ...
-                    this.lockManager = new RepositoryLockManager(this);
+                    this.lockManager = new RepositoryLockManager(this, config.getGarbageCollection());
                     this.changeBus.register(this.lockManager);
 
                     // Set up the monitoring listener ...
@@ -1357,20 +1357,20 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 // Do this last since we want the repository running before these are started ...
                 GarbageCollection gcConfig = config.getGarbageCollection();
                 String threadPoolName = gcConfig.getThreadPoolName();
-                long binaryGcInitialTimeInMillis = determineInitialDelay(gcConfig.getInitialTimeExpression());
-                long binaryGcIntervalInHours = gcConfig.getIntervalInHours();
-                int lockSweepIntervalInMinutes = gcConfig.getLockSweepIntervalInMinutes();
-                assert binaryGcInitialTimeInMillis >= 0;
-                long binaryGcIntervalInMillis = TimeUnit.MILLISECONDS.convert(binaryGcIntervalInHours, TimeUnit.HOURS);
+                long gcInitialTimeInMillis = determineInitialDelay(gcConfig.getInitialTimeExpression());
+                long gcIntervalInMillis = gcConfig.getIntervalInMillis();
+             
+                assert gcInitialTimeInMillis >= 0;
                 ScheduledExecutorService garbageCollectionService = this.context.getScheduledThreadPool(threadPoolName);
                 backgroundProcesses.add(garbageCollectionService.scheduleAtFixedRate(new LockGarbageCollectionTask(
                                                                                                                    JcrRepository.this),
-                                                                                     lockSweepIntervalInMinutes,
-                                                                                     lockSweepIntervalInMinutes, TimeUnit.MINUTES));
+                                                                                     gcInitialTimeInMillis,
+                                                                                     gcIntervalInMillis,
+                                                                                     TimeUnit.MILLISECONDS));
                 backgroundProcesses.add(garbageCollectionService.scheduleAtFixedRate(new BinaryValueGarbageCollectionTask(
                                                                                                                           JcrRepository.this),
-                                                                                     binaryGcInitialTimeInMillis,
-                                                                                     binaryGcIntervalInMillis,
+                                                                                     gcInitialTimeInMillis,
+                                                                                     gcIntervalInMillis,
                                                                                      TimeUnit.MILLISECONDS));
 
                 DocumentOptimization optConfig = config.getDocumentOptimization();
@@ -1814,9 +1814,9 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 logger.debug("Starting lock cleanup in the '{0}' repository", repositoryName());
             }
 
+            Set<String> activeSessionIds = new HashSet<String>();
             try {
                 // Get the IDs for the active sessions ...
-                Set<String> activeSessionIds = new HashSet<String>();
                 Lock lock = this.activeSessionLock.writeLock();
                 try {
                     lock.lock();
@@ -1830,12 +1830,18 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 }
 
                 this.lockManager().cleanupLocks(activeSessionIds);
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Finishing lock cleanup in the '{0}' repository", repositoryName());
+                }
+            } catch (TimeoutException te) {
+                // some locks could not be obtained in ISPN while trying to execute the job
+                // just log the exception since the transaction should've rolled back and we'll retry this job anyway later on
+                if (logger.isDebugEnabled()) {
+                    logger.debug(te, "A timeout occurred in ISPN while attempting to clean the JCR locks for the sessions: {0}",
+                                 activeSessionIds);
+                }
             } catch (Throwable e) {
                 logger.error(e, JcrI18n.errorDuringGarbageCollection, e.getMessage());
-            }
-
-            if (logger.isDebugEnabled()) {
-                logger.debug("Finishing lock cleanup in the '{0}' repository", repositoryName());
             }
         }
 

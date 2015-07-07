@@ -21,12 +21,5 @@
             "roles" : ["readonly","readwrite","admin"],
             "useOnFailedLogin" : false
         }
-    },
-    "query" : {
-        "enabled" : true,
-        "indexStorage" : {
-            "type" : "filesystem",
-            "location" : "target/persistent_repository/index"
-        }
     }
 }

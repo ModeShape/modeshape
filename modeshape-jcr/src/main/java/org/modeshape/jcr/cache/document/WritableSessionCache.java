@@ -1612,15 +1612,15 @@ public class WritableSessionCache extends AbstractSessionCache {
         if (binaryKeys.length == 0) {
             return;
         }
-        Set<BinaryKey> unusedBinaries = this.binaryReferencesByNodeKey.get(nodeKey);
-        if (unusedBinaries == null) {
+        Set<BinaryKey> binaryReferencesForNode = this.binaryReferencesByNodeKey.get(nodeKey);
+        if (binaryReferencesForNode == null) {
             Set<BinaryKey> emptySet = Collections.newSetFromMap(new ConcurrentHashMap<BinaryKey, Boolean>());
-            unusedBinaries = this.binaryReferencesByNodeKey.putIfAbsent(nodeKey, emptySet);
-            if (unusedBinaries == null) {
-                unusedBinaries = emptySet;
+            binaryReferencesForNode = this.binaryReferencesByNodeKey.putIfAbsent(nodeKey, emptySet);
+            if (binaryReferencesForNode == null) {
+                binaryReferencesForNode = emptySet;
             }
         }
-        unusedBinaries.addAll(Arrays.asList(binaryKeys));
+        binaryReferencesForNode.addAll(Arrays.asList(binaryKeys));
     }
 
     @Override

@@ -173,33 +173,6 @@ public class RepositoryConfiguration {
     public final static Pattern INDEX_COLUMN_DEFINITIONS_PATTERN = Pattern.compile(INDEX_COLUMN_DEFINITIONS_STRING);
 
     /**
-     * The process of garbage collecting locks and binary values runs periodically, and this value controls how often it runs. The
-     * value is currently set to 5 minutes.
-     */
-    private final static int LOCK_GARBAGE_COLLECTION_SWEEP_PERIOD = 5;
-    private final static TimeUnit LOCK_GARBAGE_COLLECTION_SWEEP_PERIOD_UNIT = TimeUnit.MINUTES;
-
-    /**
-     * Each time the garbage collection process runs, session-scoped locks that are still used by active sessions will have their
-     * expiry times extended by this amount of time. Each repository instance in the ModeShape cluster will run its own cleanup
-     * process, which will extend the expiry times of its own locks. As soon as a repository is no longer running the cleanup
-     * process, we know that there can be no active sessions.
-     * <p>
-     * The extension interval is generally twice the length of the period that the garbage collection runs, ensuring that any
-     * slight deviation in the period does not cause locks to be expired prematurely.
-     * </p>
-     */
-    final static int LOCK_EXTENSION_INTERVAL_IN_MILLIS = (int)TimeUnit.MILLISECONDS.convert(LOCK_GARBAGE_COLLECTION_SWEEP_PERIOD * 2,
-                                                                                            LOCK_GARBAGE_COLLECTION_SWEEP_PERIOD_UNIT);
-
-    /**
-     * The amount of time that a lock may be expired before being removed. The sweep process will extend the locks for active
-     * sessions, so only unused locks will have an unmodified expiry time. The value is currently twice the sweep period.
-     */
-    final static int LOCK_EXPIRY_AGE_IN_MILLIS = (int)TimeUnit.MILLISECONDS.convert(LOCK_GARBAGE_COLLECTION_SWEEP_PERIOD * 2,
-                                                                                    LOCK_GARBAGE_COLLECTION_SWEEP_PERIOD_UNIT);
-
-    /**
      * As binary values are no longer used, they are quarantined in the binary store. When the garbage collection process runs,
      * any binary values that have been quarantined longer than this duration will be removed.
      * <p>
@@ -1987,23 +1960,14 @@ public class RepositoryConfiguration {
         public int getIntervalInHours() {
             return gc.getInteger(FieldName.INTERVAL_IN_HOURS, Default.GARBAGE_COLLECTION_INTERVAL_IN_HOURS);
         }
-
+        
         /**
-         * Get the minimum time that a binary value should be unused before it can be garbage collected.
+         * Get the garbage collection interval in milliseconds.
          *
-         * @return the minimum time; never null
+         * @return the interval; never null
          */
-        public long getUnusedBinaryValueTimeInMillis() {
-            return UNUSED_BINARY_VALUE_AGE_IN_MILLIS;
-        }
-
-        /**
-         * Get the number of minutes between sweeping the locks.
-         *
-         * @return the interval for lock sweeping, in minutes; never null
-         */
-        public int getLockSweepIntervalInMinutes() {
-            return LOCK_GARBAGE_COLLECTION_SWEEP_PERIOD;
+        public long getIntervalInMillis() {
+            return TimeUnit.MILLISECONDS.convert(getIntervalInHours(), TimeUnit.HOURS);
         }
     }
 
