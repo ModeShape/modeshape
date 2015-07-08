@@ -65,6 +65,13 @@ public class MapDB {
                                                      Comparator<?> comparator,
                                                      boolean pack );
 
+        /**
+         * Obtain a serializer for the given value type that can handle nulls.
+         *
+         * @param type the type; may not be null
+         * @return the serializer that can handle nulls
+         */
+        Serializer<?> nullSafeSerializerFor( Class<?> type );
     }
 
     public static Serializers serializers( ValueFactories factories ) {
@@ -78,9 +85,14 @@ public class MapDB {
 
     public static final class SerializerSupplier implements Serializers {
         private final Map<Class<?>, Serializer<?>> serializersByClass;
+        private final Map<Class<?>, Serializer<?>> nullSafeSerializersByClass;
         private final Map<Class<?>, BTreeKeySerializer<?>> bTreeKeySerializersByClass;
+        private final Serializer<?> DEFAULT_NULL_SAFE_SERIALIZER;
 
         protected SerializerSupplier( ValueFactories factories ) {
+            DEFAULT_NULL_SAFE_SERIALIZER = (isNullSafe(DEFAULT_SERIALIZER) ? DEFAULT_SERIALIZER
+                                                                           : new NullSafeSerializer<>(DEFAULT_SERIALIZER));
+
             // Create the serializers ...
             serializersByClass = new HashMap<Class<?>, Serializer<?>>();
             serializersByClass.put(String.class, Serializer.STRING);
@@ -96,11 +108,24 @@ public class MapDB {
             serializersByClass.put(NodeKey.class, NODE_KEY_SERIALIZER);
 
             bTreeKeySerializersByClass = new HashMap<Class<?>, BTreeKeySerializer<?>>();
+            nullSafeSerializersByClass = new HashMap<Class<?>, Serializer<?>>();
             for (Map.Entry<Class<?>, Serializer<?>> entry : serializersByClass.entrySet()) {
                 Serializer<?> serializer = entry.getValue();
                 @SuppressWarnings( {"rawtypes", "unchecked"} )
                 BTreeKeySerializer<?> bTreeSerializer = new DelegatingKeySerializer(serializer);
                 bTreeKeySerializersByClass.put(entry.getKey(), bTreeSerializer);
+
+                Serializer<?> nullsafe = (isNullSafe(serializer) ? serializer : new NullSafeSerializer<>(serializer));
+                nullSafeSerializersByClass.put(entry.getKey(), nullsafe);
+            }
+        }
+
+        private static <T> boolean isNullSafe(Serializer<T> serializer) {
+            try {
+                serializer.serialize(new DataOutput2(), null);
+                return true;
+            } catch(IOException | NullPointerException e) {
+                return false;
             }
         }
 
@@ -109,6 +134,12 @@ public class MapDB {
             Serializer<?> result = serializersByClass.get(type);
             if (result != null) return result;
             return DEFAULT_SERIALIZER;
+        }
+
+        public Serializer<?> nullSafeSerializerFor( Class<?> type ) {
+            Serializer<?> result = nullSafeSerializersByClass.get(type);
+            if (result != null) return result;
+            return DEFAULT_NULL_SAFE_SERIALIZER;
         }
 
         @Override
@@ -129,6 +160,38 @@ public class MapDB {
         private <T> BTreeKeySerializer<T> bTreeKeySerializerWith( final BTreeKeySerializer<?> original,
                                                                   final Comparator<T> comparator ) {
             return new BTreeKeySerializerWitheComparator<T>(original, comparator);
+        }
+
+        private static class NullSafeSerializer<T> implements Serializer<T>, Serializable {
+            private Serializer<T> baseSerializer;
+
+            public NullSafeSerializer(Serializer<T> baseSerializer) {
+                this.baseSerializer = baseSerializer;
+            }
+
+            @Override
+            public void serialize(DataOutput dataOutput, T t) throws IOException {
+                if (t == null) {
+                    dataOutput.writeBoolean(false);
+                } else {
+                    dataOutput.writeBoolean(true);
+                    baseSerializer.serialize(dataOutput, t);
+                }
+            }
+
+            @Override
+            public T deserialize(DataInput dataInput, int i) throws IOException {
+                if (!dataInput.readBoolean()) {
+                    return null;
+                } else {
+                    return baseSerializer.deserialize(dataInput, i);
+                }
+            }
+
+            @Override
+            public int fixedSize() {
+                return -1;
+            }
         }
     }
 

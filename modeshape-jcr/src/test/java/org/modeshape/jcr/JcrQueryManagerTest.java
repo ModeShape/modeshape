@@ -702,6 +702,14 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         validateQuery().rowCount(4).validate(query, query.execute());
     }
 
+    @FixFor("MODE-2490")
+    @Test
+    public void shouldOrderByTwoColumnsEvenIfNullable() throws RepositoryException {
+        String sql = "SELECT * FROM [car:Car] ORDER BY [car:maker] DESC NULLS FIRST, [car:msrp] ASC NULLS FIRST";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        validateQuery().rowCount(13).validate(query, query.execute());
+    }
+
     @FixFor( "MODE-2297" )
     @Test
     public void shouldExecuteQueryUsingSetOperationOfQueriesWithoutJoins() throws RepositoryException {
