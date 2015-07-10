@@ -9,6 +9,7 @@
             <transaction
                     mode="NON_DURABLE_XA"
                     locking="PESSIMISTIC"/>
+            <locking acquire-timeout="2000" />
             <persistence 
                     passivation="false">
                 <file-store fetch-state="false"

@@ -320,8 +320,8 @@ public class FederatedDocumentStore implements DocumentStore {
     }
 
     @Override
-    public boolean prepareDocumentsForUpdate( Collection<String> keys ) {
-        return localDocumentStore.prepareDocumentsForUpdate(keys);
+    public boolean lockDocuments( Collection<String> keys ) {
+        return localDocumentStore.lockDocuments(keys);
     }
 
     @Override

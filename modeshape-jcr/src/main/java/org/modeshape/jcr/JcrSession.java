@@ -2419,7 +2419,7 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
                 // primary types. The first to fail will result in an exception ...
                 final SessionCache session = cache();
                 for (NodeKey appendedOrRenamedKey : appendedOrRenamedChildrenByName.get(childName)) {
-                    MutableCachedNode appendedOrRenamedChild = session.mutable(appendedOrRenamedKey);
+                    CachedNode appendedOrRenamedChild = session.getNode(appendedOrRenamedKey);
                     if (appendedOrRenamedChild == null) { continue; }
                     Name childPrimaryType = appendedOrRenamedChild.getPrimaryType(session);
                     childDefns = nodeTypeCapabilities.findChildNodeDefinitions(primaryType, mixinTypes);

@@ -45,6 +45,7 @@ import org.modeshape.jcr.JcrI18n;
 import org.modeshape.jcr.JcrLexicon;
 import org.modeshape.jcr.JcrNtLexicon;
 import org.modeshape.jcr.JcrSession;
+import org.modeshape.jcr.api.Binary;
 import org.modeshape.jcr.ModeShapeLexicon;
 import org.modeshape.jcr.NodeTypes;
 import org.modeshape.jcr.cache.CachedNode;
@@ -62,6 +63,7 @@ import org.modeshape.jcr.cache.ReferrerCounts.MutableReferrerCounts;
 import org.modeshape.jcr.cache.RepositoryEnvironment;
 import org.modeshape.jcr.cache.SessionCache;
 import org.modeshape.jcr.cache.WrappedException;
+import org.modeshape.jcr.value.BinaryKey;
 import org.modeshape.jcr.value.BinaryValue;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.NameFactory;
@@ -74,6 +76,7 @@ import org.modeshape.jcr.value.Reference;
 import org.modeshape.jcr.value.ValueFactories;
 import org.modeshape.jcr.value.basic.NodeKeyReference;
 import org.modeshape.jcr.value.basic.StringReference;
+import org.modeshape.jcr.value.binary.AbstractBinary;
 import org.modeshape.jcr.value.binary.ExternalBinaryValue;
 
 /**
@@ -811,7 +814,7 @@ public class SessionNode implements MutableCachedNode {
         Name name = property.getName();
         changedProperties.put(name, property);
         if (!isNew) removedProperties.remove(name);
-        updateReferences(cache, name, null);
+        processPropertyChange(cache, name, null);
     }
 
     @Override
@@ -824,30 +827,45 @@ public class SessionNode implements MutableCachedNode {
         Name name = property.getName();
         changedProperties.put(name, property);
         if (!isNew) removedProperties.remove(name);
-        updateReferences(cache, name, systemCache);
+        processPropertyChange(cache, name, systemCache);
     }
 
-    private void updateReferences( SessionCache cache,
-                                   Name propertyName,
-                                   SessionCache systemCache ) {
+    private void processPropertyChange( SessionCache cache,
+                                        Name propertyName,
+                                        SessionCache systemCache ) {
         Property propertyWhichWasRemoved = null;
         Property propertyWhichWasAdded = null;
 
         // first try to determine if there's old reference property with the same name so that old references can be removed
         boolean oldPropertyWasReference = false;
         List<Reference> referencesToRemove = new ArrayList<>();
+        Set<BinaryKey> binaryChanges = new HashSet<BinaryKey>();
+
         if (isPropertyModified(cache, propertyName) || isPropertyRemoved(propertyName)) {
             // remove potential existing references
             CachedNode persistedNode = nodeInWorkspace(session(cache));
             Property oldProperty = persistedNode.getProperty(propertyName, cache);
-            if (oldProperty != null && oldProperty.isReference()) {
-                oldPropertyWasReference = true;
-                propertyWhichWasRemoved = oldProperty;
-                for (Object referenceObject : oldProperty.getValuesAsArray()) {
-                    assert referenceObject instanceof Reference;
-                    referencesToRemove.add((Reference)referenceObject);
+            if (oldProperty != null) {
+                if (oldProperty.isReference()) {
+                    oldPropertyWasReference = true;
+                    propertyWhichWasRemoved = oldProperty;
+                    for (Object referenceObject : oldProperty.getValuesAsArray()) {
+                        assert referenceObject instanceof Reference;
+                        referencesToRemove.add((Reference)referenceObject);
+                    }
                 }
-            }
+                
+                if (oldProperty.isBinary()) {
+                    // track any removed binaries by this node  because they will need to be processed during save
+                    for (Object binaryObject : oldProperty.getValuesAsArray()) {
+                        assert binaryObject instanceof Binary;
+                        if (binaryObject instanceof AbstractBinary) {
+                            BinaryKey binaryKey = ((AbstractBinary)binaryObject).getKey();
+                            binaryChanges.add(binaryKey);
+                        }
+                    }
+                }
+            } 
         }
 
         // if the updated property is a reference, determine which are the references that need updating
@@ -855,53 +873,79 @@ public class SessionNode implements MutableCachedNode {
         List<Reference> referencesToAdd = new ArrayList<>();
         Property property = changedProperties.get(propertyName);
         boolean keepPropertyAsChanged = false;
-        if (property != null && property.isReference()) {
-            updatedPropertyIsReference = true;
-            propertyWhichWasAdded = property;
-            Object[] valuesAsArray = property.getValuesAsArray();
-          
-            for (int i = 0; i < valuesAsArray.length; i++) {
-                Object referenceObject = valuesAsArray[i];
-                assert referenceObject instanceof Reference;
-                Reference updatedReference = (Reference)referenceObject;
-                int referenceToRemoveIdx = referencesToRemove.indexOf(updatedReference);
-                if (referenceToRemoveIdx != -1) {
-                    // the reference is already present on a property with the same name, so this is a no-op for that reference
-                    // therefore we remove it from the list of references that will be removed,
-                    // but we need to keep in mind the fact that references may be reordered  
-                    if (referenceToRemoveIdx != i) {
-                        // the index of the updated reference differs from the index of the existing reference, meaning
-                        // that the reference has been reordered
-                        keepPropertyAsChanged = true;
-                    }
-                    if (referencesToRemove.remove(updatedReference)) {
-                        // Make sure that the referenced node is not modified to remove the back-reference to this node.
-                        // See MODE-2283 for an example ...
-                        NodeKey referredKey = nodeKeyFromReference(updatedReference);
-                        CachedNode referredNode = cache.getNode(referredKey);
-                        if (referredNode instanceof SessionNode) {
-                            // The node was modified during this session and has unsaved changes ...
-                            SessionNode changedReferrerNode = (SessionNode)referredNode;
-                            ReferrerChanges changes = changedReferrerNode.getReferrerChanges();
-                            if (changes != null) {
-                                // There are changes to that node's referrers ...
-                                ReferenceType type = updatedReference.isWeak() ? ReferenceType.WEAK : ReferenceType.STRONG;
-                                if (changes.isRemovedReferrer(key, type)) {
-                                    // The referenced node had a back reference to this node, but we're no longer removing
-                                    // this node's reference to the referenced node, and that means we should no longer remove
-                                    // the referenced node's backreference to this node ...
-                                    if (updatedReference.isWeak()) changes.addWeakReferrer(propertyWhichWasRemoved, key);
-                                    else changes.addStrongReferrer(propertyWhichWasRemoved, key);
+        
+        if (property != null) {
+            if (property.isReference()) {
+                updatedPropertyIsReference = true;
+                propertyWhichWasAdded = property;
+                Object[] valuesAsArray = property.getValuesAsArray();
+
+                for (int i = 0; i < valuesAsArray.length; i++) {
+                    Object referenceObject = valuesAsArray[i];
+                    assert referenceObject instanceof Reference;
+                    Reference updatedReference = (Reference)referenceObject;
+                    int referenceToRemoveIdx = referencesToRemove.indexOf(updatedReference);
+                    if (referenceToRemoveIdx != -1) {
+                        // the reference is already present on a property with the same name, so this is a no-op for that reference
+                        // therefore we remove it from the list of references that will be removed,
+                        // but we need to keep in mind the fact that references may be reordered  
+                        if (referenceToRemoveIdx != i) {
+                            // the index of the updated reference differs from the index of the existing reference, meaning
+                            // that the reference has been reordered
+                            keepPropertyAsChanged = true;
+                        }
+                        if (referencesToRemove.remove(updatedReference)) {
+                            // Make sure that the referenced node is not modified to remove the back-reference to this node.
+                            // See MODE-2283 for an example ...
+                            NodeKey referredKey = nodeKeyFromReference(updatedReference);
+                            CachedNode referredNode = cache.getNode(referredKey);
+                            if (referredNode instanceof SessionNode) {
+                                // The node was modified during this session and has unsaved changes ...
+                                SessionNode changedReferrerNode = (SessionNode)referredNode;
+                                ReferrerChanges changes = changedReferrerNode.getReferrerChanges();
+                                if (changes != null) {
+                                    // There are changes to that node's referrers ...
+                                    ReferenceType type = updatedReference.isWeak() ? ReferenceType.WEAK : ReferenceType.STRONG;
+                                    if (changes.isRemovedReferrer(key, type)) {
+                                        // The referenced node had a back reference to this node, but we're no longer removing
+                                        // this node's reference to the referenced node, and that means we should no longer remove
+                                        // the referenced node's backreference to this node ...
+                                        if (updatedReference.isWeak())
+                                            changes.addWeakReferrer(propertyWhichWasRemoved, key);
+                                        else
+                                            changes.addStrongReferrer(propertyWhichWasRemoved, key);
+                                    }
                                 }
                             }
                         }
+                    } else {
+                        keepPropertyAsChanged = true;
+                        // this is a new reference (either via key or type)
+                        referencesToAdd.add(updatedReference);
                     }
-                } else {
-                    keepPropertyAsChanged = true;
-                    // this is a new reference (either via key or type)
-                    referencesToAdd.add(updatedReference);
                 }
             }
+
+            if (property.isBinary()) {
+                //if the changed property is a binary, we need to track the change via the session cache
+                for (Object binaryObject : property.getValuesAsArray()) {
+                    assert binaryObject instanceof Binary;
+                    if (binaryObject instanceof AbstractBinary) {
+                        BinaryKey key = ((AbstractBinary)binaryObject).getKey();
+                        if (binaryChanges.remove(key)) {
+                            // the same binary key already appears in the set, meaning it has been both removed & changed, making it a no-op
+                        } else {
+                            // this is a new or updated binary reference which we must add 
+                            binaryChanges.add(key);
+                        }
+                    }
+                }
+            }
+        }
+        
+        // if there are any binary usage changes, send them to the session cache
+        if (!binaryChanges.isEmpty()) {
+            session(cache).addBinaryReference(key, binaryChanges.toArray(new BinaryKey[binaryChanges.size()]));
         }
 
         // if an existing reference property was just updated with the same value in the same order, it is a no-op so we should just 
@@ -1015,7 +1059,7 @@ public class SessionNode implements MutableCachedNode {
             Name name = property.getName();
             changedProperties.put(name, property);
             if (!isNew) removedProperties.remove(name);
-            updateReferences(cache, name, null);
+            processPropertyChange(cache, name, null);
         }
     }
 
@@ -1028,7 +1072,7 @@ public class SessionNode implements MutableCachedNode {
             Name name = property.getName();
             changedProperties.put(name, property);
             if (!isNew) removedProperties.remove(name);
-            updateReferences(cache, name, null);
+            processPropertyChange(cache, name, null);
         }
     }
 
@@ -1045,7 +1089,7 @@ public class SessionNode implements MutableCachedNode {
                 removedProperties.put(name, name);
             }
         }
-        updateReferences(cache, name, null);
+        processPropertyChange(cache, name, null);
     }
 
     @Override
@@ -1065,7 +1109,7 @@ public class SessionNode implements MutableCachedNode {
                     removedProperties.put(name, name);
                 }
             }
-            updateReferences(cache, name, null);
+            processPropertyChange(cache, name, null);
         }
     }
 

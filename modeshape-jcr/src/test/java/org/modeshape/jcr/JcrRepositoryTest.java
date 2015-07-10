@@ -30,10 +30,13 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -714,6 +717,79 @@ public class JcrRepositoryTest {
         assertLocking(reader, "/sessionLockedNode2", true);
 
         assertEquals(Long.MAX_VALUE, locker2.getWorkspace().getLockManager().getLock("/sessionLockedNode2").getSecondsRemaining());
+    }
+
+    @Test
+    @FixFor( "MODE-2485" )
+    public void shouldCleanupLocksConcurrently() throws Exception {
+        //simulate cleaning up locks from multiple threads concurrently
+        //this is a scenario which should only occur in a cluster
+        final JcrSession locker1 = repository.login();
+
+        // add a session scoped lock from session1
+        javax.jcr.Node sessionLockedNode1 = locker1.getRootNode().addNode("sessionLockedNode1");
+        sessionLockedNode1.addMixin("mix:lockable");
+        locker1.save();
+        locker1.getWorkspace().getLockManager().lock(sessionLockedNode1.getPath(), false, true, 1, "me");
+
+        // add a session scoped lock from session2
+        final JcrSession locker2 = repository.login();
+        javax.jcr.Node sessionLockedNode2 = locker2.getRootNode().addNode("sessionLockedNode2");
+        sessionLockedNode2.addMixin("mix:lockable");
+        locker2.save();
+        locker2.getWorkspace().getLockManager().lock(sessionLockedNode2.getPath(), false, true, 1, "me");
+
+        // validate that all sessions see all nodes as locked
+        assertLocking(locker1, "/sessionLockedNode1", true);
+        assertLocking(locker1, "/sessionLockedNode2", true);
+        assertLocking(locker2, "/sessionLockedNode1", true);
+        assertLocking(locker2, "/sessionLockedNode2", true);
+        
+        // run threads which concurrently terminate the sessions and cleaup the locks
+        int nThreads = 2;
+        ExecutorService executors = Executors.newFixedThreadPool(nThreads);
+        List<Future> results = new ArrayList<Future>(nThreads);        
+        final CyclicBarrier barrier = new CyclicBarrier(nThreads);
+        try {
+            results.add(executors.submit(new Callable() {
+                @Override
+                public Object call() throws Exception {
+                    //remove the 1st locking session internally, as if it had terminated unexpectedly
+                    repository.runningState().removeSession(locker1);
+                    //make sure the open lock also expires
+                    Thread.sleep(1001);
+                    barrier.await();
+                    repository.runningState().cleanUpLocks();
+                    return null;
+                }
+            }));
+
+            results.add(executors.submit(new Callable() {
+                @Override
+                public Object call() throws Exception {
+                    //remove the 2nd locking session internally, as if it had terminated unexpectedly
+                    repository.runningState().removeSession(locker2);
+                    //make sure the open lock also expires
+                    Thread.sleep(1001);
+                    barrier.await();
+                    repository.runningState().cleanUpLocks();
+                    return null;
+                }
+            }));
+            
+            for (Future<?> result : results) {
+                result.get(3, TimeUnit.SECONDS);
+            }
+
+            // validate that all nodes are unlocked for all sessions
+            assertLocking(locker1, "/sessionLockedNode1", false);
+            assertLocking(locker1, "/sessionLockedNode2", false);
+            assertLocking(locker2, "/sessionLockedNode1", false);
+            assertLocking(locker2, "/sessionLockedNode2", false);
+        } finally {
+            executors.shutdownNow();
+        }
+
     }
 
     private void assertLocking( Session session, String path, boolean locked ) throws Exception {
