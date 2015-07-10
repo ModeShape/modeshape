@@ -4841,6 +4841,56 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         }
     }
 
+    @Test
+    @FixFor( "MODE-2491" )
+    public void shouldSupportCaseOperandsForMultiValuedProperties() throws Exception {
+        Node metaData = session.getRootNode().addNode("metaData", "nt:unstructured");
+        metaData.setProperty("lowerCase", new String[]{"a", "b", "c"});        
+        metaData.setProperty("upperCase", new String[]{"A", "B", "C"});
+        session.save();
+
+        try {
+            String sql = "SELECT [jcr:path] FROM [nt:unstructured] AS node WHERE LOWER(node.upperCase) = 'a'";
+            Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+            NodeIterator nodes = query.execute().getNodes();
+            assertEquals(1, nodes.getSize());
+            assertEquals("/metaData", nodes.nextNode().getPath());
+
+            sql = "SELECT [jcr:path] FROM [nt:unstructured] AS node WHERE LOWER(node.upperCase) = 'b'";
+            query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+            nodes = query.execute().getNodes();
+            assertEquals(1, nodes.getSize());
+            assertEquals("/metaData", nodes.nextNode().getPath());
+            
+            sql = "SELECT [jcr:path] FROM [nt:unstructured] AS node WHERE LOWER(node.upperCase) = 'c'";
+            query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+            nodes = query.execute().getNodes();
+            assertEquals(1, nodes.getSize());
+            assertEquals("/metaData", nodes.nextNode().getPath());   
+            
+            sql = "SELECT [jcr:path] FROM [nt:unstructured] AS node WHERE UPPER(node.lowerCase) = 'A'";
+            query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+            nodes = query.execute().getNodes();
+            assertEquals(1, nodes.getSize());
+            assertEquals("/metaData", nodes.nextNode().getPath());
+
+            sql = "SELECT [jcr:path] FROM [nt:unstructured] AS node WHERE UPPER(node.lowerCase) = 'B'";
+            query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+            nodes = query.execute().getNodes();
+            assertEquals(1, nodes.getSize());
+            assertEquals("/metaData", nodes.nextNode().getPath());
+            
+            sql = "SELECT [jcr:path] FROM [nt:unstructured] AS node WHERE UPPER(node.lowerCase) = 'C'";
+            query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+            nodes = query.execute().getNodes();
+            assertEquals(1, nodes.getSize());
+            assertEquals("/metaData", nodes.nextNode().getPath());
+        } finally {
+            metaData.remove();
+            session.save();
+        }
+    }
+
     private void registerNodeType( String typeName ) throws RepositoryException {
         NodeTypeManager nodeTypeManager = session.getWorkspace().getNodeTypeManager();
 
