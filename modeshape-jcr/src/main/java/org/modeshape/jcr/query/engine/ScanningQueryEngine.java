@@ -666,11 +666,23 @@ public class ScanningQueryEngine implements org.modeshape.jcr.query.QueryEngine 
                             }
                         } else if (joinCondition instanceof ChildNodeJoinCondition) {
                             ChildNodeJoinCondition condition = (ChildNodeJoinCondition)joinCondition;
-                            assert leftColumns.getSelectorNames().contains(condition.getParentSelectorName());
-                            int leftIndex = leftColumns.getSelectorIndex(condition.getParentSelectorName());
-                            int rightIndex = rightColumns.getSelectorIndex(condition.getChildSelectorName());
-                            leftExtractor = RowExtractors.extractNodeKey(leftIndex, cache, types);
-                            rightExtractor = RowExtractors.extractParentNodeKey(rightIndex, cache, types);
+
+                            // check if the JOIN was not reversed by an optimization
+                            boolean joinReversed = !leftColumns.getSelectorNames().contains(condition.getParentSelectorName());
+
+                            if (joinReversed) {
+                                int leftIndex = leftColumns.getSelectorIndex(condition.getChildSelectorName());
+                                int rightIndex = rightColumns.getSelectorIndex(condition.getParentSelectorName());
+
+                                leftExtractor = RowExtractors.extractParentNodeKey(leftIndex, cache, types);
+                                rightExtractor = RowExtractors.extractNodeKey(rightIndex, cache, types);
+                            } else {
+                                int leftIndex = leftColumns.getSelectorIndex(condition.getParentSelectorName());
+                                int rightIndex = rightColumns.getSelectorIndex(condition.getChildSelectorName());
+
+                                leftExtractor = RowExtractors.extractNodeKey(leftIndex, cache, types);
+                                rightExtractor = RowExtractors.extractParentNodeKey(rightIndex, cache, types);
+                            }
                         } else if (joinCondition instanceof EquiJoinCondition) {
                             EquiJoinCondition condition = (EquiJoinCondition)joinCondition;
                             // check if the JOIN was not reversed by an optimization

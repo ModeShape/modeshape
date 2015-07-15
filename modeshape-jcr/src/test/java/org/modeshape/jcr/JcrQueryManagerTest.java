@@ -2642,6 +2642,56 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         validateQuery().rowCount(17).hasColumns("left.jcr:path").validate(query, result);
     }
 
+    @FixFor( "MODE-2494" )
+    @Test
+    public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithTwoLeftOuterJoinsOnIsChildNodeWithSubsequentIsChildNode() throws RepositoryException {
+        String sql = "SELECT parent.[jcr:path], child1.[jcr:name], desc.[jcr:name] FROM [nt:unstructured] AS parent " +
+                "LEFT OUTER JOIN [nt:unstructured] AS child1 ON ISCHILDNODE(child1,parent) " +
+                "INNER JOIN [nt:unstructured] AS desc on ISCHILDNODE(desc, child1) " +
+                "LEFT OUTER JOIN [nt:unstructured] AS child2 ON ISCHILDNODE(child2,parent) " +
+                "WHERE ISCHILDNODE(parent,'/') " +
+                "AND NAME(child2) = 'Hybrid' " +
+                "AND NAME(desc) LIKE 'Nissan%'";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        QueryResult result = query.execute();
+        validateQuery().rowCount(1).validate(query, result);
+    }
+
+    @FixFor( "MODE-2494" )
+    @Test
+    public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithTwoLeftOuterJoinsOnIsChildNodeWithSubsequentIsDescendantNode() throws RepositoryException {
+        String sql = "SELECT parent.[jcr:path], child1.[jcr:name], desc.[jcr:name] FROM [nt:unstructured] AS parent " +
+                "LEFT OUTER JOIN [nt:unstructured] AS child1 ON ISCHILDNODE(child1,parent) " +
+                "INNER JOIN [nt:unstructured] AS desc on ISDESCENDANTNODE(desc, child1) " +
+                "LEFT OUTER JOIN [nt:unstructured] AS child2 ON ISCHILDNODE(child2,parent) " +
+                "WHERE ISCHILDNODE(parent,'/') " +
+                "AND NAME(child2) = 'Hybrid' " +
+                "AND NAME(desc) LIKE 'Nissan%'";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        QueryResult result = query.execute();
+        validateQuery().rowCount(1).validate(query, result);
+    }
+
+    @FixFor( "MODE-2494" )
+    @Test
+    @Ignore("This is not fixed by the fix for MODE-2494, and points to a potentially deeper problem, " +
+            "possibly in ReplaceViews." +
+            "Note: this query has the same semantics as that in " +
+            "'shouldBeAbleToCreateAndExecuteJcrSql2QueryWithTwoLeftOuterJoinsOnIsChildNodeWithSubsequentIsDescendantNode' " +
+            "and should work exactly the same way.")
+    public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithTwoLeftOuterJoinsOnIsChildNodeWithSubsequentIsDescendantNodeOutOfOrder() throws RepositoryException {
+        String sql = "SELECT parent.[jcr:path], child1.[jcr:name], child2.[jcr:name], desc.[jcr:name] FROM [nt:unstructured] AS parent " +
+                "LEFT OUTER JOIN [nt:unstructured] AS child1 ON ISCHILDNODE(child1,parent) " +
+                "LEFT OUTER JOIN [nt:unstructured] AS child2 ON ISCHILDNODE(child2,parent) " +
+                "INNER JOIN [nt:unstructured] AS desc on ISDESCENDANTNODE(desc, child1) " +
+                "WHERE ISCHILDNODE(parent,'/') " +
+                "AND NAME(child2) = 'Hybrid' " +
+                "AND NAME(desc) LIKE 'Nissan%'";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        QueryResult result = query.execute();
+        validateQuery().rowCount(1).validate(query, result);
+    }
+
     @FixFor( "MODE-1750" )
     @Test
     public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithRightOuterJoinOnNullCondition() throws RepositoryException {
