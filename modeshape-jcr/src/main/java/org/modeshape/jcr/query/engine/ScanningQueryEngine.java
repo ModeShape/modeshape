@@ -1799,8 +1799,23 @@ public class ScanningQueryEngine implements org.modeshape.jcr.query.QueryEngine 
 
                 @Override
                 public Object getValueInRow( RowAccessor row ) {
-                    String result = stringFactory.create(delegate.getValueInRow(row));
-                    return result != null ? result.toLowerCase() : null;
+                    Object valueInRow = delegate.getValueInRow(row);
+                    if (valueInRow == null) {
+                        return null;
+                    }
+                    if (valueInRow instanceof Object[]) {
+                        // multi valued prop
+                        Object[] values = (Object[])valueInRow;
+                        Object[] lowerCasedValues = new Object[values.length];
+                        for (int i = 0; i < values.length; i++) {  
+                            String valueString = stringFactory.create(values[i]);
+                            lowerCasedValues[i] = valueString.toLowerCase();
+                        }
+                        return lowerCasedValues;
+                    } else {
+                        // single valued prop
+                        return stringFactory.create(valueInRow).toLowerCase();
+                    }
                 }
 
                 @Override
@@ -1821,8 +1836,23 @@ public class ScanningQueryEngine implements org.modeshape.jcr.query.QueryEngine 
 
                 @Override
                 public Object getValueInRow( RowAccessor row ) {
-                    String result = stringFactory.create(delegate.getValueInRow(row));
-                    return result != null ? result.toUpperCase() : null;
+                    Object valueInRow = delegate.getValueInRow(row);
+                    if (valueInRow == null) {
+                        return null;
+                    }
+                    if (valueInRow instanceof Object[]) {
+                        // multi valued prop
+                        Object[] values = (Object[])valueInRow;
+                        Object[] upperCasedValues = new Object[values.length];
+                        for (int i = 0; i < values.length; i++) {
+                            String valueString = stringFactory.create(values[i]);
+                            upperCasedValues[i] = valueString.toUpperCase();
+                        }
+                        return upperCasedValues;
+                    } else {
+                        // single valued prop
+                        return stringFactory.create(valueInRow).toUpperCase();
+                    }
                 }
 
                 @Override
