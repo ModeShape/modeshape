@@ -21,7 +21,6 @@ import java.util.List;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.SimpleAttributeDefinition;
-import org.jboss.as.controller.registry.AttributeAccess;
 import org.jboss.dmr.ModelNode;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.jcr.RepositoryConfiguration;
@@ -36,20 +35,20 @@ public class MappedSimpleAttributeDefinition extends SimpleAttributeDefinition i
     private final List<String> pathToContainerOfFieldInConfiguration;
 
     /**
-     * @param defn the simple attribute definition
+     * @param builder the simple attribute definition builder
      * @param pathToFieldInConfiguration the path to the field within the {@link RepositoryConfiguration} document
      */
     @SuppressWarnings( "deprecation" )
-    protected MappedSimpleAttributeDefinition( SimpleAttributeDefinition defn,
+    protected MappedSimpleAttributeDefinition( MappedAttributeDefinitionBuilder builder,
                                                List<String> pathToFieldInConfiguration ) {
-        super(defn.getName(), defn.getXmlName(), defn.getDefaultValue(), defn.getType(), defn.isAllowNull(),
-              defn.isAllowExpression(), defn.getMeasurementUnit(), defn.getValidator(), defn.getAlternatives(),
-              defn.getRequires(), defn.getFlags().toArray(new AttributeAccess.Flag[defn.getFlags().size()]));
+        super(builder);
         assert pathToFieldInConfiguration != null;
         assert pathToFieldInConfiguration.size() > 0;
         this.pathToFieldInConfiguration = pathToFieldInConfiguration;
-        this.pathToContainerOfFieldInConfiguration = this.pathToFieldInConfiguration.size() > 1 ? this.pathToFieldInConfiguration.subList(0,
-                                                                                                                                          this.pathToFieldInConfiguration.size() - 1) : Collections.<String>emptyList();
+        this.pathToContainerOfFieldInConfiguration = this.pathToFieldInConfiguration.size() > 1 ? 
+                                                     this.pathToFieldInConfiguration.subList(0, this.pathToFieldInConfiguration.size() - 1) 
+                                                                                                : 
+                                                     Collections.<String>emptyList();
     }
 
     @Override

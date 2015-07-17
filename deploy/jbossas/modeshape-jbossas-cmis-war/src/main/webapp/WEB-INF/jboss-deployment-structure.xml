@@ -6,6 +6,11 @@
                 see https://bugzilla.redhat.com/show_bug.cgi?id=1148297
             -->
             <module name="com.sun.xml.messaging.saaj"/>
+            <!-- 
+               The following 2 dependencies are required for the WAR to run in Wildfly 9
+            -->
+            <module name="javax.jws.api"/>
+            <module name="javax.xml.ws.api"/>
             <module name="javax.jcr"/>
             <module name="org.modeshape.jcr.api" services="import"/>
             <module name="org.modeshape" services="import"/>
