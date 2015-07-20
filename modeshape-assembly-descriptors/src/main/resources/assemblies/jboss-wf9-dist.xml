@@ -1,6 +1,6 @@
 <!--This script builds a zip for ModeShape server Installation -->
 <assembly>
-	<id>jboss-wf8-dist</id>
+	<id>jboss-wf9-dist</id>
 	<formats>
 		<format>zip</format>
 	</formats>
@@ -10,7 +10,7 @@
 	<fileSets>
 		<!-- The modules part of the kit -->
 		<fileSet>
-			<directory>../deploy/jbossas/kit/jboss-wf8</directory>
+			<directory>../deploy/jbossas/kit/jboss-wf9</directory>
 			<outputDirectory>${jboss.kit.modules.location}</outputDirectory>
             <excludes>
                 <exclude>standalone/**</exclude>
@@ -21,13 +21,13 @@
 
 		<!-- The configuration part -->
 		<fileSet>
-			<directory>../deploy/jbossas/kit/jboss-wf8</directory>
+			<directory>../deploy/jbossas/kit/jboss-wf9</directory>
 			<outputDirectory>/</outputDirectory>
             <includes>
                 <include>standalone/**</include>
                 <include>domain/**</include>
             </includes>
-            <filtered>true</filtered>
+            <filtered>false</filtered>
 		</fileSet>
 
 		<!-- ModeShape subsystem XSD(s) -->
