@@ -69,6 +69,10 @@ import org.modeshape.jcr.api.index.IndexColumnDefinition;
 import org.modeshape.jcr.api.index.IndexDefinition;
 import org.modeshape.jcr.api.index.IndexDefinition.IndexKind;
 import org.modeshape.jcr.index.local.LocalIndexProvider;
+import org.modeshape.jcr.mimetype.ContentDetector;
+import org.modeshape.jcr.mimetype.MimeTypeDetector;
+import org.modeshape.jcr.mimetype.NameOnlyDetector;
+import org.modeshape.jcr.mimetype.NullMimeTypeDetector;
 import org.modeshape.jcr.security.AnonymousProvider;
 import org.modeshape.jcr.security.JaasProvider;
 import org.modeshape.jcr.value.PropertyType;
@@ -343,6 +347,8 @@ public class RepositoryConfiguration {
          * The name for the field whose value is a document containing binary storage information.
          */
         public static final String COMPOSITE_STORE_NAMED_BINARY_STORES = "namedStores";
+        
+        public static final String MIMETYPE_DETECTION = "mimeTypeDetection";
 
         /**
          * The name for the field whose value is a document containing security information.
@@ -550,6 +556,10 @@ public class RepositoryConfiguration {
         public static final String KIND_ENUMERATED = "enumerated";
         public static final String KIND_TEXT = "text";
         public static final String KIND_NODE_TYPE = "nodetype";
+        
+        public static final String MIMETYPE_DETECTION_NONE = "none";
+        public static final String MIMETYPE_DETECTION_NAME = "name";
+        public static final String MIMETYPE_DETECTION_CONTENT = "content";
     }
 
     protected static final Set<List<String>> DEPRECATED_FIELDS;
@@ -1168,6 +1178,24 @@ public class RepositoryConfiguration {
          */
         public String getType() {
             return binaryStorage.getString(FieldName.TYPE, FieldValue.BINARY_STORAGE_TYPE_TRANSIENT);
+        }
+        
+        protected MimeTypeDetector getMimeTypeDetector(Environment environment) {
+            String mimeTypeDetection = binaryStorage.getString(FieldName.MIMETYPE_DETECTION, FieldValue.MIMETYPE_DETECTION_CONTENT);
+            switch (mimeTypeDetection.toLowerCase()) {
+                case FieldValue.MIMETYPE_DETECTION_CONTENT: {
+                    return new ContentDetector(environment);
+                }
+                case FieldValue.MIMETYPE_DETECTION_NAME: {
+                    return new NameOnlyDetector(environment);
+                }
+                case FieldValue.MIMETYPE_DETECTION_NONE: {
+                    return NullMimeTypeDetector.INSTANCE;
+                }
+                default: {
+                    throw new IllegalArgumentException("Unknown mime-type detector setting: " + mimeTypeDetection);
+                }
+            }
         }
 
         /*

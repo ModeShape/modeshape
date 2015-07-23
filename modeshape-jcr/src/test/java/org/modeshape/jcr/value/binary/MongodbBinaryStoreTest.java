@@ -15,6 +15,13 @@
  */
 package org.modeshape.jcr.value.binary;
 
+import java.io.IOException;
+import java.util.UUID;
+import java.util.logging.FileHandler;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import de.flapdoodle.embed.mongo.MongodExecutable;
 import de.flapdoodle.embed.mongo.MongodProcess;
 import de.flapdoodle.embed.mongo.MongodStarter;
@@ -22,13 +29,6 @@ import de.flapdoodle.embed.mongo.config.MongodConfig;
 import de.flapdoodle.embed.mongo.config.RuntimeConfig;
 import de.flapdoodle.embed.mongo.distribution.Version;
 import de.flapdoodle.embed.process.runtime.Network;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import java.io.IOException;
-import java.util.UUID;
-import java.util.logging.FileHandler;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * Setup mongodb env and uncomment tests to run.
@@ -63,6 +63,7 @@ public class MongodbBinaryStoreTest extends AbstractBinaryStoreTest {
         mongodProcess = mongodExecutable.start();
 
         binaryStore = new MongodbBinaryStore("localhost", freeServerPort, "test-" + UUID.randomUUID());
+        binaryStore.setMimeTypeDetector(DEFAULT_DETECTOR);
         binaryStore.start();
     }
 

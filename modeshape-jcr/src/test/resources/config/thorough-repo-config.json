@@ -21,7 +21,8 @@
             "type" : "file",
             "directory" : "Thorough/binaries",
             "minimumBinarySizeInBytes" : 4096,
-            "minimumStringSize" : 8096
+            "minimumStringSize" : 8096,
+            "mimeTypeDetection" : "none"
         }
     },
     "security" : {

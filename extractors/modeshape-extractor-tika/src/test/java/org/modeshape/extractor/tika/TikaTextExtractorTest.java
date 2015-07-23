@@ -15,6 +15,12 @@
  */
 package org.modeshape.extractor.tika;
 
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNull.notNullValue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -34,23 +40,18 @@ import org.modeshape.common.FixFor;
 import org.modeshape.common.util.FileUtil;
 import org.modeshape.common.util.IoUtil;
 import org.modeshape.jcr.InMemoryTestBinary;
+import org.modeshape.jcr.TestingEnvironment;
+import org.modeshape.jcr.mimetype.ContentDetector;
 import org.modeshape.jcr.mimetype.MimeTypeDetector;
-import org.modeshape.jcr.mimetype.MimeTypeDetectors;
 import org.modeshape.jcr.text.TextExtractorContext;
 import org.modeshape.jcr.text.TextExtractorOutput;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsNull.notNullValue;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
 
 /**
  * Unit test for {@link TikaTextExtractor}
  */
 public class TikaTextExtractorTest {
 
-    private static final MimeTypeDetector DETECTOR = new MimeTypeDetectors();
+    private static final MimeTypeDetector DETECTOR = new ContentDetector(new TestingEnvironment());
     private static final int DEFAULT_TIKA_WRITE_LIMIT = 100000;
     private static final String CHARS = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
     private static final Random RANDOM = new Random();

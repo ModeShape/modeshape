@@ -19,6 +19,7 @@ package org.modeshape.jcr;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
@@ -36,10 +37,12 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import javax.jcr.Node;
+import javax.jcr.PathNotFoundException;
 import javax.jcr.Property;
 import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
+import org.apache.tika.mime.MediaType;
 import org.junit.Assert;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
@@ -91,7 +94,8 @@ public class BinaryStorageIntegrationTest extends SingleUseAbstractTest {
     @FixFor( "MODE-2051" )
     public void shouldStoreBinariesIntoSameCacheBinaryStoreAsRepository() throws Exception {
         FileUtil.delete("target/persistent_repository");
-        startRepositoryWithConfiguration(resourceStream("config/repo-config-cache-persistent-binary-storage-same-location.json"));
+        startRepositoryWithConfiguration(resourceStream(
+                "config/repo-config-cache-persistent-binary-storage-same-location.json"));
         byte[] smallData = randomBytes(100);
         storeBinaryAndAssert(smallData, "smallNode");
         byte[] largeData = randomBytes(3 * 1024);
@@ -360,6 +364,61 @@ public class BinaryStorageIntegrationTest extends SingleUseAbstractTest {
         assertEquals(0, binariesCount());
     }
 
+
+    @Test
+    @FixFor( "MODE-2489" )
+    public void shouldSupportContentBasedTypeDetection() throws Exception {
+        startRepositoryWithConfiguration(resourceStream("config/repo-config-persistent-disk.json"));
+
+        // upload 2 binaries but don't save
+        tools.uploadFile(session, "/file1", resourceStream("io/file1.txt"));
+        tools.uploadFile(session, "/file2", resourceStream("io/binary.pdf"));
+        session.save();
+
+        Node content1 = session.getNode("/file1").getNode("jcr:content");
+        // even though the name of the file has no extension, full content based extraction should've been performed
+        assertEquals(MediaType.TEXT_PLAIN.toString(), content1.getProperty("jcr:mimeType").getString());
+
+        Node content2 = session.getNode("/file2").getNode("jcr:content");
+        // even though the name of the file has no extension, full content based extraction should've been performed
+        assertEquals("application/pdf", content2.getProperty("jcr:mimeType").getString());
+    }
+    
+    @Test
+    @FixFor( "MODE-2489" )
+    public void shouldSupportNoMimeTypeDetection() throws Exception {
+        startRepositoryWithConfiguration(resourceStream("config/repo-config-no-mimetype-detection.json"));
+
+        // upload 2 binaries but don't save
+        tools.uploadFile(session, "/file1.txt", resourceStream("io/file1.txt"));
+        session.save();
+        
+        Node content = session.getNode("/file1.txt").getNode("jcr:content");
+        try {
+            content.getProperty("jcr:mimeType");
+            fail("No mimetype should have been extracted");
+        } catch (PathNotFoundException e) {
+            //expected
+        }
+    }  
+    
+    @Test
+    @FixFor( "MODE-2489" )
+    public void shouldSupportNameBasedTypeDetection() throws Exception {
+        startRepositoryWithConfiguration(resourceStream("config/repo-config-name-mimetype-detection.json"));
+
+        tools.uploadFile(session, "/file1", resourceStream("io/file1.txt"));
+        tools.uploadFile(session, "/file2.txt", resourceStream("io/file2.txt"));
+        session.save();
+        
+        Node content1 = session.getNode("/file1").getNode("jcr:content");
+        // because the name of the file does not have an extension, we're expecting a generic mime type here
+        assertEquals("application/octet-stream", content1.getProperty("jcr:mimeType").getString());
+
+        Node content2 = session.getNode("/file2.txt").getNode("jcr:content");
+        // because the name of the file doe have an extension, we're expecting a specific mime type here
+        assertEquals("text/plain", content2.getProperty("jcr:mimeType").getString());
+    }
 
     private String randomString(long size) {
         StringBuilder builder = new StringBuilder("");

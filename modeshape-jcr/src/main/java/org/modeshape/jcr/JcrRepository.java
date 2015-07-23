@@ -115,7 +115,7 @@ import org.modeshape.jcr.journal.ChangeJournal;
 import org.modeshape.jcr.journal.ClusteredJournal;
 import org.modeshape.jcr.journal.LocalJournal;
 import org.modeshape.jcr.mimetype.MimeTypeDetector;
-import org.modeshape.jcr.mimetype.MimeTypeDetectors;
+import org.modeshape.jcr.mimetype.NullMimeTypeDetector;
 import org.modeshape.jcr.query.parse.FullTextSearchParser;
 import org.modeshape.jcr.query.parse.JcrQomQueryParser;
 import org.modeshape.jcr.query.parse.JcrSql2QueryParser;
@@ -527,6 +527,10 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
 
     protected final boolean lockingUsed() {
         return runningState().repositoryCache().lockingUsed();
+    }
+    
+    protected final boolean mimeTypeDetectionEnabled() {
+        return runningState().mimeTypeDetector() != NullMimeTypeDetector.INSTANCE;
     }
 
     protected final void completeRestore(RestoreOptions options) throws ExecutionException, Exception {
@@ -960,7 +964,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         private final ChangeBus changeBus;
         private final ExecutorService changeDispatchingQueue;
         private final boolean useXaSessions;
-        private final MimeTypeDetectors mimeTypeDetector;
+        private final MimeTypeDetector mimeTypeDetector;
         private final BackupService backupService;
         private final InitialContentImporter initialContentImporter;
         private final SystemContentInitializer systemContentInitializer;
@@ -1054,7 +1058,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                             this.cache.createWorkspace(workspaceName);
                         }
                     }
-                    this.mimeTypeDetector = new MimeTypeDetectors(other.config.environment(), this.problems);
+                    this.mimeTypeDetector = other.mimeTypeDetector;
                     this.binaryStore = other.binaryStore;
                     this.changeBus = other.changeBus;
                     this.internalWorkerContext = other.internalWorkerContext;
@@ -1099,7 +1103,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
 
                     // Now create the registry implementation and the execution context that uses it ...
                     this.persistentRegistry = new SystemNamespaceRegistry(this);
-                    this.mimeTypeDetector = new MimeTypeDetectors(this.config.environment(), this.problems);
+                    this.mimeTypeDetector = binaryStorageConfig.getMimeTypeDetector(this.config.environment());
                     this.context = tempContext.with(persistentRegistry);
                     this.persistentRegistry.setContext(this.context);
                     this.internalWorkerContext = this.context.with(new InternalSecurityContext(INTERNAL_WORKER_USERNAME));
