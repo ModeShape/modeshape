@@ -41,8 +41,6 @@ import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.EmptyAsset;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.jboss.shrinkwrap.resolver.api.maven.Maven;
-import org.jboss.shrinkwrap.resolver.api.maven.ScopeType;
-import org.jboss.shrinkwrap.resolver.api.maven.coordinate.MavenDependencies;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -69,19 +67,10 @@ public class JBossASKitTest {
 
     @Deployment
     public static WebArchive createDeployment() {
-        File[] testDeps = Maven.resolver()
-                               .offline()
+        File[] testDeps = Maven.configureResolver()
+                               .workOffline() 
                                .loadPomFromFile("pom.xml")
-                               .addDependencies(
-                                       MavenDependencies.createDependency(
-                                               "org.jboss.shrinkwrap.resolver:shrinkwrap-resolver-api-maven",
-                                               ScopeType.TEST,
-                                               false),
-                                       MavenDependencies.createDependency(
-                                               "org.apache.httpcomponents:httpclient",
-                                               ScopeType.TEST,
-                                               false))
-                               .resolve()
+                               .resolve("org.apache.httpcomponents:httpclient")                 
                                .withTransitivity()
                                .asFile();
         return ShrinkWrap.create(WebArchive.class, "as7-kit-test.war")

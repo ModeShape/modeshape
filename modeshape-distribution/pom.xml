@@ -175,9 +175,9 @@
                   <scope>compile</scope>
                 </dependency>
                 <dependency>
-                    <groupId>org.wildfly</groupId>
+                    <groupId>org.wildfly.core</groupId>
                     <artifactId>wildfly-controller</artifactId>
-                    <version>${jboss.server.version}</version>
+                    <version>${version.org.wildfly.core}</version>
                     <scope>compile</scope>
                 </dependency>
             </dependencies>

@@ -55,7 +55,7 @@
         <c3p0.version>0.9.5</c3p0.version>  <!-- same as the one used by Infinispan's JDBC cache store -->
         <picketbox.version>4.0.21.Final</picketbox.version>
         <atomikos.version>3.8.0</atomikos.version>
-        <jbossjta.version>5.0.0.Final</jbossjta.version>
+        <jbossjta.version>5.1.0.Final</jbossjta.version>
         <mongo.driver.version>2.7.3</mongo.driver.version>
         <embedmongo.version>1.28</embedmongo.version>
         <cassandra-cql-driver>2.0.0-rc2</cassandra-cql-driver>

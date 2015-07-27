@@ -26,8 +26,6 @@ import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.EmptyAsset;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.jboss.shrinkwrap.resolver.api.maven.Maven;
-import org.jboss.shrinkwrap.resolver.api.maven.ScopeType;
-import org.jboss.shrinkwrap.resolver.api.maven.coordinate.MavenDependencies;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -51,14 +49,12 @@ public class QueryIntegrationTest {
 
     @Deployment
     public static WebArchive createDeployment() {
-        File[] testDeps = Maven.resolver()
-                               .offline()
+        File[] testDeps = Maven.configureResolver()
+                               .workOffline()
                                .loadPomFromFile("pom.xml")
-                               .addDependencies(MavenDependencies.createDependency("org.jboss.shrinkwrap.resolver:shrinkwrap-resolver-api-maven",
-                                                                                   ScopeType.TEST, false),
-                                                MavenDependencies.createDependency("org.modeshape:modeshape-jcr:test-jar:?",
-                                                                                   ScopeType.TEST, false)).resolve()
-                               .withTransitivity().asFile();
+                               .resolve("org.modeshape:modeshape-jcr:test-jar:tests:?").withTransitivity().asFile();
+                                                
+                               
         return ShrinkWrap.create(WebArchive.class, "query-test.war").addAsLibraries(testDeps)
                          .addAsWebInfResource(EmptyAsset.INSTANCE, ArchivePaths.create("beans.xml"))
                          .setManifest(new File("src/main/webapp/META-INF/MANIFEST.MF"));

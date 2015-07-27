@@ -49,8 +49,12 @@
             <artifactId>jboss-connector-api_1.7_spec</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.wildfly</groupId>
+            <groupId>org.wildfly.core</groupId>
             <artifactId>wildfly-controller</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.wildfly.core</groupId>
+            <artifactId>wildfly-subsystem-test-framework</artifactId>
         </dependency>
         <dependency>
             <groupId>org.wildfly</groupId>
@@ -65,16 +69,7 @@
             <artifactId>picketbox-bare</artifactId>
             <scope>provided</scope>
         </dependency>
-        <dependency>
-            <groupId>org.wildfly</groupId>
-            <artifactId>wildfly-clustering-jgroups</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.wildfly</groupId>
-            <artifactId>wildfly-subsystem-test-framework</artifactId>
-        </dependency>
-
-
+      
         <!--Testing-->
         <dependency>
             <groupId>log4j</groupId>
