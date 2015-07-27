@@ -55,6 +55,7 @@ public class ModelKeys {
     static final String CHUNK_SIZE = "chunk-size";
     static final String MINIMUM_BINARY_SIZE = "minimum-binary-size";
     static final String MINIMUM_STRING_SIZE = "minimum-string-size";
+    static final String MIME_TYPE_DETECTION = "mime-type-detection";
     static final String MODULE = "module";
     static final String NAME = "name";
     static final String PATH = "path";

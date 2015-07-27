@@ -38,6 +38,7 @@ import org.modeshape.jcr.JcrI18n;
 @Immutable
 @ThreadSafe
 public final class ContentDetector extends TikaMimeTypeDetector {
+    
     private DefaultDetector detector;
     
     /**

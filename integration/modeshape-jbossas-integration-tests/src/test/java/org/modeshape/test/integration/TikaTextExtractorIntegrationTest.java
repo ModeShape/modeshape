@@ -78,7 +78,8 @@ public class TikaTextExtractorIntegrationTest {
     @Test
     public void shouldExtractAndIndexContentFromDocFile() throws Exception {
         String queryString = "select [jcr:path] from [nt:resource] as res where contains(res.*, 'ModeShape supports')";
-        uploadFileAndCheckExtraction("text-extractor/modeshape.doc", "application/msword", queryString);
+        // upload under a nodename without extension, to check mime-type detection is content based (as configured)
+        uploadFileAndCheckExtraction("text-extractor/modeshape.doc", "/testDoc", "application/msword", queryString);
     }
 
 
@@ -86,16 +87,21 @@ public class TikaTextExtractorIntegrationTest {
     @FixFor( "MODE-1810" )
     public void shouldExtractAndIndexContentFromXlsxFile() throws Exception {
         String queryString = "select [jcr:path] from [nt:resource] as res where contains(res.*, 'Operations')";
-        uploadFileAndCheckExtraction("text-extractor/sample-file.xlsx", 
-                                     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", 
+        uploadFileAndCheckExtraction("text-extractor/sample-file.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", 
                                      queryString);
     }
 
     private void uploadFileAndCheckExtraction( String filepath,
                                                String expectedMimeType,
                                                String validationQuery ) throws Exception {
+       uploadFileAndCheckExtraction(filepath, "/" + filepath, expectedMimeType, validationQuery);
+    }  
+    
+    private void uploadFileAndCheckExtraction( String filepath,
+                                               String nodePath,
+                                               String expectedMimeType,
+                                               String validationQuery ) throws Exception {
         // this will create jcr:content of type nt:resource with the jcr:data property
-        String nodePath = "/" + filepath;
         jcrTools.uploadFile(session, nodePath, getResource(filepath));
         session.save();
         String mimeType = session.getNode(nodePath).getNode("jcr:content").getProperty("jcr:mimeType").getString();

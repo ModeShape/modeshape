@@ -1,0 +1,11 @@
+<subsystem xmlns="urn:jboss:domain:modeshape:2.1">
+  <repository name="sample1">
+    <file-binary-storage path="modeshape1/sample/binaries"  mime-type-detection="content"/>
+  </repository>                         
+  <repository name="sample2">
+    <file-binary-storage path="modeshape/sample2/binaries"  mime-type-detection="name"/>
+  </repository>
+  <repository name="sample3">
+    <file-binary-storage path="modeshape/sample3/binaries"  mime-type-detection="none"/>
+  </repository>
+</subsystem>

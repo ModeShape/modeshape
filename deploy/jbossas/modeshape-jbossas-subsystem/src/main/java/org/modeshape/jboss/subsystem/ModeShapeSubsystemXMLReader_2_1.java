@@ -461,6 +461,9 @@ public class ModeShapeSubsystemXMLReader_2_1 implements XMLStreamConstants, XMLE
                     case MIN_STRING_SIZE:
                         ModelAttributes.MINIMUM_STRING_SIZE.parseAndSetParameter(attrValue, storageType, reader);
                         break;
+                    case MIME_TYPE_DETECTION:
+                        ModelAttributes.MIME_TYPE_DETECTION.parseAndSetParameter(attrValue, storageType, reader);
+                        break;
                     case STORE_NAME:
                         storeName = attrValue.trim();
                         ModelAttributes.STORE_NAME.parseAndSetParameter(attrValue, storageType, reader);
@@ -519,6 +522,9 @@ public class ModeShapeSubsystemXMLReader_2_1 implements XMLStreamConstants, XMLE
                     case MIN_STRING_SIZE:
                         ModelAttributes.MINIMUM_STRING_SIZE.parseAndSetParameter(attrValue, storageType, reader);
                         break;
+                    case MIME_TYPE_DETECTION:
+                        ModelAttributes.MIME_TYPE_DETECTION.parseAndSetParameter(attrValue, storageType, reader);
+                        break;
                     case STORE_NAME:
                         storeName = attrValue.trim();
                         ModelAttributes.STORE_NAME.parseAndSetParameter(attrValue, storageType, reader);
@@ -567,6 +573,9 @@ public class ModeShapeSubsystemXMLReader_2_1 implements XMLStreamConstants, XMLE
                         break;
                     case MIN_STRING_SIZE:
                         ModelAttributes.MINIMUM_STRING_SIZE.parseAndSetParameter(attrValue, storageType, reader);
+                        break;
+                    case MIME_TYPE_DETECTION:
+                        ModelAttributes.MIME_TYPE_DETECTION.parseAndSetParameter(attrValue, storageType, reader);
                         break;
                     case STORE_NAME:
                         storeName = attrValue.trim();
@@ -619,6 +628,9 @@ public class ModeShapeSubsystemXMLReader_2_1 implements XMLStreamConstants, XMLE
                     case MIN_STRING_SIZE:
                         ModelAttributes.MINIMUM_STRING_SIZE.parseAndSetParameter(attrValue, storageType, reader);
                         break;
+                    case MIME_TYPE_DETECTION:
+                        ModelAttributes.MIME_TYPE_DETECTION.parseAndSetParameter(attrValue, storageType, reader);
+                        break;
                     case STORE_NAME:
                         storeName = attrValue.trim();
                         ModelAttributes.STORE_NAME.parseAndSetParameter(attrValue, storageType, reader);
@@ -665,6 +677,9 @@ public class ModeShapeSubsystemXMLReader_2_1 implements XMLStreamConstants, XMLE
                         break;
                     case MIN_STRING_SIZE:
                         ModelAttributes.MINIMUM_STRING_SIZE.parseAndSetParameter(attrValue, compositeBinaryStorage, reader);
+                        break;
+                    case MIME_TYPE_DETECTION:
+                        ModelAttributes.MIME_TYPE_DETECTION.parseAndSetParameter(attrValue, compositeBinaryStorage, reader);
                         break;
                     case STORE_NAME:
                         ModelAttributes.STORE_NAME.parseAndSetParameter(attrValue, compositeBinaryStorage, reader);

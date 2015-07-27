@@ -31,7 +31,9 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.modeshape.common.util.IoUtil;
+import org.modeshape.jcr.api.JcrTools;
 import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -42,7 +44,8 @@ import static org.junit.Assert.assertTrue;
  */
 @RunWith( Arquillian.class )
 public class InfinispanPersistenceIntegrationTest {
-
+    private JcrTools jcrTools = new JcrTools();
+    
     @Resource( mappedName = "/jcr/infinispanRepository" )
     private Repository repository;
 
@@ -64,16 +67,18 @@ public class InfinispanPersistenceIntegrationTest {
     public void shouldStoreBinaryValues() throws Exception {
         Session session = repository.login();
         String testNodeName = "test_" + UUID.randomUUID().toString();
-
-        Node testNode = session.getRootNode().addNode(testNodeName);
-        Binary binaryValue = session.getValueFactory().createBinary(getClass().getClassLoader().getResourceAsStream("BooksVDB.vdb"));
-        testNode.setProperty("binary", binaryValue);
+        String nodePath = "/" + testNodeName;
+        
+        jcrTools.uploadFile(session, nodePath, getClass().getClassLoader().getResourceAsStream("BooksVDB.vdb"));
         session.save();
 
         byte[] binaryBytes = IoUtil.readBytes(getClass().getClassLoader().getResourceAsStream("BooksVDB.vdb"));
 
-        testNode = session.getNode("/" + testNodeName);
-        Binary binary = testNode.getProperty("binary").getBinary();
+        Node testNode = session.getNode(nodePath);
+        Node contentNode = testNode.getNode("jcr:content");
+        // mime type detection is name based and there is no entry for VDBs
+        assertEquals("application/octet-stream", contentNode.getProperty("jcr:mimeType").getString());
+        Binary binary = contentNode.getProperty("jcr:data").getBinary();
         assertNotNull(binary);
         byte[] storedBinaryBytes = IoUtil.readBytes(binary.getStream());
 

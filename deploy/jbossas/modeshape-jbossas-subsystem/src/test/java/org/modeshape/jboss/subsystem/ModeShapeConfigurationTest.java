@@ -156,6 +156,11 @@ public class ModeShapeConfigurationTest extends AbstractSubsystemBaseTest {
     public void testOutputPersistenceOfConfigurationWithOptimization() throws Exception {
         parse(readResource("modeshape-optimiziation-config.xml"));
     }
+    
+    @Test
+    public void testOutputPersistenceOfConfigurationWithMimeTypeDetection() throws Exception {
+        parse(readResource("modeshape-mime-type-detection.xml"));
+    }
 
     @Test
     public void testSampleConfigurationModel() throws Exception {
