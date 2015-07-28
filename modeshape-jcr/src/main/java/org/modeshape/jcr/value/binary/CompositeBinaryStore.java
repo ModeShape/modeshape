@@ -129,7 +129,8 @@ public class CompositeBinaryStore implements BinaryStore {
 
     @Override
     public void setMimeTypeDetector( MimeTypeDetector mimeTypeDetector ) {
-        this.detector = mimeTypeDetector != null ? mimeTypeDetector : NullMimeTypeDetector.INSTANCE;
+        CheckArg.isNotNull(mimeTypeDetector, "mimeTypeDetector");
+        this.detector = mimeTypeDetector;
 
         Iterator<Map.Entry<String, BinaryStore>> it = getNamedStoreIterator();
 

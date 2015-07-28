@@ -41,6 +41,7 @@ public class DatabaseBinaryStoreTest extends AbstractBinaryStoreTest {
         String username = DB_CONFIG.getUsername();
         String password = DB_CONFIG.getPassword();
         store = new DatabaseBinaryStore(driver, url, username, password);
+        store.setMimeTypeDetector(DEFAULT_DETECTOR);
         store.start();
     }
 

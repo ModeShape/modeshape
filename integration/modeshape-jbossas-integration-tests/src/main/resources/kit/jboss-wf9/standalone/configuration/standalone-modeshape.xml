@@ -406,7 +406,7 @@
                 <text-extractors max-pool-size="5" thread-pool-name="test-text-extractor">
                     <text-extractor name="tika-extractor" classname="tika" module="org.modeshape.extractor.tika"/>
                 </text-extractors>
-                <file-binary-storage/>
+                <file-binary-storage mime-type-detection="content"/>
             </repository>
             <repository name="preconfiguredRepository" anonymous-roles="admin" cache-config="modeshape/infinispan-test-caches.xml">
                 <workspaces>
@@ -472,18 +472,20 @@
                                       cache-config="modeshape/infinispan-test-binary-caches.xml"
                                       min-string-size="10"
                                       min-value-size="1024"
-                                      chunk-size="1000"/>
+                                      chunk-size="1000"
+                                      mime-type-detection="name"/>
             </repository>
             <repository name="binaryJDBCRepository" anonymous-roles="admin" cache-config="modeshape/infinispan-test-caches.xml">
-                <cache-binary-storage cache-config="modeshape/infinispan-test-binary-caches.xml"/>
+                <cache-binary-storage cache-config="modeshape/infinispan-test-binary-caches.xml" mime-type-detection="none"/>
             </repository>
             <repository name="dbBinaryJDBCRepository" anonymous-roles="admin" cache-config="modeshape/infinispan-test-caches.xml">
-                <db-binary-storage data-source-jndi-name="java:jboss/datasources/ExampleDS"/>
+                <db-binary-storage data-source-jndi-name="java:jboss/datasources/ExampleDS" mime-type-detection="none"/>
             </repository>
             <repository name="binaryIndexingJDBCRepository" anonymous-roles="admin" cache-config="modeshape/infinispan-test-caches.xml">
                 <cache-binary-storage cache-config="modeshape/infinispan-test-binary-caches.xml"
                                       data-cache-name="binaryJDBCRepository-binary-data-wb"
-                                      metadata-cache-name="binaryJDBCRepository-binary-metadata-wb"/>
+                                      metadata-cache-name="binaryJDBCRepository-binary-metadata-wb"
+                                      mime-type-detection="none"/>
             </repository>
             <repository name="repo-clustered1" cache-config="modeshape/infinispan-test-clustered-caches.xml" anonymous-roles="admin"/>
             <repository name="repo-clustered2" cache-config="modeshape/infinispan-test-clustered-caches.xml" anonymous-roles="admin"/>

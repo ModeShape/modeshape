@@ -55,6 +55,7 @@ public enum Attribute {
     CHUNK_SIZE("chunk-size"),
     MIN_VALUE_SIZE("min-value-size"),
     MIN_STRING_SIZE("min-string-size"),
+    MIME_TYPE_DETECTION("mime-type-detection"),
     MODULE("module"),
     NAME("name"),
     PATH("path"),

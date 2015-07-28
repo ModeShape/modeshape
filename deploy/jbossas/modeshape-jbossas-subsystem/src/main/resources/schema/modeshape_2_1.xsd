@@ -783,6 +783,16 @@
                     The default value is the value of 'min-value-size'.
                 </xs:documentation>
             </xs:annotation>
+        </xs:attribute>  
+        <xs:attribute name="mime-type-detection" type="mime-type-detection" use="optional" default="content">
+            <xs:annotation>
+                <xs:documentation>
+                    The mime type detector to use when automatically determining and setting the mimeType property
+                    on mix:mimeType types. The possible values are: 'content' meaning the binary content (header) should be
+                    read and mime-type determined based on that; 'name' only the name of the node which owns the binary property
+                    should be taken into account; 'none' no mime type detection is performed.
+                </xs:documentation>
+            </xs:annotation>
         </xs:attribute>
     </xs:attributeGroup>
 
@@ -870,6 +880,13 @@
             <xs:enumeration value="enumerated"/>
             <xs:enumeration value="text"/>
             <xs:enumeration value="nodetype"/>
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="mime-type-detection">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="content"/>
+            <xs:enumeration value="name"/>
+            <xs:enumeration value="none"/>
         </xs:restriction>
     </xs:simpleType>
 </xs:schema>

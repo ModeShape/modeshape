@@ -69,4 +69,8 @@ public class StoredBinaryValue extends AbstractBinary {
     protected InputStream internalStream() throws RepositoryException {
         return store.getInputStream(getKey());
     }
+    
+    protected String mimeType() {
+        return this.mimeType;
+    }    
 }

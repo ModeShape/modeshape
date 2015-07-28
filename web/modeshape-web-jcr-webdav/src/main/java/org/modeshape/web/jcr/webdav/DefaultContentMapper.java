@@ -209,7 +209,9 @@ public class DefaultContentMapper implements ContentMapper {
         if (contentType == null) {
             contentType = binary.getMimeType(resourceName);
         }
-        contentNode.setProperty(MIME_TYPE_PROP_NAME, contentType);
+        if (contentType != null) {
+            contentNode.setProperty(MIME_TYPE_PROP_NAME, contentType);
+        }
         return contentNode.getProperty(DATA_PROP_NAME).getLength();
 
     }

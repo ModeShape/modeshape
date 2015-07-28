@@ -105,7 +105,8 @@ public abstract class AbstractBinaryStore implements BinaryStore {
 
     @Override
     public void setMimeTypeDetector( MimeTypeDetector mimeTypeDetector ) {
-        this.detector = mimeTypeDetector != null ? mimeTypeDetector : NullMimeTypeDetector.INSTANCE;
+        CheckArg.isNotNull(mimeTypeDetector, "mimeTypeDetector");
+        this.detector = mimeTypeDetector; 
     }
 
     @Override
@@ -149,17 +150,19 @@ public abstract class AbstractBinaryStore implements BinaryStore {
     @Override
     public String getMimeType( BinaryValue binary,
                                String name ) throws IOException, RepositoryException {
+        
+        if (detector == NullMimeTypeDetector.INSTANCE) {
+            // no mime type detection is explicitly configured, so just return
+            return null;
+        }
+
         if (binary instanceof StoredBinaryValue) {
             String storedMimeType = getStoredMimeType(binary);
             if (!StringUtil.isBlank(storedMimeType)) {
                 return storedMimeType;
             }
         }
-
-        if (detector == null) {
-            return null;
-        }
-
+        
         String detectedMimeType = detector().mimeTypeOf(name, binary);
         if (binary instanceof InMemoryBinaryValue) {
             return detectedMimeType;

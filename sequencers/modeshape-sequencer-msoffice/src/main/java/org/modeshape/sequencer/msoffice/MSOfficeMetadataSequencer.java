@@ -140,7 +140,10 @@ public class MSOfficeMetadataSequencer extends Sequencer {
             sequencedNode = outputNode.addNode(METADATA_NODE, METADATA_NODE);
         }
 
-        setProperty(sequencedNode, JCR_MIME_TYPE, mimeType);
+        if (mimeType != null) {
+            setProperty(sequencedNode, JCR_MIME_TYPE, mimeType);
+        }
+        
         if (isPowerpoint(mimeType)) {
             try (InputStream stream = binaryValue.getStream()) {
                 sequencePowerpoint(sequencedNode, context.valueFactory(), stream);

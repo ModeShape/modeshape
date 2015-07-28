@@ -21,9 +21,8 @@ import javax.jcr.RepositoryException;
 
 /**
  * MIME-type detection libraries must provide thread-safe implementations of this interface to enable ModeShape to use the
- * libraries to return MIME-types for data sources. Implementors are expected to have a public, no-arg constructor.
+ * libraries to return MIME-types for data sources.
  */
-
 public interface MimeTypeDetector {
 
     /**

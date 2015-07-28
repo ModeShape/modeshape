@@ -141,6 +141,12 @@
                                     "type" : "integer",
                                     "description" : "The size threshold that dictates whether string values should be stored in the binary store. String values shorter than this length are stored with the node, whereas strings with a length equal to or greater than this limit will be stored separately from the node and in the binary store, keyed by the SHA-1 hash of the value. This is a space and performance optimization that stores each unique large value only once. The default value is to match the 'minimumBinarySizeInBytes' value."
                                 },
+                                "mimeTypeDetection" : {
+                                    "type" : "string",
+                                    "description" : "What type of mime-type detection should be performed when uploading binary values. Defaults to 'content' - i.e. reading the binary content (at least the headers) to determine the mime type",
+                                    "default" : "content",
+                                    "enum" : [ "none", "content", "name" ]
+                                },
                                 "description" : {
                                     "type" : "string",
                                     "description" : "The optional description of this section of the configuration. It is unused by ModeShape."
@@ -174,6 +180,12 @@
                                     "type" : "integer",
                                     "description" : "The size threshold that dictates whether string values should be stored in the binary store. String values shorter than this length are stored with the node, whereas strings with a length equal to or greater than this limit will be stored separately from the node and in the binary store, keyed by the SHA-1 hash of the value. This is a space and performance optimization that stores each unique large value only once. The default value is to match the 'minimumBinarySizeInBytes' value."
                                 },
+                                "mimeTypeDetection" : {
+                                    "type" : "string",
+                                    "description" : "What type of mime-type detection should be performed when uploading binary values. Defaults to 'content' - i.e. reading the binary content (at least the headers) to determine the mime type",
+                                    "default" : "content",
+                                    "enum" : [ "none", "content", "name" ]
+                                },
                                 "description" : {
                                     "type" : "string",
                                     "description" : "The optional description of this section of the configuration. It is unused by ModeShape."
@@ -206,6 +218,12 @@
                                 "minimumStringSize" : {
                                     "type" : "integer",
                                     "description" : "The size threshold that dictates whether string values should be stored in the binary store. String values shorter than this length are stored with the node, whereas strings with a length equal to or greater than this limit will be stored separately from the node and in the binary store, keyed by the SHA-1 hash of the value. This is a space and performance optimization that stores each unique large value only once. The default value is to match the 'minimumBinarySizeInBytes' value."
+                                },
+                                "mimeTypeDetection" : {
+                                    "type" : "string",
+                                    "description" : "What type of mime-type detection should be performed when uploading binary values. Defaults to 'content' - i.e. reading the binary content (at least the headers) to determine the mime type",
+                                    "default" : "content",
+                                    "enum" : [ "none", "content", "name" ]
                                 },
                                 "description" : {
                                     "type" : "string",
@@ -255,6 +273,12 @@
                                     "type" : "integer",
                                     "description" : "The size threshold that dictates whether string values should be stored in the binary store. String values shorter than this length are stored with the node, whereas strings with a length equal to or greater than this limit will be stored separately from the node and in the binary store, keyed by the SHA-1 hash of the value. This is a space and performance optimization that stores each unique large value only once. The default value is to match the 'minimumBinarySizeInBytes' value."
                                 },
+                                "mimeTypeDetection" : {
+                                    "type" : "string",
+                                    "description" : "What type of mime-type detection should be performed when uploading binary values. Defaults to 'content' - i.e. reading the binary content (at least the headers) to determine the mime type",
+                                    "default" : "content",
+                                    "enum" : [ "none", "content", "name" ]
+                                },
                                 "description" : {
                                     "type" : "string",
                                     "description" : "The optional description of this section of the configuration. It is unused by ModeShape."
@@ -296,6 +320,12 @@
                                 "minimumStringSize" : {
                                     "type" : "integer",
                                     "description" : "The size threshold that dictates whether string values should be stored in the binary store. String values shorter than this length are stored with the node, whereas strings with a length equal to or greater than this limit will be stored separately from the node and in the binary store, keyed by the SHA-1 hash of the value. This is a space and performance optimization that stores each unique large value only once. The default value is to match the 'minimumBinarySizeInBytes' value."
+                                },
+                                "mimeTypeDetection" : {
+                                    "type" : "string",
+                                    "description" : "What type of mime-type detection should be performed when uploading binary values. Defaults to 'content' - i.e. reading the binary content (at least the headers) to determine the mime type",
+                                    "default" : "content",
+                                    "enum" : [ "none", "content", "name" ]
                                 },
                                 "chunkSize" : {
                                     "type" : "integer",
@@ -505,6 +535,16 @@
                                 "minimumStringSize" : {
                                     "type" : "integer",
                                     "description" : "The size threshold that dictates whether string values should be stored in the binary store. String values shorter than this length are stored with the node, whereas strings with a length equal to or greater than this limit will be stored separately from the node and in the binary store, keyed by the SHA-1 hash of the value. This is a space and performance optimization that stores each unique large value only once. The default value is to match the 'minimumBinarySizeInBytes' value."
+                                },
+                                "mimeTypeDetection" : {
+                                    "type": "string",
+                                    "description": "What type of mime-type detection should be performed when uploading binary values. Defaults to 'content' - i.e. reading the binary content (at least the headers) to determine the mime type",
+                                    "default": "content",
+                                    "enum": [
+                                        "none",
+                                        "content",
+                                        "name"
+                                    ]
                                 },
                                 "description" : {
                                     "type" : "string",

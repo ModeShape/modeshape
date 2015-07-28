@@ -119,6 +119,10 @@ public abstract class AbstractAddBinaryStorage extends AbstractAddStepHandler {
         if (storeName.isDefined()) {
             binaries.set(FieldName.BINARY_STORE_NAME, storeName.asString());
         }
+        ModelNode mimeTypeDetection = ModelAttributes.MIME_TYPE_DETECTION.resolveModelAttribute(context, model);
+        if (mimeTypeDetection.isDefined()) {
+            binaries.set(FieldName.MIMETYPE_DETECTION, mimeTypeDetection.asString());
+        }
     }
 
     @SuppressWarnings( "unused" )

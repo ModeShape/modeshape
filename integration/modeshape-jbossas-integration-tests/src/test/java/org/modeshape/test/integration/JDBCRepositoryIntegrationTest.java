@@ -23,6 +23,7 @@ import java.util.Random;
 import javax.annotation.Resource;
 import javax.jcr.Binary;
 import javax.jcr.Node;
+import javax.jcr.PathNotFoundException;
 import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
@@ -40,6 +41,7 @@ import org.modeshape.jcr.api.JcrTools;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
 
 /**
  * Smoke tests persistence in a repository backed by a JDBC cache store
@@ -140,6 +142,13 @@ public class JDBCRepositoryIntegrationTest {
             session.save();
 
             Node nodeWithBinaryContent = session.getNode("/folder/file/jcr:content");
+            assertEquals("nt:resource", nodeWithBinaryContent.getPrimaryNodeType().getName());
+            try {
+                nodeWithBinaryContent.getProperty("jcr:mimeType");
+                fail("Mimetype detection is disabled; there shouldn't be any mime type property");
+            } catch (PathNotFoundException e) {
+                // expected
+            }
             Binary binaryValue = nodeWithBinaryContent.getProperty("jcr:data").getBinary();
             binaryValueStream = binaryValue.getStream();
             byte[] retrievedContent = IoUtil.readBytes(binaryValueStream);

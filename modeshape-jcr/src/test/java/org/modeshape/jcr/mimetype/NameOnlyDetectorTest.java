@@ -17,41 +17,30 @@ package org.modeshape.jcr.mimetype;
 
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
-import static org.modeshape.jcr.mimetype.MimeTypeConstants.APPLICATION_XML;
-import static org.modeshape.jcr.mimetype.MimeTypeConstants.AU;
-import static org.modeshape.jcr.mimetype.MimeTypeConstants.FLI;
-import static org.modeshape.jcr.mimetype.MimeTypeConstants.GTAR;
-import static org.modeshape.jcr.mimetype.MimeTypeConstants.JPEG;
-import static org.modeshape.jcr.mimetype.MimeTypeConstants.OCTET_STREAM;
-import static org.modeshape.jcr.mimetype.MimeTypeConstants.OPEN_DOC_PRESENTATION;
-import static org.modeshape.jcr.mimetype.MimeTypeConstants.PCX;
-import static org.modeshape.jcr.mimetype.MimeTypeConstants.PDF;
-import static org.modeshape.jcr.mimetype.MimeTypeConstants.PHOTOSHOP;
-import static org.modeshape.jcr.mimetype.MimeTypeConstants.PICT;
-import static org.modeshape.jcr.mimetype.MimeTypeConstants.PNG;
-import static org.modeshape.jcr.mimetype.MimeTypeConstants.WAV;
-import static org.modeshape.jcr.mimetype.MimeTypeConstants.WSDL_XML;
-import static org.modeshape.jcr.mimetype.MimeTypeConstants.XSD_XML;
 import java.io.InputStream;
 import java.util.HashSet;
 import java.util.Set;
+import org.apache.tika.mime.MediaType;
 import org.junit.Test;
 import org.modeshape.common.util.StringUtil;
 import org.modeshape.jcr.InMemoryTestBinary;
+import org.modeshape.jcr.TestingEnvironment;
 
 /**
- * Unit test for {@link org.modeshape.jcr.mimetype.MimeTypeDetectors}.
+ * Unit test for {@link NameOnlyDetector}.
  *
  * @author Horia Chiorean
  */
-public class MimeTypeDetectorsTest {
+public class NameOnlyDetectorTest {
+    
+    private static final MimeTypeDetector DETECTOR = new NameOnlyDetector(new TestingEnvironment());
 
     protected void testMimeType( String name,
                                  String... mimeTypes ) throws Exception {
         String filePath = "mimetype/" + name;
 
         InputStream inputStream = getClass().getClassLoader().getResourceAsStream(filePath);
-        String actualMimeType = getDetector().mimeTypeOf(name, new InMemoryTestBinary(inputStream));
+        String actualMimeType = DETECTOR.mimeTypeOf(name, new InMemoryTestBinary(inputStream));
 
         if (mimeTypes != null && mimeTypes.length != 0) {
             Set<String> acceptableMimeTypes = new HashSet<String>();
@@ -63,18 +52,14 @@ public class MimeTypeDetectorsTest {
         }
     }
 
-    protected MimeTypeDetector getDetector() {
-        return new MimeTypeDetectors();
-    }
-
     @Test
     public void shouldProvideMimeTypeForAu() throws Exception {
-        testMimeType("test.au", AU);
+        testMimeType("test.au", "audio/basic");
     }
 
     @Test
     public void shouldProvideMimeTypeForBin() throws Exception {
-        testMimeType("test.bin", OCTET_STREAM);
+        testMimeType("test.bin", MediaType.OCTET_STREAM.toString());
     }
 
     @Test
@@ -84,53 +69,52 @@ public class MimeTypeDetectorsTest {
 
     @Test
     public void shouldProvideMimeTypeForFli() throws Exception {
-        testMimeType("test.fli", FLI);
+        testMimeType("test.fli", "video/x-fli");
     }
 
     @Test
     public void shouldProvideMimeTypeForPcx() throws Exception {
-        testMimeType("test.pcx", PCX);
+        testMimeType("test.pcx", "image/x-pcx");
     }
 
     @Test
     public void shouldProvideMimeTypeForPict() throws Exception {
-        testMimeType("test.pict", PICT);
+        testMimeType("test.pict", "image/x-pict");
     }
 
     @Test
     public void shouldProvideMimeTypeForPsd() throws Exception {
-        testMimeType("test.psd", PHOTOSHOP);
+        testMimeType("test.psd", "image/vnd.adobe.photoshop");
     }
 
     @Test
     public void shouldProvideMimeTypeForTar() throws Exception {
-        testMimeType("test.tar", GTAR);
+        testMimeType("test.tar", "application/x-tar");
     }
 
     @Test
     public void shouldProvideMimeTypeForPdf() throws Exception {
-        testMimeType("modeshape_pdfcontext.pdf", PDF);
+        testMimeType("modeshape_pdfcontext.pdf", "application/pdf");
     }
 
     @Test
     public void shouldProvideMimeTypeForOpenOfficePresentation() throws Exception {
-        testMimeType("component-architecture.odp", OPEN_DOC_PRESENTATION);
+        testMimeType("component-architecture.odp", "application/vnd.oasis.opendocument.presentation");
     }
 
     @Test
     public void shouldProvideMimeTypeForXml() throws Exception {
-        testMimeType("master.xml", APPLICATION_XML);
+        testMimeType("master.xml", MediaType.APPLICATION_XML.toString());
     }
 
-    @SuppressWarnings( "deprecation" )
     @Test
     public void shouldProvideMimeTypeForXsd() throws Exception {
-        testMimeType("xsd_file.xsd", APPLICATION_XML, XSD_XML);
+        testMimeType("xsd_file.xsd", MediaType.APPLICATION_XML.toString());
     }
 
     @Test
     public void shouldProvideMimeTypeForWsdl() throws Exception {
-        testMimeType("uddi_api_v3_portType.wsdl", WSDL_XML);
+        testMimeType("uddi_api_v3_portType.wsdl", "application/wsdl+xml");
     }
 
     @Test
@@ -140,12 +124,12 @@ public class MimeTypeDetectorsTest {
 
     @Test
     public void shouldProvideMimeTypeForPng() throws Exception {
-        testMimeType("test.png", PNG);
+        testMimeType("test.png", "image/png");
     }
 
     @Test
     public void shouldProvideMimeTypeForJpg() throws Exception {
-        testMimeType("test.jpg", JPEG);
+        testMimeType("test.jpg", "image/jpeg");
     }
 
     @Test
@@ -155,11 +139,16 @@ public class MimeTypeDetectorsTest {
 
     @Test
     public void shouldProvideMimeTypeForWave() throws Exception {
-        testMimeType("test.wav", WAV);
+        testMimeType("test.wav", "audio/x-wav");
     }
 
     @Test
     public void shouldProvideMimeTypeForJavaClass() throws Exception {
         testMimeType("test_1.2.class", "application/java-vm");
+    }
+    
+    @Test
+    public void shouldProvideMimeTypeForCND() throws Exception {
+        testMimeType("aircraft.cnd", "text/jcr-cnd");        
     }
 }

@@ -248,6 +248,7 @@ public class ModeShapeSubsystemXMLWriter implements XMLStreamConstants, XMLEleme
             ModelAttributes.PATH.marshallAsAttribute(storage, false, writer);
             ModelAttributes.RELATIVE_TO.marshallAsAttribute(storage, false, writer);
             ModelAttributes.STORE_NAME.marshallAsAttribute(storage, false, writer);
+            ModelAttributes.MIME_TYPE_DETECTION.marshallAsAttribute(storage, false, writer);
             writer.writeEndElement();
         } else if (ModelKeys.CACHE_BINARY_STORAGE.equals(storageType)) {
             writer.writeStartElement(Element.CACHE_BINARY_STORAGE.getLocalName());
@@ -258,6 +259,7 @@ public class ModeShapeSubsystemXMLWriter implements XMLStreamConstants, XMLEleme
             ModelAttributes.CHUNK_SIZE.marshallAsAttribute(storage, false, writer);
             ModelAttributes.CACHE_CONFIG.marshallAsAttribute(storage, false, writer);
             ModelAttributes.STORE_NAME.marshallAsAttribute(storage, false, writer);
+            ModelAttributes.MIME_TYPE_DETECTION.marshallAsAttribute(storage, false, writer);
             writer.writeEndElement();
         } else if (ModelKeys.DB_BINARY_STORAGE.equals(storageType)) {
             writer.writeStartElement(Element.DB_BINARY_STORAGE.getLocalName());
@@ -265,12 +267,14 @@ public class ModeShapeSubsystemXMLWriter implements XMLStreamConstants, XMLEleme
             ModelAttributes.MINIMUM_STRING_SIZE.marshallAsAttribute(storage, false, writer);
             ModelAttributes.DATA_SOURCE_JNDI_NAME.marshallAsAttribute(storage, false, writer);
             ModelAttributes.STORE_NAME.marshallAsAttribute(storage, false, writer);
+            ModelAttributes.MIME_TYPE_DETECTION.marshallAsAttribute(storage, false, writer);
             writer.writeEndElement();
         } else if (ModelKeys.COMPOSITE_BINARY_STORAGE.equals(storageType)) {
             writer.writeStartElement(Element.COMPOSITE_BINARY_STORAGE.getLocalName());
             ModelAttributes.MINIMUM_BINARY_SIZE.marshallAsAttribute(storage, false, writer);
             ModelAttributes.MINIMUM_STRING_SIZE.marshallAsAttribute(storage, false, writer);
             ModelAttributes.STORE_NAME.marshallAsAttribute(storage, false, writer);
+            ModelAttributes.MIME_TYPE_DETECTION.marshallAsAttribute(storage, false, writer);
 
             writeNestedStoresOfType(storage, ModelKeys.NESTED_STORAGE_TYPE_FILE, ModelKeys.FILE_BINARY_STORAGE, writer);
             writeNestedStoresOfType(storage, ModelKeys.NESTED_STORAGE_TYPE_CACHE, ModelKeys.CACHE_BINARY_STORAGE, writer);
@@ -283,6 +287,7 @@ public class ModeShapeSubsystemXMLWriter implements XMLStreamConstants, XMLEleme
             ModelAttributes.MINIMUM_BINARY_SIZE.marshallAsAttribute(storage, false, writer);
             ModelAttributes.MINIMUM_STRING_SIZE.marshallAsAttribute(storage, false, writer);
             ModelAttributes.STORE_NAME.marshallAsAttribute(storage, false, writer);
+            ModelAttributes.MIME_TYPE_DETECTION.marshallAsAttribute(storage, false, writer);
             for (String key : storage.keys()) {
                 if (key.equals(ModelKeys.CLASSNAME)) {
                     ModelAttributes.CLASSNAME.marshallAsAttribute(storage, false, writer);

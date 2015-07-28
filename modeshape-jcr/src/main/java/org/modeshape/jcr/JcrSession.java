@@ -142,6 +142,7 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
     private final long nanosCreated;
     private volatile BufferManager bufferMgr;
     private final boolean hasCustomAuthorizationProvider;
+    private final boolean mimeTypeDetectionEnabled;
 
     private ExecutionContext context;
 
@@ -218,6 +219,7 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
         SecurityContext securityContext = context.getSecurityContext();
         this.hasCustomAuthorizationProvider = securityContext instanceof AuthorizationProvider
                                               || securityContext instanceof AdvancedAuthorizationProvider;
+        this.mimeTypeDetectionEnabled = repository.mimeTypeDetectionEnabled();
     }
 
     protected JcrSession( JcrSession original,
@@ -240,6 +242,7 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
         this.nanosCreated = System.nanoTime();
         repository.statistics().increment(ValueMetric.SESSION_COUNT);
         acm = new AccessControlManagerImpl(this);
+        this.mimeTypeDetectionEnabled = original.mimeTypeDetectionEnabled;
     }
 
     final JcrWorkspace workspace() {
@@ -2214,7 +2217,7 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
             // -----------
             if (nodeTypeCapabilities.isNtResource(primaryType)) {
                 // If there is no "jcr:mimeType" property ...
-                if (!node.hasProperty(JcrLexicon.MIMETYPE, cache)) {
+                if (mimeTypeDetectionEnabled && !node.hasProperty(JcrLexicon.MIMETYPE, cache)) {
                     // Try to get the MIME type for the binary value ...
                     org.modeshape.jcr.value.Property dataProp = node.getProperty(JcrLexicon.DATA, cache);
                     if (dataProp != null) {
