@@ -50,14 +50,15 @@ public final class NoClientTransactions extends Transactions {
 
     @Override
     public synchronized Transaction begin() throws NotSupportedException, SystemException {
-        if (ACTIVE_TRANSACTION.get() == null) {
+        NestableThreadLocalTransaction tx = ACTIVE_TRANSACTION.get();
+        if (tx == null) {
             // Start a transaction ...
             txnMgr.begin();
             if (logger.isTraceEnabled()) {
                 logger.trace("Begin transaction {0}", currentTransactionId());
             }
-            ACTIVE_TRANSACTION.set(new NestableThreadLocalTransaction(txnMgr, ACTIVE_TRANSACTION));
+            tx = new NestableThreadLocalTransaction(txnMgr, ACTIVE_TRANSACTION);
         }
-        return ACTIVE_TRANSACTION.get().begin();
+        return tx.begin();
     }
 }
