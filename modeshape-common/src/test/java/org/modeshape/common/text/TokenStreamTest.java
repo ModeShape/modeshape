@@ -20,6 +20,7 @@ import static org.junit.Assert.assertThat;
 import java.util.Arrays;
 import org.junit.Before;
 import org.junit.Test;
+import org.modeshape.common.FixFor;
 import org.modeshape.common.text.TokenStream.BasicTokenizer;
 import org.modeshape.common.text.TokenStream.Tokenizer;
 
@@ -122,6 +123,54 @@ public class TokenStreamTest {
         tokens.consume("SELECT");
         tokens.consume("ALL");
         tokens.consume("columns");
+    }
+
+    @FixFor( "MODE-2497" )
+    @Test
+    public void shouldHandleNonAsciiCharactersWhenCaseSensitive() {
+        content = "ü and";
+        makeCaseSensitive();
+        tokens.consume("ü");
+        tokens.consume("and");
+        assertThat(tokens.hasNext(), is(false));
+    }
+
+    @FixFor( "MODE-2497" )
+    @Test
+    public void shouldHandleßCharacterWhenCaseSensitive() {
+        content = "ß and";
+        makeCaseSensitive();
+        tokens.consume("ß");
+        tokens.consume("and");
+        assertThat(tokens.hasNext(), is(false));
+    }
+
+    @FixFor( "MODE-2497" )
+    @Test
+    public void shouldConsumeCaseInsensitiveStringInOriginalCase() {
+        makeCaseInsensitive();
+        String firstToken = tokens.consume();
+
+        assertThat(firstToken, is("Select"));
+    }
+
+    @FixFor( "MODE-2497" )
+    @Test
+    public void shouldMatchUpperCaseVersionOfßCharacterWhenCaseInsensitive() {
+        content = "ß";
+        makeCaseInsensitive();
+        tokens.consume("SS");
+        assertThat(tokens.hasNext(), is(false));
+    }
+
+    @FixFor( "MODE-2497" )
+    @Test
+    public void shouldHandleTokensAfterßCharacterWhenCaseInsensitive() {
+        content = "ß and";
+        makeCaseInsensitive();
+        tokens.consume(TokenStream.ANY_VALUE);
+        tokens.consume("AND");
+        assertThat(tokens.hasNext(), is(false));
     }
 
     @Test
