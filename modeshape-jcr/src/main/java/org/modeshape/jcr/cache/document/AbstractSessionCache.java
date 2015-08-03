@@ -20,6 +20,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 import javax.transaction.RollbackException;
 import javax.transaction.Status;
@@ -74,9 +75,9 @@ public abstract class AbstractSessionCache implements SessionCache, DocumentCach
     private final PathFactory pathFactory;
     private final Path rootPath;
     private final RepositoryEnvironment repositoryEnvironment;
-
+    private final ConcurrentHashMap<Integer, Transactions.TransactionFunction> completeTxFunctionByTxId = new ConcurrentHashMap<>();
+    
     private ExecutionContext context;
-    private AtomicReference<Transactions.TransactionFunction> completeTransactionFunction = new AtomicReference<>();
 
     protected AbstractSessionCache( ExecutionContext context,
                                     WorkspaceCache sharedWorkspaceCache,
@@ -116,21 +117,27 @@ public abstract class AbstractSessionCache implements SessionCache, DocumentCach
                 // otherwise, "save" is never called meaning this cache should be discarded
                 Transactions.Transaction modeshapeTx = transactions.currentTransaction();
                 if (modeshapeTx != null) {
-                    if (this.completeTransactionFunction.get() == null) {
+                    // we can use the identity hash code as a tx id, because we essentially want a different tx function for each
+                    // different transaction and as long as a tx is active, it should not be garbage collected, hence we should
+                    // get different IDs for different transactions
+                    final int txId = System.identityHashCode(modeshapeTx);
+                    if (!completeTxFunctionByTxId.containsKey(txId)) {
                         // create and register the complete transaction function only once
-                        this.completeTransactionFunction.compareAndSet(null, new Transactions.TransactionFunction() {
+                        Transactions.TransactionFunction completeFunction = new Transactions.TransactionFunction() {
                             @Override
                             public void execute() {
-                                completeTransaction();
+                                completeTransaction(txId);
                             }
-                        });
-                        // always run this function, regardless whether the transaction succeeds or not
-                        modeshapeTx.uponCompletion(this.completeTransactionFunction.get());
+                        };
+                        if (completeTxFunctionByTxId.putIfAbsent(txId, completeFunction) == null) {
+                            // we only want 1 completion function per tx id
+                            modeshapeTx.uponCompletion(completeFunction);    
+                        }
                     }
                 }
             } else {
                 // There is no active transaction, so just use the shared workspace cache ...
-                completeTransaction();
+                completeTransaction(null);
             }
         } catch (SystemException e) {
             logger().error(e, JcrI18n.errorDeterminingCurrentTransactionAssumingNone, workspaceName(), e.getMessage());
@@ -143,9 +150,11 @@ public abstract class AbstractSessionCache implements SessionCache, DocumentCach
      * Signal that the transaction that was active and in which this session participated has completed and that this session
      * should no longer use a transaction-specific workspace cache.
      */
-    protected void completeTransaction() {
+    protected void completeTransaction(final Integer txId) {
         workspaceCache.set(sharedWorkspaceCache);
-        completeTransactionFunction.set(null);
+        if (txId != null) {
+            completeTxFunctionByTxId.remove(txId);
+        }
     }
 
     @Override

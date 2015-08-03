@@ -121,7 +121,7 @@ public abstract class Transactions {
     public abstract Transaction begin() throws NotSupportedException, SystemException;
 
     /**
-     * Returns a the current transaction, if one exists.
+     * Returns a the current ModeShape transaction, if one exists.
      *
      * @return either a {@link org.modeshape.jcr.txn.Transactions.Transaction instance} or {@code null}
      */
@@ -384,11 +384,12 @@ public abstract class Transactions {
 
     protected class NestableThreadLocalTransaction extends TraceableSimpleTransaction {
         private AtomicInteger nestedLevel = new AtomicInteger(0);
-        private ThreadLocal<? extends Transaction> txReference;
+        private ThreadLocal<NestableThreadLocalTransaction> txHolder;
 
-        protected NestableThreadLocalTransaction( TransactionManager txnMgr, ThreadLocal<? extends Transaction> txReference) {
+        protected NestableThreadLocalTransaction( TransactionManager txnMgr, ThreadLocal<NestableThreadLocalTransaction> txHolder ) {
             super(txnMgr);
-            this.txReference = txReference;
+            this.txHolder = txHolder;
+            this.txHolder.set(this);
         }
 
         @Override
@@ -414,10 +415,10 @@ public abstract class Transactions {
         }
 
         protected void cleanup() {
-            // txReference can be null if commit failed and then rollback is called in which case cleanup had already been done
-            if (txReference != null) {
-                txReference.remove();
-                txReference = null;
+            // this can be null if commit failed and then rollback is called in which case cleanup had already been done
+            if (txHolder != null) {
+                txHolder.remove();
+                txHolder = null;
             }
             nestedLevel = null;
         }
