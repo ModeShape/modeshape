@@ -25,7 +25,9 @@ import org.modeshape.web.shared.ResultSet;
 import com.google.gwt.user.client.rpc.RemoteService;
 import com.google.gwt.user.client.rpc.RemoteServiceRelativePath;
 import java.util.Date;
+import org.modeshape.web.shared.BackupParams;
 import org.modeshape.web.shared.RepositoryName;
+import org.modeshape.web.shared.RestoreParams;
 import org.modeshape.web.shared.Stats;
 
 /**
@@ -270,8 +272,8 @@ public interface JcrService extends RemoteService {
      */
     public void save(String repository, String workspace) throws RemoteException;
     
-    public void backup(String repository, String name) throws RemoteException;
-    public void restore(String repository, String name) throws RemoteException;
+    public void backup(String repository, String name, BackupParams params) throws RemoteException;
+    public void restore(String repository, String name, RestoreParams params) throws RemoteException;
     
     public void export(String repository, String workspace, String path, String location, boolean skipBinary, boolean noRecurse) 
             throws RemoteException;

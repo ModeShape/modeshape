@@ -39,9 +39,8 @@ public class NodeReordered extends AbstractNodeChange {
                           NodeKey parent,
                           Path newPath,
                           Path oldPath,
-                          Path reorderedBeforePath,
-                          boolean queryable ) {
-        super(key, newPath, primaryType, mixinTypes, queryable);
+                          Path reorderedBeforePath ) {
+        super(key, newPath, primaryType, mixinTypes);
         this.oldPath = oldPath;
         this.parent = parent;
         this.reorderedBeforePath = reorderedBeforePath;

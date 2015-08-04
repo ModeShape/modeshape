@@ -33,14 +33,19 @@ public class CacheSchematicDb implements SchematicDb {
 
     private final String name;
     private final AdvancedCache<String, SchematicEntry> store;
+    private final AdvancedCache<String, SchematicEntry> storeForWriting;
     private final AdvancedCache<String, SchematicEntry> lockingStore;
     private final boolean explicitLocking;
 
     public CacheSchematicDb( AdvancedCache<String, SchematicEntry> store ) {
+        assert store != null;
         this.store = store;
+        this.storeForWriting = store.withFlags(Flag.SKIP_CACHE_LOAD, Flag.SKIP_REMOTE_LOOKUP);
         this.name = store.getName();
         this.explicitLocking = store.getCacheConfiguration().transaction().lockingMode() == LockingMode.PESSIMISTIC;
         if (this.explicitLocking) {
+            // the FAIL SILENTLY flag is required here because without it ISPN will rollback the active transaction on the first
+            // TimeoutException, while ModeShape has built-in logic for retrying....
             this.lockingStore = store.withFlags(Flag.FAIL_SILENTLY).getAdvancedCache();
         } else {
             this.lockingStore = store;
@@ -78,22 +83,15 @@ public class CacheSchematicDb implements SchematicDb {
     }
 
     @Override
-    public SchematicEntry put( String key,
-                               Document document ) {
+    public void put( String key,
+                     Document document ) {
         SchematicEntry newEntry = new SchematicEntryLiteral(key, document);
-        SchematicEntry oldValue = store.put(key, newEntry);
-        return oldValue != null ? removedResult(key, oldValue) : null;
-    }
-
-    protected SchematicEntry removedResult( String key,
-                                            SchematicEntry entry ) {
-        SchematicEntryLiteral literal = (SchematicEntryLiteral)entry;
-        literal.markRemoved(true);
-        return literal;
+        // use storeForWriting because we don't care about the return type - i.e. we're doing a local put
+        storeForWriting.put(key, newEntry);
     }
 
     @Override
-    public SchematicEntry put( Document entryDocument ) {
+    public void put( Document entryDocument ) {
         Document metadata = entryDocument.getDocument(FieldName.METADATA);
         Object content = entryDocument.get(FieldName.CONTENT);
         if (metadata == null || content == null) {
@@ -107,29 +105,30 @@ public class CacheSchematicDb implements SchematicDb {
         if (content instanceof Document) {
             newEntry = new SchematicEntryLiteral(metadata, (Document)content);
         }
-        SchematicEntry oldValue = store.put(key, newEntry);
-        return oldValue != null ? removedResult(key, oldValue) : null;
+        // use storeForWriting because we don't care about the return type - i.e. we're doing a local put
+        storeForWriting.put(key, newEntry);
     }
 
     @Override
     public SchematicEntry putIfAbsent( String key,
                                        Document document ) {
         SchematicEntryLiteral newEntry = new SchematicEntryLiteral(key, document);
-        SchematicEntry existingEntry = store.putIfAbsent(key, newEntry);
-        return existingEntry;
+        // we can't use storeForWriting, because we care about the return value here 
+        return store.putIfAbsent(key, newEntry);
     }
 
     @Override
-    public SchematicEntry replace( String key,
-                                   Document document ) {
+    public void replace( String key,
+                         Document document ) {
         SchematicEntryLiteral newEntry = new SchematicEntryLiteral(key, document);
-        return removedResult(key, store.replace(key, newEntry));
+        // use storeForWriting because we don't care about the return type - i.e. we're doing a local replace
+        storeForWriting.replace(key, newEntry);
     }
 
     @Override
     public SchematicEntry remove( String key ) {
-        SchematicEntry existing = store.remove(key);
-        return existing == null ? null : removedResult(key, existing);
+        // we can't use storeForWriting, because we care about the return value here
+        return store.remove(key);
     }
 
     @Override
@@ -147,11 +146,13 @@ public class CacheSchematicDb implements SchematicDb {
         if (literal == null) {
             if (!createIfMissing) return null;
             literal = new SchematicEntryLiteral(key);
-            store.put(key, literal);
-            return new DocumentEditor((MutableDocument)literal.getContent());
+            SchematicEntry existingLiteral = store.putIfAbsent(key, literal);
+            MutableDocument content = existingLiteral == null ? (MutableDocument)literal.getContent()
+                                                              : (MutableDocument)existingLiteral.getContent();
+            return new DocumentEditor(content);
         }
         // this makes a copy and puts the new copy into the store ...
-        return literal.edit(key, store, shouldAcquireLock(acquireLock));
+        return literal.edit(key, storeForWriting, shouldAcquireLock(acquireLock));
     }
 
     private AdvancedCache<String, SchematicEntry> shouldAcquireLock( boolean acquireLockRequested ) {

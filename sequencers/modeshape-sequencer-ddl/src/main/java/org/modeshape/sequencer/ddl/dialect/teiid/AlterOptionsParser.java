@@ -144,10 +144,13 @@ final class AlterOptionsParser extends StatementParser {
 
         // can't find referenced table
         if (tableRefNode == null) {
-            this.logger.debug("Alter options statement table reference '{0}' node not found", tableRefName);
-        } else {
-            alterOptionsNode.setProperty(TeiidDdlLexicon.AlterOptions.REFERENCE, tableRefNode);
+            //
+            // Causes a constraint violation exception as REFERENCE is mandatory
+            //
+            throw new TeiidDdlParsingException(tokens, "Alter options statement table reference '" + tableRefName + "' node not found");
         }
+
+        alterOptionsNode.setProperty(TeiidDdlLexicon.AlterOptions.REFERENCE, tableRefNode);
 
         // must have either a <alter options list> or a <alter column options>
         if (!parseAlterOptionsList(tokens, alterOptionsNode) && !parseAlterColumnOptions(tokens, alterOptionsNode)) {

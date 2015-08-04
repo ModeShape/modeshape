@@ -16,7 +16,12 @@
 
 package org.modeshape.jcr;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import java.util.ArrayList;
+import java.util.List;
 import javax.jcr.Node;
+import javax.jcr.NodeIterator;
 import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
 import javax.jcr.nodetype.NodeTypeManager;
@@ -24,6 +29,7 @@ import javax.jcr.nodetype.NodeTypeTemplate;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.modeshape.common.FixFor;
 import org.modeshape.common.util.FileUtil;
 import org.modeshape.jcr.ValidateQuery.ValidationBuilder;
 import org.modeshape.jcr.api.ValueFactory;
@@ -32,8 +38,13 @@ import org.modeshape.jcr.api.index.IndexDefinition.IndexKind;
 import org.modeshape.jcr.api.index.IndexDefinitionTemplate;
 import org.modeshape.jcr.api.index.IndexManager;
 import org.modeshape.jcr.api.query.Query;
+import org.modeshape.jcr.api.query.QueryManager;
+import org.modeshape.jcr.api.query.QueryResult;
+import org.modeshape.jcr.spi.index.provider.IndexProvider;
 
 public abstract class AbstractIndexProviderTest extends SingleUseAbstractTest {
+
+    protected static final String LOCAL_PROVIDER_NAME = "local";
 
     private static final String CONFIG_FILE = "config/repo-config-persistent-local-provider-no-indexes.json";
     private static final String STORAGE_DIR = "target/persistent_repository";
@@ -114,6 +125,52 @@ public abstract class AbstractIndexProviderTest extends SingleUseAbstractTest {
         validateQuery().rowCount(2L).useNoIndexes().validate(query, query.execute());
     }
 
+    @Test
+    @FixFor( "MODE-2473" )
+    public void shouldSkipEntireBatches() throws Exception {
+        registerNodeTypes("cnd/authors.cnd");
+        registerValueIndex("baseNodes", "nt:base", null, "*", "jcr:primaryType", PropertyType.NAME);
+
+        int batchSize = batchSize() + 1;
+        for (int i = 0; i < batchSize; i++) {
+            Node node = session.getRootNode().addNode("node_" + i, "my:content");
+            node.setProperty("content", "content_" + i);
+            node.setProperty("author", "author_" + i);
+        }
+        Node node = session.getRootNode().addNode("lastNode", "my:content");
+        node.setProperty("content", "lastContent");
+        node.setProperty("author", "lastAuthor");
+
+        session.save();
+        waitForIndexes();
+        int totalNodesCount = batchSize + 1;
+        NodeIterator nodeIterator = null;
+        int[] positionsToSkip = new int[] {batchSize - 2, batchSize - 1, batchSize};
+        List<Node> collectedNodes = new ArrayList<>();
+        for (int positionToSkip : positionsToSkip ) {
+            collectedNodes.clear();
+
+            final String sql = "select content.[jcr:path] from [my:content] as content order by content.author";
+            final QueryManager queryManager = session.getWorkspace().getQueryManager();
+            final Query query = queryManager.createQuery(sql, Query.JCR_SQL2);
+            final QueryResult result = query.execute();
+
+            nodeIterator = result.getNodes();
+            assertEquals(batchSize + 1, nodeIterator.getSize());
+            nodeIterator.skip(positionToSkip);
+            while (nodeIterator.hasNext()) {
+                collectedNodes.add(nodeIterator.nextNode());
+
+            }
+            assertEquals(collectedNodes.size(), totalNodesCount - positionToSkip);
+        }
+
+        // the last skip should produce just 1 node
+        Node lastNode = collectedNodes.get(collectedNodes.size() - 1);
+        assertEquals("lastContent", lastNode.getProperty("content").getString());
+        assertNotNull("lastAuthor", lastNode.getProperty("author").getString());
+    }
+
     @Override
     protected void startRepository() throws Exception {
         startRepositoryWithConfiguration(resource(CONFIG_FILE));
@@ -124,10 +181,10 @@ public abstract class AbstractIndexProviderTest extends SingleUseAbstractTest {
     }
 
     protected void registerNodeType( String typeName ) throws RepositoryException {
-        registerNodeType(typeName, true, "nt:unstructured");
+        registerNodeType(typeName, true, false, "nt:unstructured");
     }
     
-    protected void registerNodeType( String typeName, boolean queryable, String...declaredSuperTypes) throws RepositoryException {
+    protected void registerNodeType( String typeName, boolean queryable, boolean mixin, String...declaredSuperTypes) throws RepositoryException {
         NodeTypeManager mgr = session.getWorkspace().getNodeTypeManager();
 
         // Create a template for the node type ...
@@ -136,24 +193,31 @@ public abstract class AbstractIndexProviderTest extends SingleUseAbstractTest {
         type.setDeclaredSuperTypeNames(declaredSuperTypes);
         type.setAbstract(false);
         type.setOrderableChildNodes(true);
-        type.setMixin(false);
+        type.setMixin(mixin);
         type.setQueryable(queryable);
         mgr.registerNodeType(type, true);
     }
 
-    protected abstract void registerValueIndex( String indexName,
-                                                String indexedNodeType,
-                                                String desc,
-                                                String workspaceNamePattern,
-                                                String propertyName,
-                                                int propertyType ) throws RepositoryException;
+    protected void registerValueIndex( String indexName,
+                                       String indexedNodeType,
+                                       String desc,
+                                       String workspaceNamePattern,
+                                       String propertyName,
+                                       int propertyType ) throws RepositoryException {
+        registerIndex(indexName, IndexKind.VALUE, providerName(), indexedNodeType, desc, workspaceNamePattern, propertyName,
+                      propertyType);
+    }
 
-    protected abstract void registerNodeTypeIndex( String indexName,
-                                                   String indexedNodeType,
-                                                   String desc,
-                                                   String workspaceNamePattern,
-                                                   String propertyName,
-                                                   int propertyType ) throws RepositoryException;
+    protected void registerNodeTypeIndex( String indexName,
+                                          String indexedNodeType,
+                                          String desc,
+                                          String workspaceNamePattern,
+                                          String propertyName,
+                                          int propertyType ) throws RepositoryException {
+        registerIndex(indexName, IndexKind.NODE_TYPE, providerName(), indexedNodeType, desc, workspaceNamePattern, propertyName,
+                      propertyType);
+
+    }
 
     protected void registerIndex( String indexName,
                                   IndexKind kind,
@@ -205,7 +269,13 @@ public abstract class AbstractIndexProviderTest extends SingleUseAbstractTest {
         return ValidateQuery.validateQuery().printDetail(print);
     }
 
+    protected int batchSize() {
+        return IndexProvider.DEFAULT_BATCH_SIZE;
+    }
+
     protected abstract boolean useSynchronousIndexes();
+ 
+    protected abstract String providerName();
 
     protected void waitForIndexes( long extraTime ) throws InterruptedException {
         if (useSynchronousIndexes()) {

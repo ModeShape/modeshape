@@ -15,7 +15,9 @@
  */
 package org.modeshape.jcr.cache;
 
+import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -27,9 +29,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import javax.transaction.NotSupportedException;
 import javax.transaction.SystemException;
-import javax.transaction.TransactionManager;
-import org.infinispan.AdvancedCache;
 import org.infinispan.Cache;
+import org.infinispan.configuration.cache.Configuration;
+import org.infinispan.eviction.EvictionStrategy;
 import org.infinispan.lifecycle.ComponentStatus;
 import org.infinispan.manager.CacheContainer;
 import org.infinispan.manager.EmbeddedCacheManager;
@@ -37,6 +39,8 @@ import org.infinispan.schematic.Schematic;
 import org.infinispan.schematic.SchematicEntry;
 import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.document.EditableDocument;
+import org.infinispan.transaction.TransactionMode;
+import org.infinispan.util.concurrent.TimeoutException;
 import org.modeshape.common.SystemFailureException;
 import org.modeshape.common.collection.Collections;
 import org.modeshape.common.i18n.I18n;
@@ -116,9 +120,9 @@ public class RepositoryCache {
     protected final Set<String> workspaceNames;
     protected final String systemWorkspaceName;
     protected final Logger logger;
-    private final SessionEnvironment sessionContext;
+    private final RepositoryEnvironment repositoryEnvironment;
     private final String processKey;
-    private final CacheContainer workspaceCacheManager;
+    private final EmbeddedCacheManager workspaceCacheManager;
     protected final Upgrades upgrades;
     private volatile boolean initializingRepository = false;
     private volatile boolean upgradingRepository = false;
@@ -132,7 +136,7 @@ public class RepositoryCache {
                             ClusteringService clusteringService,
                             RepositoryConfiguration configuration,
                             ContentInitializer initializer,
-                            SessionEnvironment sessionContext,
+                            RepositoryEnvironment repositoryEnvironment,
                             ChangeBus changeBus,
                             CacheContainer workspaceCacheContainer,
                             Upgrades upgradeFunctions ) {
@@ -142,9 +146,12 @@ public class RepositoryCache {
         this.clusteringService = clusteringService;
         this.minimumStringLengthForBinaryStorage.set(configuration.getBinaryStorage().getMinimumStringSize());
         this.translator = new DocumentTranslator(this.context, this.documentStore, this.minimumStringLengthForBinaryStorage.get());
-        this.sessionContext = sessionContext;
+        this.repositoryEnvironment = repositoryEnvironment;
         this.processKey = context.getProcessId();
-        this.workspaceCacheManager = workspaceCacheContainer;
+        if (! (workspaceCacheContainer instanceof EmbeddedCacheManager)) {
+            throw new ConfigurationException(JcrI18n.workspaceCacheShouldBeEmbedded.text());
+        }
+        this.workspaceCacheManager = (EmbeddedCacheManager)workspaceCacheContainer;
         this.logger = Logger.getLogger(getClass());
         this.rootNodeId = RepositoryConfiguration.ROOT_NODE_ID;
         this.name = configuration.getName();
@@ -224,8 +231,8 @@ public class RepositoryCache {
                     @Override
                     public Boolean call() throws Exception {
                         LocalDocumentStore store = documentStore().localStore();
-                        store.prepareDocumentsForUpdate(Collections.unmodifiableSet(REPOSITORY_INFO_KEY));
-                        EditableDocument editor = store.edit(REPOSITORY_INFO_KEY, true);
+                        store.lockDocuments(Collections.unmodifiableSet(REPOSITORY_INFO_KEY));
+                        EditableDocument editor = store.edit(REPOSITORY_INFO_KEY, true, false);
                         if (editor.get(REPOSITORY_UPGRADER_FIELD_NAME) == null) {
                             // Make sure that some other process didn't sneak in and already upgrade ...
                             int lastUpgradeId = editor.getInteger(REPOSITORY_UPGRADE_ID_FIELD_NAME, 0);
@@ -239,7 +246,7 @@ public class RepositoryCache {
                         // Another process is upgrading (or has already upgraded) the repository ...
                         return false;
                     }
-                });
+                }, 1, REPOSITORY_INFO_KEY);
                 if (this.upgradingRepository) {
                     LOGGER.debug("This process will upgrade the content in repository '{0}'", name);
                 } else {
@@ -383,8 +390,8 @@ public class RepositoryCache {
         return changeBus;
     }
 
-    protected final SessionEnvironment sessionContext() {
-        return sessionContext;
+    protected final RepositoryEnvironment repositoryEnvironment() {
+        return repositoryEnvironment;
     }
 
     protected final String processKey() {
@@ -412,7 +419,7 @@ public class RepositoryCache {
             Map<String, String> userData = context.getData();
             DateTime timestamp = context.getValueFactories().getDateFactory().create();
             RecordingChanges changes = new RecordingChanges(context.getId(), context.getProcessId(), this.getKey(), null,
-                                                            sessionContext.journalId());
+                                                            repositoryEnvironment.journalId());
             changes.repositoryMetadataChanged();
             changes.freeze(userId, userData, timestamp);
             this.changeBus.notify(changes);
@@ -435,15 +442,15 @@ public class RepositoryCache {
                     @Override
                     public Void call() throws Exception {
                         LocalDocumentStore store = documentStore().localStore();
-                        store.prepareDocumentsForUpdate(Collections.unmodifiableSet(REPOSITORY_INFO_KEY));
-                        EditableDocument editor = store.edit(REPOSITORY_INFO_KEY, true);
-                        if (editor.get(REPOSITORY_INITIALIZED_AT_FIELD_NAME) == null) {
+                        store.lockDocuments(Collections.unmodifiableSet(REPOSITORY_INFO_KEY));
+                        EditableDocument repositoryInfo = store.edit(REPOSITORY_INFO_KEY, true, false);
+                        if (repositoryInfo.get(REPOSITORY_INITIALIZED_AT_FIELD_NAME) == null) {
                             DateTime now = context().getValueFactories().getDateFactory().create();
-                            editor.setDate(REPOSITORY_INITIALIZED_AT_FIELD_NAME, now.toDate());
+                            repositoryInfo.setDate(REPOSITORY_INITIALIZED_AT_FIELD_NAME, now.toDate());
                         }
                         return null;
                     }
-                });
+                }, 1, REPOSITORY_INFO_KEY);
                 LOGGER.debug("Repository '{0}' is fully initialized", name);
             }
             return this;
@@ -468,15 +475,14 @@ public class RepositoryCache {
                         LOGGER.debug("Recording upgrade completion in repository '{0}'", name);
 
                         LocalDocumentStore store = documentStore().localStore();
-                        store.prepareDocumentsForUpdate(Collections.unmodifiableSet(REPOSITORY_INFO_KEY));
-                        EditableDocument editor = store.edit(REPOSITORY_INFO_KEY, true);
+                        EditableDocument editor = store.edit(REPOSITORY_INFO_KEY, true, false);
                         DateTime now = context().getValueFactories().getDateFactory().create();
                         editor.setDate(REPOSITORY_UPGRADED_AT_FIELD_NAME, now.toDate());
                         editor.setNumber(REPOSITORY_UPGRADE_ID_FIELD_NAME, lastUpgradeId);
                         editor.remove(REPOSITORY_UPGRADER_FIELD_NAME);
                         return null;
                     }
-                });
+                }, 1, REPOSITORY_INFO_KEY);
                 LOGGER.debug("Repository '{0}' is fully upgraded", name);
             } catch (Throwable err) {
                 // We do NOT want an error during upgrade to prevent the repository from coming online.
@@ -488,24 +494,43 @@ public class RepositoryCache {
         return this;
     }
 
-    private <V> V runInTransaction( Callable<V> operation ) {
+    private <V> V runInTransaction( Callable<V> operation, int retryCountOnLockTimeout, String... keysToLock ) {
         // Start a transaction ...
-        Transactions txns = sessionContext.getTransactions();
+        Transactions txns = repositoryEnvironment.getTransactions();
         try {
             Transaction txn = txns.begin();
+            if (keysToLock.length > 0) {
+                List<String> keysList = Arrays.asList(keysToLock);
+                boolean locksAquired = false;
+                while (!locksAquired && retryCountOnLockTimeout > 0) {
+                    locksAquired = documentStore().localStore().lockDocuments(keysList);
+                    --retryCountOnLockTimeout;
+                }
+                if (!locksAquired) {
+                    txn.rollback();
+                    throw new org.modeshape.jcr.TimeoutException(
+                            "Cannot aquire lock on " + keysToLock + " after " + retryCountOnLockTimeout + " attempts");
+                }
+            }
             try {
                 V result = operation.call();
                 txn.commit();
                 return result;
             } catch (Exception e) {
+                // always rollback
                 txn.rollback();
-                throw (e instanceof RuntimeException) ? (RuntimeException)e : new RuntimeException(e);
+                // throw as is (see below)
+                throw e;
             }
         } catch (IllegalStateException | SystemException err) {
             throw new SystemFailureException(err);
         } catch (NotSupportedException e) {
             logger.debug(e, "nested transactions not supported");
             return null;
+        } catch (RuntimeException re) {
+            throw re;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -524,12 +549,9 @@ public class RepositoryCache {
             // Tell the workspace cache intance that it's closed ...
             entry.getValue().signalClosed();
             // Remove the infinispan cache from the manager ...
-            if (workspaceCacheManager instanceof EmbeddedCacheManager) {
-                EmbeddedCacheManager embeddedCacheManager = (EmbeddedCacheManager)workspaceCacheManager;
-                if (embeddedCacheManager.getStatus().equals(ComponentStatus.RUNNING)) {
-                    String cacheName = cacheNameForWorkspace(workspaceName);
-                    ((EmbeddedCacheManager)workspaceCacheManager).removeCache(cacheName);
-                }
+            if (workspaceCacheManager.getStatus().equals(ComponentStatus.RUNNING)) {
+                String cacheName = cacheNameForWorkspace(workspaceName);
+                workspaceCacheManager.removeCache(cacheName);
             }
         }
     }
@@ -614,14 +636,14 @@ public class RepositoryCache {
                             entry = documentStore().localStore().get(systemMetadataKeyStr);
                         }
                     }
-                    EditableDocument doc = documentStore().localStore().edit(systemMetadataKeyStr, true);
+                    EditableDocument doc = documentStore().localStore().edit(systemMetadataKeyStr, true, false);
                     PropertyFactory propFactory = context().getPropertyFactory();
                     translator.setProperty(doc, propFactory.create(name("workspaces"), workspaceNames), null, null);
                     translator.setProperty(doc, propFactory.create(name("accessControl"), accessControlEnabled), null, null);
 
                     return null;
                 }
-            });
+            }, 2, systemMetadataKeyStr);
         } catch (RuntimeException re) {
             LOGGER.error(JcrI18n.errorUpdatingRepositoryMetadata, name, re.getMessage());
             throw re;
@@ -842,13 +864,14 @@ public class RepositoryCache {
 
                         WorkspaceCache workspaceCache = new WorkspaceCache(context, getKey(), name, systemWorkspaceCache,
                                                                            documentStore, translator, rootKey, nodeCache,
-                                                                           changeBus);
+                                                                           changeBus, repositoryEnvironment());
 
                         if (documentStore.localStore().putIfAbsent(rootKey.toString(), rootDoc) == null) {
                             // we are the first node to perform the initialization, so we need to link the system node
                             if (!RepositoryCache.this.systemWorkspaceName.equals(name)) {
                                 logger.debug("Creating '{0}' workspace in repository '{1}'", name, getName());
-                                SessionCache workspaceSession = new WritableSessionCache(context, workspaceCache, sessionContext);
+                                SessionCache workspaceSession = new WritableSessionCache(context, workspaceCache,
+                                                                                         repositoryEnvironment);
                                 MutableCachedNode workspaceRootNode = workspaceSession.mutable(workspaceSession.getRootKey());
                                 workspaceRootNode.linkChild(workspaceSession, RepositoryCache.this.systemKey, JcrLexicon.SYSTEM);
 
@@ -858,7 +881,7 @@ public class RepositoryCache {
                         }
                         return workspaceCache;
                     }
-                });
+                }, 0);
                 workspaceCachesByName.put(name, initializedWsCache);
             }
         }
@@ -866,16 +889,38 @@ public class RepositoryCache {
     }
 
     protected Cache<NodeKey, CachedNode> cacheForWorkspace( String name ) {
-        Cache<NodeKey, CachedNode> cache = workspaceCacheManager.getCache(cacheNameForWorkspace(name));
-        if (cache instanceof AdvancedCache) {
-            TransactionManager txManager = ((AdvancedCache<?, ?>)cache).getTransactionManager();
-            if (txManager != null) {
-                throw new ConfigurationException(JcrI18n.workspaceCacheShouldNotBeTransactional.text(name));
+        String cacheName = cacheNameForWorkspace(name);
+        if (LOGGER.isDebugEnabled()) {
+            Set<String> cacheNames = workspaceCacheManager.getCacheNames();
+            if (!cacheNames.contains(cacheName)) {
+                // there is no explicit ws cache defined for this cache 
+                LOGGER.debug(
+                        "There is no explicit cache named '{0}' defined in the workspace cache container, using a default cache",
+                        cacheName);
             }
         }
+        Cache<NodeKey, CachedNode> cache = workspaceCacheManager.getCache(cacheName);
+        Configuration cacheConfiguration = cache.getCacheConfiguration();
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("The '{0}' workspace cache is using the cache configuration: '{1}'", cacheName,
+                         cacheConfiguration);
+        }
+        validateWorkspaceCacheConfig(cacheName, cacheConfiguration);
         return cache;
     }
 
+    private void validateWorkspaceCacheConfig( String cacheName, Configuration cacheConfiguration ) {
+        if (cacheConfiguration.transaction() != null &&
+            cacheConfiguration.transaction().transactionMode() != TransactionMode.NON_TRANSACTIONAL) {
+            throw new ConfigurationException(JcrI18n.workspaceCacheShouldNotBeTransactional.text(cacheName));
+        }
+        if (cacheConfiguration.eviction() == null || cacheConfiguration.eviction().strategy() == EvictionStrategy.NONE) {
+            throw new ConfigurationException(JcrI18n.workspaceCacheShouldUseEviction.text(cacheName));
+        }
+        if (cacheConfiguration.persistence() != null && cacheConfiguration.persistence().usingStores()) {
+            throw new ConfigurationException(JcrI18n.workspaceCacheShouldNotUseLoaders.text(cacheName));
+        }
+    }
     protected final String cacheNameForWorkspace( String workspaceName ) {
         return this.name + "/" + workspaceName;
     }
@@ -891,11 +936,9 @@ public class RepositoryCache {
         if (removed != null) {
             try {
                 removed.signalDeleted();
-                sessionContext.getTransactionalWorkspaceCacheFactory().remove(name);
+                repositoryEnvironment.getTransactionalWorkspaceCacheFactory().remove(name);
             } finally {
-                if (workspaceCacheManager instanceof EmbeddedCacheManager) {
-                    ((EmbeddedCacheManager)workspaceCacheManager).removeCache(cacheNameForWorkspace(name));
-                }
+                workspaceCacheManager.removeCache(cacheNameForWorkspace(name));
             }
         }
     }
@@ -951,7 +994,7 @@ public class RepositoryCache {
             Map<String, String> userData = context.getData();
             DateTime timestamp = context.getValueFactories().getDateFactory().create();
             RecordingChanges changes = new RecordingChanges(context.getId(), context.getProcessId(), this.getKey(), null,
-                                                            sessionContext.journalId());
+                                                            repositoryEnvironment.journalId());
             changes.workspaceAdded(name);
             changes.freeze(userId, userData, timestamp);
             this.changeBus.notify(changes);
@@ -1001,14 +1044,14 @@ public class RepositoryCache {
 
                     return null;
                 }
-            });
+            }, 0);
 
             // And notify the others - this notification will clear & close the WS cache via the local listener
             String userId = context.getSecurityContext().getUserName();
             Map<String, String> userData = context.getData();
             DateTime timestamp = context.getValueFactories().getDateFactory().create();
             RecordingChanges changes = new RecordingChanges(context.getId(), context.getProcessId(), this.getKey(), null,
-                                                            sessionContext.journalId());
+                                                            repositoryEnvironment.journalId());
             changes.workspaceRemoved(name);
             changes.freeze(userId, userData, timestamp);
             this.changeBus.notify(changes);
@@ -1071,7 +1114,7 @@ public class RepositoryCache {
         final WorkspaceCache systemWorkspaceCache = workspaceCachesByName.get(systemWorkspaceName);
         
         WorkspaceCache workspaceCache = new WorkspaceCache(context, getKey(), 
-                wsName, systemWorkspaceCache, documentStore, translator, rootKey, nodeCache, changeBus);
+                wsName, systemWorkspaceCache, documentStore, translator, rootKey, nodeCache, changeBus, repositoryEnvironment());
         workspaceCachesByName.put(wsName, workspaceCache);
 
         return workspace(wsName);
@@ -1091,9 +1134,9 @@ public class RepositoryCache {
             boolean readOnly) {
         WorkspaceCache workspaceCache = workspace(workspaceName);
         if (readOnly || workspaceCache.isExternal()) {
-            return new ReadOnlySessionCache(context, workspaceCache, sessionContext);
+            return new ReadOnlySessionCache(context, workspaceCache, repositoryEnvironment);
         }
-        return new WritableSessionCache(context, workspaceCache, sessionContext);
+        return new WritableSessionCache(context, workspaceCache, repositoryEnvironment);
     }
 
     /**
@@ -1135,6 +1178,12 @@ public class RepositoryCache {
             sw.stop();
             logger.info(JcrI18n.completeChildrenOptimization, getName(), sw.getTotalDuration().toSimpleString(), results);
             return results;
+        } catch (TimeoutException te) {
+            // we were unable to obtain some locks in ISPN while trying to do optimize so we'll just log this since the operation
+            // will be retried later and the transaction should've been rolled back
+            if (logger.isDebugEnabled()) {
+                logger.debug(te, "Unable to obtain ISPN locks while trying to perform document optimization");
+            }
         } catch (Throwable e) {
             logger.info(JcrI18n.errorDuringChildrenOptimization, getName(), sw.getTotalDuration().toSimpleString(), e);
         }

@@ -88,6 +88,8 @@ public class CompositeBinaryStoreTest extends AbstractBinaryStoreTest {
 
         store = new CompositeBinaryStore(stores);
         store.setMinimumBinarySizeInBytes(MIN_BINARY_SIZE);
+        store.setMimeTypeDetector(DEFAULT_DETECTOR);
+
         store.start();
     }
 

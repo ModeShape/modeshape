@@ -116,7 +116,11 @@ import org.modeshape.jcr.value.ValueFactories;
  * @author Randall Hauch (rhauch@redhat.com)
  */
 public abstract class IndexProvider {
-
+    /**
+     * The default number of rows in a batch.
+     */
+    public static final int DEFAULT_BATCH_SIZE = 100;
+    
     private final static IndexWriter EMPTY_WRITER = NoOpQueryIndexWriter.INSTANCE;
 
     /**
@@ -220,6 +224,15 @@ public abstract class IndexProvider {
      */
     public final String getRepositoryName() {
         return repositoryName;
+    }
+
+    /**
+     * Get the default number of rows in a batch.
+     *
+     * @return the number of rows, should never be < 0;
+     */
+    public int batchSize() {
+        return DEFAULT_BATCH_SIZE;
     }
 
     /**
@@ -815,7 +828,7 @@ public abstract class IndexProvider {
                              Properties properties ) {
                 Collection<IndexChangeAdapter> adapters = adaptersByWorkspaceName.get(workspace);
                 if (adapters != null) {
-                    boolean queryable = nodeTypesSupplier.getNodeTypes().isQueryable(primaryType);
+                    boolean queryable = nodeTypesSupplier.getNodeTypes().isQueryable(primaryType, mixinTypes);
                     // There are adapters for this workspace ...
                     for (IndexChangeAdapter adapter : adaptersByWorkspaceName.get(workspace)) {
                         if (adapter != null) {
@@ -1022,7 +1035,7 @@ public abstract class IndexProvider {
                                      IndexDefinition newDefinition,
                                      NodeTypeMatcher matcher ) {
             this.managedIndex = managedIndex;
-            this.defn = defn;
+            this.defn = newDefinition;
             this.matcher.use(matcher);
         }
     }

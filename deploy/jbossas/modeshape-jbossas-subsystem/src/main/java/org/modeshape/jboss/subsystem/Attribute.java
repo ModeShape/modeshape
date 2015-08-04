@@ -31,7 +31,8 @@ public enum Attribute {
     ANALYZER_MODULE("analyzer-module"),
     ANONYMOUS_ROLES("anonymous-roles"),
     ANONYMOUS_USERNAME("anonymous-username"),
-    CACHE_CONTAINER("cache-container"),
+    CACHE_CONFIG("cache-config"),
+    CONFIG_RELATIVE_TO("config-relative-to"),
     CACHE_NAME("cache-name"),
     CLASSNAME("classname"),
     DATA_CACHE_NAME("data-cache-name"),
@@ -54,6 +55,7 @@ public enum Attribute {
     CHUNK_SIZE("chunk-size"),
     MIN_VALUE_SIZE("min-value-size"),
     MIN_STRING_SIZE("min-string-size"),
+    MIME_TYPE_DETECTION("mime-type-detection"),
     MODULE("module"),
     NAME("name"),
     PATH("path"),
@@ -78,11 +80,12 @@ public enum Attribute {
     JOURNAL_GC_INITIAL_TIME("journal-gc-initial-time"),
     JOURNAL_PATH("journal-path"),
     JOURNAL_RELATIVE_TO("journal-relative-to"),
-
     INDEX_KIND("kind"),
     SYNCHRONOUS("synchronous"),
     PROVIDER_NAME("provider-name"),
     NODE_TYPE("node-type"),
+    THREAD_POOL_NAME("thread-pool-name"),
+    MAX_POOL_SIZE("max-pool-size"),
     COLUMNS("columns");
 
     private final String name;

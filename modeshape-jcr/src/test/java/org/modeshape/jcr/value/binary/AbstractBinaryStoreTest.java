@@ -39,9 +39,11 @@ import org.junit.rules.TestRule;
 import org.modeshape.common.FixFor;
 import org.modeshape.common.junit.SkipTestRule;
 import org.modeshape.common.util.IoUtil;
+import org.modeshape.jcr.TestingEnvironment;
 import org.modeshape.jcr.TextExtractors;
 import org.modeshape.jcr.api.text.TextExtractor;
 import org.modeshape.jcr.mimetype.MimeTypeDetector;
+import org.modeshape.jcr.mimetype.NameOnlyDetector;
 import org.modeshape.jcr.value.BinaryKey;
 import org.modeshape.jcr.value.BinaryValue;
 
@@ -67,6 +69,8 @@ public abstract class AbstractBinaryStoreTest {
     public static final BinaryKey EMPTY_BINARY_KEY;
     public static final String TEXT_DATA;
 
+    protected static final MimeTypeDetector DEFAULT_DETECTOR = new NameOnlyDetector(new TestingEnvironment());
+    
     private static final Random RANDOM = new Random();
 
     static {
@@ -85,7 +89,7 @@ public abstract class AbstractBinaryStoreTest {
     }
 
     protected abstract BinaryStore getBinaryStore();
-
+    
     @Test
     public void shouldAllowChangingTheMinimumBinarySize() throws Exception {
         BinaryStore binaryStore = getBinaryStore();

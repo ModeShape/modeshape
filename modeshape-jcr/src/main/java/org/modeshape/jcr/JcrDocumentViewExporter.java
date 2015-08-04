@@ -18,8 +18,10 @@ package org.modeshape.jcr;
 import java.io.IOException;
 import java.text.CharacterIterator;
 import java.text.StringCharacterIterator;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Set;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
@@ -184,27 +186,22 @@ class JcrDocumentViewExporter extends AbstractJcrExporter {
             return;
         }
 
-        Value value = null;
-        if (prop instanceof JcrSingleValueProperty) {
-            value = prop.getValue();
-        } else {
-            // Only output the first value of the multi-valued property.
-            // This is acceptable as per JCR 1.0 Spec (section 6.4.2.5)
-            Value[] values = prop.getValues();
-            value = values.length > 0 ? values[0] : null;
-        }
-
+        
         String valueAsString = "";
-        if (value != null) {
-            if (PropertyType.BINARY == prop.getType()) {
-                try {
-                    Base64.InputStream is = new Base64.InputStream(value.getBinary().getStream(), Base64.ENCODE);
-                    valueAsString = IoUtil.read(is);
-                } catch (IOException ioe) {
-                    throw new RepositoryException(ioe);
+        if (prop instanceof JcrSingleValueProperty) {
+            valueAsString = jcrValueToString(prop.getValue(), prop.getType());
+        } else {
+            Value[] values = prop.getValues();
+            if (values.length > 0) {
+                StringBuilder multiValuedString = new StringBuilder(valueAsString);
+                for (Iterator<Value> valuesIterator = Arrays.asList(values).iterator(); valuesIterator.hasNext();) {
+                    String valueString = jcrValueToString(valuesIterator.next(), prop.getType());
+                    multiValuedString.append(valueString);
+                    if (valuesIterator.hasNext()) {
+                        multiValuedString.append(" ");
+                    }
                 }
-            } else {
-                valueAsString = VALUE_ENCODER.encode(value.getString());
+                valueAsString = multiValuedString.toString();
             }
         }
 
@@ -214,6 +211,23 @@ class JcrDocumentViewExporter extends AbstractJcrExporter {
                           org.modeshape.jcr.api.PropertyType.nameFromValue(prop.getType()),
                           valueAsString);
     }
+
+    private String jcrValueToString( Value value, int propertyType ) throws RepositoryException {
+        if (value == null) {
+            return "";
+        }
+
+        if (PropertyType.BINARY == propertyType) {
+            try {
+                Base64.InputStream is = new Base64.InputStream(value.getBinary().getStream(), Base64.ENCODE);
+                return IoUtil.read(is);
+            } catch (IOException ioe) {
+                throw new RepositoryException(ioe);
+            }
+        } else {
+            return VALUE_ENCODER.encode(value.getString());
+        }
+    }   
 
     /**
      * Indicates whether the current node is an XML text node as per section 6.4.2.3 of the JCR 1.0 specification. XML text nodes

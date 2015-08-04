@@ -58,8 +58,8 @@ public final class TextExtractors {
 
     protected TextExtractors( JcrRepository.RunningState repository,
                     RepositoryConfiguration.TextExtraction extracting ) {
-        this(repository.context().getCachedTreadPool(extracting.getThreadPoolName()), getConfiguredExtractors(repository,
-                                                                                                              extracting));
+        this(repository.context().getCachedTreadPool(extracting.getThreadPoolName(), extracting.getMaxPoolSize()), 
+             getConfiguredExtractors(repository, extracting));
     }
 
     protected void shutdown() {

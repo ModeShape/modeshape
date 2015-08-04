@@ -286,7 +286,7 @@ public class NodeTypes {
                         // fullDefined = false;
                     }
                     if (childDefn.allowsSameNameSiblings()) {
-                        if (childDefn.isResidual() && !childDefn.hasRequiredPrimaryTypes()) {
+                        if (childDefn.isResidual()) {
                             allowsResidualWithSameNameSiblings = true;
                         }
                     } else {
@@ -575,11 +575,22 @@ public class NodeTypes {
         return false;
     }
 
-    public boolean disallowsSameNameSiblings( Name primaryType,
-                                              Set<Name> mixinTypes ) {
-        if (!nodeTypeNamesThatAllowSameNameSiblings.contains(primaryType)) return true;
-        for (Name mixinType : mixinTypes) {
-            if (!nodeTypeNamesThatAllowSameNameSiblings.contains(mixinType)) return true;
+    /**
+     * Determine if either the primary type or any of the mixin types allows SNS.
+     *
+     * @param primaryType the primary type name; may not be null
+     * @param mixinTypes the mixin type names; may be null or empty
+     * @return {@code true} if either the primary type or any of the mixin types allows SNS. If neither allow SNS,
+     * this will return {@code false}
+     */
+    public boolean allowsNameSiblings( Name primaryType,
+                                       Set<Name> mixinTypes ) {
+        if (nodeTypeNamesThatAllowSameNameSiblings.contains(primaryType)) return true;
+        if (mixinTypes != null && !mixinTypes.isEmpty()) {
+            for (Name mixinType : mixinTypes) {
+                if (nodeTypeNamesThatAllowSameNameSiblings.contains(mixinType))
+                    return true;
+            }
         }
         return false;
     }
@@ -805,13 +816,25 @@ public class NodeTypes {
     }
 
     /**
-     * Check if the node type with the given name is queryable or not, based on its node type definition.
+     * Check if the node type and mixin types are queryable or not. 
      *
      * @param nodeTypeName a {@link Name}, never {@code null}
-     * @return {@code true} if the node type is queryable, {@code false} otherwise.
+     * @param mixinTypes the mixin type names; may not be null but may be empty 
+     * 
+     * @return {@code false} if at least one of the node types is not queryable, {@code true} otherwise
      */
-    public boolean isQueryable(Name nodeTypeName) {
-        return !nonQueryableNodeTypes.contains(nodeTypeName);    
+    public boolean isQueryable(Name nodeTypeName, Set<Name> mixinTypes) {
+        if (nonQueryableNodeTypes.contains(nodeTypeName)) {
+            return false;
+        }
+        if (!mixinTypes.isEmpty()) {
+            for (Name mixinType : mixinTypes) {
+                if (nonQueryableNodeTypes.contains(mixinType)) {
+                    return false;
+                }
+            }
+        }
+        return true;    
     }
 
     /**

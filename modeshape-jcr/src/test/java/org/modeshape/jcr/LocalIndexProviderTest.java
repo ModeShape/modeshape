@@ -24,6 +24,7 @@ import static org.junit.Assert.fail;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
@@ -43,13 +44,20 @@ import org.modeshape.jcr.query.engine.IndexPlanners;
  * {@link LocalIndexProviderAsynchronousTest} for verification of the asynchronous cases.
  *
  * @author Randall Hauch (rhauch@redhat.com)
+ * @author Horia Chiorean (hchiorea@redhat.com)
+ * 
  * @see LocalIndexProviderAsynchronousTest
  */
-public class LocalIndexProviderTest extends AbstractLocalIndexProviderTest {
+public class LocalIndexProviderTest extends AbstractIndexProviderTest {
 
     @Override
     protected boolean useSynchronousIndexes() {
         return true;
+    }
+    
+    @Override
+    protected String providerName() {
+        return LOCAL_PROVIDER_NAME;
     }
 
     // ---------------------------------------------------------------
@@ -1069,23 +1077,93 @@ public class LocalIndexProviderTest extends AbstractLocalIndexProviderTest {
     @Test
     public void shouldNotConsiderNonQueryableNodeTypes() throws RepositoryException, InterruptedException {
         String typeName = "nt:nonQueryableFolder";
-        registerNodeType(typeName, false, "nt:folder");
+        registerNodeType(typeName, false, false, "nt:folder");
         registerNodeTypeIndex("typesIndex", "nt:folder", null, "*", "jcr:primaryType", PropertyType.STRING);
         
         waitForIndexes();
 
         session.getRootNode().addNode("nonQueryableFolder", typeName);
-        session.getRootNode().addNode("regularFolder", "nt:folder");
+        session.getRootNode().addNode("regularFolder1", "nt:folder");
+        Node folder2 = session.getRootNode().addNode("regularFolder2", typeName);
+        folder2.addNode("subFolder", "nt:folder");
         session.save();
 
         waitForIndexes();
+        final List<String> expectedResults = new ArrayList<>(Arrays.asList("/regularFolder1", "/regularFolder2/subFolder"));
+        Query query = jcrSql2Query("select folder.[jcr:name] FROM [nt:folder] as folder");
+        validateQuery()
+                .rowCount(2L)
+                .useIndex("typesIndex")
+                .onEachRow(new ValidateQuery.Predicate() {
+                    @Override
+                    public void validate( int rowNumber, Row row ) throws RepositoryException {
+                        expectedResults.remove(row.getPath());
+                    }
+                })
+                .validate(query, query.execute());
+        assertTrue("Not all expected nodes found: " + expectedResults, expectedResults.isEmpty());
+    }
 
+
+    @FixFor( "MODE-2401" )
+    @Test
+    public void shouldNotConsiderNonQueryableMixins() throws RepositoryException, InterruptedException {
+        String mixinName = "nt:nonQueryableFolderMixin";
+        registerNodeType(mixinName, false, true);
+        registerNodeTypeIndex("typesIndex", "nt:folder", null, "*", "jcr:primaryType", PropertyType.STRING);
+
+        waitForIndexes();
+
+        Node folder1 = session.getRootNode().addNode("folder1", "nt:folder");
+        Node folder2 = session.getRootNode().addNode("folder2", "nt:folder");
+        folder2.addMixin(mixinName);
+        session.save();
+        waitForIndexes();
+        
+        // test with the initial node config
+        final List<String> expectedResults = new ArrayList<>(Collections.singletonList("/folder1"));
         Query query = jcrSql2Query("select folder.[jcr:name] FROM [nt:folder] as folder");
         validateQuery()
                 .rowCount(1L)
                 .useIndex("typesIndex")
-                .hasNodesAtPaths("/regularFolder")
+                .onEachRow(new ValidateQuery.Predicate() {
+                    @Override
+                    public void validate( int rowNumber, Row row ) throws RepositoryException {
+                        expectedResults.remove(row.getPath());
+                    }
+                })
                 .validate(query, query.execute());
+        assertTrue("Not all expected nodes found: " + expectedResults, expectedResults.isEmpty());
+        
+        // add the mixin on the 1st node and reindex
+        folder1.addMixin(mixinName);
+        session.save();
+        session.getWorkspace().reindex("/");
+        query = jcrSql2Query("select folder.[jcr:name] FROM [nt:folder] as folder");
+        validateQuery()
+                .rowCount(0L)
+                .useIndex("typesIndex")
+                .validate(query, query.execute());
+        
+        // remove both mixins and reindex
+        folder1.removeMixin(mixinName);
+        folder2.removeMixin(mixinName);
+        session.save();
+        session.getWorkspace().reindex("/");
+
+        final List<String> expectedResults2 = new ArrayList<>(Arrays.asList("/folder1", "/folder2"));
+        query = jcrSql2Query("select folder.[jcr:name] FROM [nt:folder] as folder");
+        validateQuery()
+                .rowCount(2L)
+                .useIndex("typesIndex")
+                .onEachRow(new ValidateQuery.Predicate() {
+                    @Override
+                    public void validate( int rowNumber, Row row ) throws RepositoryException {
+                        expectedResults2.remove(row.getPath());
+                    }
+                })
+                .validate(query, query.execute());
+        assertTrue("Not all expected nodes found: " + expectedResults2, expectedResults2.isEmpty());
     }
 
     @FixFor( "MODE-2432 ")
@@ -1096,29 +1174,29 @@ public class LocalIndexProviderTest extends AbstractLocalIndexProviderTest {
         waitForIndexes();
 
         assertEquals(IndexManager.IndexStatus.NON_EXISTENT, indexManager().getIndexStatus("unknown", indexName, "default"));
-        assertEquals(IndexManager.IndexStatus.NON_EXISTENT, indexManager().getIndexStatus(PROVIDER_NAME, "invalid_name", "default"));
-        assertEquals(IndexManager.IndexStatus.NON_EXISTENT, indexManager().getIndexStatus(PROVIDER_NAME, indexName, "invalid_ws"));
+        assertEquals(IndexManager.IndexStatus.NON_EXISTENT, indexManager().getIndexStatus(LOCAL_PROVIDER_NAME, "invalid_name", "default"));
+        assertEquals(IndexManager.IndexStatus.NON_EXISTENT, indexManager().getIndexStatus(LOCAL_PROVIDER_NAME, indexName, "invalid_ws"));
 
-        assertEquals(IndexManager.IndexStatus.ENABLED, indexManager().getIndexStatus(PROVIDER_NAME, indexName, "default")); 
+        assertEquals(IndexManager.IndexStatus.ENABLED, indexManager().getIndexStatus(LOCAL_PROVIDER_NAME, indexName, "default")); 
         int nodeCount = 100;
         for (int i = 0; i < nodeCount; i++) {
             Node node = session.getRootNode().addNode("node_" + i);
             node.setProperty("foo", UUID.randomUUID().toString());
         }
         session.save();
-        assertEquals(IndexManager.IndexStatus.ENABLED, indexManager().getIndexStatus(PROVIDER_NAME, indexName, "default"));
+        assertEquals(IndexManager.IndexStatus.ENABLED, indexManager().getIndexStatus(LOCAL_PROVIDER_NAME, indexName, "default"));
         Future<Boolean> reindexingResult = session.getWorkspace().reindexAsync();
         Thread.sleep(10);
         if (!reindexingResult.isDone()) {
-            assertEquals(IndexManager.IndexStatus.REINDEXING, indexManager().getIndexStatus(PROVIDER_NAME, indexName, "default"));
+            assertEquals(IndexManager.IndexStatus.REINDEXING, indexManager().getIndexStatus(LOCAL_PROVIDER_NAME, indexName, "default"));
         }
         assertEquals(true, reindexingResult.get());
-        assertEquals(IndexManager.IndexStatus.ENABLED, indexManager().getIndexStatus(PROVIDER_NAME, indexName, "default"));
+        assertEquals(IndexManager.IndexStatus.ENABLED, indexManager().getIndexStatus(LOCAL_PROVIDER_NAME, indexName, "default"));
         
         indexManager().unregisterIndexes(indexName);
         // removing the actual index is async (event based)
         Thread.sleep(100);
-        assertEquals(IndexManager.IndexStatus.NON_EXISTENT, indexManager().getIndexStatus(PROVIDER_NAME, indexName, "default"));
+        assertEquals(IndexManager.IndexStatus.NON_EXISTENT, indexManager().getIndexStatus(LOCAL_PROVIDER_NAME, indexName, "default"));
     }
     
     @Test
@@ -1127,10 +1205,10 @@ public class LocalIndexProviderTest extends AbstractLocalIndexProviderTest {
         registerValueIndex("index1", "nt:unstructured", "Foo index", "*", "foo", PropertyType.STRING);
         registerValueIndex("index2", "nt:unstructured", "Bar index", "*", "bar", PropertyType.STRING);
         waitForIndexes();
-        assertEquals(Arrays.asList("index1", "index2"), indexManager().getIndexNames(PROVIDER_NAME, "default",
+        assertEquals(Arrays.asList("index1", "index2"), indexManager().getIndexNames(LOCAL_PROVIDER_NAME, "default",
                                                                                      IndexManager.IndexStatus.ENABLED));
-        assertTrue(indexManager().getIndexNames(PROVIDER_NAME, "default", IndexManager.IndexStatus.REINDEXING).isEmpty());
+        assertTrue(indexManager().getIndexNames(LOCAL_PROVIDER_NAME, "default", IndexManager.IndexStatus.REINDEXING).isEmpty());
         assertTrue(indexManager().getIndexNames("missing", "default", IndexManager.IndexStatus.ENABLED).isEmpty());
-        assertTrue(indexManager().getIndexNames(PROVIDER_NAME, "missing", IndexManager.IndexStatus.ENABLED).isEmpty());
+        assertTrue(indexManager().getIndexNames(LOCAL_PROVIDER_NAME, "missing", IndexManager.IndexStatus.ENABLED).isEmpty());
     }
 }

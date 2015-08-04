@@ -189,8 +189,9 @@ class JcrWorkspace implements org.modeshape.jcr.api.Workspace {
              */
             JcrSession sourceSession = session.spawnSession(srcWorkspace, true);
             AbstractJcrNode sourceNode = sourceSession.node(srcPath);
-            if (session.lockManager().isLocked(sourceNode)
-                && !session.lockManager().hasLockToken(sourceNode.getLock().getLockToken())) {
+            JcrLockManager lockManager = session.lockManager();
+            javax.jcr.lock.Lock lock = lockManager.getLockIfExists(sourceNode);
+            if (lock != null && !lock.isLockOwningSession()) {
                 throw new LockException(srcAbsPath);
             }
 
@@ -221,6 +222,12 @@ class JcrWorkspace implements org.modeshape.jcr.api.Workspace {
 
                     // For the nodes which were versionable, set the mappings for the original version
                     copySession.setOriginalVersionKey(dstNodeKey, srcNode.getBaseVersion().key());
+                }
+                
+                // if we copied nodes which have ACLs we need to make sure this is reflected in the overall ACL count
+                Map<String, Set<String>> permissions = srcNode.node().getPermissions(copySession.cache());
+                if (permissions != null && !permissions.isEmpty()) {
+                    copySession.aclAdded(permissions.size());
                 }
             }
 
@@ -360,8 +367,9 @@ class JcrWorkspace implements org.modeshape.jcr.api.Workspace {
                 sourceSession = session.spawnSession(srcWorkspace, true);
             }
             AbstractJcrNode sourceNode = sourceSession.node(srcPath);
-            if (session.lockManager().isLocked(sourceNode)
-                && !session.lockManager().hasLockToken(sourceNode.getLock().getLockToken())) {
+            JcrLockManager lockManager = session.lockManager();
+            javax.jcr.lock.Lock lock = lockManager.getLockIfExists(sourceNode);
+            if (lock != null && !lock.isLockOwningSession()) {
                 throw new LockException(srcAbsPath);
             }
 
@@ -403,6 +411,12 @@ class JcrWorkspace implements org.modeshape.jcr.api.Workspace {
                         // the current session,
                         // we need to perform some checks
                         AbstractJcrNode srcNode = sourceSession.node(srcKey, null);
+                        
+                        // look if the source node has any ACLs and if yes, reflect that in the clone session's ACL count
+                        Map<String, Set<String>> permissions = srcNode.node().getPermissions(sourceCache);
+                        if (permissions != null && !permissions.isEmpty()) {
+                            cloneSession.aclAdded(permissions.size());
+                        }
                         boolean isExternal = !srcKey.getSourceKey().equalsIgnoreCase(sourceCache.getRootKey().getSourceKey());
                         if (isExternal && session.nodeExists(srcKey) && !removeExisting) {
                             throw new ItemExistsException(JcrI18n.itemAlreadyExistsWithUuid.text(srcKey, workspaceName,
@@ -434,7 +448,12 @@ class JcrWorkspace implements org.modeshape.jcr.api.Workspace {
                             throw new ItemExistsException(JcrI18n.itemAlreadyExistsWithUuid.text(srcKey, workspaceName,
                                                                                                  cloneSessionNode.getPath()));
                         }
-
+                        // if the clone node which we're about to remove has any ACLs, we need to reflect the fact that we're
+                        // removing this node in ACL count
+                        Map<String, Set<String>> existingPermissions = cloneSessionNode.node().getPermissions(cloneSessionNode.cache());
+                        if (existingPermissions != null && !existingPermissions.isEmpty()) {
+                            cloneSession.aclRemoved(existingPermissions.size());
+                        }
                         cloneSessionNode.remove();
                     } catch (PathNotFoundException e) {
                         // means we don't have a node with the same path

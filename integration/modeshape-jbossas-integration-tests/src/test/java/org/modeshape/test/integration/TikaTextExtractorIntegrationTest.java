@@ -72,13 +72,14 @@ public class TikaTextExtractorIntegrationTest {
     @Test
     public void shouldExtractAndIndexContentFromPlainTextFile() throws Exception {
         String queryString = "select [jcr:path] from [nt:resource] as res where contains(res.*, 'The Quick')";
-        uploadFileAndCheckExtraction("text-extractor/text-file.txt", queryString);
+        uploadFileAndCheckExtraction("text-extractor/text-file.txt", "text/plain", queryString);
     }
 
     @Test
     public void shouldExtractAndIndexContentFromDocFile() throws Exception {
         String queryString = "select [jcr:path] from [nt:resource] as res where contains(res.*, 'ModeShape supports')";
-        uploadFileAndCheckExtraction("text-extractor/modeshape.doc", queryString);
+        // upload under a nodename without extension, to check mime-type detection is content based (as configured)
+        uploadFileAndCheckExtraction("text-extractor/modeshape.doc", "/testDoc", "application/msword", queryString);
     }
 
 
@@ -86,14 +87,25 @@ public class TikaTextExtractorIntegrationTest {
     @FixFor( "MODE-1810" )
     public void shouldExtractAndIndexContentFromXlsxFile() throws Exception {
         String queryString = "select [jcr:path] from [nt:resource] as res where contains(res.*, 'Operations')";
-        uploadFileAndCheckExtraction("text-extractor/sample-file.xlsx", queryString);
+        uploadFileAndCheckExtraction("text-extractor/sample-file.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", 
+                                     queryString);
     }
 
     private void uploadFileAndCheckExtraction( String filepath,
+                                               String expectedMimeType,
+                                               String validationQuery ) throws Exception {
+       uploadFileAndCheckExtraction(filepath, "/" + filepath, expectedMimeType, validationQuery);
+    }  
+    
+    private void uploadFileAndCheckExtraction( String filepath,
+                                               String nodePath,
+                                               String expectedMimeType,
                                                String validationQuery ) throws Exception {
         // this will create jcr:content of type nt:resource with the jcr:data property
-        jcrTools.uploadFile(session, "/" + filepath, getResource(filepath));
+        jcrTools.uploadFile(session, nodePath, getResource(filepath));
         session.save();
+        String mimeType = session.getNode(nodePath).getNode("jcr:content").getProperty("jcr:mimeType").getString();
+        assertEquals("Expected mime-type has not been detected", expectedMimeType, mimeType);
         long numRows = 0;
         for (int i = 0; i != 10; ++i) {
             // wait a bit to make sure the text extraction has happened

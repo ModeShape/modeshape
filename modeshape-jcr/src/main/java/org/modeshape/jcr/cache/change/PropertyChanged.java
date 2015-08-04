@@ -35,9 +35,8 @@ public class PropertyChanged extends AbstractPropertyChange {
                                Set<Name> nodeMixinTypes,
                                Path nodePath,
                                Property newProperty,
-                               Property oldProperty,
-                               boolean queryable ) {
-        super(key, nodePrimaryType, nodeMixinTypes, nodePath, newProperty, queryable);
+                               Property oldProperty ) {
+        super(key, nodePrimaryType, nodeMixinTypes, nodePath, newProperty);
         this.oldProperty = oldProperty;
     }
 

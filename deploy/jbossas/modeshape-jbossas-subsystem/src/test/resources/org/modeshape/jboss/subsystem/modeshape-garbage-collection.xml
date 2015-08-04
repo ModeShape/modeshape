@@ -1,6 +1,6 @@
-<subsystem xmlns="urn:jboss:domain:modeshape:2.0">
+<subsystem xmlns="urn:jboss:domain:modeshape:2.1">
   <repository name="sample"
-              cache-name="sample" cache-container="modeshape"
+              cache-name="sample"
               jndi-name="jcr/local/sample"
               enable-monitoring="true"
               security-domain="modeshape-security"

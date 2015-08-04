@@ -87,6 +87,103 @@ public class TeiidDdlLexicon extends StandardDdlLexicon implements TeiidDdlConst
     }
 
     /**
+     * JCR names related to the teiid materialized options.
+     */
+    public interface MaterializedOptions {
+
+        /**
+         * Whether table is materialized
+         */
+        String MATERIALIZED = "MATERIALIZED";
+
+        /**
+         * Materialized table
+         */
+        String MATERIALIZED_TABLE = "MATERIALIZED_TABLE";
+
+        /**
+         * Whether table is updateable
+         */
+        String UPDATABLE = "UPDATABLE";
+
+        /**
+         * Allow Teiid based management
+         */
+        String ALLOW_MATVIEW_MANAGEMENT = "teiid_rel:ALLOW_MATVIEW_MANAGEMENT";
+
+        /**
+         * Fully qualified Status Table Name defined above
+         */
+        String MATVIEW_STATUS_TABLE = "teiid_rel:MATVIEW_STATUS_TABLE";
+
+        /**
+         * Semi-colon(;) separated DDL/DML commands to run
+         * before the actual load of the cache, typically used to
+         * truncate staging table
+         */
+        String MATVIEW_BEFORE_LOAD_SCRIPT = "teiid_rel:MATVIEW_BEFORE_LOAD_SCRIPT";
+
+        /**
+         * semi-colon(;) separated DDL/DML commands to run for
+         * loading of the cache
+         */
+        String MATVIEW_LOAD_SCRIPT = "teiid_rel:MATVIEW_LOAD_SCRIPT";
+
+        /**
+         * semi-colon(;) separated DDL/DML commands to run after
+         * the actual load of the cache. Typically used to rename
+         * staging table to actual cache table. Required when
+         * MATVIEW_LOAD_SCRIPT not defined to copy data from
+         * teiid_rel:MATVIEW_STAGE_TABLE to MATVIEW table
+         */
+        String MATVIEW_AFTER_LOAD_SCRIPT = "teiid_rel:MATVIEW_AFTER_LOAD_SCRIPT";
+
+        /**
+         * Allowed values are {NONE, VDB, SCHEMA}, which define
+         * if the cached contents are shared among different VDB
+         * versions and different VDBs as long as schema names match
+         */
+        String MATVIEW_SHARE_SCOPE = "teiid_rel:MATVIEW_SHARE_SCOPE";
+
+        /**
+         * When MATVIEW_LOAD_SCRIPT property not defined, Teiid
+         * loads the cache contents into this table.
+         * Required when MATVIEW_LOAD_SCRIPT not defined
+         */
+        String MATERIALIZED_STAGE_TABLE = "teiid_rel:MATERIALIZED_STAGE_TABLE";
+
+        /**
+         * DML commands to run start of vdb
+         */
+        String ON_VDB_START_SCRIPT = "teiid_rel:ON_VDB_START_SCRIPT";
+
+        /**
+         * DML commands to run at VDB un-deploy; typically
+         * used for cleaning the cache/status tables
+         */
+        String ON_VDB_DROP_SCRIPT = "teiid_rel:ON_VDB_DROP_SCRIPT";
+
+        /**
+         * Action to be taken when mat view contents are
+         * requested but cache is invalid. Allowed values
+         * are
+         *
+         * THROW_EXCEPTION = throws an exception,
+         * IGNORE = ignores the warning and supplied invalidated data,
+         * WAIT = waits until the data is refreshed and valid
+         *              then provides the updated data)
+         */
+        String MATVIEW_ONERROR_ACTION = "teiid_rel:MATVIEW_ONERROR_ACTION";
+
+        /**
+         * Time to live in milliseconds. Provide property or
+         * cache hint on view transformation - property takes
+         * precedence.
+         */
+        String MATVIEW_TTL = "teiid_rel:MATVIEW_TTL";
+    }
+
+    /**
      * JCR names for DDL constraint-related elements.
      */
     public interface Constraint {

@@ -18,7 +18,7 @@ package org.modeshape.jcr;
 /**
  * An exception that signals a timeout has occurred.
  */
-public class TimeoutException extends javax.jcr.RepositoryException {
+public class TimeoutException extends RuntimeException {
 
     private static final long serialVersionUID = 1L;
 

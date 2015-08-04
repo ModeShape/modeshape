@@ -17,83 +17,34 @@ package org.modeshape.jcr.mimetype;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
 import javax.jcr.Binary;
 import javax.jcr.RepositoryException;
-import org.apache.tika.detect.CompositeDetector;
-import org.apache.tika.detect.DefaultDetector;
-import org.apache.tika.detect.Detector;
-import org.apache.tika.io.TemporaryResources;
-import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.mime.MediaType;
-import org.apache.tika.mime.MimeTypes;
-import org.apache.tika.mime.MimeTypesFactory;
-import org.modeshape.common.SystemFailureException;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.SelfClosingInputStream;
 import org.modeshape.common.util.StringUtil;
-import org.modeshape.jcr.JcrI18n;
+import org.modeshape.jcr.Environment;
 
 /**
- * A {@link MimeTypeDetector} that uses the Tika library.
+ * A base class for the {@link MimeTypeDetector}s that use the Tika library.
  */
 @Immutable
 @ThreadSafe
-public final class TikaMimeTypeDetector implements MimeTypeDetector {
+public abstract class TikaMimeTypeDetector implements MimeTypeDetector {
 
-    private static final Logger LOGGER = Logger.getLogger(TikaMimeTypeDetector.class);
-
-    protected final MimeTypes mimetypes;
-    private final CompositeDetector allDetectors;
-    private final Detector nameOnlyDetector;
-
-    public TikaMimeTypeDetector( ClassLoader classLoader ) {
-
-        // Add these files in this order, since those read in later will overwrite the entries read in previously,
-        // and we want ModeShape's custom MIME types file to override everything else.
-        List<URL> validUrls = new ArrayList<URL>(3);
-        validUrls.add(classLoader.getResource("org/apache/tika/mime/tika-mimetypes.xml"));
-        validUrls.add(classLoader.getResource("org/apache/tika/mime/custom-tika-mimetypes.xml"));
-        validUrls.add(classLoader.getResource("org/modeshape/custom-mimetypes.xml"));
-
-        // Remove any null URL or one that is not in the correct format ...
-        Iterator<URL> iter = validUrls.iterator();
-        while (iter.hasNext()) {
-            URL url = iter.next();
-            if (url == null) {
-                iter.remove();
-                continue;
-            }
-            try {
-                // Read in the URLs, with the most custom ones last as they override the MIME type patterns already read in ...
-                MimeTypesFactory.create(url);
-            } catch (Exception e) {
-                LOGGER.warn(e, JcrI18n.unableToReadMediaTypeRegistry, url, e.getMessage());
-                iter.remove();
-            }
-        }
-
-        URL[] urls = validUrls.toArray(new URL[validUrls.size()]);
-        try {
-            mimetypes = MimeTypesFactory.create(urls);
-        } catch (Exception e) {
-            throw new SystemFailureException(JcrI18n.unableToInitializeMimeTypeDetector.text(urls, e.getMessage()), e);
-        }
-        // Create the detectors ...
-        // this.allDetectors = new DefaultDetector(classLoader);
-        this.allDetectors = new DefaultDetector(mimetypes, classLoader);
-        this.nameOnlyDetector = mimetypes;
-
-        LOGGER.debug("Initializing the Tika MIME type detectors");
-        for (Detector detector : allDetectors.getDetectors()) {
-            LOGGER.debug(" - Found detector: " + detector.getClass().getName());
-        }
+    protected final Logger logger;
+    
+    protected TikaMimeTypeDetector( Environment environment ) {
+        assert environment != null;
+        this.logger = Logger.getLogger(getClass());
+        // the extra classpath entry is the package name of the tika extractor, so it can be located inside AS7 (see
+        // RepositoryService)
+        ClassLoader loader = environment.getClassLoader(getClass().getClassLoader(), "org.modeshape.extractor.tika");
+        logger.debug("Initializing mime-type detector...");
+        initDetector(loader);
+        logger.debug("Successfully initialized detector: {0}", getClass().getName());
     }
 
     @Override
@@ -103,40 +54,20 @@ public final class TikaMimeTypeDetector implements MimeTypeDetector {
         if (!StringUtil.isBlank(name)) {
             metadata.set(Metadata.RESOURCE_NAME_KEY, name);
         }
-        MediaType autoDetectedMimeType = null;
+
         if (binaryValue == null) {
-            if (name == null) {
-                return null;
-            }
-            try {
-                // Otherwise there is a name and no content ...
-                autoDetectedMimeType = nameOnlyDetector.detect(null, metadata);
-            } catch (IOException e) {
-                LOGGER.debug(e, "Unable to extract mime-type");
-            }
-        } else {
-            InputStream stream = binaryValue.getStream();
-            if (stream instanceof SelfClosingInputStream) {
-                //because of the "all detectors" approach (see below), we need to avoid a self-closing stream here
-                stream = ((SelfClosingInputStream) stream).wrappedStream();
-            }
-            TemporaryResources tmp = new TemporaryResources();
-            try {
-                TikaInputStream tikaInputStream = TikaInputStream.get(stream, tmp);
-                // There is content and possibly a name ...
-                autoDetectedMimeType = allDetectors.detect(tikaInputStream, metadata);
-            } catch (Exception e) {
-                LOGGER.debug(e, "Unable to extract mime-type");
-            } finally {
-                try {
-                    tmp.close();
-                } finally {
-                    if (stream != null) {
-                        stream.close();
-                    }
-                }
-            }
+            return name == null ? null : detect(null, metadata);
         }
-        return autoDetectedMimeType != null ? autoDetectedMimeType.toString() : null;
+
+        InputStream stream = binaryValue.getStream();
+        if (stream instanceof SelfClosingInputStream) {
+            //we need to avoid the SelfClosingInputStream because Tika will read and mark from this stream multiple times
+            stream = ((SelfClosingInputStream)stream).wrappedStream();
+        }
+        return detect(stream, metadata);
     }
+
+    protected abstract void initDetector( ClassLoader loader );
+
+    protected abstract String detect(InputStream inputStream, Metadata metadata);
 }

@@ -31,6 +31,7 @@ import org.modeshape.jcr.cache.CachedNode;
 import org.modeshape.jcr.cache.ChildReference;
 import org.modeshape.jcr.cache.NodeCache;
 import org.modeshape.jcr.cache.NodeKey;
+import org.modeshape.jcr.cache.RepositoryEnvironment;
 import org.modeshape.jcr.cache.WorkspaceNotFoundException;
 import org.modeshape.jcr.cache.change.ChangeSet;
 import org.modeshape.jcr.cache.change.ChangeSetListener;
@@ -62,6 +63,7 @@ public class WorkspaceCache implements DocumentCache {
     private final ChangeBus changeBus;
     private final ChangeSetListener systemChangeNotifier;
     private final ChangeSetListener nonSystemChangeNotifier;
+    private final RepositoryEnvironment repositoryEnvironment;
     private volatile boolean closed = false;
 
     public WorkspaceCache( ExecutionContext context,
@@ -72,7 +74,8 @@ public class WorkspaceCache implements DocumentCache {
                            DocumentTranslator translator,
                            NodeKey rootKey,
                            ConcurrentMap<NodeKey, CachedNode> cache,
-                           ChangeBus changeBus ) {
+                           ChangeBus changeBus,
+                           RepositoryEnvironment repositoryEnvironment) {
         assert context != null;
         assert repositoryKey != null;
         assert workspaceName != null;
@@ -94,6 +97,7 @@ public class WorkspaceCache implements DocumentCache {
         this.pathFactory = context.getValueFactories().getPathFactory();
         this.nameFactory = context.getValueFactories().getNameFactory();
         this.nodesByKey = cache;
+        this.repositoryEnvironment = repositoryEnvironment;
         if (systemWorkspace != null) {
             // This is not the system workspace, so we have to listen both asynchronously and synchronously ...
             this.systemChangeNotifier = new SystemChangeNotifier(systemWorkspace.getWorkspaceName());
@@ -121,6 +125,7 @@ public class WorkspaceCache implements DocumentCache {
         this.sourceKey = original.sourceKey;
         this.pathFactory = original.pathFactory;
         this.nameFactory = original.nameFactory;
+        this.repositoryEnvironment = original.repositoryEnvironment;
         this.nodesByKey = cache;
         this.systemChangeNotifier = null;
         this.nonSystemChangeNotifier = null;
@@ -172,6 +177,10 @@ public class WorkspaceCache implements DocumentCache {
 
     final DocumentStore documentStore() {
         return documentStore;
+    }
+    
+    final RepositoryEnvironment repositoryEnvironment() {
+        return repositoryEnvironment;
     }
 
     final Document documentFor( String key ) {

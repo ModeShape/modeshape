@@ -666,11 +666,23 @@ public class ScanningQueryEngine implements org.modeshape.jcr.query.QueryEngine 
                             }
                         } else if (joinCondition instanceof ChildNodeJoinCondition) {
                             ChildNodeJoinCondition condition = (ChildNodeJoinCondition)joinCondition;
-                            assert leftColumns.getSelectorNames().contains(condition.getParentSelectorName());
-                            int leftIndex = leftColumns.getSelectorIndex(condition.getParentSelectorName());
-                            int rightIndex = rightColumns.getSelectorIndex(condition.getChildSelectorName());
-                            leftExtractor = RowExtractors.extractNodeKey(leftIndex, cache, types);
-                            rightExtractor = RowExtractors.extractParentNodeKey(rightIndex, cache, types);
+
+                            // check if the JOIN was not reversed by an optimization
+                            boolean joinReversed = !leftColumns.getSelectorNames().contains(condition.getParentSelectorName());
+
+                            if (joinReversed) {
+                                int leftIndex = leftColumns.getSelectorIndex(condition.getChildSelectorName());
+                                int rightIndex = rightColumns.getSelectorIndex(condition.getParentSelectorName());
+
+                                leftExtractor = RowExtractors.extractParentNodeKey(leftIndex, cache, types);
+                                rightExtractor = RowExtractors.extractNodeKey(rightIndex, cache, types);
+                            } else {
+                                int leftIndex = leftColumns.getSelectorIndex(condition.getParentSelectorName());
+                                int rightIndex = rightColumns.getSelectorIndex(condition.getChildSelectorName());
+
+                                leftExtractor = RowExtractors.extractNodeKey(leftIndex, cache, types);
+                                rightExtractor = RowExtractors.extractParentNodeKey(rightIndex, cache, types);
+                            }
                         } else if (joinCondition instanceof EquiJoinCondition) {
                             EquiJoinCondition condition = (EquiJoinCondition)joinCondition;
                             // check if the JOIN was not reversed by an optimization
@@ -1799,8 +1811,23 @@ public class ScanningQueryEngine implements org.modeshape.jcr.query.QueryEngine 
 
                 @Override
                 public Object getValueInRow( RowAccessor row ) {
-                    String result = stringFactory.create(delegate.getValueInRow(row));
-                    return result != null ? result.toLowerCase() : null;
+                    Object valueInRow = delegate.getValueInRow(row);
+                    if (valueInRow == null) {
+                        return null;
+                    }
+                    if (valueInRow instanceof Object[]) {
+                        // multi valued prop
+                        Object[] values = (Object[])valueInRow;
+                        Object[] lowerCasedValues = new Object[values.length];
+                        for (int i = 0; i < values.length; i++) {  
+                            String valueString = stringFactory.create(values[i]);
+                            lowerCasedValues[i] = valueString.toLowerCase();
+                        }
+                        return lowerCasedValues;
+                    } else {
+                        // single valued prop
+                        return stringFactory.create(valueInRow).toLowerCase();
+                    }
                 }
 
                 @Override
@@ -1821,8 +1848,23 @@ public class ScanningQueryEngine implements org.modeshape.jcr.query.QueryEngine 
 
                 @Override
                 public Object getValueInRow( RowAccessor row ) {
-                    String result = stringFactory.create(delegate.getValueInRow(row));
-                    return result != null ? result.toUpperCase() : null;
+                    Object valueInRow = delegate.getValueInRow(row);
+                    if (valueInRow == null) {
+                        return null;
+                    }
+                    if (valueInRow instanceof Object[]) {
+                        // multi valued prop
+                        Object[] values = (Object[])valueInRow;
+                        Object[] upperCasedValues = new Object[values.length];
+                        for (int i = 0; i < values.length; i++) {
+                            String valueString = stringFactory.create(values[i]);
+                            upperCasedValues[i] = valueString.toUpperCase();
+                        }
+                        return upperCasedValues;
+                    } else {
+                        // single valued prop
+                        return stringFactory.create(valueInRow).toUpperCase();
+                    }
                 }
 
                 @Override

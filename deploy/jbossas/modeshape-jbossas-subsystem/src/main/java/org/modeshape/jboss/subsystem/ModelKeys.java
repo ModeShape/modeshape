@@ -33,10 +33,10 @@ public class ModelKeys {
     static final String NESTED_STORAGE_TYPE_CACHE = "nested-storage-type-cache";
     static final String NESTED_STORAGE_TYPE_DB = "nested-storage-type-db";
     static final String NESTED_STORAGE_TYPE_CUSTOM = "nested-storage-type-custom";
-    static final String CACHE_CONTAINER = "cache-container";
+    static final String CACHE_CONFIG = "cache-config";
+    static final String CONFIG_RELATIVE_TO = "config-relative-to";
     static final String CACHE_NAME = "cache-name";
     static final String CLASSNAME = "classname";
-    static final String CONNECTION_FACTORY_JNDI_NAME = "connection-factory-jndi-name";
     static final String DATA_CACHE_NAME = "data-cache-name";
     static final String DATA_SOURCE_JNDI_NAME = "data-source-jndi-name";
     static final String DEFAULT_WORKSPACE = "default-workspace";
@@ -51,11 +51,11 @@ public class ModelKeys {
     static final String GARBAGE_COLLECTION_INTERVAL = "garbage-collection-interval";
     static final String JNDI_NAME = "jndi-name";
     static final String LOCK_CACHE_NAME = "lock-cache-name";
-    static final String LOCKING_STRATEGY = "locking-strategy";
     static final String METADATA_CACHE_NAME = "metadata-cache-name";
     static final String CHUNK_SIZE = "chunk-size";
     static final String MINIMUM_BINARY_SIZE = "minimum-binary-size";
     static final String MINIMUM_STRING_SIZE = "minimum-string-size";
+    static final String MIME_TYPE_DETECTION = "mime-type-detection";
     static final String MODULE = "module";
     static final String NAME = "name";
     static final String PATH = "path";
@@ -74,6 +74,10 @@ public class ModelKeys {
     static final String STORE_NAME = "store-name";
     static final String NESTED_STORES = "nested-stores";
     static final String USE_ANONYMOUS_IF_AUTH_FAILED = "use-anonymous-upon-failed-authentication";
+    static final String SEQUENCERS_THREAD_POOL_NAME = "sequencers-thread-pool-name";
+    static final String SEQUENCERS_MAX_POOL_SIZE = "sequencers-max-pool-size";
+    static final String TEXT_EXTRACTORS_THREAD_POOL_NAME = "text-extractors-thread-pool-name";
+    static final String TEXT_EXTRACTORS_MAX_POOL_SIZE = "text-extractors-max-pool-size";
 
     static final String AUTHENTICATOR = "authenticator";
     static final String AUTHENTICATOR_CLASSNAME = "classname";
@@ -86,7 +90,9 @@ public class ModelKeys {
     static final String CUSTOM_BINARY_STORAGE = "custom-binary-storage";
 
     static final String SEQUENCER = "sequencer";
+    static final String SEQUENCERS = "sequencers";
     static final String SOURCE = "source";
+    static final String EXTRACTORS = "text-extractors";
     static final String TEXT_EXTRACTOR = "text-extractor";
 
     static final String INDEX = "index";

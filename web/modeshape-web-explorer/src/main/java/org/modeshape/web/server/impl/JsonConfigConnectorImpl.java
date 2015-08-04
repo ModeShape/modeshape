@@ -49,6 +49,9 @@ public class JsonConfigConnectorImpl implements Connector {
     private transient Credentials credentials;
     private transient String userName;
     
+    //server's env
+    private transient ServletContext context;
+    
     private transient ModeShapeEngine engine; 
     private RepositoryList repoList;
     
@@ -119,7 +122,9 @@ public class JsonConfigConnectorImpl implements Connector {
         if (!repositories.containsKey(name)) {
             try {
                 logger.debug("Starting repository: " + name);
-                repositories.put(name, new LRepositoryImpl(engine.getRepository(name), credentials));
+                repositories.put(name, 
+                        new LRepositoryImpl(context,
+                        engine.getRepository(name), credentials));
             } catch (Exception e) {
                 logger.debug("Could not start repository " + name, e);
                 throw new RemoteException(e.getMessage());

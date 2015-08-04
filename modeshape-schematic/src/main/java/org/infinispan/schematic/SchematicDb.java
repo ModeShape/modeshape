@@ -60,6 +60,7 @@ public interface SchematicDb extends Lifecycle {
      * @param key the key or identifier for the document
      * @param createIfMissing true if a new entry should be created and added to the database if an existing entry does not exist
      * @return the entry, or null if there was no document with the supplied key
+     * @throws org.infinispan.util.concurrent.TimeoutException if a lock cannot be obtained on the requested document
      * @see #editContent(String, boolean, boolean)
      */
     EditableDocument editContent( String key,
@@ -76,6 +77,8 @@ public interface SchematicDb extends Lifecycle {
      * @param acquireLock true if the lock should be acquired for this entry, or false if the lock is known to have already been
      *        acquired for the current transaction
      * @return the entry, or null if there was no document with the supplied key
+     * @throws org.infinispan.util.concurrent.TimeoutException if {@code aquireLock} is {@code true}
+     * and the lock cannot be acquired within the configured lock acquisition time.
      */
     EditableDocument editContent( String key,
                                   boolean createIfMissing,
@@ -94,20 +97,18 @@ public interface SchematicDb extends Lifecycle {
      *
      * @param key the key or identifier for the document
      * @param document the document that is to be stored
-     * @return the entry previously stored at this key, or null if there was no entry with the supplied key
      * @see #putIfAbsent(String, Document)
      */
-    SchematicEntry put( String key,
-                        Document document );
+    void put( String key,
+              Document document );
 
     /**
      * Store the supplied document and metadata at the given key.
      * 
      * @param entryDocument the document that contains the metadata document, content document, and key
-     * @return the entry previously stored at this key, or null if there was no entry with the supplied key
      * @see #putIfAbsent(String, Document)
      */
-    SchematicEntry put( Document entryDocument );
+    void put( Document entryDocument );
 
     /**
      * Store the supplied document and metadata at the given key.
@@ -125,10 +126,9 @@ public interface SchematicDb extends Lifecycle {
      *
      * @param key the key or identifier for the document
      * @param document the new document that is to replace the existing document (or binary content)
-     * @return the entry that was replaced, or null if nothing was replaced
      */
-    SchematicEntry replace( String key,
-                            Document document );
+    void replace( String key,
+                  Document document );
 
     /**
      * Remove the existing document at the given key.

@@ -23,6 +23,7 @@ import javax.transaction.HeuristicRollbackException;
 import javax.transaction.InvalidTransactionException;
 import javax.transaction.NotSupportedException;
 import javax.transaction.RollbackException;
+import javax.transaction.Status;
 import javax.transaction.Synchronization;
 import javax.transaction.SystemException;
 import javax.transaction.TransactionManager;
@@ -120,7 +121,7 @@ public abstract class Transactions {
     public abstract Transaction begin() throws NotSupportedException, SystemException;
 
     /**
-     * Returns a the current transaction, if one exists.
+     * Returns a the current ModeShape transaction, if one exists.
      *
      * @return either a {@link org.modeshape.jcr.txn.Transactions.Transaction instance} or {@code null}
      */
@@ -196,7 +197,8 @@ public abstract class Transactions {
         /**
          * Register a function that will be called when the current transaction completes, or immediately if there is not
          * currently an active transaction.
-         * The function will be executed regardless whether the transaction was committed or rolled back.
+         * The function will be executed regardless whether the transaction was committed or rolled back and regardless if 
+         * the commit or rollback call failed or not.
          *
          * @param function the completion function
          */
@@ -306,21 +308,49 @@ public abstract class Transactions {
 
         @Override
         public void rollback() throws IllegalStateException, SecurityException, SystemException {
-            // rollback first
-            txnMgr.rollback();
-            // if rollback succeeded execute the functions
-            executeFunctionsUponCompletion();
+            try {
+                if (canRollback()) {
+                    // rollback first
+                    txnMgr.rollback();
+                }
+            } finally {
+                // even if rollback fails, we want to execute the complete functions to try and leave the repository into a consistent state
+                // because a rollback was requested in the first place, meaning something went wrong during the UOW
+                executeFunctionsUponCompletion();
+            }
         }
 
         @Override
         public void commit()
                 throws RollbackException, HeuristicMixedException, HeuristicRollbackException, SecurityException,
                        IllegalStateException, SystemException {
-            // commit first
-            txnMgr.commit();
-            // if the above succeeded, ISPN should have been updated so execute the functions
-            executeFunctionsUponCommit();
-            executeFunctionsUponCompletion();
+            try {
+                // commit first
+                txnMgr.commit();
+                // if the above succeeded, ISPN should have been updated so execute the functions
+                executeFunctionsUponCommit();
+            } finally {
+                // even if commit fails, we want to execute the complete functions to try and leave the repository into a consistent state
+                executeFunctionsUponCompletion();    
+            }
+        }
+        
+        protected boolean canRollback() {
+            try {
+                switch (super.status()) {
+                    case Status.STATUS_ACTIVE:
+                    case Status.STATUS_COMMITTING:    
+                    case Status.STATUS_PREPARED:    
+                    case Status.STATUS_PREPARING:    
+                    case Status.STATUS_MARKED_ROLLBACK:    
+                        return true;
+                    default: {
+                        return false;
+                    }
+                }
+            } catch (SystemException e) {
+                return false;
+            }
         }
     }
 
@@ -354,34 +384,42 @@ public abstract class Transactions {
 
     protected class NestableThreadLocalTransaction extends TraceableSimpleTransaction {
         private AtomicInteger nestedLevel = new AtomicInteger(0);
-        private ThreadLocal<? extends Transaction> txReference;
+        private ThreadLocal<NestableThreadLocalTransaction> txHolder;
 
-        protected NestableThreadLocalTransaction( TransactionManager txnMgr, ThreadLocal<? extends Transaction> txReference) {
+        protected NestableThreadLocalTransaction( TransactionManager txnMgr, ThreadLocal<NestableThreadLocalTransaction> txHolder ) {
             super(txnMgr);
-            this.txReference = txReference;
+            this.txHolder = txHolder;
+            this.txHolder.set(this);
         }
 
         @Override
         public void rollback() throws IllegalStateException, SecurityException, SystemException {
-            // cleanup first, regardless of what happens
-            cleanup();
-            super.rollback();
+            try {
+                super.rollback();
+            } finally {
+                cleanup();    
+            }
         }
 
         @Override
         public void commit() throws RollbackException, HeuristicMixedException, HeuristicRollbackException, SecurityException, IllegalStateException, SystemException {
             if (nestedLevel.getAndDecrement() == 1) {
-                // cleanup first, regardless of what happens
-                cleanup();
-                super.commit();
+                try {
+                    super.commit();
+                } finally {
+                    cleanup();
+                }
             } else {
                 logger.trace("Not committing transaction because it's nested within another transaction. Only the top level transaction should commit");
             }
         }
 
         protected void cleanup() {
-            txReference.remove();
-            txReference = null;
+            // this can be null if commit failed and then rollback is called in which case cleanup had already been done
+            if (txHolder != null) {
+                txHolder.remove();
+                txHolder = null;
+            }
             nestedLevel = null;
         }
 

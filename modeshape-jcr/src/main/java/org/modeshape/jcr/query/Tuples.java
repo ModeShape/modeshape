@@ -24,6 +24,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.Iterator;
+
 import org.infinispan.schematic.internal.HashCode;
 import org.mapdb.Serializer;
 import org.modeshape.common.util.ObjectUtil;
@@ -32,7 +33,7 @@ import org.modeshape.jcr.value.ValueFormatException;
 
 /**
  * A simple set of classes for working with tuples of data.
- * 
+ *
  * @author Randall Hauch (rhauch@redhat.com)
  */
 public class Tuples {
@@ -42,7 +43,7 @@ public class Tuples {
 
     /**
      * Create a tuple with the given two values.
-     * 
+     *
      * @param v1 the first value
      * @param v2 the second value
      * @return the tuple; never null
@@ -54,7 +55,7 @@ public class Tuples {
 
     /**
      * Create a tuple with the given three values.
-     * 
+     *
      * @param v1 the first value
      * @param v2 the second value
      * @param v3 the third value
@@ -68,7 +69,7 @@ public class Tuples {
 
     /**
      * Create a tuple with the given four values.
-     * 
+     *
      * @param v1 the first value
      * @param v2 the second value
      * @param v3 the third value
@@ -85,7 +86,7 @@ public class Tuples {
     /**
      * Create a tuple with the given values. Note that this always creates a n-ary tuple, so use {@link #tuple(Object, Object)},
      * {@link #tuple(Object, Object, Object)} or {@link #tuple(Object, Object, Object, Object)} for tuples smaller than 5.
-     * 
+     *
      * @param values the values
      * @return the tuple; never null
      */
@@ -95,7 +96,7 @@ public class Tuples {
 
     /**
      * Create a type factory for tuples of size 2.
-     * 
+     *
      * @param type1 the first type; may not be null
      * @param type2 the second type; may not be null
      * @return the type factory; never null
@@ -107,7 +108,7 @@ public class Tuples {
 
     /**
      * Create a type factory for tuples of size 3.
-     * 
+     *
      * @param type1 the first type; may not be null
      * @param type2 the second type; may not be null
      * @param type3 the third type; may not be null
@@ -121,7 +122,7 @@ public class Tuples {
 
     /**
      * Create a type factory for tuples of size 4.
-     * 
+     *
      * @param type1 the first type; may not be null
      * @param type2 the second type; may not be null
      * @param type3 the third type; may not be null
@@ -137,7 +138,7 @@ public class Tuples {
 
     /**
      * Create a type factory for n-ary tuples.
-     * 
+     *
      * @param types the collection of types for each slot in the tuple
      * @return the type factory; never null
      */
@@ -147,7 +148,7 @@ public class Tuples {
 
     /**
      * Create a type factory for uniform tuples.
-     * 
+     *
      * @param type the type of each/every slot in the tuples
      * @param tupleSize the size of the tuples
      * @return the type factory; never null
@@ -167,7 +168,7 @@ public class Tuples {
 
     /**
      * Create a {@link Serializer} for tuples of size 2.
-     * 
+     *
      * @param first the serializer for the first slot
      * @param second the serializer for the second slot
      * @return the serializer; never null
@@ -179,7 +180,7 @@ public class Tuples {
 
     /**
      * Create a {@link Serializer} for tuples of size 3.
-     * 
+     *
      * @param first the serializer for the first slot
      * @param second the serializer for the second slot
      * @param third the serializer for the third slot
@@ -193,7 +194,7 @@ public class Tuples {
 
     /**
      * Create a {@link Serializer} for tuples of size 4.
-     * 
+     *
      * @param first the serializer for the first slot
      * @param second the serializer for the second slot
      * @param third the serializer for the third slot
@@ -209,7 +210,7 @@ public class Tuples {
 
     /**
      * Create a {@link Serializer} for n-ary tuples
-     * 
+     *
      * @param serializers the serializers for each slot in the tuples
      * @return the serializer; never null
      */
@@ -219,7 +220,7 @@ public class Tuples {
 
     /**
      * Create a {@link Serializer} for uniform tuples.
-     * 
+     *
      * @param serializer the serializer of each/every slot in the tuples
      * @param tupleSize the size of the tuples
      * @return the type factory; never null
@@ -577,7 +578,7 @@ public class Tuples {
         }
     }
 
-    public static interface TupleFactory<T> {
+    public interface TupleFactory<T> {
         Serializer<T> getSerializer( BufferManager bufferMgr );
     }
 
@@ -638,8 +639,8 @@ public class Tuples {
 
         @Override
         public Serializer<Tuple2<T1, T2>> getSerializer( BufferManager bufferMgr ) {
-            Serializer<T1> ser1 = (Serializer<T1>)bufferMgr.serializerFor(type1);
-            Serializer<T2> ser2 = (Serializer<T2>)bufferMgr.serializerFor(type2);
+            Serializer<T1> ser1 = (Serializer<T1>)bufferMgr.nullSafeSerializerFor(type1);
+            Serializer<T2> ser2 = (Serializer<T2>)bufferMgr.nullSafeSerializerFor(type2);
             return new Tuple2Serializer<T1, T2>(ser1, ser2);
         }
 
@@ -727,9 +728,9 @@ public class Tuples {
 
         @Override
         public Serializer<Tuple3<T1, T2, T3>> getSerializer( BufferManager bufferMgr ) {
-            Serializer<T1> ser1 = (Serializer<T1>)bufferMgr.serializerFor(type1);
-            Serializer<T2> ser2 = (Serializer<T2>)bufferMgr.serializerFor(type2);
-            Serializer<T3> ser3 = (Serializer<T3>)bufferMgr.serializerFor(type3);
+            Serializer<T1> ser1 = (Serializer<T1>)bufferMgr.nullSafeSerializerFor(type1);
+            Serializer<T2> ser2 = (Serializer<T2>)bufferMgr.nullSafeSerializerFor(type2);
+            Serializer<T3> ser3 = (Serializer<T3>)bufferMgr.nullSafeSerializerFor(type3);
             return new Tuple3Serializer<T1, T2, T3>(ser1, ser2, ser3);
         }
 
@@ -823,10 +824,10 @@ public class Tuples {
 
         @Override
         public Serializer<Tuple4<T1, T2, T3, T4>> getSerializer( BufferManager bufferMgr ) {
-            Serializer<T1> ser1 = (Serializer<T1>)bufferMgr.serializerFor(type1);
-            Serializer<T2> ser2 = (Serializer<T2>)bufferMgr.serializerFor(type2);
-            Serializer<T3> ser3 = (Serializer<T3>)bufferMgr.serializerFor(type3);
-            Serializer<T4> ser4 = (Serializer<T4>)bufferMgr.serializerFor(type4);
+            Serializer<T1> ser1 = (Serializer<T1>)bufferMgr.nullSafeSerializerFor(type1);
+            Serializer<T2> ser2 = (Serializer<T2>)bufferMgr.nullSafeSerializerFor(type2);
+            Serializer<T3> ser3 = (Serializer<T3>)bufferMgr.nullSafeSerializerFor(type3);
+            Serializer<T4> ser4 = (Serializer<T4>)bufferMgr.nullSafeSerializerFor(type4);
             return new Tuple4Serializer<T1, T2, T3, T4>(ser1, ser2, ser3, ser4);
         }
 
@@ -916,7 +917,7 @@ public class Tuples {
         public Serializer<TupleN> getSerializer( BufferManager bufferMgr ) {
             Serializer<?>[] serializers = new Serializer<?>[types.length];
             for (int i = 0; i != types.length; ++i) {
-                serializers[i] = bufferMgr.serializerFor(types[i]);
+                serializers[i] = (Serializer<?>)bufferMgr.nullSafeSerializerFor(types[i]);
             }
             return new TupleNSerializer(serializers);
         }

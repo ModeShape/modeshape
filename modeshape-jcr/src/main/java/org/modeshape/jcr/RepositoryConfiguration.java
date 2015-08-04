@@ -69,6 +69,10 @@ import org.modeshape.jcr.api.index.IndexColumnDefinition;
 import org.modeshape.jcr.api.index.IndexDefinition;
 import org.modeshape.jcr.api.index.IndexDefinition.IndexKind;
 import org.modeshape.jcr.index.local.LocalIndexProvider;
+import org.modeshape.jcr.mimetype.ContentDetector;
+import org.modeshape.jcr.mimetype.MimeTypeDetector;
+import org.modeshape.jcr.mimetype.NameOnlyDetector;
+import org.modeshape.jcr.mimetype.NullMimeTypeDetector;
 import org.modeshape.jcr.security.AnonymousProvider;
 import org.modeshape.jcr.security.JaasProvider;
 import org.modeshape.jcr.value.PropertyType;
@@ -171,33 +175,6 @@ public class RepositoryConfiguration {
     private final static String INDEX_COLUMN_DEFINITIONS_STRING = INDEX_COLUMN_DEFINITION_STRING + "(,"
                                                                   + INDEX_COLUMN_DEFINITION_STRING + ")*";
     public final static Pattern INDEX_COLUMN_DEFINITIONS_PATTERN = Pattern.compile(INDEX_COLUMN_DEFINITIONS_STRING);
-
-    /**
-     * The process of garbage collecting locks and binary values runs periodically, and this value controls how often it runs. The
-     * value is currently set to 5 minutes.
-     */
-    private final static int LOCK_GARBAGE_COLLECTION_SWEEP_PERIOD = 5;
-    private final static TimeUnit LOCK_GARBAGE_COLLECTION_SWEEP_PERIOD_UNIT = TimeUnit.MINUTES;
-
-    /**
-     * Each time the garbage collection process runs, session-scoped locks that are still used by active sessions will have their
-     * expiry times extended by this amount of time. Each repository instance in the ModeShape cluster will run its own cleanup
-     * process, which will extend the expiry times of its own locks. As soon as a repository is no longer running the cleanup
-     * process, we know that there can be no active sessions.
-     * <p>
-     * The extension interval is generally twice the length of the period that the garbage collection runs, ensuring that any
-     * slight deviation in the period does not cause locks to be expired prematurely.
-     * </p>
-     */
-    final static int LOCK_EXTENSION_INTERVAL_IN_MILLIS = (int)TimeUnit.MILLISECONDS.convert(LOCK_GARBAGE_COLLECTION_SWEEP_PERIOD * 2,
-                                                                                            LOCK_GARBAGE_COLLECTION_SWEEP_PERIOD_UNIT);
-
-    /**
-     * The amount of time that a lock may be expired before being removed. The sweep process will extend the locks for active
-     * sessions, so only unused locks will have an unmodified expiry time. The value is currently twice the sweep period.
-     */
-    final static int LOCK_EXPIRY_AGE_IN_MILLIS = (int)TimeUnit.MILLISECONDS.convert(LOCK_GARBAGE_COLLECTION_SWEEP_PERIOD * 2,
-                                                                                    LOCK_GARBAGE_COLLECTION_SWEEP_PERIOD_UNIT);
 
     /**
      * As binary values are no longer used, they are quarantined in the binary store. When the garbage collection process runs,
@@ -370,6 +347,8 @@ public class RepositoryConfiguration {
          * The name for the field whose value is a document containing binary storage information.
          */
         public static final String COMPOSITE_STORE_NAMED_BINARY_STORES = "namedStores";
+        
+        public static final String MIMETYPE_DETECTION = "mimeTypeDetection";
 
         /**
          * The name for the field whose value is a document containing security information.
@@ -379,7 +358,7 @@ public class RepositoryConfiguration {
         /**
          * The name of the security domain used together with a {@link org.modeshape.jcr.security.EnvironmentAuthenticationProvider}
          */
-        public static final String DOMAIN_NAME = "domainName";
+        public static final String SECURITY_DOMAIN = "securityDomain";
 
         /**
          * The name for the field under "security" specifying the optional JAAS configuration.
@@ -462,56 +441,15 @@ public class RepositoryConfiguration {
         public static final String OPTIMIZATION_CHILD_COUNT_TOLERANCE = "childCountTolerance";
 
         /**
-         * The name for the field (under "sequencing" and "query") specifying the thread pool that should be used for sequencing.
-         * By default, all repository instances will use the same thread pool within the engine. To use a dedicated thread pool
-         * for a single repository, simply use a name that is unique from all other repositories.
+         * The name for the field (under "sequencing" and "textExtraction") specifying the thread pool that should be used for sequencing.
          */
         public static final String THREAD_POOL = "threadPool";
 
-        @Deprecated
-        public static final String REMOVE_DERIVED_CONTENT_WITH_ORIGINAL = "removeDerivedContentWithOriginal";
-
-        public static final String INDEXING_ANALYZER = "analyzer";
-        public static final String INDEXING_ANALYZER_CLASSPATH = "analyzerClasspath";
-        public static final String INDEXING_SIMILARITY = "similarity";
-        public static final String INDEXING_BATCH_SIZE = "batchSize";
-        public static final String INDEXING_INDEX_FORMAT = "indexFormat";
-        public static final String INDEXING_READER_STRATEGY = "readerStrategy";
-        public static final String INDEXING_MODE = "mode";
-        public static final String INDEXING_ASYNC_THREAD_POOL_SIZE = "asyncThreadPoolSize";
-        public static final String INDEXING_ASYNC_MAX_QUEUE_SIZE = "asyncMaxQueueSize";
-
-        public static final String INDEX_STORAGE_LOCATION = "location";
-        public static final String INDEX_STORAGE_SOURCE_LOCATION = "sourceLocation";
-        public static final String INDEX_STORAGE_LOCKING_STRATEGY = "lockingStrategy";
-        public static final String INDEX_STORAGE_FILE_SYSTEM_ACCESS_TYPE = "fileSystemAccessType";
-        public static final String INDEX_STORAGE_REFRESH_IN_SECONDS = "refreshInSeconds";
-        public static final String INDEX_STORAGE_COPY_BUFFER_SIZE_IN_MEGABYTES = "copyBufferSizeInMegabytes";
-        public static final String INDEX_STORAGE_RETRY_MARKER_LOOKUP = "retryMarkerLookup";
-        public static final String INDEX_STORAGE_RETRY_INITIALIZE_PERIOD_IN_SECONDS = "retryInitializePeriodInSeconds";
-
-        public static final String INDEXING_BACKEND_JMS_CONNECTION_FACTORY_JNDI_NAME = "connectionFactoryJndiName";
-        public static final String INDEXING_BACKEND_JMS_QUEUE_JNDI_NAME = "queueJndiName";
-        public static final String INDEXING_BACKEND_JGROUPS_CHANNEL_NAME = "channelName";
-        public static final String INDEXING_BACKEND_JGROUPS_CHANNEL_CONFIGURATION = "channelConfiguration";
-
         /**
-         * @deprecated use REBUILD_ON_STARTUP document
+         * The name of the field which allows the configuration of the maximum number of threads that can be spawned by a pool
          */
-        @Deprecated
-        public static final String REBUILD_UPON_STARTUP = "rebuildUponStartup";
-
-        /**
-         * @deprecated use REBUILD_ON_STARTUP document
-         */
-        @Deprecated
-        public static final String INDEXING_MODE_SYSTEM_CONTENT = "systemContentMode";
-
-        public static final String REBUILD_ON_STARTUP = "rebuildOnStartup";
-        public static final String REBUILD_WHEN = "when";
-        public static final String REBUILD_INCLUDE_SYSTEM_CONTENT = "includeSystemContent";
-        public static final String REBUILD_MODE = "mode";
-
+        public static final String MAX_POOL_SIZE = "maxPoolSize";
+        
         /**
          * The name of the journaling schema field.
          */
@@ -577,21 +515,13 @@ public class RepositoryConfiguration {
 
         public static final String ANONYMOUS_USERNAME = "<anonymous>";
 
-        public static final boolean QUERY_ENABLED = true;
-        public static final boolean FULL_TEXT_SEARCH_ENABLED = true;
-
         public static final boolean MONITORING_ENABLED = true;
 
-        @Deprecated
-        public static final boolean REMOVE_DERIVED_CONTENT_WITH_ORIGINAL = true;
-
         public static final String SEQUENCING_POOL = "modeshape-sequencer";
-        public static final String QUERY_THREAD_POOL = "modeshape-indexer";
+        public static final String TEXT_EXTRACTION_POOL = "modeshape-text-extractor";
         public static final String GARBAGE_COLLECTION_POOL = "modeshape-gc";
         public static final String OPTIMIZATION_POOL = "modeshape-opt";
         public static final String JOURNALING_POOL = "modeshape-journaling-gc";
-
-        public static final String CLUSTER_NAME = "ModeShape-JCR";
 
         public static final String GARBAGE_COLLECTION_INITIAL_TIME = "00:00";
         public static final int GARBAGE_COLLECTION_INTERVAL_IN_HOURS = 24;
@@ -608,6 +538,9 @@ public class RepositoryConfiguration {
         public static final String NODE_TYPE = "nt:base";
         public static final boolean SYNCHRONOUS = true;
         public static final String WORKSPACES = "*";
+
+        public static final int SEQUENCING_MAX_POOL_SIZE = 10;
+        public static final int TEXT_EXTRACTION_MAX_POOL_SIZE = 5;
     }
 
     public static final class FieldValue {
@@ -623,6 +556,10 @@ public class RepositoryConfiguration {
         public static final String KIND_ENUMERATED = "enumerated";
         public static final String KIND_TEXT = "text";
         public static final String KIND_NODE_TYPE = "nodetype";
+        
+        public static final String MIMETYPE_DETECTION_NONE = "none";
+        public static final String MIMETYPE_DETECTION_NAME = "name";
+        public static final String MIMETYPE_DETECTION_CONTENT = "content";
     }
 
     protected static final Set<List<String>> DEPRECATED_FIELDS;
@@ -1241,6 +1178,24 @@ public class RepositoryConfiguration {
          */
         public String getType() {
             return binaryStorage.getString(FieldName.TYPE, FieldValue.BINARY_STORAGE_TYPE_TRANSIENT);
+        }
+        
+        protected MimeTypeDetector getMimeTypeDetector(Environment environment) {
+            String mimeTypeDetection = binaryStorage.getString(FieldName.MIMETYPE_DETECTION, FieldValue.MIMETYPE_DETECTION_CONTENT);
+            switch (mimeTypeDetection.toLowerCase()) {
+                case FieldValue.MIMETYPE_DETECTION_CONTENT: {
+                    return new ContentDetector(environment);
+                }
+                case FieldValue.MIMETYPE_DETECTION_NAME: {
+                    return new NameOnlyDetector(environment);
+                }
+                case FieldValue.MIMETYPE_DETECTION_NONE: {
+                    return NullMimeTypeDetector.INSTANCE;
+                }
+                default: {
+                    throw new IllegalArgumentException("Unknown mime-type detector setting: " + mimeTypeDetection);
+                }
+            }
         }
 
         /*
@@ -1944,8 +1899,18 @@ public class RepositoryConfiguration {
          * @return the thread pool name; never null
          */
         public String getThreadPoolName() {
-            return textExtracting.getString(FieldName.THREAD_POOL, "modeshape-text-extractor");
+            return textExtracting.getString(FieldName.THREAD_POOL, Default.TEXT_EXTRACTION_POOL);
         }
+
+        /**
+         * Get the maximum number of threads that can be spawned for sequencing at the same time
+         *
+         * @return the max number of threads
+         */
+        public int getMaxPoolSize() {
+            return textExtracting.getInteger(FieldName.MAX_POOL_SIZE, Default.TEXT_EXTRACTION_MAX_POOL_SIZE);
+        }
+
 
         /**
          * Get the ordered list of text extractors. All text extractors are configured with this list.
@@ -2023,23 +1988,14 @@ public class RepositoryConfiguration {
         public int getIntervalInHours() {
             return gc.getInteger(FieldName.INTERVAL_IN_HOURS, Default.GARBAGE_COLLECTION_INTERVAL_IN_HOURS);
         }
-
+        
         /**
-         * Get the minimum time that a binary value should be unused before it can be garbage collected.
+         * Get the garbage collection interval in milliseconds.
          *
-         * @return the minimum time; never null
+         * @return the interval; never null
          */
-        public long getUnusedBinaryValueTimeInMillis() {
-            return UNUSED_BINARY_VALUE_AGE_IN_MILLIS;
-        }
-
-        /**
-         * Get the number of minutes between sweeping the locks.
-         *
-         * @return the interval for lock sweeping, in minutes; never null
-         */
-        public int getLockSweepIntervalInMinutes() {
-            return LOCK_GARBAGE_COLLECTION_SWEEP_PERIOD;
+        public long getIntervalInMillis() {
+            return TimeUnit.MILLISECONDS.convert(getIntervalInHours(), TimeUnit.HOURS);
         }
     }
 
@@ -2136,25 +2092,21 @@ public class RepositoryConfiguration {
         }
 
         /**
-         * Determine whether the derived content originally produced by a sequencer upon sequencing some specific input should be
-         * removed if that input is updated and the sequencer re-run.
-         *
-         * @return true if the original derived content should be removed upon subsequent sequencing of the same input.
-         * @deprecated because it was never used
-         */
-        @Deprecated
-        public boolean removeDerivedContentWithOriginal() {
-            return sequencing.getBoolean(FieldName.REMOVE_DERIVED_CONTENT_WITH_ORIGINAL,
-                                         Default.REMOVE_DERIVED_CONTENT_WITH_ORIGINAL);
-        }
-
-        /**
          * Get the name of the thread pool that should be used for sequencing work.
          *
          * @return the thread pool name; never null
          */
         public String getThreadPoolName() {
             return sequencing.getString(FieldName.THREAD_POOL, Default.SEQUENCING_POOL);
+        }
+
+        /**
+         * Get the maximum number of threads that can be spawned for sequencing at the same time
+         * 
+         * @return the max number of threads
+         */
+        public int getMaxPoolSize() { 
+            return sequencing.getInteger(FieldName.MAX_POOL_SIZE, Default.SEQUENCING_MAX_POOL_SIZE);
         }
 
         /**

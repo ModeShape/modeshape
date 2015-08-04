@@ -51,7 +51,7 @@ class SystemContentInitializer implements ContentInitializer {
 
         // Create the "/jcr:system/jcr:versionStorage" node which we don't want to index
         MutableCachedNode versionStorage = createNode(session, system, "jcr:versionStorage", JcrLexicon.VERSION_STORAGE, ModeShapeLexicon.VERSION_STORAGE);
-        versionStorage.setQueryable(false);
+        versionStorage.excludeFromSearch();
 
         // Create the "/jcr:system/mode:namespaces" node ...
         namespaces = createNode(session, system, "mode:namespaces", ModeShapeLexicon.NAMESPACES, ModeShapeLexicon.NAMESPACES);
@@ -79,11 +79,11 @@ class SystemContentInitializer implements ContentInitializer {
 
         // Create the "/jcr:system/mode:locks" node which we don't want to index
         MutableCachedNode locks = createNode(session, system, "mode:locks", ModeShapeLexicon.LOCKS, ModeShapeLexicon.LOCKS);
-        locks.setQueryable(false);
+        locks.excludeFromSearch();
 
         // Create the "/jcr:system/mode:indexes" node which we don't want to index
         MutableCachedNode indexes = createNode(session, system, INDEXES_NODE_ID, ModeShapeLexicon.INDEXES, ModeShapeLexicon.INDEXES);
-        indexes.setQueryable(false);
+        indexes.excludeFromSearch();
     }
 
     protected MutableCachedNode createNode( SessionCache session,

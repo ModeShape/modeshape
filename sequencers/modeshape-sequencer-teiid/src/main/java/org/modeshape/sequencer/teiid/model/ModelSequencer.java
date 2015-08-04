@@ -22,6 +22,7 @@ import javax.jcr.NamespaceRegistry;
 import javax.jcr.Node;
 import javax.jcr.Property;
 import javax.jcr.RepositoryException;
+import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.jcr.api.nodetype.NodeTypeManager;
@@ -37,6 +38,7 @@ import org.modeshape.sequencer.teiid.lexicon.VdbLexicon;
 /**
  * A sequencer of Teiid XMI model files.
  */
+@ThreadSafe
 public class ModelSequencer extends Sequencer {
 
     private static final String[] MODEL_FILE_EXTENSIONS = { ".xmi" };
@@ -55,23 +57,6 @@ public class ModelSequencer extends Sequencer {
         return (validModelType && RelationalLexicon.Namespace.URI.equals(modelReader.getPrimaryMetamodelUri()));
     }
 
-    private final ReferenceResolver resolver;
-
-    /**
-     * Constructs a sequencer and an internal reference resolver.
-     */
-    public ModelSequencer() {
-        this.resolver = new ReferenceResolver();
-    }
-
-    /**
-     * @param resolver the reference resolver to use during sequencing (cannot be <code>null</code>)
-     */
-    public ModelSequencer( final ReferenceResolver resolver ) {
-        CheckArg.isNotNull(resolver, "resolver");
-        this.resolver = resolver;
-    }
-
     /**
      * @see org.modeshape.jcr.api.sequencer.Sequencer#execute(javax.jcr.Property, javax.jcr.Node,
      *      org.modeshape.jcr.api.sequencer.Sequencer.Context)
@@ -85,7 +70,7 @@ public class ModelSequencer extends Sequencer {
         outputNode.addMixin(CoreLexicon.JcrId.MODEL);
 
         try (InputStream modelStream = binaryValue.getStream()) {
-            return sequenceModel(modelStream, outputNode, outputNode.getPath(), null, context);
+            return sequenceModel(modelStream, outputNode, outputNode.getPath(), null, new ReferenceResolver(), context);
         }
     }
 
@@ -145,14 +130,16 @@ public class ModelSequencer extends Sequencer {
      * @param modelOutputNode the root node of the model being sequenced (cannot be <code>null</code>)
      * @param modelPath the model path including the model name (cannot be <code>null</code> or empty)
      * @param vdbModel the VDB model associated with the input stream (cannot be <code>null</code>)
-     * @param context the sequencer context (cannot be <code>null</code>)
-     * @return <code>true</code> if the model file input stream was successfully sequenced
+     * @param resolver a {@link ReferenceResolver} instance; may not be {@code null}
+     * @param context the sequencer context (cannot be <code>null</code>)  @return <code>true</code> if the model file input stream was successfully sequenced
+     * @return <code>true</code> if the model was sequenced successfully
      * @throws Exception if there is a problem during sequencing
      */
     private boolean sequenceModel( final InputStream modelStream,
                                    final Node modelOutputNode,
                                    final String modelPath,
                                    final VdbModel vdbModel,
+                                   final ReferenceResolver resolver, 
                                    final Context context ) throws Exception {
         assert (modelStream != null);
         assert (modelOutputNode != null);
@@ -165,11 +152,11 @@ public class ModelSequencer extends Sequencer {
                      vdbModel);
 
         final NamespaceRegistry registry = modelOutputNode.getSession().getWorkspace().getNamespaceRegistry();
-        final ModelReader modelReader = new ModelReader(modelPath, this.resolver, registry);
+        final ModelReader modelReader = new ModelReader(modelPath, resolver, registry);
         modelReader.readModel(modelStream);
 
         if (shouldSequence(modelReader)) {
-            final ModelNodeWriter nodeWriter = new ModelNodeWriter(modelOutputNode, modelReader, this.resolver, vdbModel,
+            final ModelNodeWriter nodeWriter = new ModelNodeWriter(modelOutputNode, modelReader, resolver, vdbModel,
                                                                    context);
             return nodeWriter.write();
         }
@@ -185,6 +172,7 @@ public class ModelSequencer extends Sequencer {
      * @param modelStream the input stream of the model file (cannot be <code>null</code>)
      * @param modelOutputNode the root node of the model being sequenced (cannot be <code>null</code>)
      * @param vdbModel the VDB model associated with the input stream (cannot be <code>null</code>)
+     * @param resolver a {@link ReferenceResolver} instance; may not be {@code null}
      * @param context the sequencer context (cannot be <code>null</code>)
      * @return <code>true</code> if the model file input stream was successfully sequenced
      * @throws Exception if there is a problem during sequencing or node does not have a VDB model primary type
@@ -192,6 +180,7 @@ public class ModelSequencer extends Sequencer {
     public boolean sequenceVdbModel( final InputStream modelStream,
                                      final Node modelOutputNode,
                                      final VdbModel vdbModel,
+                                     final ReferenceResolver resolver,
                                      final Context context ) throws Exception {
         CheckArg.isNotNull(modelStream, "modelStream");
         CheckArg.isNotNull(modelOutputNode, "modelOutputNode");
@@ -201,6 +190,6 @@ public class ModelSequencer extends Sequencer {
             throw new RuntimeException(TeiidI18n.invalidVdbModelNodeType.text(modelOutputNode.getPath()));
         }
 
-        return sequenceModel(modelStream, modelOutputNode, vdbModel.getPathInVdb(), vdbModel, context);
+        return sequenceModel(modelStream, modelOutputNode, vdbModel.getPathInVdb(), vdbModel, resolver, context);
     }
 }

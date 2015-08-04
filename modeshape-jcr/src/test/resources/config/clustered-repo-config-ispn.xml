@@ -1,27 +1,25 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <infinispan xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-            xsi:schemaLocation="urn:infinispan:config:6.0 http://www.infinispan.org/schemas/infinispan-config-6.0.xsd"
-            xmlns="urn:infinispan:config:6.0">
-
-    <global>
-        <!-- Defines the global settings shared by all caches -->
-        <globalJmxStatistics enabled="false" allowDuplicateDomains="true"/>
-
-        <transport clusterName="modeshape-cluster">
-          <!-- Use the property below to point to a specific JGroups configuration file on your classpath -->
-          <properties>
-             <property name="configurationFile" value="config/jgroups-test-config.xml" />
-          </properties>
-        </transport>
-    </global>
-
-    <namedCache name="repo_cache">
-        <clustering mode="replication">
-            <stateTransfer fetchInMemoryState="true" timeout="2000" />
-            <sync />
-        </clustering>
-        <locking isolationLevel="READ_COMMITTED" writeSkewCheck="false" lockAcquisitionTimeout="1000"/>
-        <transaction transactionMode="TRANSACTIONAL" lockingMode="PESSIMISTIC" />
-    </namedCache>
-
+        xsi:schemaLocation="urn:infinispan:config:7.2 http://www.infinispan.org/schemas/infinispan-config-7.2.xsd"
+        xmlns="urn:infinispan:config:7.2">
+    <jgroups>
+        <stack-file name="tcp" path="config/jgroups-test-config.xml"/>
+    </jgroups>
+    <cache-container default-cache="repo_cache">
+        <jmx duplicate-domains="true"/>
+        <transport 
+                cluster="modeshape-cluster" 
+                stack="tcp"/>
+        <replicated-cache name="repo_cache" mode="SYNC" statistics="false">
+            <state-transfer timeout="2000"/> 
+            <locking 
+                    isolation="READ_COMMITTED"  
+                    write-skew="false" 
+                    acquire-timeout="1000"/>
+            <transaction
+                    mode="NON_XA"
+                    locking="PESSIMISTIC"/>
+        </replicated-cache>
+    </cache-container>
+    
 </infinispan>

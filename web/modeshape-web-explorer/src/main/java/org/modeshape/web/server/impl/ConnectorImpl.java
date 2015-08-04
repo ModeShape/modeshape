@@ -54,6 +54,9 @@ public class ConnectorImpl implements Connector {
     private transient ModeShapeEngine engine;
     private RepositoryList repoList;
     
+    //reference to the server's env
+    private transient ServletContext context;
+    
     private final static Logger logger = Logger.getLogger(ConnectorImpl.class);
     
     public ConnectorImpl() {
@@ -61,6 +64,8 @@ public class ConnectorImpl implements Connector {
     
     @Override
     public void start(ServletContext context) throws RemoteException {
+        this.context = context;
+        
         String jndiPrefix = context.getInitParameter(JNDI_PREFIX_PARAM);
         if (jndiPrefix == null) jndiPrefix = DEFAULT_JNDI_PREFIX;
         try {
@@ -119,7 +124,9 @@ public class ConnectorImpl implements Connector {
         if (!repositories.containsKey(name)) {
             try {
                 logger.debug("Starting repository: " + name);
-                repositories.put(name, new LRepositoryImpl(engine.getRepository(name), credentials));
+                repositories.put(name, 
+                        new LRepositoryImpl(context, 
+                        engine.getRepository(name), credentials));
             } catch (Exception e) {
                 logger.debug("Could not start repository " + name, e);
                 throw new RemoteException(e.getMessage());

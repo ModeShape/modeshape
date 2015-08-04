@@ -66,7 +66,7 @@ public interface BinaryStore {
     /**
      * Set the MIME type detector that can be used for determining the MIME type for binary content.
      * 
-     * @param mimeTypeDetector the detector
+     * @param mimeTypeDetector the detector; may not be {@code null}
      */
     void setMimeTypeDetector( MimeTypeDetector mimeTypeDetector );
 

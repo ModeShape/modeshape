@@ -26,6 +26,7 @@ import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.hamcrest.core.IsSame.sameInstance;
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -51,6 +52,7 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
+import java.util.TreeSet;
 import javax.jcr.ImportUUIDBehavior;
 import javax.jcr.NamespaceRegistry;
 import javax.jcr.Node;
@@ -299,7 +301,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
     private static int countAllNodesBelow( NodeKey nodeKey,
                                            NodeCache cache ) throws RepositoryException {
         CachedNode node = cache.getNode(nodeKey);
-        if (!node.isQueryable(cache)) return 0;
+        if (node.isExcludedFromSearch(cache)) return 0;
         int result = 1;
         ChildReferences childReferences = node.getChildReferences(cache);
         for (Iterator<NodeKey> nodeKeyIterator = childReferences.getAllKeys(); nodeKeyIterator.hasNext();) {
@@ -698,6 +700,14 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         String sql = "SELECT * FROM [nt:unstructured] WHERE ISCHILDNODE('/Cars') ORDER BY [jcr:path]";
         Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
         validateQuery().rowCount(4).validate(query, query.execute());
+    }
+
+    @FixFor("MODE-2490")
+    @Test
+    public void shouldOrderByTwoColumnsEvenIfNullable() throws RepositoryException {
+        String sql = "SELECT * FROM [car:Car] ORDER BY [car:maker] DESC NULLS FIRST, [car:msrp] ASC NULLS FIRST";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        validateQuery().rowCount(13).validate(query, query.execute());
     }
 
     @FixFor( "MODE-2297" )
@@ -2638,6 +2648,56 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
         QueryResult result = query.execute();
         validateQuery().rowCount(17).hasColumns("left.jcr:path").validate(query, result);
+    }
+
+    @FixFor( "MODE-2494" )
+    @Test
+    public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithTwoLeftOuterJoinsOnIsChildNodeWithSubsequentIsChildNode() throws RepositoryException {
+        String sql = "SELECT parent.[jcr:path], child1.[jcr:name], desc.[jcr:name] FROM [nt:unstructured] AS parent " +
+                "LEFT OUTER JOIN [nt:unstructured] AS child1 ON ISCHILDNODE(child1,parent) " +
+                "INNER JOIN [nt:unstructured] AS desc on ISCHILDNODE(desc, child1) " +
+                "LEFT OUTER JOIN [nt:unstructured] AS child2 ON ISCHILDNODE(child2,parent) " +
+                "WHERE ISCHILDNODE(parent,'/') " +
+                "AND NAME(child2) = 'Hybrid' " +
+                "AND NAME(desc) LIKE 'Nissan%'";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        QueryResult result = query.execute();
+        validateQuery().rowCount(1).validate(query, result);
+    }
+
+    @FixFor( "MODE-2494" )
+    @Test
+    public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithTwoLeftOuterJoinsOnIsChildNodeWithSubsequentIsDescendantNode() throws RepositoryException {
+        String sql = "SELECT parent.[jcr:path], child1.[jcr:name], desc.[jcr:name] FROM [nt:unstructured] AS parent " +
+                "LEFT OUTER JOIN [nt:unstructured] AS child1 ON ISCHILDNODE(child1,parent) " +
+                "INNER JOIN [nt:unstructured] AS desc on ISDESCENDANTNODE(desc, child1) " +
+                "LEFT OUTER JOIN [nt:unstructured] AS child2 ON ISCHILDNODE(child2,parent) " +
+                "WHERE ISCHILDNODE(parent,'/') " +
+                "AND NAME(child2) = 'Hybrid' " +
+                "AND NAME(desc) LIKE 'Nissan%'";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        QueryResult result = query.execute();
+        validateQuery().rowCount(1).validate(query, result);
+    }
+
+    @FixFor( "MODE-2494" )
+    @Test
+    @Ignore("This is not fixed by the fix for MODE-2494, and points to a potentially deeper problem, " +
+            "possibly in ReplaceViews." +
+            "Note: this query has the same semantics as that in " +
+            "'shouldBeAbleToCreateAndExecuteJcrSql2QueryWithTwoLeftOuterJoinsOnIsChildNodeWithSubsequentIsDescendantNode' " +
+            "and should work exactly the same way.")
+    public void shouldBeAbleToCreateAndExecuteJcrSql2QueryWithTwoLeftOuterJoinsOnIsChildNodeWithSubsequentIsDescendantNodeOutOfOrder() throws RepositoryException {
+        String sql = "SELECT parent.[jcr:path], child1.[jcr:name], child2.[jcr:name], desc.[jcr:name] FROM [nt:unstructured] AS parent " +
+                "LEFT OUTER JOIN [nt:unstructured] AS child1 ON ISCHILDNODE(child1,parent) " +
+                "LEFT OUTER JOIN [nt:unstructured] AS child2 ON ISCHILDNODE(child2,parent) " +
+                "INNER JOIN [nt:unstructured] AS desc on ISDESCENDANTNODE(desc, child1) " +
+                "WHERE ISCHILDNODE(parent,'/') " +
+                "AND NAME(child2) = 'Hybrid' " +
+                "AND NAME(desc) LIKE 'Nissan%'";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        QueryResult result = query.execute();
+        validateQuery().rowCount(1).validate(query, result);
     }
 
     @FixFor( "MODE-1750" )
@@ -4765,15 +4825,128 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
     @Test
     @FixFor( "MODE-2401" )
     public void shouldNotReturnNonQueryableNodeTypes() throws Exception {
-        session.getRootNode().addNode("folder1", "test:noQueryFolder");
-        session.getRootNode().addNode("folder2", "nt:folder"); 
+        Node folder1 = session.getRootNode().addNode("folder1", "test:noQueryFolder");
+        Node folder2 = session.getRootNode().addNode("folder2", "nt:folder");
+        Node folder3 = session.getRootNode().addNode("folder3", "test:noQueryFolder");
+        Node folder31 = folder3.addNode("folder3_1", "nt:folder");
+        Node folder311 = folder31.addNode("folder3_1", "test:noQueryFolder");
+        folder311.addNode("folder3_1_1", "nt:folder");
+        session.save();
+
+        try {
+            String sql = "SELECT folder.[jcr:name] FROM [nt:folder] AS folder";
+            Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+            NodeIterator nodes = query.execute().getNodes();
+            assertEquals(3, nodes.getSize());
+            Set<String> names = new TreeSet<>();
+            while (nodes.hasNext()) {
+                names.add(nodes.nextNode().getName());
+            }
+            assertArrayEquals(new String[] { "folder2", "folder3_1", "folder3_1_1" }, names.toArray(new String[0]));
+        } finally {
+            folder1.remove();
+            folder2.remove();
+            folder3.remove();
+            session.save();
+        }
+    } 
+    
+    @Test
+    @FixFor( "MODE-2401" )
+    public void shouldNotReturnNodeWithNoQueryMixin() throws Exception {
+        Node folder1 = session.getRootNode().addNode("folder1", "nt:folder");
+        folder1.addMixin("test:noQueryMixin");
+        Node folder2 = session.getRootNode().addNode("folder2", "nt:folder");
         session.save();
 
         String sql = "SELECT folder.[jcr:name] FROM [nt:folder] AS folder";
-        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
-        NodeIterator nodes = query.execute().getNodes();
-        assertEquals(1, nodes.getSize());
-        assertEquals("folder2", nodes.nextNode().getName());
+
+        try {
+            Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+            NodeIterator nodes = query.execute().getNodes();
+            assertEquals(1, nodes.getSize());
+            Set<String> names = new TreeSet<>();
+            while (nodes.hasNext()) {
+                names.add(nodes.nextNode().getName());
+            }
+            assertArrayEquals(new String[] { "folder2" }, names.toArray(new String[0]));
+            
+            //add a mixin on the 2nd node and reindex
+            folder2.addMixin("test:noQueryMixin");
+            session.save();
+            
+            query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+            nodes = query.execute().getNodes();
+            assertEquals(0, nodes.getSize());
+            
+            //remove the mixins from both nodesx
+            folder1.removeMixin("test:noQueryMixin");
+            folder2.removeMixin("test:noQueryMixin");
+            session.save();
+            
+            query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+            nodes = query.execute().getNodes();
+            assertEquals(2, nodes.getSize());
+            names = new TreeSet<>();
+            while (nodes.hasNext()) {
+                names.add(nodes.nextNode().getName());
+            }
+            assertArrayEquals(new String[] { "folder1", "folder2" }, names.toArray(new String[0]));
+        } finally {
+            folder1.remove();
+            folder2.remove();
+            session.save();
+        }
+    }
+
+    @Test
+    @FixFor( "MODE-2491" )
+    public void shouldSupportCaseOperandsForMultiValuedProperties() throws Exception {
+        Node metaData = session.getRootNode().addNode("metaData", "nt:unstructured");
+        metaData.setProperty("lowerCase", new String[]{"a", "b", "c"});        
+        metaData.setProperty("upperCase", new String[]{"A", "B", "C"});
+        session.save();
+
+        try {
+            String sql = "SELECT [jcr:path] FROM [nt:unstructured] AS node WHERE LOWER(node.upperCase) = 'a'";
+            Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+            NodeIterator nodes = query.execute().getNodes();
+            assertEquals(1, nodes.getSize());
+            assertEquals("/metaData", nodes.nextNode().getPath());
+
+            sql = "SELECT [jcr:path] FROM [nt:unstructured] AS node WHERE LOWER(node.upperCase) = 'b'";
+            query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+            nodes = query.execute().getNodes();
+            assertEquals(1, nodes.getSize());
+            assertEquals("/metaData", nodes.nextNode().getPath());
+            
+            sql = "SELECT [jcr:path] FROM [nt:unstructured] AS node WHERE LOWER(node.upperCase) = 'c'";
+            query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+            nodes = query.execute().getNodes();
+            assertEquals(1, nodes.getSize());
+            assertEquals("/metaData", nodes.nextNode().getPath());   
+            
+            sql = "SELECT [jcr:path] FROM [nt:unstructured] AS node WHERE UPPER(node.lowerCase) = 'A'";
+            query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+            nodes = query.execute().getNodes();
+            assertEquals(1, nodes.getSize());
+            assertEquals("/metaData", nodes.nextNode().getPath());
+
+            sql = "SELECT [jcr:path] FROM [nt:unstructured] AS node WHERE UPPER(node.lowerCase) = 'B'";
+            query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+            nodes = query.execute().getNodes();
+            assertEquals(1, nodes.getSize());
+            assertEquals("/metaData", nodes.nextNode().getPath());
+            
+            sql = "SELECT [jcr:path] FROM [nt:unstructured] AS node WHERE UPPER(node.lowerCase) = 'C'";
+            query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+            nodes = query.execute().getNodes();
+            assertEquals(1, nodes.getSize());
+            assertEquals("/metaData", nodes.nextNode().getPath());
+        } finally {
+            metaData.remove();
+            session.save();
+        }
     }
 
     private void registerNodeType( String typeName ) throws RepositoryException {

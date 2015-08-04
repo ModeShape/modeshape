@@ -18,6 +18,7 @@ package org.modeshape.jcr.cache.document;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -27,6 +28,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
+import java.util.TreeSet;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -50,6 +53,7 @@ import org.modeshape.jcr.ExecutionContext;
 import org.modeshape.jcr.JcrI18n;
 import org.modeshape.jcr.JcrLexicon;
 import org.modeshape.jcr.TimeoutException;
+import org.modeshape.jcr.api.Binary;
 import org.modeshape.jcr.api.value.DateTime;
 import org.modeshape.jcr.cache.AllPathsCache;
 import org.modeshape.jcr.cache.CachedNode;
@@ -66,8 +70,8 @@ import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.cache.NodeNotFoundException;
 import org.modeshape.jcr.cache.PathCache;
 import org.modeshape.jcr.cache.ReferentialIntegrityException;
+import org.modeshape.jcr.cache.RepositoryEnvironment;
 import org.modeshape.jcr.cache.SessionCache;
-import org.modeshape.jcr.cache.SessionEnvironment;
 import org.modeshape.jcr.cache.WrappedException;
 import org.modeshape.jcr.cache.change.ChangeSet;
 import org.modeshape.jcr.cache.change.RecordingChanges;
@@ -83,6 +87,7 @@ import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.NamespaceRegistry;
 import org.modeshape.jcr.value.Path;
 import org.modeshape.jcr.value.Property;
+import org.modeshape.jcr.value.binary.AbstractBinary;
 import org.modeshape.jcr.value.binary.BinaryStore;
 import org.modeshape.jcr.value.binary.BinaryStoreException;
 
@@ -117,22 +122,28 @@ public class WritableSessionCache extends AbstractSessionCache {
     private LinkedHashSet<NodeKey> changedNodesInOrder;
     private Map<NodeKey, ReferrerChanges> referrerChangesForRemovedNodes;
     private final Transactions txns;
+    
+    /**
+     * Track the binary keys which are being referenced/unreferenced by nodes so they can be locked in ISPN
+     */                        
+    private final ConcurrentHashMap<NodeKey, Set<BinaryKey>> binaryReferencesByNodeKey; 
 
     /**
      * Create a new SessionCache that can be used for making changes to the workspace.
      *
      * @param context the execution context; may not be null
      * @param workspaceCache the (shared) workspace cache; may not be null
-     * @param sessionContext the context for the session; may not be null
+     * @param repositoryEnvironment the context for the session; may not be null
      */
     public WritableSessionCache( ExecutionContext context,
                                  WorkspaceCache workspaceCache,
-                                 SessionEnvironment sessionContext ) {
-        super(context, workspaceCache, sessionContext);
+                                 RepositoryEnvironment repositoryEnvironment ) {
+        super(context, workspaceCache, repositoryEnvironment);
         this.changedNodes = new HashMap<NodeKey, SessionNode>();
         this.changedNodesInOrder = new LinkedHashSet<NodeKey>();
         this.referrerChangesForRemovedNodes = new HashMap<NodeKey, ReferrerChanges>();
-        this.txns = sessionContext.getTransactions();
+        this.binaryReferencesByNodeKey = new ConcurrentHashMap<NodeKey, Set<BinaryKey>>();
+        this.txns = repositoryEnvironment.getTransactions();
     }
 
     protected final void assertInSession( SessionNode node ) {
@@ -205,8 +216,11 @@ public class WritableSessionCache extends AbstractSessionCache {
         Lock lock = this.lock.writeLock();
         try {
             lock.lock();
+            referrerChangesForRemovedNodes.clear();
             changedNodes.clear();
             changedNodesInOrder.clear();
+            referrerChangesForRemovedNodes.clear();
+            binaryReferencesByNodeKey.clear();
         } finally {
             lock.unlock();
         }
@@ -225,6 +239,9 @@ public class WritableSessionCache extends AbstractSessionCache {
                 changedNodes.remove(key);
                 changedNodesInOrder.remove(key);
             }
+            NodeKey key = node.getKey();
+            referrerChangesForRemovedNodes.remove(key);
+            binaryReferencesByNodeKey.remove(key);
         } finally {
             lock.unlock();
         }
@@ -462,9 +479,7 @@ public class WritableSessionCache extends AbstractSessionCache {
                     clearState();
 
                 } catch (org.infinispan.util.concurrent.TimeoutException e) {
-                    if (txn != null) {
-                        txn.rollback();
-                    }
+                    txn.rollback();
                     if (repeat <= 0) {
                         throw new TimeoutException(e.getMessage(), e);
                     }
@@ -548,6 +563,7 @@ public class WritableSessionCache extends AbstractSessionCache {
         this.changedNodes = new HashMap<NodeKey, SessionNode>();
         this.referrerChangesForRemovedNodes.clear();
         this.changedNodesInOrder.clear();
+        this.binaryReferencesByNodeKey.clear();
         this.replacedNodes = null;
         this.checkForTransaction();
     }
@@ -560,6 +576,8 @@ public class WritableSessionCache extends AbstractSessionCache {
             if (this.replacedNodes != null) {
                 this.replacedNodes.remove(savedNode);
             }
+            this.referrerChangesForRemovedNodes.remove(savedNode);
+            this.binaryReferencesByNodeKey.remove(savedNode);
         }
         this.checkForTransaction();
     }
@@ -921,7 +939,6 @@ public class WritableSessionCache extends AbstractSessionCache {
                     Name primaryType = persisted.getPrimaryType(this);
                     Set<Name> mixinTypes = persisted.getMixinTypes(this);
                     Path path = workspacePaths.getPath(persisted);
-                    boolean queryable = persisted.isQueryable(this);
                     NodeKey parentKey = persisted.getParentKey(persistedCache);
                     CachedNode parent = getNode(parentKey);
                     Name parentPrimaryType;
@@ -936,7 +953,7 @@ public class WritableSessionCache extends AbstractSessionCache {
                         parentPrimaryType = parent.getPrimaryType(persistedCache);
                         parentMixinTypes = parent.getMixinTypes(persistedCache);
                     }
-                    changes.nodeRemoved(key, parentKey, path, primaryType, mixinTypes, queryable, parentPrimaryType, parentMixinTypes);
+                    changes.nodeRemoved(key, parentKey, path, primaryType, mixinTypes, parentPrimaryType, parentMixinTypes);
                     removedNodes.add(key);
 
                     // if there were any referrer changes for the removed nodes, we need to process them
@@ -964,7 +981,6 @@ public class WritableSessionCache extends AbstractSessionCache {
                 // should be there and shouldn't require a looking in the cache...
                 Name primaryType = node.getPrimaryType(this);
                 Set<Name> mixinTypes = node.getMixinTypes(this);
-                boolean queryable = node.isQueryable(this);
 
                 CachedNode persisted = null;
                 // when editing existing nodes delay the loading of the session path because for some external nodes/connectors 
@@ -979,7 +995,7 @@ public class WritableSessionCache extends AbstractSessionCache {
                     translator.setKey(doc, key);
                     translator.setParents(doc, newParent, null, additionalParents);
                     // Create an event ...
-                    changes.nodeCreated(key, newParent, newPath, primaryType, mixinTypes, node.changedProperties(), queryable);
+                    changes.nodeCreated(key, newParent, newPath, primaryType, mixinTypes, node.changedProperties());
                 } else {
                     doc = documentStore.edit(keyStr, true, acquireLock);
                     if (doc == null) {
@@ -1007,7 +1023,7 @@ public class WritableSessionCache extends AbstractSessionCache {
                         String workspaceKey = node.getKey().getWorkspaceKey();
                         boolean isSameWorkspace = persistedCache.getWorkspaceKey().equalsIgnoreCase(workspaceKey);
                         if (isSameWorkspace) {
-                            changes.nodeMoved(key, primaryType, mixinTypes, newParent, oldParentKey, newPath, oldPath, queryable);
+                            changes.nodeMoved(key, primaryType, mixinTypes, newParent, oldParentKey, newPath, oldPath);
                         }
                     } else if (additionalParents != null) {
                         // The node in another workspace has been linked to this workspace ...
@@ -1025,11 +1041,11 @@ public class WritableSessionCache extends AbstractSessionCache {
                         // the property was changed ...
                         Property newProperty = translator.getProperty(doc, JcrLexicon.MIXIN_TYPES);
                         if (oldProperty == null) {
-                            changes.propertyAdded(key, primaryType, mixinTypes, newPath, newProperty, queryable);
+                            changes.propertyAdded(key, primaryType, mixinTypes, newPath, newProperty);
                         } else if (newProperty == null) {
-                            changes.propertyRemoved(key, primaryType, mixinTypes, newPath, oldProperty, queryable);
+                            changes.propertyRemoved(key, primaryType, mixinTypes, newPath, oldProperty);
                         } else {
-                            changes.propertyChanged(key, primaryType, mixinTypes, newPath, newProperty, oldProperty, queryable);
+                            changes.propertyChanged(key, primaryType, mixinTypes, newPath, newProperty, oldProperty);
                         }
                     }
                 }
@@ -1064,7 +1080,7 @@ public class WritableSessionCache extends AbstractSessionCache {
                         Property oldProperty = translator.removeProperty(doc, name, unusedBinaryKeys, usedBinaryKeys);
                         if (oldProperty != null) {
                             // the property was removed ...
-                            changes.propertyRemoved(key, primaryType, mixinTypes, newPath, oldProperty, queryable);
+                            changes.propertyRemoved(key, primaryType, mixinTypes, newPath, oldProperty);
                             // and we know that there are modifications to the properties ...
                             hasPropertyChanges = true;
                         }
@@ -1084,7 +1100,7 @@ public class WritableSessionCache extends AbstractSessionCache {
                         translator.setProperty(doc, prop, unusedBinaryKeys, usedBinaryKeys);
                         if (oldProperty == null) {
                             // the property was created ...
-                            changes.propertyAdded(key, primaryType, mixinTypes, newPath, prop, queryable);
+                            changes.propertyAdded(key, primaryType, mixinTypes, newPath, prop);
                             // and we know that there are modifications to the properties ...
                             hasPropertyChanges = true;
                         } else if (hasPropertyChanges || !oldProperty.equals(prop)) {
@@ -1097,7 +1113,7 @@ public class WritableSessionCache extends AbstractSessionCache {
                             // See MODE-1856 for details.
 
                             // the property was changed and is actually different than the persisted property ...
-                            changes.propertyChanged(key, primaryType, mixinTypes, newPath, prop, oldProperty, queryable);
+                            changes.propertyChanged(key, primaryType, mixinTypes, newPath, prop, oldProperty);
                             hasPropertyChanges = true;
                         }
                     }
@@ -1125,7 +1141,7 @@ public class WritableSessionCache extends AbstractSessionCache {
                                     Path newNodePath = pathFactory().create(newPath, appendedChildRef.getSegment());
                                     Path oldNodePath = workspacePaths.getPath(persistent);
                                     changes.nodeReordered(persistent.getKey(), primaryType, mixinTypes, node.getKey(), newNodePath,
-                                                          oldNodePath, null, queryable);
+                                                          oldNodePath, null);
                                 }
                             }
 
@@ -1148,7 +1164,7 @@ public class WritableSessionCache extends AbstractSessionCache {
                             Path renamedFromPath = workspacePaths.getPath(oldRenamedNode);
                             Path renamedToPath = pathFactory().create(renamedFromPath.getParent(), renameEntry.getValue());
                             changes.nodeRenamed(renamedKey, renamedToPath, renamedFromPath.getLastSegment(), primaryType,
-                                                mixinTypes, queryable);
+                                                mixinTypes);
                             if (isExternal) {
                                 renamedExternalNodes.add(renamedKey);
                             }
@@ -1176,7 +1192,7 @@ public class WritableSessionCache extends AbstractSessionCache {
                                 }
                                 changes.nodeReordered(insertedRef.getKey(), insertedNode.getPrimaryType(this),
                                                       insertedNode.getMixinTypes(this), node.getKey(), nodeNewPath, nodeOldPath,
-                                                      insertedBeforePath, queryable);
+                                                      insertedBeforePath);
 
                             } else {
                                 // if the node is new and reordered at the same time (most likely due to either a version restore
@@ -1185,7 +1201,7 @@ public class WritableSessionCache extends AbstractSessionCache {
                                 Path insertedBeforePath = sessionPaths.getPath(insertedBeforeNode);
                                 changes.nodeReordered(insertedRef.getKey(), insertedNode.getPrimaryType(this),
                                                       insertedNode.getMixinTypes(this), node.getKey(), nodeNewPath, null,
-                                                      insertedBeforePath, queryable);
+                                                      insertedBeforePath);
                             }
                         }
                     }
@@ -1195,7 +1211,7 @@ public class WritableSessionCache extends AbstractSessionCache {
                 boolean nodeChanged = false;
                 if (referrerChanges != null && !referrerChanges.isEmpty()) {
                     translator.changeReferrers(doc, referrerChanges);
-                    changes.nodeChanged(key, newPath, primaryType, mixinTypes, queryable);
+                    changes.nodeChanged(key, newPath, primaryType, mixinTypes);
                     nodeChanged = true;
                 }
 
@@ -1205,7 +1221,7 @@ public class WritableSessionCache extends AbstractSessionCache {
                     String childName = federatedSegment.getValue();
                     translator.addFederatedSegment(doc, externalNodeKey, childName);
                     if (!nodeChanged) {
-                        changes.nodeChanged(key, newPath, primaryType, mixinTypes, queryable);
+                        changes.nodeChanged(key, newPath, primaryType, mixinTypes);
                         nodeChanged = true;
                     }
                 }
@@ -1213,15 +1229,18 @@ public class WritableSessionCache extends AbstractSessionCache {
                 if (!removedFederatedSegments.isEmpty()) {
                     translator.removeFederatedSegments(doc, node.getRemovedFederatedSegments());
                     if (!nodeChanged) {
-                        changes.nodeChanged(key, newPath, primaryType, mixinTypes, queryable);
+                        changes.nodeChanged(key, newPath, primaryType, mixinTypes);
                         nodeChanged = true;
                     }
                 }
 
                 // write additional node "metadata", meaning various flags which have internal meaning
-                if (!queryable) {
-                    // we are only interested if the node is not queryable, as by default all nodes are queryable.
+                boolean excludedFromSearch = node.isExcludedFromSearch(this);
+                if (excludedFromSearch && translator.isQueryable(doc)) {
                     translator.setQueryable(doc, false);
+                }
+                if (!excludedFromSearch && !translator.isQueryable(doc)) {
+                    translator.setQueryable(doc, true);
                 }
 
                 if (node.isNew()) {
@@ -1269,7 +1288,7 @@ public class WritableSessionCache extends AbstractSessionCache {
                             ChildReference ref = parent.getChildReferences(this).getChild(key);
                             Path parentPath = sessionPaths.getPath(parent);
                             Path childPath = pathFactory().create(parentPath, ref.getSegment());
-                            changes.nodeCreated(key, parentKey, childPath, primaryType, mixinTypes, null, queryable);
+                            changes.nodeCreated(key, parentKey, childPath, primaryType, mixinTypes, null);
                         }
                     }
                     // Generate NODE_REMOVED events for each of the newly-removed parents ...
@@ -1284,7 +1303,7 @@ public class WritableSessionCache extends AbstractSessionCache {
                                 Path childPath = pathFactory().create(parentPath, ref.getSegment());
                                 Name parentPrimaryType = persistedParent.getPrimaryType(persistedCache);
                                 Set<Name> parentMixinTypes = persistedParent.getMixinTypes(persistedCache);
-                                changes.nodeRemoved(key, parentKey, childPath, primaryType, mixinTypes, queryable, 
+                                changes.nodeRemoved(key, parentKey, childPath, primaryType, mixinTypes,
                                                     parentPrimaryType, parentMixinTypes);
                             }
                         }
@@ -1352,30 +1371,44 @@ public class WritableSessionCache extends AbstractSessionCache {
             }
         }
         // Try to acquire from the DocumentStore locks for all the nodes that we're going to change ...
-        Set<String> keysToLock = new HashSet<String>();
+        Set<String> keysToLock = new TreeSet<String>();
 
         for (NodeKey key : changedNodesInOrder) {
             SessionNode node = changedNodes.get(key);
-            if (node != REMOVED && !node.isNew()) {
+            if (!node.isNew()) {
                 String keyStr = key.toString();
                 keysToLock.add(keyStr);
             }
-        }
-        if (!documentStore.prepareDocumentsForUpdate(keysToLock)) {
-            // try again ...
-            if (!documentStore.prepareDocumentsForUpdate(keysToLock)) {
-                throw new org.infinispan.util.concurrent.TimeoutException("Unable to acquire storage locks: " + keysToLock);
-            } else if (LOGGER.isDebugEnabled()) {
-                if (!keysToLock.isEmpty()) {
-                    LOGGER.debug("Locked the nodes: {0}", keysToLock);
+            // collect all binary reference document keys since they have to be locked as well
+            Set<BinaryKey> binaryReferencesForNode = binaryReferencesByNodeKey.get(key);
+            if (binaryReferencesForNode != null) {
+                for (BinaryKey binaryKey : binaryReferencesForNode) {
+                    keysToLock.add(translator().keyForBinaryReferenceDocument(binaryKey.toString()));
                 }
             }
-        } else if (LOGGER.isDebugEnabled()) {
-            if (!keysToLock.isEmpty()) {
-                LOGGER.debug("Locked the nodes: {0}", keysToLock);
+        }
+        
+        if (!keysToLock.isEmpty()) {
+            int retryCountOnLockTimeout = 2;
+            boolean locksAquired = false;
+            while (!locksAquired && retryCountOnLockTimeout > 0) {
+                locksAquired = documentStore.lockDocuments(keysToLock);
+                if (locksAquired) {
+                    if (LOGGER.isDebugEnabled()) {
+                        LOGGER.debug("Locked the nodes: {0}", keysToLock);
+                    }
+                } else {
+                    if (LOGGER.isDebugEnabled()) {
+                        LOGGER.debug("Timeout while attempting to lock keys {0} in Infinispan. Retrying....", keysToLock);
+                    }
+                    --retryCountOnLockTimeout;
+                }
+            }
+            if (!locksAquired) {
+                throw new org.infinispan.util.concurrent.TimeoutException("Timeout while attempting to lock the keys " + keysToLock + " after " + retryCountOnLockTimeout + " retry attempts.");
             }
         }
-        // return a transient workspace cache, which contains the latest view of the nodes which will be changed
+        //return a transient workspace cache, which contains the latest view of the nodes which will be changed
         return workspaceCache().persistedCache(changedNodesInOrder);
     }
 
@@ -1480,6 +1513,23 @@ public class WritableSessionCache extends AbstractSessionCache {
                     // influence ref integrity
                     referrerChangesForRemovedNodes.put(nodeKey, node.getReferrerChanges());
                     cleanupReferences = true;
+                    
+                    // we need to go through all the node's binary properties and mark them as unused by this node
+                    for (Iterator<Property> it = node.getProperties(this); it.hasNext();) {
+                        Property property = it.next();
+                        if (property != null) {
+                            if (property.isBinary() && !node.isPropertyNew(this, property.getName())) {
+                                // We need to register the binary value as not being in use anymore
+                                for (Object binaryObject : property.getValuesAsArray()) {
+                                    assert binaryObject instanceof Binary;
+                                    if (binaryObject instanceof AbstractBinary) {
+                                        BinaryKey binaryKey = ((AbstractBinary)binaryObject).getKey();
+                                        addBinaryReference(nodeKey, binaryKey);
+                                    }
+                                }                                                                       
+                            }
+                        }
+                    }
                 } else {
                     // The node did not exist in the session, so get it from the workspace ...
                     addToChangedNodes.add(nodeKey);
@@ -1491,14 +1541,27 @@ public class WritableSessionCache extends AbstractSessionCache {
                     // Look for outgoing references that need to be cleaned up ...
                     for (Iterator<Property> it = persisted.getProperties(workspace); it.hasNext();) {
                         Property property = it.next();
-                        if (property != null && property.isReference()) {
-                            // We need to get the node in the session's cache ...
-                            this.changedNodes.remove(nodeKey); // we put REMOVED a dozen lines up ...
-                            node = this.mutable(nodeKey);
-                            if (node != null) {
-                                cleanupReferences = true;
+                        if (property != null) {
+                            if (property.isReference()) {
+                                // We need to get the node in the session's cache ...
+                                this.changedNodes.remove(nodeKey); // we put REMOVED a dozen lines up ...
+                                node = this.mutable(nodeKey);
+                                if (node != null) {
+                                    cleanupReferences = true;
+                                }
+                                this.changedNodes.put(nodeKey, REMOVED);
                             }
-                            this.changedNodes.put(nodeKey, REMOVED);
+
+                            if (property.isBinary()) {
+                                // We need to register the binary value as not being in use anymore
+                                for (Object binaryObject : property.getValuesAsArray()) {
+                                    assert binaryObject instanceof Binary;
+                                    if (binaryObject instanceof AbstractBinary) {
+                                        BinaryKey binaryKey = ((AbstractBinary)binaryObject).getKey();
+                                        addBinaryReference(nodeKey, binaryKey);
+                                    }
+                                }
+                            }
                         }
                     }
                 }
@@ -1542,6 +1605,22 @@ public class WritableSessionCache extends AbstractSessionCache {
     @Override
     public boolean isDestroyed( NodeKey key ) {
         return changedNodes.get(key) == REMOVED;
+    }
+
+    @Override
+    protected void addBinaryReference( NodeKey nodeKey, BinaryKey... binaryKeys ) {
+        if (binaryKeys.length == 0) {
+            return;
+        }
+        Set<BinaryKey> binaryReferencesForNode = this.binaryReferencesByNodeKey.get(nodeKey);
+        if (binaryReferencesForNode == null) {
+            Set<BinaryKey> emptySet = Collections.newSetFromMap(new ConcurrentHashMap<BinaryKey, Boolean>());
+            binaryReferencesForNode = this.binaryReferencesByNodeKey.putIfAbsent(nodeKey, emptySet);
+            if (binaryReferencesForNode == null) {
+                binaryReferencesForNode = emptySet;
+            }
+        }
+        binaryReferencesForNode.addAll(Arrays.asList(binaryKeys));
     }
 
     @Override

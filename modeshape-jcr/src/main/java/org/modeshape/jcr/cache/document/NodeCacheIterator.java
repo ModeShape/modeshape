@@ -106,17 +106,24 @@ public class NodeCacheIterator implements Iterator<NodeKey> {
                 continue;
             }
             if (filter != null && !filter.includeNode(node, cache)) {
-                // this node is excluded by the filter, so skip it ...
-                continue;
+                // the node should not be included by the filter but check if any of its children should be
+                if (filter.continueProcessingChildren(node, cache)) {
+                    nextKey = null;
+                } else {
+                    // this node is excluded by the filter, so skip it ...
+                    continue;
+                }
             }
             // Add all of the children onto the queue ...
             Iterator<NodeKey> iter = node.getChildReferences(cache).getAllKeys();
             while (iter.hasNext()) {
                 keys.add(iter.next());
             }
-            // Set the nextNode ref and return ...
+            // Set the nextNode ref and return if we have a valid node...
             this.nextNode = nextKey;
-            return;
+            if (nextKey != null) {
+                return;
+            }
         }
     }
 
@@ -137,8 +144,10 @@ public class NodeCacheIterator implements Iterator<NodeKey> {
 
     public static interface NodeFilter {
         /**
-         * Determine if the supplied node is to be included in the iterator. If this method returns false, then the node and all
-         * descendants will be excluded from the iterator. By default, this method always returns true.
+         * Determine if the supplied node is to be included in the iterator. If this method returns false, the code should
+         * use the {@link org.modeshape.jcr.cache.document.NodeCacheIterator.NodeFilter#continueProcessingChildren(CachedNode, NodeCache)}
+         * method to determine if any of the children of the node should be processed.
+         * By default, this method always returns true.
          * 
          * @param node the node; never null
          * @param cache the node cache; never null
@@ -146,5 +155,15 @@ public class NodeCacheIterator implements Iterator<NodeKey> {
          */
         public boolean includeNode( CachedNode node,
                                     NodeCache cache );
+        
+        /**
+         * Determine if for a given node that isn't included by 
+         * {@link org.modeshape.jcr.cache.document.NodeCacheIterator.NodeFilter#includeNode(CachedNode, NodeCache)}, its children 
+         * should be processed or not.
+         *                                                                
+         * @return {@code true} if any children of an excluded node should be taken into account, {@code false} otherwise.
+         */
+        public boolean continueProcessingChildren(CachedNode node,
+                                                  NodeCache cache);
     }
 }

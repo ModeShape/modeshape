@@ -1,5 +1,5 @@
-<subsystem xmlns="urn:jboss:domain:modeshape:2.0">
-    <repository  name="sample">
+<subsystem xmlns="urn:jboss:domain:modeshape:2.1">
+    <repository  name="sample" cache-config="/modeshape/cache-config.xml" config-relative-to="jboss.server.some.dir">
         <node-types>
             <node-type>custom.cnd</node-type>
         </node-types>
@@ -13,12 +13,6 @@
         </workspaces>
         <journaling max-days-to-keep-records="15"/>
         <file-binary-storage path="modeshape/compositeBinaryStoreRepository/binaries/fs1"/>
-        <!--index-providers>
-            <index-provider name="local-indexes" classname="local"
-                  path="modeshape/sample/indexes/"
-                  relative-to="jboss.server.data.dir"
-                  />
-        </index-providers-->
         <sequencers>
             <sequencer classname="ddl" name="modeshape-sequencer-ddl" path-expression="//a/b"/>
             <sequencer classname="java" name="modeshape-sequencer-java" path-expression="//a/b"/>

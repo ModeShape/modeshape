@@ -6,7 +6,7 @@
     <parent>
         <groupId>org.modeshape</groupId>
         <artifactId>modeshape-parent</artifactId>
-        <version>4.3-SNAPSHOT</version>
+        <version>4.4-SNAPSHOT</version>
         <relativePath>../modeshape-parent/pom.xml</relativePath>
     </parent>
 
@@ -32,7 +32,7 @@
 
         <!-- 
         Both 'modeshape-jcr' and 'modeshape-extractor-tika' depend on Tika, but have different transitive dependencies
-        (due to exclusions). Therefore, depend on this directly to pull in all transitive dependences defined in the parent POM.
+        (due to exclusions). Therefore, depend on this directly to pull in all transitive dependencies defined in the parent POM.
         And do this before 'modeshape-jcr' pulls in only a subset.
         -->
         <dependency>
@@ -130,6 +130,12 @@
             <artifactId>modeshape-jbossas-subsystem</artifactId>
         </dependency>
 
+        <dependency>
+            <groupId>org.infinispan</groupId>
+            <artifactId>infinispan-as-embedded-modules</artifactId>
+            <type>zip</type>
+        </dependency>
+
     </dependencies>
 
     <profiles>
@@ -169,9 +175,9 @@
                   <scope>compile</scope>
                 </dependency>
                 <dependency>
-                    <groupId>org.wildfly</groupId>
+                    <groupId>org.wildfly.core</groupId>
                     <artifactId>wildfly-controller</artifactId>
-                    <version>${jboss.server.version}</version>
+                    <version>${version.org.wildfly.core}</version>
                     <scope>compile</scope>
                 </dependency>
             </dependencies>

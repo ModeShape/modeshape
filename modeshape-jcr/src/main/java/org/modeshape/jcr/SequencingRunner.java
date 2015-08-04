@@ -324,7 +324,7 @@ final class SequencingRunner implements Runnable {
 
             sequencingChanges.nodeSequenced(sequencedNode.key(), sequencedNode.path(), primaryType, mixinTypes, outputNode.key(),
                                             outputNode.path(), work.getOutputPath(), work.getUserId(), work.getSelectedPath(),
-                                            sequencerName, sequencedNode.node().isQueryable(outputSession.cache()));
+                                            sequencerName);
         }
         sequencingChanges.freeze(outputSession.getUserID(), null, context.getValueFactories().getDateFactory().create());
         repository.changeBus().notify(sequencingChanges);
@@ -345,7 +345,7 @@ final class SequencingRunner implements Runnable {
                                                                                                             .journalId());
         sequencingChanges.nodeSequencingFailure(sequencedNode.key(), sequencedNode.path(), primaryType, mixinTypes,
                                                 work.getOutputPath(), work.getUserId(), work.getSelectedPath(), sequencerName,
-                                                sequencedNode.node().isQueryable(inputSession.cache()), cause);
+                                                cause);
         repository.changeBus().notify(sequencingChanges);
     }
 

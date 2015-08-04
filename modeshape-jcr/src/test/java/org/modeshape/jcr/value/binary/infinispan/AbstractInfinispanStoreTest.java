@@ -54,6 +54,7 @@ public abstract class AbstractInfinispanStoreTest extends AbstractBinaryStoreTes
         cacheManager.startCache(BLOB);
 
         binaryStore = new InfinispanBinaryStore(cacheManager, true, METADATA, BLOB);
+        binaryStore.setMimeTypeDetector(DEFAULT_DETECTOR);
         binaryStore.start();
     }
 

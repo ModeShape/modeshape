@@ -134,8 +134,10 @@ public class TestUtil {
             Set<Cache<?, ?>> caches = new HashSet<>();
             for (String cacheName : manager.getCacheNames()) {
                 Cache<Object, Object> cache = manager.getCache(cacheName, false);
-                AdvancedCache<Object, Object> advancedCache = cache.getAdvancedCache();
-                caches.add(advancedCache);
+                if (cache != null) {
+                    AdvancedCache<Object, Object> advancedCache = cache.getAdvancedCache();
+                    caches.add(advancedCache);
+                }
             }
             killCaches(caches);
         }

@@ -1,60 +1,48 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <infinispan xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-            xsi:schemaLocation="urn:infinispan:config:6.0 http://www.infinispan.org/schemas/infinispan-config-6.0.xsd"
-            xmlns="urn:infinispan:config:6.0">
+            xsi:schemaLocation="urn:infinispan:config:7.2 http://www.infinispan.org/schemas/infinispan-config-7.2.xsd"
+            xmlns="urn:infinispan:config:7.2">
 
-    <global>
-        <globalJmxStatistics enabled="false" allowDuplicateDomains="true"/>
-    </global>
-
-    <namedCache name="persistentRepository">
-        <transaction
-                transactionManagerLookupClass="org.infinispan.transaction.lookup.GenericTransactionManagerLookup"
-                transactionMode="TRANSACTIONAL"
-                lockingMode="PESSIMISTIC"/>
-        <persistence
-                passivation="false">
-            <singleFile
-                    shared="false"
-                    preload="false"
-                    fetchPersistentState="false"
-                    purgeOnStartup="false"
-                    location="target/persistent_repository">
-            </singleFile>
-        </persistence>
-    </namedCache>
-
-    <namedCache name="binary-data">
-        <transaction
-                transactionManagerLookupClass="org.infinispan.transaction.lookup.GenericTransactionManagerLookup"
-                transactionMode="TRANSACTIONAL"
-                lockingMode="PESSIMISTIC"/>
-        <persistence
-                passivation="false">
-            <singleFile
-                    preload="false"
-                    shared="false"
-                    fetchPersistentState="false"
-                    purgeOnStartup="false"
-                    location="target/persistent_repository">
-            </singleFile>
-        </persistence>
-    </namedCache>
-
-    <namedCache name="binary-meta-data">
-        <transaction
-                transactionManagerLookupClass="org.infinispan.transaction.lookup.GenericTransactionManagerLookup"
-                transactionMode="TRANSACTIONAL"
-                lockingMode="PESSIMISTIC"/>
-        <persistence
-                passivation="false">
-            <singleFile
-                    preload="false"
-                    shared="false"
-                    fetchPersistentState="false"
-                    purgeOnStartup="false"
-                    location="target/persistent_repository">
-            </singleFile>
-        </persistence>
-    </namedCache>
+    <cache-container default-cache="persistentRepository" statistics="false">
+        <jmx duplicate-domains="true"/>
+        <local-cache name="persistentRepository" statistics="false">
+            <transaction
+                    mode="NON_XA"
+                    locking="PESSIMISTIC"/>
+            <persistence
+                    passivation="false">
+                <file-store fetch-state="false"
+                            shared="false"
+                            preload="false"
+                            purge="false"
+                            path="target/persistent_repository"/>
+            </persistence>
+        </local-cache> 
+        <local-cache name="binary-data" statistics="false">
+            <transaction
+                    mode="NON_XA"
+                    locking="PESSIMISTIC"/>
+            <persistence
+                    passivation="false">
+                <file-store fetch-state="false"
+                            shared="false"
+                            preload="false"
+                            purge="false"
+                            path="target/persistent_repository"/>
+            </persistence>
+        </local-cache>
+        <local-cache name="binary-meta-data" statistics="false">
+            <transaction
+                    mode="NON_XA"
+                    locking="PESSIMISTIC"/>
+            <persistence
+                    passivation="false">
+                <file-store fetch-state="false"
+                            shared="false"
+                            preload="false"
+                            purge="false"
+                            path="target/persistent_repository"/>
+            </persistence>
+        </local-cache>
+    </cache-container>
 </infinispan>

@@ -42,7 +42,6 @@ import javax.xml.validation.Validator;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.subsystem.test.AbstractSubsystemBaseTest;
-import org.jboss.as.subsystem.test.AdditionalInitialization;
 import org.jboss.as.subsystem.test.KernelServices;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
@@ -57,13 +56,7 @@ import org.xml.sax.SAXParseException;
  */
 @SuppressWarnings( "nls" )
 public class ModeShapeConfigurationTest extends AbstractSubsystemBaseTest {
-
-    /**
-     * An initialization mode which tells the base test class that the container should be started/simulated in "normal" mode.
-     * This is required in order to make sure that all the ModeShape service have been started.
-     */
-    private static final AdditionalInitialization NORMAL_INITIALIZATION_MODE = new AdditionalInitialization();
-
+    
     public ModeShapeConfigurationTest() {
         super(SUBSYSTEM_NAME, new ModeShapeExtension());
     }
@@ -71,11 +64,6 @@ public class ModeShapeConfigurationTest extends AbstractSubsystemBaseTest {
     @Override
     protected String getSubsystemXml() throws IOException {
         return readResource("modeshape-sample-config.xml");
-    }
-
-    @Override
-    protected AdditionalInitialization createAdditionalInitialization() {
-        return NORMAL_INITIALIZATION_MODE;
     }
 
     @Override
@@ -168,6 +156,11 @@ public class ModeShapeConfigurationTest extends AbstractSubsystemBaseTest {
     public void testOutputPersistenceOfConfigurationWithOptimization() throws Exception {
         parse(readResource("modeshape-optimiziation-config.xml"));
     }
+    
+    @Test
+    public void testOutputPersistenceOfConfigurationWithMimeTypeDetection() throws Exception {
+        parse(readResource("modeshape-mime-type-detection.xml"));
+    }
 
     @Test
     public void testSampleConfigurationModel() throws Exception {
@@ -259,7 +252,7 @@ public class ModeShapeConfigurationTest extends AbstractSubsystemBaseTest {
     }
 
     private KernelServices initKernel( String subsystemXml ) throws Exception {
-        return super.createKernelServicesBuilder(NORMAL_INITIALIZATION_MODE).setSubsystemXml(subsystemXml).build();
+        return super.createKernelServicesBuilder(super.createAdditionalInitialization()).setSubsystemXml(subsystemXml).build();
     }
 
     @Test
@@ -271,6 +264,11 @@ public class ModeShapeConfigurationTest extends AbstractSubsystemBaseTest {
     public void testSequencingConfiguration() throws Exception {
         standardSubsystemTest("sequencing");
     }
+   
+    @Test
+    public void testTextExtractionConfiguration() throws Exception {
+        standardSubsystemTest("text-extraction");
+    }    
 
     @Test
     public void testSchema() throws Exception {
@@ -284,8 +282,18 @@ public class ModeShapeConfigurationTest extends AbstractSubsystemBaseTest {
         validate(marshalled);
     }
 
+    @Override
+    protected String getSubsystemXsdPath() throws Exception {
+        return "schema/modeshape_2_1.xsd";
+    }
+
+    @Override
+    protected String[] getSubsystemTemplatePaths() throws IOException {
+        return new String[]{"modeshape-full-config.xml"};
+    }
+
     private void validate( String marshalled ) throws SAXException, IOException {
-        URL xsdURL = Thread.currentThread().getContextClassLoader().getResource("schema/modeshape_2_0.xsd");
+        URL xsdURL = Thread.currentThread().getContextClassLoader().getResource("schema/modeshape_2_1.xsd");
         // System.out.println(marshalled);
 
         SchemaFactory factory = SchemaFactory.newInstance("http://www.w3.org/2001/XMLSchema");

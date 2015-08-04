@@ -682,17 +682,19 @@ public class OracleDdlParserTest extends DdlParserTestHelper {
         final String content = "CREATE TABLE EL$VIS (\n" //$NON-NLS-1$
                                + "COL_A VARCHAR2(20) NOT NULL,\n" //$NON-NLS-1$
                                + "COL@B VARCHAR2(10) NOT NULL,\n" //$NON-NLS-1$
-                               + "COL#C NUMBER(10));"; //$NON-NLS-1$
+                               + "COL#C NUMBER(10),\n" //$NON-NLS-1$
+                               + "COL$D NUMBER(10));"; //$NON-NLS-1$
         this.parser.parse(content, this.rootNode, null);
         assertThat(this.rootNode.getChildCount(), is(1));
 
         final AstNode tableNode = this.rootNode.getChildren().get(0);
         assertThat(tableNode.getName(), is("EL$VIS"));
-        assertThat(tableNode.getChildCount(), is(3)); // 3 columns
+        assertThat(tableNode.getChildCount(), is(4)); // 4 columns
 
         assertThat(tableNode.childrenWithName("COL_A").size(), is(1));
         assertThat(tableNode.childrenWithName("COL@B").size(), is(1));
         assertThat(tableNode.childrenWithName("COL#C").size(), is(1));
+        assertThat(tableNode.childrenWithName("COL$D").size(), is(1));
     }
 
 }

@@ -1,26 +1,23 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <infinispan xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-            xsi:schemaLocation="urn:infinispan:config:6.0 http://www.infinispan.org/schemas/infinispan-config-6.0.xsd"
-            xmlns="urn:infinispan:config:6.0">
+            xsi:schemaLocation="urn:infinispan:config:7.2 http://www.infinispan.org/schemas/infinispan-config-7.2.xsd"
+            xmlns="urn:infinispan:config:7.2">
 
-    <global>
-        <globalJmxStatistics enabled="false" allowDuplicateDomains="true"/>
-    </global>
-
-    <namedCache name="persistentRepository">
-        <transaction
-                transactionManagerLookupClass="org.infinispan.transaction.lookup.JBossStandaloneJTAManagerLookup"
-                transactionMode="TRANSACTIONAL"
-                lockingMode="OPTIMISTIC"/>
-        <persistence
-                passivation="false">
-            <singleFile
-                    shared="false"
-                    preload="false"
-                    fetchPersistentState="false"
-                    purgeOnStartup="false"
-                    location="target/persistent_repository/store">
-            </singleFile>
-        </persistence>
-    </namedCache>
+    <cache-container default-cache="persistentRepository" statistics="false">
+        <jmx duplicate-domains="true"/>
+        <local-cache name="persistentRepository" statistics="false">
+            <transaction
+                    mode="NON_XA"
+                    transaction-manager-lookup="org.infinispan.transaction.lookup.JBossStandaloneJTAManagerLookup"
+                    locking="OPTIMISTIC"/>
+            <persistence
+                    passivation="false">
+                <file-store fetch-state="false"
+                            shared="false"
+                            preload="false"
+                            purge="false"
+                            path="target/persistent_repository/store"/>
+            </persistence>
+        </local-cache>
+    </cache-container>
 </infinispan>

@@ -4,7 +4,7 @@
 
     <groupId>org.modeshape.bom</groupId>
     <artifactId>modeshape-bom-jbossas</artifactId>
-    <version>4.3-SNAPSHOT</version>
+    <version>4.4-SNAPSHOT</version>
 
     <name>ModeShape BOM for use within a JBoss App Server</name>
 
@@ -56,7 +56,8 @@
         <jboss.snapshots.repo.url>https://repository.jboss.org/nexus/content/repositories/snapshots/</jboss.snapshots.repo.url>
 
         <jcr.version>2.0</jcr.version>
-        <jboss.server.version>8.2.0.Final</jboss.server.version>
+        <version.org.wildfly>9.0.0.Final</version.org.wildfly>
+        <version.org.jboss.spec.jboss-javaee-7.0>1.0.3.Final</version.org.jboss.spec.jboss-javaee-7.0>
     </properties>
 
     <!--
@@ -82,46 +83,34 @@
                 <version>${jcr.version}</version>
                 <scope>provided</scope>
             </dependency>
-
             <!--
-              Wildfly BOM
+                Java EE 7
+            -->
+            <dependency>
+                <groupId>org.jboss.spec</groupId>
+                <artifactId>jboss-javaee-7.0</artifactId>
+                <version>${version.org.jboss.spec.jboss-javaee-7.0}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            
+            <!--
+              Wildfly BOMs
             -->
             <dependency>
                 <groupId>org.wildfly.bom</groupId>
-                <artifactId>jboss-javaee-7.0-with-tools</artifactId>
-                <version>${jboss.server.version}</version>
+                <artifactId>jboss-javaee-7.0-wildfly-with-tools</artifactId>
+                <version>${version.org.wildfly}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>   
             
             <dependency>
                 <groupId>org.wildfly.bom</groupId>
-                <artifactId>jboss-javaee-7.0-with-security</artifactId>
-                <version>${jboss.server.version}</version>
+                <artifactId>jboss-javaee-7.0-wildfly</artifactId>
+                <version>${version.org.wildfly}</version>
                 <type>pom</type>
                 <scope>import</scope>
-            </dependency>
-
-            <dependency>
-                <groupId>org.wildfly.bom</groupId>
-                <artifactId>jboss-javaee-7.0-with-logging</artifactId>
-                <version>${jboss.server.version}</version>
-                <scope>import</scope>
-                <type>pom</type>
-            </dependency>
-
-            <!--The following are not included in the above BOMs but are required for Arquillian to run -->
-            <dependency>
-                <groupId>org.wildfly</groupId>
-                <artifactId>wildfly-arquillian-container-managed</artifactId>
-                <version>${jboss.server.version}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.wildfly</groupId>
-                <artifactId>wildfly-arquillian-container-remote</artifactId>
-                <version>${jboss.server.version}</version>
-                <scope>test</scope>
             </dependency>
         </dependencies>
     </dependencyManagement>

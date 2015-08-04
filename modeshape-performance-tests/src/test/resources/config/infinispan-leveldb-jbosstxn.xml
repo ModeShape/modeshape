@@ -1,26 +1,24 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <infinispan
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xsi:schemaLocation="urn:infinispan:config:6.0 http://www.infinispan.org/schemas/infinispan-config-6.0.xsd
-                            urn:infinispan:config:store:leveldb:6.0 http://www.infinispan.org/schemas/infinispan-cachestore-leveldb-config-6.0.xsd"
-        xmlns="urn:infinispan:config:6.0">
-    <namedCache name="levelDBRepository">
-        <eviction maxEntries="50000" strategy="LIRS"/>
-
-        <persistence passivation="false">
-            <leveldbStore xmlns="urn:infinispan:config:store:leveldb:6.0"
-                          fetchPersistentState="false"
-                          ignoreModifications="false"
-                          purgeOnStartup="false"
-                          shared="false"
-                          location="target/leveldb/content"
-                          expiredLocation="target/leveldb/expired"
-                          implementationType="JAVA">
-            </leveldbStore>
-        </persistence>
-        <transaction
-                transactionManagerLookupClass="org.infinispan.transaction.lookup.JBossStandaloneJTAManagerLookup"
-                transactionMode="TRANSACTIONAL"
-                lockingMode="PESSIMISTIC"/>
-    </namedCache>
+        xsi:schemaLocation="urn:infinispan:config:7.2 http://www.infinispan.org/schemas/infinispan-config-7.2.xsd
+                            urn:infinispan:config:store:leveldb:7.2 http://www.infinispan.org/schemas/infinispan-cachestore-leveldb-config-7.2.xsd"
+        xmlns="urn:infinispan:config:7.2">
+    <cache-container default-cache="levelDBRepository">
+        <local-cache name="levelDBRepository" statistics="false">
+            <eviction strategy="LIRS" max-entries="50000"/>
+            <transaction
+                    mode="NON_XA"
+                    transaction-manager-lookup="org.infinispan.transaction.lookup.JBossStandaloneJTAManagerLookup"
+                    locking="PESSIMISTIC"/>
+            <leveldb-store xmlns="urn:infinispan:config:store:leveldb:7.2"
+                           path="target/leveldb/content"
+                           fetch-state="false"
+                           shared="false"
+                           purge="false">
+                <expiration path="target/leveldb/expired"/>
+                <implementation type="JAVA"/>
+            </leveldb-store>
+        </local-cache>
+    </cache-container>
 </infinispan>

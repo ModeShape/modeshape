@@ -16,7 +16,6 @@
 package org.modeshape.jboss.subsystem;
 
 import java.util.List;
-import org.infinispan.manager.CacheContainer;
 import org.infinispan.schematic.Schematic;
 import org.infinispan.schematic.document.EditableArray;
 import org.infinispan.schematic.document.EditableDocument;
@@ -113,6 +112,8 @@ public class AddRepository extends AbstractAddStepHandler {
         final AddressContext addressContext = AddressContext.forOperation(operation);
         final String repositoryName = addressContext.repositoryName();
         final String cacheName = attribute(context, model, ModelAttributes.CACHE_NAME, repositoryName);
+        String infinispanConfig = attribute(context, model, ModelAttributes.CACHE_CONFIG, null);
+        String configRelativeTo = attribute(context, model, ModelAttributes.CONFIG_RELATIVE_TO).asString();
         final boolean enableMonitoring = attribute(context, model, ModelAttributes.ENABLE_MONITORING).asBoolean();
         final String gcThreadPool = attribute(context, model, ModelAttributes.GARBAGE_COLLECTION_THREAD_POOL, null);
         final String gcInitialTime = attribute(context, model, ModelAttributes.GARBAGE_COLLECTION_INITIAL_TIME, null);
@@ -126,9 +127,6 @@ public class AddRepository extends AbstractAddStepHandler {
                                                   ModelAttributes.DOCUMENT_OPTIMIZATION_CHILD_COUNT_TOLERANCE,
                                                   null);
 
-        // Figure out which cache container to use (by default we'll use Infinispan subsystem's default cache container) ...
-        String namedContainer = attribute(context, model, ModelAttributes.CACHE_CONTAINER, "modeshape");
-
         // Create a document for the repository configuration ...
         EditableDocument configDoc = Schematic.newDocument();
         configDoc.set(FieldName.NAME, repositoryName);
@@ -141,6 +139,19 @@ public class AddRepository extends AbstractAddStepHandler {
             jndiAlias = null;
         }
 
+        // Parse the cache configuration
+        if (StringUtil.isBlank(infinispanConfig)) {
+            infinispanConfig = "modeshape/" + repositoryName + "-cache-config.xml";
+        } else {
+            // check if it's a system property
+            String infinispanConfigSystemProperty = System.getProperty(infinispanConfig);
+            if (!StringUtil.isBlank(infinispanConfigSystemProperty)) {
+                infinispanConfig = infinispanConfigSystemProperty;
+            }
+        }
+        // Set the storage information (that was set on the repository ModelNode) ...
+        setRepositoryStorageConfiguration(infinispanConfig, cacheName, configDoc);
+
         // Always set whether monitoring is enabled ...
         enableMonitoring(enableMonitoring, configDoc);
 
@@ -149,21 +160,30 @@ public class AddRepository extends AbstractAddStepHandler {
 
         // Workspace information is on the repository model node (unlike the XML) ...
         EditableDocument workspacesDoc = parseWorkspaces(context, model, configDoc);
-
-        // Set the storage information (that was set on the repository ModelNode) ...
-        setRepositoryStorageConfiguration(cacheName, configDoc);
-
+        
         // security
         parseSecurity(context, model, configDoc);
-
+        
         // Now create the repository service that manages the lifecycle of the JcrRepository instance ...
         RepositoryConfiguration repositoryConfig = new RepositoryConfiguration(configDoc, repositoryName);
-        RepositoryService repositoryService = new RepositoryService(repositoryConfig);
+        String configRelativeToSystemProperty = System.getProperty(configRelativeTo);
+        if (!StringUtil.isBlank(configRelativeToSystemProperty)) {
+            configRelativeTo = configRelativeToSystemProperty;
+        }
+        if (!configRelativeTo.endsWith("/")) {
+            configRelativeTo = configRelativeTo  + "/";
+        }
+        RepositoryService repositoryService = new RepositoryService(repositoryConfig, infinispanConfig, configRelativeTo);
+        ServiceName repositoryServiceName = ModeShapeServiceNames.repositoryServiceName(repositoryName);
 
+        // Sequencing
+        parseSequencing(model, configDoc);
+
+        // Text Extraction
+        parseTextExtraction(model, configDoc);
+        
         // Journaling
         parseJournaling(repositoryService, context, model, configDoc);
-
-        ServiceName repositoryServiceName = ModeShapeServiceNames.repositoryServiceName(repositoryName);
 
         // Add the EngineService's dependencies ...
         ServiceBuilder<JcrRepository> repositoryServiceBuilder = target.addService(repositoryServiceName, repositoryService);
@@ -200,24 +220,15 @@ public class AddRepository extends AbstractAddStepHandler {
             }
         }
 
-        // Add dependency to the Infinispan cache container used for content ...
-        repositoryServiceBuilder.addDependency(ServiceName.JBOSS.append("infinispan", namedContainer),
-                                               CacheContainer.class,
-                                               repositoryService.getCacheManagerInjector());
-        
+    
         // Add the dependency to the Security Manager
         repositoryServiceBuilder.addDependency(SecurityManagementService.SERVICE_NAME, ISecurityManagement.class,
                                                repositoryService.getSecurityManagementServiceInjector());
 
         // Add dependency, if necessary, to the workspaces cache container
-        String workspacesCacheContainer = attribute(context, model, ModelAttributes.WORKSPACES_CACHE_CONTAINER, null);
-        if (workspacesCacheContainer != null && !workspacesCacheContainer.toLowerCase().equalsIgnoreCase(namedContainer)) {
-            // there is a different ISPN container configured for the ws caches
-            repositoryServiceBuilder.addDependency(ServiceName.JBOSS.append("infinispan", workspacesCacheContainer),
-                                                   CacheContainer.class,
-                                                   repositoryService.getWorkspacesCacheContainerInjector());
-            // the name is a constant which will be resolved later by the RepositoryService
-            workspacesDoc.set(FieldName.WORKSPACE_CACHE_CONFIGURATION, RepositoryService.WORKSPACES_CONTAINER_NAME);
+        String workspacesInfinispanConfig = attribute(context, model, ModelAttributes.WORKSPACES_CACHE_CONTAINER, null);
+        if (workspacesInfinispanConfig != null && !workspacesInfinispanConfig.toLowerCase().equalsIgnoreCase(infinispanConfig)) {
+            workspacesDoc.set(FieldName.WORKSPACE_CACHE_CONFIGURATION, workspacesInfinispanConfig);
         }
 
         repositoryServiceBuilder.addDependency(Services.JBOSS_SERVICE_MODULE_LOADER,
@@ -288,6 +299,33 @@ public class AddRepository extends AbstractAddStepHandler {
         newControllers.add(monitorBuilder.install());
     }
 
+    private void parseTextExtraction( ModelNode model, EditableDocument configDoc ) {
+        if (model.hasDefined(ModelKeys.TEXT_EXTRACTORS_THREAD_POOL_NAME)) {
+            EditableDocument extractors = configDoc.getOrCreateDocument(FieldName.TEXT_EXTRACTION);
+            String poolName = model.get(ModelKeys.TEXT_EXTRACTORS_THREAD_POOL_NAME).asString();
+            extractors.set(FieldName.THREAD_POOL, poolName);
+        }
+        if (model.hasDefined(ModelKeys.TEXT_EXTRACTORS_MAX_POOL_SIZE)) {
+            EditableDocument sequencing = configDoc.getOrCreateDocument(FieldName.TEXT_EXTRACTION);
+            int maxPoolSize = model.get(ModelKeys.TEXT_EXTRACTORS_MAX_POOL_SIZE).asInt();
+            sequencing.set(FieldName.MAX_POOL_SIZE, maxPoolSize);
+        }
+    }
+
+    private void parseSequencing( ModelNode model,
+                                  EditableDocument configDoc ) {
+        if (model.hasDefined(ModelKeys.SEQUENCERS_THREAD_POOL_NAME)) {
+            EditableDocument sequencing = configDoc.getOrCreateDocument(FieldName.SEQUENCING);
+            String sequencingThreadPool = model.get(ModelKeys.SEQUENCERS_THREAD_POOL_NAME).asString();
+            sequencing.set(FieldName.THREAD_POOL, sequencingThreadPool);
+        }            
+        if (model.hasDefined(ModelKeys.SEQUENCERS_MAX_POOL_SIZE)) {
+            EditableDocument sequencing = configDoc.getOrCreateDocument(FieldName.SEQUENCING);
+            int maxPoolSize = model.get(ModelKeys.SEQUENCERS_MAX_POOL_SIZE).asInt();
+            sequencing.set(FieldName.MAX_POOL_SIZE, maxPoolSize);
+        }            
+    }
+
     private void parseSecurity( OperationContext context,
                                 ModelNode model,
                                 EditableDocument configDoc ) throws OperationFailedException {
@@ -316,7 +354,7 @@ public class AddRepository extends AbstractAddStepHandler {
         String securityDomain = attribute(context, model, ModelAttributes.SECURITY_DOMAIN).asString();
         EditableDocument jboss = Schematic.newDocument();
         jboss.set(FieldName.CLASSNAME, JBossDomainAuthenticationProvider.class.getName());
-        jboss.set(FieldName.DOMAIN_NAME, securityDomain);
+        jboss.set(FieldName.SECURITY_DOMAIN, securityDomain);
         providers.add(jboss);
 
         // Servlet authenticator ...
@@ -325,13 +363,15 @@ public class AddRepository extends AbstractAddStepHandler {
         providers.add(servlet);
     }
 
-    private void setRepositoryStorageConfiguration( String cacheName,
+    private void setRepositoryStorageConfiguration( String infinispanConfig,
+                                                    String cacheName,
                                                     EditableDocument configDoc ) {
         EditableDocument storage = configDoc.getOrCreateDocument(FieldName.STORAGE);
         storage.set(FieldName.CACHE_NAME, cacheName);
-        // The proper container will be injected into the RepositoryService, so use the fixed container name ...
-        storage.set(FieldName.CACHE_CONFIGURATION, RepositoryService.CONTENT_CONTAINER_NAME);
+        // set the ISPN config relative path which will be resolved later on
+        storage.set(FieldName.CACHE_CONFIGURATION, infinispanConfig);
     }
+
 
     private EditableDocument parseWorkspaces( OperationContext context,
                                               ModelNode model,

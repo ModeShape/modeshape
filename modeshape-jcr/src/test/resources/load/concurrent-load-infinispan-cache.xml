@@ -1,65 +1,40 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <infinispan xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-            xsi:schemaLocation="urn:infinispan:config:6.0 http://www.infinispan.org/schemas/infinispan-config-6.0.xsd"
-            xmlns="urn:infinispan:config:6.0">
-    <global>
-        <asyncListenerExecutor
-            factory="org.infinispan.executors.DefaultExecutorFactory">
-            <properties>
-                <property name="maxThreads" value="5" />
-                <property name="threadNamePrefix" value="AsyncListenerThread" />
-            </properties>
-        </asyncListenerExecutor>
- 
-        <asyncTransportExecutor
-            factory="org.infinispan.executors.DefaultExecutorFactory">
-            <properties>
-                <property name="maxThreads" value="25" />
-                <property name="threadNamePrefix" value="AsyncSerializationThread" />
-            </properties>
-        </asyncTransportExecutor>
- 
-        <evictionScheduledExecutor
-            factory="org.infinispan.executors.DefaultScheduledExecutorFactory">
-            <properties>
-                <property name="threadNamePrefix" value="EvictionThread" />
-            </properties>
-        </evictionScheduledExecutor>
- 
-        <replicationQueueScheduledExecutor
-            factory="org.infinispan.executors.DefaultScheduledExecutorFactory">
-            <properties>
-                <property name="threadNamePrefix" value="ReplicationQueueThread" />
-            </properties>
-        </replicationQueueScheduledExecutor>
- 
-        <globalJmxStatistics enabled="false" jmxDomain="infinispan" />
- 
-        <serialization marshallerClass="org.infinispan.marshall.VersionAwareMarshaller"
-            version="1.0" />
- 
-        <shutdown hookBehavior="DEFAULT" />
-    </global>
- 
-    <default>
-        <!-- <locking isolationLevel="REPEATABLE_READ" lockAcquisitionTimeout="20000"
-            writeSkewCheck="false" concurrencyLevel="500" useLockStriping="false" /> -->
-        <transaction
-            transactionManagerLookupClass="org.infinispan.transaction.lookup.JBossStandaloneJTAManagerLookup"
-            cacheStopTimeout="30000" eagerLockSingleNode="false" lockingMode="PESSIMISTIC"
-            syncCommitPhase="false" syncRollbackPhase="false" transactionMode="TRANSACTIONAL"
-            useEagerLocking="true" autoCommit="true" />
-        <persistence
-                passivation="false">
-            <singleFile
-                    preload="false"
-                    shared="false"
-                    fetchPersistentState="false"
-                    purgeOnStartup="false"
-                    location="../modeshape-jcr/target/concurrent_load_non_clustered/store">
-            </singleFile>
-        </persistence>
-        <eviction maxEntries="20" strategy="LIRS" />
-        <locking lockAcquisitionTimeout="20000"/>
-    </default>
+            xsi:schemaLocation="urn:infinispan:config:7.2 http://www.infinispan.org/schemas/infinispan-config-7.2.xsd"
+            xmlns="urn:infinispan:config:7.2">
+    <threads>
+        <thread-factory name="infinispan-factory" group-name="infinispan" thread-name-pattern="%G %i" priority="5"/>
+        <blocking-bounded-queue-thread-pool name="AsyncListenerThread" thread-factory="infinispan-factory" max-threads="5"/> <!-- listener-executor -->
+        <blocking-bounded-queue-thread-pool name="AsyncSerializationThread" thread-factory="infinispan-factory" max-threads="25" /> <!-- transport.executor -->
+        <scheduled-thread-pool name="EvictionThread" thread-factory="infinispan-factory" /> <!-- eviction-executor -->
+        <scheduled-thread-pool name="ReplicationQueueThread" thread-factory="infinispan-factory" /> <!-- replication-queue-executor -->
+    </threads>
+    <cache-container default-cache="persistentRepository" 
+                     statistics="false" 
+                     listener-executor="AsyncListenerThread"
+                     eviction-executor="EvictionThread"
+                     persistence-executor="AsyncSerializationThread"
+                     replication-queue-executor="ReplicationQueueThread"
+                     shutdown-hook="DEFAULT">
+        <serialization marshaller="org.infinispan.marshall.core.VersionAwareMarshaller" version="1.0"/>
+        <jmx duplicate-domains="true"/>
+        <local-cache name="persistentRepository" statistics="false">
+            <eviction max-entries="20" 
+                      strategy="LIRS" />
+            <locking acquire-timeout="20000"/>
+            <transaction
+                    mode="NON_XA"
+                    transaction-manager-lookup="org.infinispan.transaction.lookup.JBossStandaloneJTAManagerLookup"
+                    locking="PESSIMISTIC"
+                    />
+            <persistence
+                    passivation="false">
+                <file-store fetch-state="false"
+                            shared="false"
+                            preload="false"
+                            purge="false"
+                            path="../modeshape-jcr/target/concurrent_load_non_clustered/store"/>
+            </persistence>
+        </local-cache>
+    </cache-container>
 </infinispan>

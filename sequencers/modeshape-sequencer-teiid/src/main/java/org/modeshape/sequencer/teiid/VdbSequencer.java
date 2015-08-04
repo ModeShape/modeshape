@@ -29,6 +29,7 @@ import javax.jcr.NamespaceRegistry;
 import javax.jcr.Node;
 import javax.jcr.Property;
 import javax.jcr.RepositoryException;
+import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.StringUtil;
@@ -47,6 +48,7 @@ import org.modeshape.sequencer.teiid.model.ReferenceResolver;
 /**
  * A sequencer of Teiid Virtual Database (VDB) files.
  */
+@ThreadSafe
 public class VdbSequencer extends Sequencer {
 
     protected static final Logger LOGGER = Logger.getLogger(VdbSequencer.class);
@@ -60,8 +62,8 @@ public class VdbSequencer extends Sequencer {
      * @param version the reference to the AtomicInteger that will be modified to contain the version
      * @return the 'fileNameWithoutExtension' value (without any trailing '.' characters); never null
      */
-    public static String extractVersionInfomation( String fileNameWithoutExtension,
-                                                   final AtomicInteger version ) {
+    public static String extractVersionInformation( String fileNameWithoutExtension,
+                                                    final AtomicInteger version ) {
         final Matcher matcher = VERSION_REGEX.matcher(fileNameWithoutExtension);
 
         if (matcher.matches()) {
@@ -75,8 +77,6 @@ public class VdbSequencer extends Sequencer {
     }
 
     private ModelSequencer modelSequencer; // constructed during initialize method
-
-    private ReferenceResolver resolver; // constructed during initialize method
 
     /**
      * @see org.modeshape.jcr.api.sequencer.Sequencer#execute(javax.jcr.Property, javax.jcr.Node,
@@ -94,7 +94,7 @@ public class VdbSequencer extends Sequencer {
         try (final ZipInputStream vdbStream = new ZipInputStream(binaryValue.getStream())) {
             VdbManifest manifest = null;
             ZipEntry entry = null;
-
+        ReferenceResolver resolver = new ReferenceResolver();
             while ((entry = vdbStream.getNextEntry()) != null) {
                 String entryName = entry.getName();
 
@@ -122,7 +122,7 @@ public class VdbSequencer extends Sequencer {
                     }
 
                     final Node modelNode = outputNode.addNode(entryName, VdbLexicon.Vdb.MODEL);
-                    final boolean sequenced = this.modelSequencer.sequenceVdbModel(vdbStream, modelNode, vdbModel, context);
+                    final boolean sequenced = this.modelSequencer.sequenceVdbModel(vdbStream, modelNode, vdbModel, resolver, context);
 
                     if (!sequenced) {
                         modelNode.remove();
@@ -204,8 +204,7 @@ public class VdbSequencer extends Sequencer {
         registerNodeTypes("vdb.cnd", nodeTypeManager, true);
         LOGGER.debug("vdb.cnd loaded");
 
-        this.resolver = new ReferenceResolver();
-        this.modelSequencer = new ModelSequencer(this.resolver);
+        this.modelSequencer = new ModelSequencer();
         this.modelSequencer.initialize(registry, nodeTypeManager);
 
         LOGGER.debug("exit initialize");
@@ -328,6 +327,10 @@ public class VdbSequencer extends Sequencer {
                         sourceNode.setProperty(VdbLexicon.Source.TRANSLATOR, source.getTranslator());
                         sourceNode.setProperty(VdbLexicon.Source.JNDI_NAME, source.getJndiName());
                     }
+                }
+
+                for (Map.Entry<String, String> entry : model.getProperties().entrySet()) {
+                    setProperty(modelNode, entry.getKey(), entry.getValue());
                 }
             }
         }

@@ -15,6 +15,7 @@
  */
 package org.modeshape.web.client.admin;
 
+import com.smartgwt.client.widgets.form.fields.CheckboxItem;
 import com.smartgwt.client.widgets.form.fields.StaticTextItem;
 import com.smartgwt.client.widgets.form.fields.TextItem;
 import com.smartgwt.client.widgets.form.fields.events.ClickEvent;
@@ -27,7 +28,11 @@ import org.modeshape.web.shared.ModalDialog;
  */
 public class BackupDialog extends ModalDialog {
     
-    private final TextItem name = new TextItem("Backup name");
+    private final TextItem nameField = new TextItem("Backup name");
+    private final CheckboxItem incBinariesField = new CheckboxItem("Include binaries");
+    private final CheckboxItem compressField = new CheckboxItem("Compress files");
+    private final TextItem docsPerFileField = new TextItem("Documents per file");
+    
     private final BackupControl control;
     
     public BackupDialog(BackupControl control) {
@@ -37,12 +42,26 @@ public class BackupDialog extends ModalDialog {
         StaticTextItem description = new StaticTextItem("");
         description.setValue("Specify backup name");
         
-        setControls(description, name);
+        setDefaults();        
+        setControls(description, nameField, incBinariesField, compressField, docsPerFileField);
+    }
+    
+    private void setDefaults() {
+        incBinariesField.setValue(true);
+        compressField.setValue(true);
+        docsPerFileField.setValue("10000");
     }
     
     @Override
     public void onConfirm(ClickEvent event) {
-        control.backup(name.getValueAsString());
+        //prepare clean options
+        BackupParams params = new BackupParams();
+        
+        params.setIncludeBinaries(incBinariesField.getValueAsBoolean());
+        params.setCompress(compressField.getValueAsBoolean());
+        params.setDocumentsPerFile(Long.valueOf(docsPerFileField.getValueAsString()));
+        
+        control.backup(nameField.getValueAsString(), params);
     }
  
     

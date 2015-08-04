@@ -56,22 +56,19 @@ public interface ConnectorChangeSet {
 
     /**
      * Signal that a new node resource was created.
-     * 
      * @param docId the connector's identifier for the new node; may not be null
      * @param parentDocId the connector's identifier for the parent of the new node; may not be null
      * @param path the path to the new node; may not be null
      * @param primaryType the primary type of the node; may not be null
      * @param mixinTypes the mixin types of the node; may not be null
      * @param properties the properties in the new node, or null if there are none
-     * @param queryable true if this node is queryable, or false otherwise
      */
     void nodeCreated( String docId,
                       String parentDocId,
                       String path,
                       Name primaryType,
                       Set<Name> mixinTypes,
-                      Map<Name, Property> properties,
-                      boolean queryable );
+                      Map<Name, Property> properties );
 
     /**
      * Signal that a node resource (and all descendants) was removed. Note that it is not common to fire an event for all nodes
@@ -82,7 +79,6 @@ public interface ConnectorChangeSet {
      * @param path the path to the removed node; may not be null
      * @param primaryType the primary type of the node; may not be null
      * @param mixinTypes the mixin types of the node; may not be null
-     * @param queryable true if this node is queryable, or false otherwise
      * @param parentPrimaryType the primary type of the parent node; may be null if the information is not available.
      * @param parentMixinTypes the mixin types of the parent node; may be null if the information is not available 
      */
@@ -91,8 +87,7 @@ public interface ConnectorChangeSet {
                       String path,
                       Name primaryType,
                       Set<Name> mixinTypes,
-                      boolean queryable, 
-                      Name parentPrimaryType, 
+                      Name parentPrimaryType,
                       Set<Name> parentMixinTypes );
 
     /**
@@ -105,7 +100,6 @@ public interface ConnectorChangeSet {
      * @param oldParentDocId the connector's identifier for the old parent for the node; may not be null
      * @param newPath the new path for the node after it has been moved; may not be null
      * @param oldPath the old path for the node before it was moved; may not be null
-     * @param queryable true if this node is queryable, or false otherwise
      */
     void nodeMoved( String docId,
                     Name primaryType,
@@ -113,12 +107,11 @@ public interface ConnectorChangeSet {
                     String newParentDocId,
                     String oldParentDocId,
                     String newPath,
-                    String oldPath,
-                    boolean queryable );
+                    String oldPath );
 
     /**
      * Signal that a node resource (and all descendants) was placed into a new location within the same parent.
-     * 
+     *
      * @param docId the connector's identifier for the node; may not be null
      * @param primaryType the primary type of the node; may not be null
      * @param mixinTypes the mixin types of the node; may not be null
@@ -127,7 +120,6 @@ public interface ConnectorChangeSet {
      * @param oldNameSegment the name segment (i.e., the name and if applicable the SNS index) for the node before it was
      *        reordered; may not be null
      * @param reorderedBeforeNameSegment the name segment of the node (in the same parent) before which the node was moved
-     * @param queryable true if this node is queryable, or false otherwise
      */
     void nodeReordered( String docId,
                         Name primaryType,
@@ -135,8 +127,7 @@ public interface ConnectorChangeSet {
                         String parentDocId,
                         String newPath,
                         String oldNameSegment,
-                        String reorderedBeforeNameSegment,
-                        boolean queryable );
+                        String reorderedBeforeNameSegment );
 
     /**
      * Signal that a property was added to a node resource.
@@ -146,14 +137,12 @@ public interface ConnectorChangeSet {
      * @param nodeMixinTypes the mixin types of the node; may not be null
      * @param nodePath the path of the node that was changed
      * @param property the new property, with name and value(s); may not be null
-     * @param queryable true if this node is queryable, or false otherwise
      */
     void propertyAdded( String docId,
                         Name nodePrimaryType,
                         Set<Name> nodeMixinTypes,
                         String nodePath,
-                        Property property,
-                        boolean queryable );
+                        Property property );
 
     /**
      * Signal that a property was removed from a node resource.
@@ -163,14 +152,12 @@ public interface ConnectorChangeSet {
      * @param nodeMixinTypes the mixin types of the node; may not be null
      * @param nodePath the path of the node that was changed
      * @param property the property that was removed, with name and value(s); may not be null
-     * @param queryable true if this node is queryable, or false otherwise
      */
     void propertyRemoved( String docId,
                           Name nodePrimaryType,
                           Set<Name> nodeMixinTypes,
                           String nodePath,
-                          Property property,
-                          boolean queryable );
+                          Property property );
 
     /**
      * Signal that a property resource was changed on a node resource.
@@ -181,15 +168,13 @@ public interface ConnectorChangeSet {
      * @param nodePath the path of the node that was changed
      * @param oldProperty the old property, with name and value(s); may be null
      * @param newProperty the new property, with name and value(s); may not be null
-     * @param queryable true if this node is queryable, or false otherwise
      */
     void propertyChanged( String docId,
                           Name nodePrimaryType,
                           Set<Name> nodeMixinTypes,
                           String nodePath,
                           Property oldProperty,
-                          Property newProperty,
-                          boolean queryable );
+                          Property newProperty );
 
     /**
      * Finish the construction of this change-set and make it available for publication into the repository. This also empties the

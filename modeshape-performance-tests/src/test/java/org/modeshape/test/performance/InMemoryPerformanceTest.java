@@ -345,7 +345,7 @@ public class InMemoryPerformanceTest {
     @Performance
     @FixFor( "MODE-2266" )
     public void insertNodesInFlatHierarchyWithParentThatAllowsSNS() throws Exception {
-        int totalNodeCount = 100000;
+        int totalNodeCount = 1000000;
         int childrenPerNode = 1000;
         int propertiesPerNode = 0;
         String nodeType = "nt:unstructured";
@@ -405,7 +405,7 @@ public class InMemoryPerformanceTest {
     @Performance
     @FixFor( "MODE-2266" )
     public void insertNodesInDeepHierarchyWithParentThatDisallowsSNS() throws Exception {
-        int totalNodeCount = 100000;
+        int totalNodeCount = 1000000;
         int childrenPerNode = 1000;
         int propertiesPerNode = 0;
         String nodeType = "nt:folder";
@@ -453,17 +453,22 @@ public class InMemoryPerformanceTest {
         Stopwatch sw = new Stopwatch();
         sw.start();
 
-        Node parentNode = session.getNode(parentAbsPath);
-        for (int i = 0; i != numberOfChildrenPerNode; ++i) {
-            Node child = parentNode.addNode(useSns ? "childNode" : ("childNode" + i), nodeType);
-            for (int j = 0; j != numberOfPropertiesPerNode; ++j) {
-                String value = (i % 5 == 0) ? LARGE_STRING_VALUE : SMALL_STRING_VALUE;
-                child.setProperty("property" + j, value);
+        Session session = repository.login();
+        try {
+            Node parentNode = session.getNode(parentAbsPath);
+            for (int i = 0; i != numberOfChildrenPerNode; ++i) {
+                Node child = parentNode.addNode(useSns ? "childNode" : ("childNode" + i), nodeType);
+                for (int j = 0; j != numberOfPropertiesPerNode; ++j) {
+                    String value = (i % 5 == 0) ? LARGE_STRING_VALUE : SMALL_STRING_VALUE;
+                    child.setProperty("property" + j, value);
+                }
+                numberCreated++;
+                childPaths.add(child.getPath());
             }
-            numberCreated++;
-            childPaths.add(child.getPath());
+            session.save();
+        } finally {
+            session.logout();
         }
-        session.save();
         sw.stop();
         System.out.println("Time to insert " + numberCreated + " nodes on level " + level + ": " + sw.getSimpleStatistics());
 
@@ -524,19 +529,24 @@ public class InMemoryPerformanceTest {
             sw.reset();
             sw.start();
             firstChildPath = null;
-            Node parentNode = session.getNode(parentAbsPath);
+            Session session = repository.login();
+            try {
+                Node parentNode = session.getNode(parentAbsPath);
 
-            for (int i = 0; i != numberOfChildrenPerNode; ++i) {
-                Node child = parentNode.addNode(useSns ? "childNode" : ("childNode" + i), nodeType);
-                for (int j = 0; j != numberOfPropertiesPerNode; ++j) {
-                    String value = (i % 5 == 0) ? LARGE_STRING_VALUE : SMALL_STRING_VALUE;
-                    child.setProperty("property" + j, value);
+                for (int i = 0; i != numberOfChildrenPerNode; ++i) {
+                    Node child = parentNode.addNode(useSns ? "childNode" : ("childNode" + i), nodeType);
+                    for (int j = 0; j != numberOfPropertiesPerNode; ++j) {
+                        String value = (i % 5 == 0) ? LARGE_STRING_VALUE : SMALL_STRING_VALUE;
+                        child.setProperty("property" + j, value);
+                    }
+                    if (firstChildPath == null) {
+                        firstChildPath = child.getPath();
+                    }
                 }
-                if (firstChildPath == null) {
-                    firstChildPath = child.getPath();
-                }
+                session.save();
+            } finally {
+                session.logout();
             }
-            session.save();
             sw.stop();
             System.out.println("Time to insert " + numberOfChildrenPerNode + " nodes on level " + level++ + ": "
                                + sw.getSimpleStatistics());

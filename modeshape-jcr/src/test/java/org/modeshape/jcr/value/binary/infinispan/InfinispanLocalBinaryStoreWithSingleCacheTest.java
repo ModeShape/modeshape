@@ -38,7 +38,8 @@ public class InfinispanLocalBinaryStoreWithSingleCacheTest extends AbstractInfin
         cacheManager.defineConfiguration(CACHE_NAME, metadataConfiguration);
         cacheManager.startCache(CACHE_NAME);
 
-        binaryStore = new InfinispanBinaryStore(cacheManager, true, CACHE_NAME, CACHE_NAME);
+        binaryStore = new InfinispanBinaryStore(cacheManager, true, CACHE_NAME, CACHE_NAME);         
+        binaryStore.setMimeTypeDetector(DEFAULT_DETECTOR);
         binaryStore.start();
     }
 

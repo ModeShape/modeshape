@@ -23,11 +23,14 @@ import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.Workspace;
+import javax.servlet.ServletContext;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.jcr.JcrRepository;
 import org.modeshape.jcr.api.RepositoryManager;
 import org.modeshape.web.shared.RemoteException;
 import org.modeshape.web.server.LRepository;
+import org.modeshape.web.shared.BackupParams;
+import org.modeshape.web.shared.RestoreParams;
 
 /**
  * @author kulikov
@@ -35,20 +38,32 @@ import org.modeshape.web.server.LRepository;
 public class LRepositoryImpl implements LRepository {
     private Credentials creds;
     private JcrRepository repository;
+    
+    //server's env
+    private transient ServletContext context;
+    private transient File tempDir;
+    
     private HashMap<String, Session> sessions = new HashMap<>();
     private String[] workspaces;
+    
     private final static Logger logger = Logger.getLogger(LRepositoryImpl.class);
 
-    public LRepositoryImpl( JcrRepository repository,
+    public LRepositoryImpl( ServletContext context, JcrRepository repository,
                             Credentials creds ) throws LoginException, RepositoryException {
+        this.context = context;
         this.creds = creds;
         assert repository != null;
         this.repository = repository;
+        
         logger.debug("Logging to repository " + repository + " as " + creds);
+        
         Session session = creds != null ? repository.login(creds) : repository.login();
         sessions.put(session.getWorkspace().getName(), session);
+        
         workspaces = session.getWorkspace().getAccessibleWorkspaceNames();
         logger.debug("[" + this.repository.getName() + "] available workspaces " + wsnames());
+        
+        tempDir = (File) context.getAttribute("javax.servlet.context.tempdir");
     }
 
     @Override
@@ -101,22 +116,22 @@ public class LRepositoryImpl implements LRepository {
     }
 
     @Override
-    public void backup( String name ) throws RemoteException {
+    public void backup( String name, BackupParams options ) throws RemoteException {
         try {
-            File backupDir = new File(name);
+            File dir = new File(tempDir.getAbsolutePath() + File.separator + name);
             RepositoryManager mgr = ((org.modeshape.jcr.api.Session)session()).getWorkspace().getRepositoryManager();
-            mgr.backupRepository(backupDir);
+            mgr.backupRepository(dir, new BackupUsrOptions(options));
         } catch (Exception e) {
             throw new RemoteException(e.getMessage());
         }
     }
 
     @Override
-    public void restore( String name ) throws RemoteException {
+    public void restore( String name, RestoreParams options ) throws RemoteException {
         try {
-            File backupDir = new File(name);
+            File dir = new File(tempDir.getAbsolutePath() + File.separator + name);
             RepositoryManager mgr = ((org.modeshape.jcr.api.Session)session()).getWorkspace().getRepositoryManager();
-            mgr.restoreRepository(backupDir);
+            mgr.restoreRepository(dir, new RestoreUsrOptions(options));
             
             //after restore process session will be closed so we need to clean up
             //sessions to avoid access of invalid session.

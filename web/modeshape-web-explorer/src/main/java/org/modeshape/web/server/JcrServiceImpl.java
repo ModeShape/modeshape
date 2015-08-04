@@ -81,6 +81,8 @@ import org.modeshape.jcr.api.monitor.Window;
 import org.modeshape.web.server.impl.MsDurationMetric;
 import org.modeshape.web.server.impl.MsValueMetric;
 import org.modeshape.web.server.impl.TimeUnit;
+import org.modeshape.web.shared.BackupParams;
+import org.modeshape.web.shared.RestoreParams;
 import org.modeshape.web.shared.Stats;
 
 /**
@@ -905,14 +907,16 @@ public class JcrServiceImpl extends RemoteServiceServlet implements JcrService {
 
     @Override
     public void backup( String repository,
-                        String name ) throws RemoteException {
-        connector().find(repository).backup(name);
+                        String name,
+                        BackupParams params) throws RemoteException {
+        connector().find(repository).backup(name, params);
     }
 
     @Override
     public void restore( String repository,
-                         String name ) throws RemoteException {
-        connector().find(repository).restore(name);
+                         String name,
+                         RestoreParams params) throws RemoteException {
+        connector().find(repository).restore(name, params);
     }
 
     @Override

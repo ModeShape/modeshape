@@ -1,4 +1,4 @@
-<subsystem xmlns="urn:jboss:domain:modeshape:2.0">
+<subsystem xmlns="urn:jboss:domain:modeshape:2.1">
   <repository name="sample" />
 </subsystem>
 

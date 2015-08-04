@@ -17,9 +17,11 @@ package org.modeshape.jcr.cache.document;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -27,8 +29,6 @@ import java.util.Set;
 import org.infinispan.schematic.document.Document;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.collection.EmptyIterator;
-import org.modeshape.common.collection.LinkedListMultimap;
-import org.modeshape.common.collection.ListMultimap;
 import org.modeshape.jcr.cache.ChildReference;
 import org.modeshape.jcr.cache.ChildReferences;
 import org.modeshape.jcr.cache.DocumentNotFoundException;
@@ -48,8 +48,9 @@ public class ImmutableChildReferences {
 
     public static ChildReferences create( DocumentTranslator documentTranslator,
                                           Document document,
-                                          String childrenFieldName ) {
-        return new Medium(documentTranslator, document, childrenFieldName);
+                                          String childrenFieldName,
+                                          boolean allowsSNS) {
+        return new Medium(documentTranslator, document, childrenFieldName, allowsSNS);
     }
 
     public static ChildReferences union( ChildReferences first,
@@ -68,17 +69,19 @@ public class ImmutableChildReferences {
 
     public static ChildReferences create( ChildReferences first,
                                           ChildReferencesInfo firstSegmentingInfo,
-                                          WorkspaceCache cache ) {
+                                          WorkspaceCache cache,
+                                          boolean allowsSNS) {
         if (firstSegmentingInfo == null || firstSegmentingInfo.nextKey == null) return first;
-        return new Segmented(cache, first, firstSegmentingInfo);
+        return new Segmented(cache, first, firstSegmentingInfo, allowsSNS);
     }
 
     public static ChildReferences create( ChildReferences first,
                                           ChildReferencesInfo firstSegmentingInfo,
                                           ChildReferences second,
-                                          WorkspaceCache cache ) {
+                                          WorkspaceCache cache,
+                                          boolean allowsSNS) {
         if (firstSegmentingInfo == null || firstSegmentingInfo.nextKey == null) return union(first, second);
-        Segmented segmentedReferences = new Segmented(cache, first, firstSegmentingInfo);
+        Segmented segmentedReferences = new Segmented(cache, first, firstSegmentingInfo, allowsSNS);
         return union(segmentedReferences, second);
     }
 
@@ -187,35 +190,40 @@ public class ImmutableChildReferences {
         public Iterator<NodeKey> getAllKeys() {
             return EMPTY_KEY_ITERATOR;
         }
+
+        @Override
+        public boolean allowsSNS() {
+            return false;
+        }
     }
 
     @Immutable
     protected static final class Medium extends AbstractChildReferences {
 
-        private final ListMultimap<Name, ChildReference> childReferences;
         private final Map<NodeKey, ChildReference> childReferencesByKey;
+        private final Map<Name, List<NodeKey>> childKeysByName;
+        private final boolean allowsSNS;
 
         protected Medium( DocumentTranslator documentTranslator,
                           Document document,
-                          String childrenFieldName ) {
-            this.childReferences = LinkedListMultimap.create();
-            this.childReferencesByKey = new HashMap<NodeKey, ChildReference>();
+                          String childrenFieldName,
+                          boolean allowsSNS) {
+            this.allowsSNS = allowsSNS;
+            this.childKeysByName = new HashMap<>();
+            this.childReferencesByKey = new LinkedHashMap<>();
 
             final List<?> documentArray = document.getArray(childrenFieldName);
-            if (documentArray == null) {
+            if (documentArray == null || documentArray.isEmpty()) {
                 return;
             }
-            int size = documentArray.size();
-            List<ChildReference> childrenReferences = new ArrayList<ChildReference>(size);
             for (Object value : documentArray) {
-                ChildReference childReference = documentTranslator.childReferenceFrom(value);
-                if (childReference != null) {
-                    childrenReferences.add(childReference);
+                ChildReference ref = documentTranslator.childReferenceFrom(value);
+                if (ref == null) {
+                    continue;
                 }
-            }
-            for (ChildReference ref : childrenReferences) {
                 Name refName = ref.getName();
-                ChildReference old = this.childReferencesByKey.get(ref.getKey());
+                NodeKey refKey = ref.getKey();
+                ChildReference old = this.childReferencesByKey.get(refKey);
                 if (old != null && old.getName().equals(ref.getName())) {
                     // We already have this key/name pair, so we don't need to add it again ...
                     continue;
@@ -225,11 +233,22 @@ public class ImmutableChildReferences {
                 // more than once in its parent's list of child nodes). See MODE-2120.
 
                 // we can precompute the SNS index up front
-                int currentSNS = this.childReferences.get(refName).size();
-                ChildReference refWithSNS = ref.with(currentSNS + 1);
-                this.childReferencesByKey.put(ref.getKey(), refWithSNS);
-                this.childReferences.put(ref.getName(), refWithSNS);
+                List<NodeKey> keysWithName = this.childKeysByName.get(refName);
+                if (allowsSNS) {
+                    int currentSNS = keysWithName != null ? this.childKeysByName.get(refName).size() : 0;
+                    ChildReference refWithSNS = ref.with(currentSNS + 1);
+                    this.childReferencesByKey.put(refKey, refWithSNS);
+                } else {
+                    this.childReferencesByKey.put(refKey, ref);
+                }
+               
+                if (keysWithName == null) {
+                    keysWithName = new ArrayList<>();
+                    this.childKeysByName.put(refName, keysWithName);
+                }
+                keysWithName.add(refKey);
             }
+           
         }
 
         @Override
@@ -239,13 +258,17 @@ public class ImmutableChildReferences {
 
         @Override
         public int getChildCount( Name name ) {
-            return childReferences.get(name).size();
+            List<NodeKey> nodeKeys = childKeysByName.get(name);
+            return nodeKeys != null ? nodeKeys.size() : 0;
         }
 
         @Override
         public ChildReference getChild( Name name,
                                         int snsIndex,
                                         Context context ) {
+            if (!allowsSNS && snsIndex > 1) {
+                return null;
+            }
             Changes changes = null;
             Iterator<ChildInsertions> insertions = null;
             boolean includeRenames = false;
@@ -259,17 +282,21 @@ public class ImmutableChildReferences {
                 }
             }
 
-            List<ChildReference> childrenWithSameName = this.childReferences.get(name);
+            List<NodeKey> childrenWithSameName = this.childKeysByName.get(name);
             if (changes == null) {
+                if (childrenWithSameName == null) {
+                    return null;
+                }
                 // there are no changes, so we can take advantage of the fact that we precomputed the SNS indexes up front...
                 if (snsIndex > childrenWithSameName.size()) {
                     return null;
                 }
-                return childrenWithSameName.get(snsIndex - 1);
+                NodeKey childKey = childrenWithSameName.get(snsIndex - 1);
+                return childReferencesByKey.get(childKey);
             }
             // there are changes, so there is some extra processing to be done...
 
-            if (childrenWithSameName.isEmpty() && !includeRenames) {
+            if (childrenWithSameName == null && !includeRenames) {
                 // This segment contains no nodes with the supplied name ...
                 if (insertions == null) {
                     // and no nodes with this name were inserted ...
@@ -300,7 +327,8 @@ public class ImmutableChildReferences {
             }
 
             // We have at least one SNS in this list (and still potentially some removals) ...
-            for (ChildReference childWithSameName : childrenWithSameName) {
+            for (NodeKey key : childrenWithSameName) {
+                ChildReference childWithSameName = childReferencesByKey.get(key);
                 if (changes.isRemoved(childWithSameName)) {
                     continue;
                 }
@@ -368,10 +396,6 @@ public class ImmutableChildReferences {
                             // The node was removed ...
                             return null;
                         }
-                    } else {
-                        // It's in our list but there are no changes so we can optimize this based on the fact that we already
-                        // precomputed the SNS indexes up front
-                        return childReferencesByKey.get(ref.getKey());
                     }
                 }
             }
@@ -392,13 +416,33 @@ public class ImmutableChildReferences {
         @Override
         public Iterator<ChildReference> iterator( Name name ) {
             // the child references should already have the correct SNS precomputed
-            return childReferences.get(name).iterator();
+            List<NodeKey> childKeys = childKeysByName.get(name);
+            if (childKeys == null || childKeys.isEmpty()) {
+                return Collections.emptyIterator();
+            }
+            final Iterator<NodeKey> childKeysIterator = childKeys.iterator();
+            return new Iterator<ChildReference>() {
+                @Override
+                public boolean hasNext() {
+                    return childKeysIterator.hasNext();
+                }
+
+                @Override
+                public ChildReference next() {
+                    return childReferencesByKey.get(childKeysIterator.next());
+                }
+
+                @Override
+                public void remove() {
+                    throw new UnsupportedOperationException();
+                }
+            };
         }
 
         @Override
         public Iterator<ChildReference> iterator() {
             // the child references should already have the correct SNS precomputed
-            return childReferences.values().iterator();
+            return childReferencesByKey.values().iterator();
         }
 
         @Override
@@ -429,7 +473,7 @@ public class ImmutableChildReferences {
 
         @Override
         public StringBuilder toString( StringBuilder sb ) {
-            Iterator<ChildReference> iter = childReferences.values().iterator();
+            Iterator<ChildReference> iter = childReferencesByKey.values().iterator();
             if (iter.hasNext()) {
                 sb.append(iter.next());
                 while (iter.hasNext()) {
@@ -439,6 +483,11 @@ public class ImmutableChildReferences {
             }
             return sb;
         }
+
+        @Override
+        public boolean allowsSNS() {
+            return allowsSNS;
+        }
     }
 
     @Immutable
@@ -446,14 +495,17 @@ public class ImmutableChildReferences {
 
         protected final WorkspaceCache cache;
         protected final long totalSize;
+        protected final boolean allowsSNS;
         private Segment firstSegment;
 
         public Segmented( WorkspaceCache cache,
                           ChildReferences firstSegment,
-                          ChildReferencesInfo info ) {
+                          ChildReferencesInfo info,
+                          boolean allowsSNS) {
             this.cache = cache;
             this.totalSize = info.totalSize;
-            this.firstSegment = new Segment(firstSegment, info.nextKey);
+            this.firstSegment = new Segment(firstSegment, info.nextKey, allowsSNS);
+            this.allowsSNS = allowsSNS;
         }
 
         @Override
@@ -507,7 +559,7 @@ public class ImmutableChildReferences {
 
         @Override
         public ChildReference getChild( NodeKey key ) {
-            return getChild(key, new BasicContext());
+            return getChild(key, defaultContext());
         }
 
         @Override
@@ -692,6 +744,11 @@ public class ImmutableChildReferences {
             }
             return sb;
         }
+
+        @Override
+        public boolean allowsSNS() {
+            return allowsSNS;
+        }
     }
 
     public static class ReferencesUnion extends AbstractChildReferences {
@@ -733,7 +790,7 @@ public class ImmutableChildReferences {
 
         @Override
         public ChildReference getChild( NodeKey key ) {
-            return getChild(key, new BasicContext());
+            return getChild(key, defaultContext());
         }
 
         @Override
@@ -777,18 +834,26 @@ public class ImmutableChildReferences {
             sb.append(">, <first references=").append(firstReferences.toString()).append(">");
             return sb;
         }
+
+        @Override
+        public boolean allowsSNS() {
+            return firstReferences.allowsSNS() || secondReferences.allowsSNS();
+        }
     }
 
     protected static class Segment {
 
         private final ChildReferences references;
         private final String nextKey;
+        private final boolean allowsSNS;
         private Segment next;
 
         protected Segment( ChildReferences references,
-                           String nextKey ) {
+                           String nextKey,
+                           boolean allowsSNS) {
             this.nextKey = nextKey;
             this.references = references;
+            this.allowsSNS = allowsSNS;
         }
 
         public ChildReferences getReferences() {
@@ -802,9 +867,9 @@ public class ImmutableChildReferences {
                     throw new DocumentNotFoundException(nextKey);
                 }
                 // we only need the direct children of the block to avoid nesting
-                ChildReferences refs = cache.translator().getChildReferencesFromBlock(blockDoc);
+                ChildReferences refs = cache.translator().getChildReferencesFromBlock(blockDoc, allowsSNS);
                 ChildReferencesInfo nextNextKey = cache.translator().getChildReferencesInfo(blockDoc);
-                next = new Segment(refs, nextNextKey != null ? nextNextKey.nextKey : null);
+                next = new Segment(refs, nextNextKey != null ? nextNextKey.nextKey : null, allowsSNS);
             }
             return next;
         }

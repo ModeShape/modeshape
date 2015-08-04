@@ -39,6 +39,7 @@ import org.modeshape.common.logging.Logger;
 import org.modeshape.jcr.api.value.DateTime;
 import org.modeshape.jcr.cache.CachedNode;
 import org.modeshape.jcr.cache.ChildReference;
+import org.modeshape.jcr.cache.ChildReferences;
 import org.modeshape.jcr.cache.LockFailureException;
 import org.modeshape.jcr.cache.MutableCachedNode;
 import org.modeshape.jcr.cache.NodeCache;
@@ -67,8 +68,10 @@ class RepositoryLockManager implements ChangeSetListener {
     private final ConcurrentMap<NodeKey, ModeShapeLock> locksByNodeKey;
     private final Path locksPath;
     private final Logger logger;
+    private final long lockExtensionIntervalMillis;
+    private final long defaultLockAgeMillis;
 
-    RepositoryLockManager( JcrRepository.RunningState repository ) {
+    RepositoryLockManager( JcrRepository.RunningState repository, RepositoryConfiguration.GarbageCollection gcConfig ) {
         this.repository = repository;
         this.systemWorkspaceName = repository.repositoryCache().getSystemWorkspaceName();
         this.processId = repository.context().getProcessId();
@@ -76,15 +79,37 @@ class RepositoryLockManager implements ChangeSetListener {
         PathFactory pathFactory = repository.context().getValueFactories().getPathFactory();
         this.locksPath = pathFactory.create(pathFactory.createRootPath(), JcrLexicon.SYSTEM, ModeShapeLexicon.LOCKS);
         this.logger = Logger.getLogger(getClass());
+        long lockGCIntervalMillis = gcConfig.getIntervalInMillis();
+        assert lockGCIntervalMillis > 0;
+        
+        /*
+         * Each time the garbage collection process runs, session-scoped locks that are still used by active sessions will have their
+         * expiry times extended by this amount of time. Each repository instance in the ModeShape cluster will run its own cleanup
+         * process, which will extend the expiry times of its own locks. As soon as a repository is no longer running the cleanup
+         * process, we know that there can be no active sessions.
+         *
+         * The default GC interval is expressed in hours, so we make the extension slightly larger to avoid any lock being expired
+         * prematurely.
+         */
+        this.lockExtensionIntervalMillis = lockGCIntervalMillis + TimeUnit.MILLISECONDS.convert(10, TimeUnit.MINUTES);
+        
+        /*
+         * The amount of time that a lock may be active before considered expired. The sweep process will extend the locks for active
+         * sessions, so only unused locks will have an unmodified expiry time.
+         * 
+         * The default GC interval is expressed in hours, so we make the default age slightly less to avoid stale lock.
+         */
+        this.defaultLockAgeMillis = lockGCIntervalMillis - TimeUnit.MILLISECONDS.convert(10, TimeUnit.MINUTES);
     }
 
-    RepositoryLockManager with( JcrRepository.RunningState repository ) {
+    RepositoryLockManager with( JcrRepository.RunningState repository,
+                                RepositoryConfiguration.GarbageCollection gcConfig ) {
         assert this.systemWorkspaceName == repository.repositoryCache().getSystemWorkspaceName();
         assert this.processId == repository.context().getProcessId();
         PathFactory pathFactory = repository.context().getValueFactories().getPathFactory();
         Path locksPath = pathFactory.create(pathFactory.createRootPath(), JcrLexicon.SYSTEM, ModeShapeLexicon.LOCKS);
         assert this.locksPath.equals(locksPath);
-        return new RepositoryLockManager(repository);
+        return new RepositoryLockManager(repository, gcConfig);
     }
 
     /**
@@ -125,14 +150,15 @@ class RepositoryLockManager implements ChangeSetListener {
      * those locks that are significantly expired are removed.
      *
      * @param activeSessionIds the IDs of the sessions that are still active in this repository
+     * @throws TimeoutException if a timeout occurs attempting to lock nodes in ISPN
      */
-    protected void cleanupLocks( Set<String> activeSessionIds ) {
+    protected void cleanupLocks( Set<String> activeSessionIds ) throws TimeoutException {
         try {
             ExecutionContext context = repository.context();
 
             DateTimeFactory dates = context.getValueFactories().getDateFactory();
             DateTime now = dates.create();
-            DateTime newExpiration = dates.create(now, RepositoryConfiguration.LOCK_EXTENSION_INTERVAL_IN_MILLIS);
+            DateTime newExpiration = dates.create(now, this.lockExtensionIntervalMillis);
 
             PropertyFactory propertyFactory = context.getPropertyFactory();
             SessionCache systemSession = repository.createSystemSession(context, false);
@@ -140,8 +166,13 @@ class RepositoryLockManager implements ChangeSetListener {
 
             Map<String, List<NodeKey>> lockedNodesByWorkspaceName = new HashMap<>();
             // Iterate over the locks ...
-            MutableCachedNode locksNode = systemContent.mutableLocksNode();
-            for (ChildReference ref : locksNode.getChildReferences(systemSession)) {
+            CachedNode locksNode = systemContent.locksNode();
+            ChildReferences childReferences = locksNode.getChildReferences(systemSession);
+            if (childReferences.isEmpty()) {
+                // there are no locks, so nothing to do
+                return;
+            }
+            for (ChildReference ref : childReferences) {
                 NodeKey lockKey = ref.getKey();
                 CachedNode lockNode = systemSession.getNode(lockKey);
                 if (lockNode == null) {
@@ -179,23 +210,29 @@ class RepositoryLockManager implements ChangeSetListener {
             //persist all the changes to the locks from the system area
             systemSession.save();
 
-            //update each of nodes which has been unlocked
-            for (String workspaceName : lockedNodesByWorkspaceName.keySet()) {
-                SessionCache internalSession = repository.repositoryCache().createSession(context, workspaceName, false);
-                for (NodeKey lockedNodeKey : lockedNodesByWorkspaceName.get(workspaceName)) {
-                    //clear the internal cache
-                    this.locksByNodeKey.remove(lockedNodeKey);
+            if (!lockedNodesByWorkspaceName.isEmpty()) {
+                //update each of nodes which has been unlocked
+                for (String workspaceName : lockedNodesByWorkspaceName.keySet()) {
+                    SessionCache internalSession = repository.repositoryCache().createSession(context, workspaceName, false);
+                    for (NodeKey lockedNodeKey : lockedNodesByWorkspaceName.get(workspaceName)) {
+                        //clear the internal cache
+                        this.locksByNodeKey.remove(lockedNodeKey);
 
-                    CachedNode lockedNode = internalSession.getWorkspace().getNode(lockedNodeKey);
-                    if (lockedNode != null) {
-                        MutableCachedNode mutableLockedNode = internalSession.mutable(lockedNodeKey);
-                        mutableLockedNode.removeProperty(internalSession, JcrLexicon.LOCK_IS_DEEP);
-                        mutableLockedNode.removeProperty(internalSession, JcrLexicon.LOCK_OWNER);
-                        mutableLockedNode.unlock();
+                        CachedNode lockedNode = internalSession.getWorkspace().getNode(lockedNodeKey);
+                        if (lockedNode != null) {
+                            MutableCachedNode mutableLockedNode = internalSession.mutable(lockedNodeKey);
+                            mutableLockedNode.removeProperty(internalSession, JcrLexicon.LOCK_IS_DEEP);
+                            mutableLockedNode.removeProperty(internalSession, JcrLexicon.LOCK_OWNER);
+                            mutableLockedNode.unlock();
+                        }
                     }
+                    internalSession.save();
                 }
-                internalSession.save();
             }
+        } catch (TimeoutException te) {
+            // there was a timeout in ISPN while locking on some nodes (most likely mode:locks) so we should re-throw this to callers
+            // so they can react
+            throw te;
         } catch (Throwable t) {
             logger.error(t, JcrI18n.errorCleaningUpLocks, repository.name());
         }
@@ -278,7 +315,7 @@ class RepositoryLockManager implements ChangeSetListener {
         final String owner = ownerInfo != null ? ownerInfo : session.getUserID();
 
         final DateTimeFactory dateFactory = context.getValueFactories().getDateFactory();
-        long expirationTimeInMillis = RepositoryConfiguration.LOCK_EXPIRY_AGE_IN_MILLIS;
+        long expirationTimeInMillis = this.defaultLockAgeMillis;
         if (timeoutHint > 0 && timeoutHint < Long.MAX_VALUE) {
             expirationTimeInMillis = TimeUnit.MILLISECONDS.convert(timeoutHint, TimeUnit.SECONDS);
         }

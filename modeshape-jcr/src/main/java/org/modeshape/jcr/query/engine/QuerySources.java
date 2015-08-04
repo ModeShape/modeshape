@@ -87,12 +87,21 @@ public class QuerySources {
                                               NodeCache cache ) {
                 // Include only queryable nodes ...
                 Name nodePrimaryType = node.getPrimaryType(cache);
-                return node.isQueryable(cache) && nodeTypes.isQueryable(nodePrimaryType);
+                Set<Name> mixinTypes = node.getMixinTypes(cache);
+                return !node.isExcludedFromSearch(cache) && nodeTypes.isQueryable(nodePrimaryType, mixinTypes);
             }
 
             @Override
             public String toString() {
                 return "(queryable nodes)";
+            }
+
+            @Override
+            public boolean continueProcessingChildren( CachedNode node, NodeCache cache ) {
+                Name nodePrimaryType = node.getPrimaryType(cache);
+                Set<Name> mixinTypes = node.getMixinTypes(cache);
+                return !node.isExcludedFromSearch(cache) && 
+                       !nodeTypes.isQueryable(nodePrimaryType, mixinTypes);
             }
         };
         if (!this.includeSystemContent) {
@@ -103,14 +112,24 @@ public class QuerySources {
                                                   NodeCache cache ) {
                     // Include only queryable nodes that are NOT in the system workspace ...
                     Name nodePrimaryType = node.getPrimaryType(cache);
-                    return node.isQueryable(cache) && 
+                    Set<Name> mixinTypes = node.getMixinTypes(cache);
+                    return !node.isExcludedFromSearch(cache) && 
                            !node.getKey().getWorkspaceKey().equals(systemWorkspaceKey) && 
-                           nodeTypes.isQueryable(nodePrimaryType);
+                           nodeTypes.isQueryable(nodePrimaryType, mixinTypes);
                 }
 
                 @Override
                 public String toString() {
                     return "(queryable nodes not in workspace)";
+                }
+
+                @Override
+                public boolean continueProcessingChildren( CachedNode node, NodeCache cache ) {
+                    Name nodePrimaryType = node.getPrimaryType(cache);
+                    Set<Name> mixinTypes = node.getMixinTypes(cache);
+                    return  !node.isExcludedFromSearch(cache) &&
+                            !node.getKey().getWorkspaceKey().equals(systemWorkspaceKey) && 
+                            !nodeTypes.isQueryable(nodePrimaryType, mixinTypes);
                 }
             };
         } else {
@@ -503,6 +522,16 @@ public class QuerySources {
         }
 
         @Override
+        public boolean continueProcessingChildren( CachedNode node, NodeCache cache ) {
+            for (NodeFilter filter : filters) {
+                if (!filter.continueProcessingChildren(node, cache)) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        @Override
         public String toString() {
             return filters.isEmpty() ? "" : filters.toString();
         }
@@ -531,6 +560,11 @@ public class QuerySources {
                     return true;
                 }
                 return true;
+            }
+
+            @Override
+            public boolean continueProcessingChildren( CachedNode node, NodeCache cache ) {
+                return !shareableNodeKeys.contains(node.getKey());
             }
 
             @Override

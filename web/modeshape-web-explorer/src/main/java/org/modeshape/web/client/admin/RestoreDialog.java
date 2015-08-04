@@ -15,6 +15,7 @@
  */
 package org.modeshape.web.client.admin;
 
+import com.smartgwt.client.widgets.form.fields.CheckboxItem;
 import com.smartgwt.client.widgets.form.fields.StaticTextItem;
 import com.smartgwt.client.widgets.form.fields.TextItem;
 import com.smartgwt.client.widgets.form.fields.events.ClickEvent;
@@ -28,6 +29,8 @@ import org.modeshape.web.shared.ModalDialog;
 public class RestoreDialog extends ModalDialog {
     
     private final TextItem name = new TextItem("Backup name");
+    private final CheckboxItem incBinariesField = new CheckboxItem("Include binaries");
+    private final CheckboxItem reindexOnFinishField = new CheckboxItem("Reindex on finish");
     private final RestoreControl control;
     
     public RestoreDialog(RestoreControl control) {
@@ -37,12 +40,18 @@ public class RestoreDialog extends ModalDialog {
         StaticTextItem description = new StaticTextItem("");
         description.setValue("Specify backup name");
         
-        setControls(description, name);
+        setControls(description, name, incBinariesField, reindexOnFinishField);
     }
     
     @Override
     public void onConfirm(ClickEvent event) {
-        control.restore(name.getValueAsString());
+        //prepare clean options
+        RestoreParams params = new RestoreParams();
+        
+        params.setIncludeBinaries(incBinariesField.getValueAsBoolean());
+        params.setReindexOnFinish(reindexOnFinishField.getValueAsBoolean());
+        
+        control.restore(name.getValueAsString(), params);
     }
  
     

@@ -30,8 +30,6 @@ import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.EmptyAsset;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.jboss.shrinkwrap.resolver.api.maven.Maven;
-import org.jboss.shrinkwrap.resolver.api.maven.ScopeType;
-import org.jboss.shrinkwrap.resolver.api.maven.coordinate.MavenDependencies;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -65,12 +63,13 @@ public class DataSourceIntegrationTest {
 
     @Deployment
     public static WebArchive createDeployment() {
-        File[] testDeps = Maven.resolver().offline().loadPomFromFile("pom.xml").addDependencies(
-                MavenDependencies.createDependency("org.jboss.shrinkwrap.resolver:shrinkwrap-resolver-api-maven",
-                                                   ScopeType.TEST, false),
-                MavenDependencies.createDependency("org.modeshape:modeshape-jdbc-local", ScopeType.TEST, false),
-                MavenDependencies.createDependency("org.modeshape:modeshape-jdbc-local:test-jar:?", ScopeType.TEST, false))
-                               .resolve().withTransitivity().asFile();
+        File[] testDeps = Maven.configureResolver()
+                               .workOffline()
+                               .loadPomFromFile("pom.xml")
+                               .resolve("org.modeshape:modeshape-jdbc-local",
+                                        "org.modeshape:modeshape-jdbc-local:test-jar:tests:?")                 
+                               .withTransitivity()
+                               .asFile();
         return ShrinkWrap.create(WebArchive.class, "ds-test.war")
                          .addAsLibraries(testDeps)
                          .addAsWebInfResource(EmptyAsset.INSTANCE, ArchivePaths.create("beans.xml"))

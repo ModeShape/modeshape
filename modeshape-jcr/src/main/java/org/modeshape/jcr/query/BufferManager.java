@@ -428,9 +428,14 @@ public class BufferManager implements Serializers, AutoCloseable {
         return null;
     }
 
+    @Override
+    public Serializer<?> nullSafeSerializerFor( Class<?> type ) {
+        return null;
+    }
+
     /**
      * Obtain a serializer for the given value type.
-     * 
+     *
      * @param type the type; may not be null
      * @return the serializer
      */
@@ -439,6 +444,21 @@ public class BufferManager implements Serializers, AutoCloseable {
             return ((TupleFactory<?>)type).getSerializer(this);
         }
         return serializers.serializerFor(type.getType());
+    }
+
+    /**
+     * Obtain serializer for the given value type that can handle null values. This is used in Tuples
+     * serialization. (See MODE-2490). Note: {@code type} must itself still not be null, but the values
+     * to be serialized <emph>can</emph> be null.
+     *
+     * @param type the type; may not be null
+     * @return the serializer
+     */
+    public Serializer<?> nullSafeSerializerFor( TypeFactory<?> type ) {
+        if (type instanceof TupleFactory) {
+            return ((TupleFactory<?>)type).getSerializer(this);
+        }
+        return serializers.nullSafeSerializerFor(type.getType());
     }
 
     /**

@@ -4,7 +4,7 @@
 
     <groupId>org.modeshape.bom</groupId>
     <artifactId>modeshape-bom-embedded</artifactId>
-    <version>4.3-SNAPSHOT</version>
+    <version>4.4-SNAPSHOT</version>
 
     <name>ModeShape BOM for embedded usage</name>
 
@@ -50,16 +50,16 @@
 
     <properties>
         <jcr.version>2.0</jcr.version>
-        <infinispan.version>6.0.2.Final</infinispan.version>
-        <jgroups.version>3.4.3.Final</jgroups.version>
-        <c3p0.version>0.9.1.2</c3p0.version>  <!-- same as the one used by Infinispan's JDBC cache store -->
+        <infinispan.version>7.2.3.Final</infinispan.version>
+        <jgroups.version>3.6.2.Final</jgroups.version>
+        <c3p0.version>0.9.5</c3p0.version>  <!-- same as the one used by Infinispan's JDBC cache store -->
         <picketbox.version>4.0.21.Final</picketbox.version>
         <atomikos.version>3.8.0</atomikos.version>
-        <jbossjta.version>5.0.0.Final</jbossjta.version>
+        <jbossjta.version>5.1.0.Final</jbossjta.version>
         <mongo.driver.version>2.7.3</mongo.driver.version>
         <embedmongo.version>1.28</embedmongo.version>
         <cassandra-cql-driver>2.0.0-rc2</cassandra-cql-driver>
-        <tika.version>1.6</tika.version>
+        <tika.version>1.8</tika.version>
         <eclipse.equinox.common.version>3.3.0-v20070426</eclipse.equinox.common.version>
         <eclipse.jdt.core.version>3.3.0-v_771</eclipse.jdt.core.version>
         <eclipse.core.resources.version>3.3.0-v20070604</eclipse.core.resources.version>
@@ -265,6 +265,11 @@
             </dependency>
             <dependency>
                 <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-web-explorer</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.modeshape</groupId>
                 <artifactId>modeshape-web-jcr-rest-war</artifactId>
                 <version>${project.version}</version>
                 <type>war</type>
@@ -351,16 +356,6 @@
             </dependency>
             <dependency>
                 <groupId>org.infinispan</groupId>
-                <artifactId>infinispan-cachestore-cloud</artifactId>
-                <version>${infinispan.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.infinispan</groupId>
-                <artifactId>infinispan-cachestore-s3</artifactId>
-                <version>${infinispan.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.infinispan</groupId>
                 <artifactId>infinispan-cachestore-jpa</artifactId>
                 <version>${infinispan.version}</version>
             </dependency>
@@ -371,7 +366,7 @@
             </dependency>
             <!--Required by infinispan-cachestore-jdbc -->
             <dependency>
-                <groupId>c3p0</groupId>
+                <groupId>com.mchange</groupId>
                 <artifactId>c3p0</artifactId>
                 <version>${c3p0.version}</version>
             </dependency>
@@ -380,6 +375,11 @@
                 Optional dependencies for modeshape-jcr which are present here so that clients of the BOM use the same version
                 of those dependencies, in case certain features are used.
             -->
+            <dependency>
+                <groupId>org.apache.tika</groupId>
+                <artifactId>tika-core</artifactId>
+                <version>${tika.version}</version>
+            </dependency>
             <dependency>
                 <groupId>org.apache.tika</groupId>
                 <artifactId>tika-parsers</artifactId>

@@ -21,6 +21,7 @@ import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
@@ -39,9 +40,11 @@ import javax.jcr.Session;
 import javax.jcr.version.VersionManager;
 import javax.transaction.HeuristicMixedException;
 import javax.transaction.HeuristicRollbackException;
+import javax.transaction.InvalidTransactionException;
 import javax.transaction.NotSupportedException;
 import javax.transaction.RollbackException;
 import javax.transaction.SystemException;
+import javax.transaction.Transaction;
 import javax.transaction.TransactionManager;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
@@ -323,7 +326,8 @@ public class TransactionsTest extends SingleUseAbstractTest {
     @FixFor( "MODE-2050" )
     public void shouldBeAbleToUseNoClientTransactionsInMultithreadedEnvironment() throws Exception {
         InputStream configFile = getClass().getClassLoader()
-                                           .getResourceAsStream("config/repo-config-inmemory-local-environment-no-client-tx.json");
+                                           .getResourceAsStream(
+                                                   "config/repo-config-inmemory-local-environment-no-client-tx.json");
         startRepositoryWithConfiguration(configFile);
         int threadsCount = 2;
         ExecutorService executorService = Executors.newFixedThreadPool(threadsCount);
@@ -463,8 +467,86 @@ public class TransactionsTest extends SingleUseAbstractTest {
         assertEquals("bar", node2.getProperty("prop").getString());
         mainSession.logout();
     }
+
+    @Test
+    @FixFor( "MODE-2489" )
+    public void shouldSupportMultipleThreadsChangingTheSameUserTransaction() throws Exception {
+        // Start the repository using the JBoss Transactions transaction manager ...
+        InputStream config = getClass().getClassLoader().getResourceAsStream("config/repo-config-inmemory-jbosstxn.json");
+        assertThat(config, is(notNullValue()));
+        startRepositoryWithConfiguration(config);
+
+        // STEP 1: create and checkin parent nodes
+        Node root = session.getRootNode();
+        Node parent = root.addNode("parent");
+        parent.addMixin("mix:versionable");
+        parent.addNode("nested");
+        session.save();
+
+        VersionManager vm = session.getWorkspace().getVersionManager();
+        vm.checkin("/parent");
+        
+        // STEP 2: checkout, create child and checkin
+        vm = session.getWorkspace().getVersionManager();
+        vm.checkout("/parent");
+        Node nested = session.getNode("/parent/nested");
+        nested.addNode("child");
+        session.save();
+        vm.checkin("/parent");
+      
+        // long transaction
+        final Transaction longTx = startTransaction();
+
+        // STEP 3: resume, checkout, suspend
+        vm = session.getWorkspace().getVersionManager();
+        vm.checkout("/parent");
+        session.removeItem("/parent/nested/child");
+        session.save();
+        suspendTransaction();
+        
+        // STEP 4: check if child is still exists outside of longTx
+        Session s = repository.login();
+        s.getNode("/parent/nested/child");
+        s.logout();
+
+        // STEP 5: resume, checkin, commit
+        Thread t5 = new Thread() {
+            @Override
+            public void run() {
+                try {
+                    resumeTransaction(longTx);
+                    VersionManager vm = session.getWorkspace().getVersionManager();
+                    vm.checkin("/parent");
+                    commitTransaction();
+                } catch (Exception e) {
+                   throw new RuntimeException(e);
+                }
+            }
+        };
+        t5.start();
+        t5.join();
+
+        // STEP 6: check if child is gone
+        try {
+            Session s1 = repository.login();
+            s1.getNode("/parent/nested/child");
+            fail("should fail");
+        } catch (PathNotFoundException e) {
+            // expected
+        }
+    }
+
+    protected Transaction suspendTransaction() throws SystemException {
+        TransactionManager txnMgr = transactionManager();
+        return txnMgr.suspend();
+    }
+
+    protected void resumeTransaction(Transaction t) throws InvalidTransactionException, IllegalStateException, SystemException {
+        TransactionManager txnMgr = transactionManager();
+        txnMgr.resume(t);
+    }
     
-    protected void startTransaction() throws NotSupportedException, SystemException {
+    protected Transaction  startTransaction() throws NotSupportedException, SystemException {
         TransactionManager txnMgr = transactionManager();
         // Change this to true if/when debugging ...
         if (true) {
@@ -475,6 +557,7 @@ public class TransactionsTest extends SingleUseAbstractTest {
             }
         }
         txnMgr.begin();
+        return txnMgr.getTransaction();
     }
 
     protected void commitTransaction()

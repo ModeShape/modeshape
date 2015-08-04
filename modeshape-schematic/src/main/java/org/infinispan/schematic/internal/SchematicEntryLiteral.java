@@ -31,6 +31,7 @@ import org.infinispan.schematic.internal.document.BasicDocument;
 import org.infinispan.schematic.internal.document.DocumentEditor;
 import org.infinispan.schematic.internal.document.MutableDocument;
 import org.infinispan.schematic.internal.marshall.Ids;
+import org.infinispan.util.concurrent.TimeoutException;
 
 /**
  * The primary implementation of {@link SchematicEntry}.
@@ -56,12 +57,6 @@ public class SchematicEntryLiteral implements SchematicEntry {
     }
 
     private volatile MutableDocument value;
-    volatile boolean copied = false;
-    volatile boolean removed = false;
-
-    public SchematicEntryLiteral() {
-        value = new BasicDocument(FieldName.METADATA, new BasicDocument(), FieldName.CONTENT, new BasicDocument());
-    }
 
     public SchematicEntryLiteral( String key ) {
         this(key, new BasicDocument());
@@ -106,10 +101,6 @@ public class SchematicEntryLiteral implements SchematicEntry {
     @Override
     public String toString() {
         return "SchematicEntryLiteral" + value;
-    }
-
-    public void markRemoved( boolean b ) {
-        removed = b;
     }
 
     @Override
@@ -159,7 +150,9 @@ public class SchematicEntryLiteral implements SchematicEntry {
                                      AdvancedCache<String, SchematicEntry> cache,
                                      AdvancedCache<String, SchematicEntry> lockingCache ) {
         if (lockingCache != null) {
-            lockingCache.lock(key);
+            if (!lockingCache.lock(key)) {
+                throw new TimeoutException("Unable to aquire lock on " + key);
+            }
         }
         MutableDocument copy = (MutableDocument)value.clone();
         SchematicEntryLiteral newEntry = new SchematicEntryLiteral(copy);

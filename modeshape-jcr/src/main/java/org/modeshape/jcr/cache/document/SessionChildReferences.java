@@ -16,6 +16,7 @@
 package org.modeshape.jcr.cache.document;
 
 import java.util.Iterator;
+import java.util.Set;
 import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.jcr.cache.ChildReference;
 import org.modeshape.jcr.cache.ChildReferences;
@@ -40,13 +41,16 @@ public class SessionChildReferences extends AbstractChildReferences {
     private final ChildReferences persisted;
     private final MutableChildReferences appended;
     private final SessionNode.ChangedChildren changedChildren;
+    private final boolean allowsSNS;
 
     public SessionChildReferences( ChildReferences persisted,
                                    MutableChildReferences appended,
-                                   SessionNode.ChangedChildren changedChildren ) {
+                                   SessionNode.ChangedChildren changedChildren,
+                                   boolean allowsSNS) {
         this.persisted = persisted != null ? persisted : ImmutableChildReferences.EMPTY_CHILD_REFERENCES;
         this.appended = appended;
         this.changedChildren = changedChildren;
+        this.allowsSNS = allowsSNS;
     }
 
     @Override
@@ -93,7 +97,10 @@ public class SessionChildReferences extends AbstractChildReferences {
     public ChildReference getChild( Name name,
                                     int snsIndex,
                                     Context context ) {
-        if (changedChildren != null) context = new WithChanges(context, changedChildren);
+        if (!allowsSNS && snsIndex > 1) {
+            return null;
+        }
+        if (changedChildren != null && !changedChildren.isEmpty()) context = new WithChanges(context, changedChildren);
         // First look in the delegate references ...
         ChildReference ref = persisted.getChild(name, snsIndex, context);
         if (ref == null) {
@@ -118,18 +125,20 @@ public class SessionChildReferences extends AbstractChildReferences {
 
     @Override
     public boolean hasChild( NodeKey key ) {
-        return getChild(key, new BasicContext()) != null;
+        return persisted.hasChild(key) ||
+               (appended != null && appended.hasChild(key)) ||
+               (changedChildren != null && changedChildren.inserted(key) != null);
     }
 
     @Override
     public ChildReference getChild( NodeKey key ) {
-        return getChild(key, new BasicContext());
+        return getChild(key, defaultContext());
     }
 
     @Override
     public ChildReference getChild( NodeKey key,
                                     Context context ) {
-        if (changedChildren != null) context = new WithChanges(context, changedChildren);
+        if (changedChildren != null && !changedChildren.isEmpty()) context = new WithChanges(context, changedChildren);
         // First look in the delegate references ...
         // Note that we don't know the name of the child yet, so we'll have to come back
         // to the persisted node after we know the name ...
@@ -146,8 +155,21 @@ public class SessionChildReferences extends AbstractChildReferences {
                         // There were some persisted with the same name, and we didn't find these
                         // when looking in the persisted node above. So adjust the SNS index ...
 
-                        //we need to take into account that the same node might be removed (in case of an reorder to the end)
-                        int numSnsInRemoved = (changedChildren != null && changedChildren.getRemovals().contains(key)) ? 1 : 0;
+                        int numSnsInRemoved = 0;
+                        if (changedChildren != null && !changedChildren.isEmpty()) {
+                            Set<NodeKey> removals = changedChildren.getRemovals();
+                            //we need to take into account that the same node might be removed (in case of an reorder to the end)
+                            if (removals.contains(key)) {
+                                numSnsInRemoved = 1;
+                            } 
+                            // for each of the existing (persisted) SNS we need to see if any of them were already removed
+                            for (int i = 1; i <= numSnsInPersisted; i++) {
+                                NodeKey persistedChildKey = persisted.getChild(ref.getName(), i).getKey();
+                                if (!key.equals(persistedChildKey) && removals.contains(persistedChildKey)) {
+                                    numSnsInRemoved++;
+                                }
+                            }
+                        }
                         ref = ref.with(numSnsInPersisted + ref.getSnsIndex() - numSnsInRemoved);
                     }
                 } else if (changedChildren != null && changedChildren.insertionCount() > 0) {
@@ -163,7 +185,7 @@ public class SessionChildReferences extends AbstractChildReferences {
     @Override
     public Iterator<ChildReference> iterator( Name name,
                                               Context context ) {
-        if (changedChildren != null) context = new WithChanges(context, changedChildren);
+        if (changedChildren != null && !changedChildren.isEmpty()) context = new WithChanges(context, changedChildren);
         return createIterator(name, context);
     }
 
@@ -182,7 +204,7 @@ public class SessionChildReferences extends AbstractChildReferences {
 
     @Override
     public Iterator<ChildReference> iterator( Context context ) {
-        if (changedChildren != null) context = new WithChanges(context, changedChildren);
+        if (changedChildren != null && !changedChildren.isEmpty()) context = new WithChanges(context, changedChildren);
         return createIterator(context);
     }
 
@@ -222,5 +244,10 @@ public class SessionChildReferences extends AbstractChildReferences {
             }
         }
         return sb;
+    }
+
+    @Override
+    public boolean allowsSNS() {
+        return allowsSNS;
     }
 }

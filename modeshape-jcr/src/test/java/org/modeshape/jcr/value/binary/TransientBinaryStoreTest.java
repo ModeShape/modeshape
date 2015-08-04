@@ -29,6 +29,7 @@ public class TransientBinaryStoreTest extends FileSystemBinaryStoreTest {
         directory.mkdirs();
         trash = new File(directory, FileSystemBinaryStore.TRASH_DIRECTORY_NAME);
         store.setMinimumBinarySizeInBytes(MIN_BINARY_SIZE);
+        store.setMimeTypeDetector(DEFAULT_DETECTOR);
         print = false;
     }
 }

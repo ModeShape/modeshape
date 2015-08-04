@@ -481,10 +481,12 @@ public class FileSystemBinaryStore extends AbstractBinaryStore {
             return;
         }
         boolean pruneTrashRequired = false;
+        boolean pruneMainRequired = false;
         File[] files = parentDirectory.listFiles();
         if (files == null) {
             return;
         }
+        File mainDirectoryToPrune = null;
         for (File fileOrDir : files) {
             if (fileOrDir == null || !fileOrDir.exists()) {
                 continue;
@@ -505,8 +507,10 @@ public class FileSystemBinaryStore extends AbstractBinaryStore {
                             if (persistedFile.exists()) {
                                 // only remove the trash files if we successfully deleted the main file
                                 // otherwise we'll try this again later on
-                                if (persistedFile.delete() && removeAllTrashFilesFor(key)) {
+                                if (persistedFile.delete() && removeTrashFile(key)) {
                                     pruneTrashRequired = true;
+                                    pruneMainRequired = true;
+                                    mainDirectoryToPrune = persistedFile.getParentFile();
                                 }
                             }
                         } finally {
@@ -524,6 +528,9 @@ public class FileSystemBinaryStore extends AbstractBinaryStore {
         if (pruneTrashRequired) {
             // at least one file was removed, so cleanup the dir structure
             pruneEmptyDirectories(trash, parentDirectory);
+        }
+        if (pruneMainRequired && mainDirectoryToPrune != null) {
+            pruneEmptyDirectories(directory, mainDirectoryToPrune);
         }
     }
 

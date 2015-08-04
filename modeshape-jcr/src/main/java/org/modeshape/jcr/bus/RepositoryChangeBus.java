@@ -23,8 +23,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import org.modeshape.common.collection.ring.RingBuffer;
-import org.modeshape.common.collection.ring.RingBufferBuilder;
 import org.modeshape.common.logging.Logger;
+import org.modeshape.jcr.RepositoryStatistics;
+import org.modeshape.jcr.api.monitor.ValueMetric;
 import org.modeshape.jcr.cache.change.ChangeSet;
 import org.modeshape.jcr.cache.change.ChangeSetListener;
 
@@ -36,11 +37,12 @@ import org.modeshape.jcr.cache.change.ChangeSetListener;
  */
 public final class RepositoryChangeBus implements ChangeBus {
 
+    public static final int DEFAULT_RING_BUFFER_SIZE = 1 << 10; // 1024
+
     protected static final Logger LOGGER = Logger.getLogger(RepositoryChangeBus.class);
-
-    private static final int DEFAULT_SIZE = 1 << 10; // 1024
-
+    
     private final AtomicBoolean shutdown = new AtomicBoolean(true);
+    
     /**
      * We use a lock for {@link #register(ChangeSetListener)}, {@link #registerInThread(ChangeSetListener)},
      * {@link #unregister(ChangeSetListener)}, {@link #start()} and {@link #shutdown()} to ensure that a single listener is
@@ -51,9 +53,10 @@ public final class RepositoryChangeBus implements ChangeBus {
     private final Lock registrationLock = new ReentrantLock();
     private final Set<ChangeSetListener> inThreadListeners = new CopyOnWriteArraySet<>();
     private final RingBuffer<ChangeSet, ChangeSetListener> ringBuffer;
+    private final RepositoryStatistics statistics;
 
     /**
-     * Creates new change bus
+     * Creates a new change bus
      * 
      * @param repositoryName the repository name; may not be null
      * @param executor the {@link java.util.concurrent.ExecutorService} which will be used internally to submit workers to
@@ -61,8 +64,30 @@ public final class RepositoryChangeBus implements ChangeBus {
      */
     public RepositoryChangeBus( String repositoryName,
                                 ExecutorService executor ) {
-        this.ringBuffer = RingBufferBuilder.withMultipleProducers(executor, new ChangeSetListenerConsumerAdapter())
-                                           .ofSize(DEFAULT_SIZE).named(repositoryName).garbageCollect(true).build();
+        this(repositoryName, executor, null, DEFAULT_RING_BUFFER_SIZE);
+    }
+
+    /**
+     * Creates a new change bus
+     * 
+     * @param repositoryName the repository name; may not be null
+     * @param executor the {@link java.util.concurrent.ExecutorService} which will be used internally to submit workers to
+     *        dispatching events to listeners.
+     * @param statistics a {@link RepositoryStatistics} instance used to record various metrics; may be null 
+     * @param bufferSize the total size of the ring buffer
+     */
+    public RepositoryChangeBus( String repositoryName,
+                                ExecutorService executor,
+                                RepositoryStatistics statistics,
+                                int bufferSize) {
+        this.ringBuffer = RepositoryRingBufferBuilder.withMultipleProducers(executor, 
+                                                                            new ChangeSetListenerConsumerAdapter(),
+                                                                            statistics)
+                                                     .ofSize(bufferSize)
+                                                     .named(repositoryName)
+                                                     .garbageCollect(true)
+                                                     .build();
+        this.statistics = statistics;
     }
 
     @Override
@@ -76,7 +101,11 @@ public final class RepositoryChangeBus implements ChangeBus {
         if (observer == null || shutdown.get()) return false;
         try {
             registrationLock.lock();
-            return ringBuffer.addConsumer(observer);
+            boolean result = ringBuffer.addConsumer(observer);
+            if (result && statistics != null) {
+                statistics.increment(ValueMetric.LISTENER_COUNT);               
+            }      
+            return result;
         } finally {
             registrationLock.unlock();
         }
@@ -87,7 +116,11 @@ public final class RepositoryChangeBus implements ChangeBus {
         if (observer == null || shutdown.get()) return false;
         try {
             registrationLock.lock();
-            return inThreadListeners.add(observer);
+            boolean result = inThreadListeners.add(observer);
+            if (result && statistics != null) {
+                statistics.increment(ValueMetric.LISTENER_COUNT);
+            }
+            return result;
         } finally {
             registrationLock.unlock();
         }
@@ -98,7 +131,11 @@ public final class RepositoryChangeBus implements ChangeBus {
         if (observer == null || shutdown.get()) return false;
         try {
             registrationLock.lock();
-            return ringBuffer.remove(observer) || inThreadListeners.remove(observer);
+            boolean result =  ringBuffer.remove(observer) || inThreadListeners.remove(observer);
+            if (result && statistics != null) {
+                statistics.decrement(ValueMetric.LISTENER_COUNT);                
+            }
+            return result;
         } finally {
             registrationLock.unlock();
         }
@@ -123,6 +160,10 @@ public final class RepositoryChangeBus implements ChangeBus {
             inThreadListeners.clear();
             // Shutdown the ring buffer waiting for running threads to complete
             ringBuffer.shutdown();
+            // Clear the metric around the total number of listeners
+            if (statistics != null) {
+                statistics.set(ValueMetric.LISTENER_COUNT, 0);
+            }
         } finally {
             registrationLock.unlock();
         }
@@ -138,6 +179,11 @@ public final class RepositoryChangeBus implements ChangeBus {
         // Add the change set into the buffer so it can be processed by the asynchronous listeners ...
         ringBuffer.add(changeSet);
 
+        if (statistics != null) {
+            // Increment the statistics
+            statistics.increment(ValueMetric.EVENT_COUNT);
+        }
+        
         // And process all of the in-thread listeners ...
         for (ChangeSetListener listener : inThreadListeners) {
             try {

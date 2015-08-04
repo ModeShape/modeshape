@@ -50,14 +50,5 @@ public class AdminView extends VLayout {
         return console.contents().repository();
     }
     
-    public void restore( String name ) {
-        console.jcrService().restore(console.repository(), name, new BaseCallback<Object>() {
-            @Override
-            public void onSuccess( Object result ) {
-                SC.say("Complete");
-            }
-        });
-    }
-
 }
 
