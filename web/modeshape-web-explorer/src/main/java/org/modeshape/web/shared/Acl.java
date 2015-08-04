@@ -36,6 +36,10 @@ public class Acl implements Serializable {
         policies.put(policy.getPrincipal(), policy);
     }
     
+    public void removePolicy( String principal ) {
+        policies.remove(principal);
+    }
+    
     public Policy getPolicy(String principal){
         return policies.get(principal);
     }

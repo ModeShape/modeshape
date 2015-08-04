@@ -15,20 +15,18 @@
  */
 package org.modeshape.web.client.admin;
 
+import com.smartgwt.client.widgets.layout.VLayout;
 import org.modeshape.web.client.Console;
 import org.modeshape.web.client.JcrServiceAsync;
-import org.modeshape.web.client.View;
-import org.modeshape.web.client.ViewPort;
 
 /**
  * @author kulikov
  */
-public class AdminView extends View {
+public class AdminView extends VLayout {
 
     private final Console console;
 
-    public AdminView( Console console, final JcrServiceAsync jcrService, ViewPort viewPort ) {
-        super(viewPort, null);
+    public AdminView( Console console) {
         this.console = console;
 
         addMember(new BackupControl(this));

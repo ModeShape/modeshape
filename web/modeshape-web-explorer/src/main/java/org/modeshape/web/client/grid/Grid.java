@@ -17,7 +17,6 @@ package org.modeshape.web.client.grid;
 
 import com.smartgwt.client.types.Alignment;
 import com.smartgwt.client.types.VerticalAlignment;
-import com.smartgwt.client.util.SC;
 import com.smartgwt.client.widgets.Label;
 import com.smartgwt.client.widgets.layout.HLayout;
 import com.smartgwt.client.widgets.layout.VLayout;
@@ -101,20 +100,22 @@ public abstract class Grid<R extends HLayout, V> extends VLayout {
         }
 
         if (values.isEmpty()) {
+            viewPort.addMember(records[0]);
             updateRecord(-1, records[0], null);
+            records[0].show();
             return;
         }
+
+        viewPort.addMember(records[0]);
+        records[0].show();
+        updateRecord(0, records[0], null);
         
-        int i = 0;
-        try {
+        int i = 1;
         for (V value : values) {
             viewPort.addMember(records[i]);
-            updateRecord(i, records[i], value);
             records[i].show();
+            updateRecord(i, records[i], value);
             i++;
-        }
-        } catch (Exception e) {
-            SC.say(Integer.toString(i));
         }
     }
     

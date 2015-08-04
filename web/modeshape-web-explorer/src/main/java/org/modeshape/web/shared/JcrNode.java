@@ -21,7 +21,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 
 /**
- * Jcr Node value object.
+ * Jcr node value object.
  * 
  * @author kulikov
  */
@@ -34,7 +34,6 @@ public class JcrNode implements Serializable, IsSerializable {
     private String path;
     private String primaryType;
     
-    private JcrAccessControlList acl;
     private Acl acll;
     
     private String[] mixins;
@@ -99,14 +98,6 @@ public class JcrNode implements Serializable, IsSerializable {
         this.properties = properties;
     }
     
-    public JcrAccessControlList getAccessList() {
-        return acl;
-    }
-    
-    public void setAcessControlList(JcrAccessControlList acl) {
-        this.acl = acl;
-    }
-    
     public Acl getAcl() {
         return acll;
     }
@@ -121,6 +112,15 @@ public class JcrNode implements Serializable, IsSerializable {
     
     public String[] getMixins() {
         return mixins;
+    }
+    
+    public boolean hasBinaryContent() {
+        for (JcrProperty p : properties) {
+            if (p.isBinary()) {
+                return true;
+            }
+        }
+        return false;
     }
     
     public void setPropertyDefs(String[] propertyDefs) {

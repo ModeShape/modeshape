@@ -18,6 +18,7 @@ package org.modeshape.web;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
+import java.util.logging.Logger;
 import javax.jcr.Binary;
 import javax.jcr.Node;
 import javax.jcr.PathNotFoundException;
@@ -36,7 +37,8 @@ import org.modeshape.web.server.Connector;
 public class BinaryContentServlet extends HttpServlet {
     
     private static final long serialVersionUID = 1L;
-
+    private static Logger log = Logger.getLogger("Binary");
+    
     /**
      * Processes requests for both HTTP
      * <code>GET</code> and
@@ -49,6 +51,7 @@ public class BinaryContentServlet extends HttpServlet {
      */
     protected void processRequest(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
+            log.severe("Binary content has been requested");
         
         String repository = request.getParameter("repository");
         String workspace = request.getParameter("workspace");
@@ -85,6 +88,7 @@ public class BinaryContentServlet extends HttpServlet {
                 response.getOutputStream().write(b);
             }
 
+            log.severe("Sent binary content");
             binary.dispose();
 
         } catch (Exception e) {

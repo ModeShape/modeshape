@@ -30,6 +30,7 @@ public class JcrPermission implements Serializable {
     private String name;
     private String displayName;
     private String jcrName;
+    private boolean status;
     
     private ArrayList<JcrPermission> aggregates = new ArrayList<JcrPermission>();
     
@@ -136,6 +137,14 @@ public class JcrPermission implements Serializable {
     
     public String getJcrName() {
         return jcrName;
+    }
+    
+    public boolean getStatus() {
+        return status;
+    }
+    
+    public void setStatus(boolean status) {
+        this.status = status;
     }
     
     public boolean matches(JcrPermission permission) {
