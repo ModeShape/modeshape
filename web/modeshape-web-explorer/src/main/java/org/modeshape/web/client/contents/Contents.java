@@ -124,7 +124,6 @@ public class Contents extends VLayout {
 
     private void updateControls() {
         wsp.setHashChanges(session().hasChanges());
-        SC.say("Enabled? " + session().hasChanges());
     }
     
     private void showLoadIcon() {
