@@ -19,6 +19,7 @@ import org.modeshape.web.shared.JcrNode;
 import com.google.gwt.user.client.rpc.AsyncCallback;
 import java.util.Collection;
 import java.util.Date;
+import org.modeshape.web.shared.BackupParams;
 import org.modeshape.web.shared.JcrNodeType;
 import org.modeshape.web.shared.JcrPermission;
 import org.modeshape.web.shared.JcrRepositoryDescriptor;

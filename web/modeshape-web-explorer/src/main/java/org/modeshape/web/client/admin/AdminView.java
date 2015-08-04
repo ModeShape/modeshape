@@ -15,11 +15,9 @@
  */
 package org.modeshape.web.client.admin;
 
-import com.smartgwt.client.util.SC;
 import com.smartgwt.client.widgets.layout.VLayout;
 import org.modeshape.web.client.Console;
 import org.modeshape.web.client.JcrServiceAsync;
-import org.modeshape.web.shared.BaseCallback;
 
 /**
  * @author kulikov

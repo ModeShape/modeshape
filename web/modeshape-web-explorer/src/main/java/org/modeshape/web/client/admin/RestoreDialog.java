@@ -20,6 +20,7 @@ import com.smartgwt.client.widgets.form.fields.StaticTextItem;
 import com.smartgwt.client.widgets.form.fields.TextItem;
 import com.smartgwt.client.widgets.form.fields.events.ClickEvent;
 import org.modeshape.web.shared.ModalDialog;
+import org.modeshape.web.shared.RestoreParams;
 
 /**
  * Dialog asking backup directory.
