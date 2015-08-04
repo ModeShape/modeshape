@@ -20,7 +20,6 @@ import com.google.gwt.user.client.rpc.AsyncCallback;
 import java.util.Collection;
 import java.util.Date;
 import org.modeshape.web.shared.BackupParams;
-import org.modeshape.web.shared.JcrAccessControlList;
 import org.modeshape.web.shared.JcrNodeType;
 import org.modeshape.web.shared.JcrPermission;
 import org.modeshape.web.shared.JcrRepositoryDescriptor;
@@ -75,9 +74,7 @@ public interface JcrServiceAsync {
     public void setProperty(JcrNode node, String name, Date value, AsyncCallback<?> cb);
     
     public void addAccessList(String repository, String workspace, String path, String principal, AsyncCallback<?> cb);
-
-    public void updateAccessList(String repository, String workspace, String path, JcrAccessControlList acl, AsyncCallback<?> cb);
-
+    public void removeAccessList( String repository, String workspace, String path, String principal, AsyncCallback<?> cb );
     public void updateAccessList(String repository, String workspace, String path, String principal,
             JcrPermission permission, boolean enabled, AsyncCallback<?> cb);
 

@@ -164,3 +164,22 @@ h1 {
     font-weight: bold;
     cursor: pointer;    
 }
+
+.longtext {
+    white-space: nowrap; /* Отменяем перенос текста */
+    overflow: hidden; /* Обрезаем содержимое */
+    padding: 5px; /* Поля */
+    text-overflow: ellipsis; /* Многоточие */
+}
+
+.longtext:after {
+    content: "...";
+    background-color: #fff;
+    position: absolute;
+    bottom: 0;
+    right: 0;
+}
+
+.session-hint {
+    border-top: 1px solid #f0c36d;
+}

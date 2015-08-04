@@ -23,7 +23,7 @@ import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
 import org.modeshape.jcr.ModeShapeEngine;
 import org.modeshape.jcr.NoSuchRepositoryException;
-import org.modeshape.web.client.RemoteException;
+import org.modeshape.web.shared.RemoteException;
 import org.modeshape.web.shared.RepositoryName;
 
 /**

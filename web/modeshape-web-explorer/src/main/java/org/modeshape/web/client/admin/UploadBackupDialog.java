@@ -23,7 +23,7 @@ import com.smartgwt.client.widgets.form.fields.HiddenItem;
 import com.smartgwt.client.widgets.form.fields.StaticTextItem;
 import com.smartgwt.client.widgets.form.fields.UploadItem;
 import com.smartgwt.client.widgets.form.fields.events.ClickEvent;
-import org.modeshape.web.client.ModalDialog;
+import org.modeshape.web.shared.ModalDialog;
 
 /**
  * Dialog asking backup directory.

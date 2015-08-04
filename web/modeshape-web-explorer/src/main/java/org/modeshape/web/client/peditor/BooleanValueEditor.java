@@ -17,7 +17,7 @@ package org.modeshape.web.client.peditor;
 
 import com.smartgwt.client.widgets.form.fields.CheckboxItem;
 import com.smartgwt.client.widgets.form.fields.events.ClickEvent;
-import org.modeshape.web.client.Contents;
+import org.modeshape.web.client.contents.Contents;
 import org.modeshape.web.shared.JcrNode;
 
 /**

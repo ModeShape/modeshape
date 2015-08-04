@@ -15,6 +15,7 @@
  */
 package org.modeshape.web.client.peditor;
 
+import com.smartgwt.client.widgets.Canvas;
 import com.smartgwt.client.widgets.Window;
 import com.smartgwt.client.widgets.events.CloseClickHandler;
 import com.smartgwt.client.widgets.events.CloseClientEvent;
@@ -24,8 +25,9 @@ import com.smartgwt.client.widgets.form.fields.SpacerItem;
 import com.smartgwt.client.widgets.form.fields.SubmitItem;
 import com.smartgwt.client.widgets.form.fields.events.ClickEvent;
 import com.smartgwt.client.widgets.form.fields.events.ClickHandler;
+import com.smartgwt.client.widgets.layout.HLayout;
 import com.smartgwt.client.widgets.layout.VStack;
-import org.modeshape.web.client.Contents;
+import org.modeshape.web.client.contents.Contents;
 
 /**
  *
@@ -39,12 +41,16 @@ public abstract class BaseEditor {
     private final SubmitItem confirmButton = new SubmitItem("OK");
     private final SubmitItem cancelButton = new SubmitItem("Cancel");
     protected final VStack vStack = new VStack();
-
+    private HLayout panel = new HLayout();
+    
     public BaseEditor(String title, int width, int height) {
         form.setNumCols(2);
         form.setPadding(25);
 
+        panel.setVisible(false);
+        
         vStack.setTop(10);
+        vStack.addMember(panel);
         vStack.addMember(form);
 
         window.addChild(vStack);
@@ -88,7 +94,53 @@ public abstract class BaseEditor {
         });
     }
 
-    public static ValueEditor<String> getValueEditor(String type, Contents contents ) {
+    
+    public BaseEditor(String title) {        
+        panel.setWidth100();
+        panel.setHeight100();
+        
+        vStack.setTop(10);
+
+        window.addChild(vStack);
+        window.setTitle(title);
+        window.setCanDragReposition(true);
+        window.setCanDragResize(false);
+        window.setShowMinimizeButton(false);
+        window.setShowCloseButton(true);
+        window.setAutoCenter(true);
+
+        window.addCloseClickHandler(new CloseClickHandler() {
+            @Override
+            public void onCloseClick(CloseClientEvent event) {
+                hide();
+            }
+        });
+
+        vStack.addMember(panel);
+    }
+    
+    public void setWidth(int width) {
+        window.setWidth(width);
+    }
+    
+    public void setHeight(int height) {
+        window.setHeight(height);
+    }
+    
+    public void setTop(int top) {
+        vStack.setTop(top);
+    }
+    
+    public void addMember(Canvas canvas) {
+        vStack.addMember(canvas);
+    }
+    
+    
+    public static ValueEditor<String> getValueEditor(String pname, String type, Contents contents ) {
+        if (pname.equals("jcr:mixinTypes")) {
+            return new MixinValueEditor(contents);
+        }
+        
         if (type.equals("Boolean")) {
             return new BooleanValueEditor(contents);
         }
