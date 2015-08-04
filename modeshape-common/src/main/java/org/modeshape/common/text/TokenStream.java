@@ -371,7 +371,6 @@ public class TokenStream {
     public static final int ANY_TYPE = Integer.MIN_VALUE;
 
     protected final String inputString;
-    protected final String inputUppercased;
     private final char[] inputContent;
     private final boolean caseSensitive;
     private final Tokenizer tokenizer;
@@ -402,7 +401,6 @@ public class TokenStream {
         this.inputString = content;
         this.inputContent = content.toCharArray();
         this.caseSensitive = caseSensitive;
-        this.inputUppercased = caseSensitive ? inputString : content.toUpperCase();
         this.tokenizer = tokenizer;
     }
 
@@ -1672,7 +1670,7 @@ public class TokenStream {
         }
 
         @Override
-        public final boolean matches( String expected ) {
+        public boolean matches(String expected) {
             return matchString().substring(startIndex, endIndex).equals(expected);
         }
 
@@ -1711,8 +1709,8 @@ public class TokenStream {
         }
 
         @Override
-        protected String matchString() {
-            return inputUppercased;
+        public boolean matches( String expected ) {
+            return matchString().substring(startIndex(), endIndex()).toUpperCase().equals(expected);
         }
 
         @Override
