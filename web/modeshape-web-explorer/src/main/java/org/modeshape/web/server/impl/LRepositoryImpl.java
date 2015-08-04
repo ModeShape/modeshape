@@ -26,7 +26,7 @@ import javax.jcr.Workspace;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.jcr.JcrRepository;
 import org.modeshape.jcr.api.RepositoryManager;
-import org.modeshape.web.client.RemoteException;
+import org.modeshape.web.shared.RemoteException;
 import org.modeshape.web.server.LRepository;
 
 /**

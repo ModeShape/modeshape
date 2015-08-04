@@ -25,7 +25,7 @@ import javax.servlet.ServletContext;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.jcr.ModeShapeEngine;
 import org.modeshape.jcr.RepositoryConfiguration;
-import org.modeshape.web.client.RemoteException;
+import org.modeshape.web.shared.RemoteException;
 import org.modeshape.web.server.Connector;
 import org.modeshape.web.server.LRepository;
 import org.modeshape.web.shared.RepositoryName;

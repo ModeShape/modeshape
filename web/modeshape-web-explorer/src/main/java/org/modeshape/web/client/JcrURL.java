@@ -28,47 +28,7 @@ public class JcrURL implements Serializable {
     private String repository;
     private String workspace;
     private String path;
-    
-    public void parse2(String uri) {
-        String path = uri;
-        path = path.replace("http://", "");
-        int pos = path.indexOf("/");
-        path = path.substring(pos);
-        parse(path);
-    }
-    
-    public void parse(String uri) {
-        if (uri.startsWith("/")) {
-            uri = uri.substring(1);
-        }
         
-        int pos = uri.indexOf("/");
-        if (pos == -1) {
-            context = uri;
-            repository = "";
-            workspace = "";
-            path="/";
-            return;
-        }
-        
-        if (pos > 0) {
-            context = uri.substring(0, pos);
-            uri = uri.substring(pos + 1);
-        }
-        
-        //expecting tree here
-         uri = uri.substring(5);
-        
-         pos = uri.indexOf("/ws-");
-         repository = uri.substring(0, pos);
-         
-         uri = uri.substring(repository.length() + 1);
-         pos = uri.indexOf("/");
-         
-         workspace = uri.substring(3, pos);
-         path = uri.substring(workspace.length() + 3);
-    }
-    
     public JcrURL() {
     }
     
@@ -120,7 +80,7 @@ public class JcrURL implements Serializable {
      * @return the path of the node
      */
     public String getPath() {
-        return path;
+        return path == null ? "/" : path;
     }
     
     /**
@@ -130,6 +90,56 @@ public class JcrURL implements Serializable {
      */
     public void setPath(String path) {
         this.path = path;
+    }
+    
+    /**
+     * Parses given URL and extracts repository name, workspace and path.
+     * 
+     * @param uri URL started with http prefix.
+     */
+    public void parse2(String uri) {
+        String path = uri;
+        path = path.replace("http://", "");
+        int pos = path.indexOf("/");
+        path = path.substring(pos);
+        parse(path);
+    }
+    
+    /**
+     * Parses given URL and extracts repository name, workspace and path.
+     * 
+     * @param uri URL started with prefix.
+     */
+    public void parse(String uri) {
+        if (uri.startsWith("/")) {
+            uri = uri.substring(1);
+        }
+        
+        int pos = uri.indexOf("/");
+        if (pos == -1) {
+            context = uri;
+            repository = "";
+            workspace = "";
+            path="/";
+            return;
+        }
+        
+        if (pos > 0) {
+            context = uri.substring(0, pos);
+            uri = uri.substring(pos + 1);
+        }
+        
+        //expecting tree here
+         uri = uri.substring(5);
+        
+         pos = uri.indexOf("/ws-");
+         repository = uri.substring(0, pos);
+         
+         uri = uri.substring(repository.length() + 1);
+         pos = uri.indexOf("/");
+         
+         workspace = uri.substring(3, pos);
+         path = uri.substring(workspace.length() + 3);
     }
     
     @Override

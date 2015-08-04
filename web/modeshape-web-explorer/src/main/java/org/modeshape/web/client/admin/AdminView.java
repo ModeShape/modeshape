@@ -15,22 +15,20 @@
  */
 package org.modeshape.web.client.admin;
 
-import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.smartgwt.client.util.SC;
+import com.smartgwt.client.widgets.layout.VLayout;
 import org.modeshape.web.client.Console;
 import org.modeshape.web.client.JcrServiceAsync;
-import org.modeshape.web.client.View;
-import org.modeshape.web.client.ViewPort;
+import org.modeshape.web.shared.BaseCallback;
 
 /**
  * @author kulikov
  */
-public class AdminView extends View {
+public class AdminView extends VLayout {
 
     private final Console console;
 
-    public AdminView( Console console, final JcrServiceAsync jcrService, ViewPort viewPort ) {
-        super(viewPort, null);
+    public AdminView( Console console) {
         this.console = console;
 
         addMember(new BackupControl(this));
@@ -53,12 +51,7 @@ public class AdminView extends View {
     }
     
     public void restore( String name ) {
-        console.jcrService().restore(console.repository(), name, new AsyncCallback<Object>() {
-            @Override
-            public void onFailure( Throwable caught ) {
-                SC.say(caught.getMessage());
-            }
-
+        console.jcrService().restore(console.repository(), name, new BaseCallback<Object>() {
             @Override
             public void onSuccess( Object result ) {
                 SC.say("Complete");

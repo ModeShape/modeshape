@@ -17,7 +17,7 @@ package org.modeshape.web.server;
 
 import javax.jcr.Repository;
 import javax.jcr.Session;
-import org.modeshape.web.client.RemoteException;
+import org.modeshape.web.shared.RemoteException;
 
 /**
  * @author kulikov

@@ -15,8 +15,8 @@
  */
 package org.modeshape.web.client;
 
+import org.modeshape.web.shared.RemoteException;
 import java.util.Collection;
-import org.modeshape.web.shared.JcrAccessControlList;
 import org.modeshape.web.shared.JcrNode;
 import org.modeshape.web.shared.JcrNodeType;
 import org.modeshape.web.shared.JcrPermission;
@@ -206,9 +206,6 @@ public interface JcrService extends RemoteService {
             throws RemoteException;
 
     
-    public void updateAccessList(String repository, String workspace, String path,
-            JcrAccessControlList acl) throws RemoteException;
-
     /**
      * Creates empty access list for given principal.
      *
@@ -221,6 +218,20 @@ public interface JcrService extends RemoteService {
     public void addAccessList(String repository, String workspace,String path,
             String principal) throws RemoteException;
 
+    
+    /**
+     * Deletes access list.
+     * 
+     * @param repository
+     * @param workspace
+     * @param path
+     * @param principal
+     * @throws RemoteException 
+     */
+    public void removeAccessList( String repository,
+                               String workspace,
+                               String path,
+                               String principal ) throws RemoteException;
     
     public void updateAccessList(String repository, String workspace, String path, String principal,
             JcrPermission permission, boolean enabled) throws RemoteException;
