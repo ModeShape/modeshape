@@ -20,6 +20,7 @@ import java.util.Properties;
 import javax.jcr.RepositoryException;
 import org.infinispan.schematic.Schematic;
 import org.infinispan.schematic.document.Changes;
+import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.document.EditableArray;
 import org.infinispan.schematic.document.EditableDocument;
 import org.infinispan.schematic.document.Editor;
@@ -29,6 +30,8 @@ import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
 import org.jboss.msc.value.InjectedValue;
 import org.modeshape.common.collection.Problems;
+import org.modeshape.common.util.StringUtil;
+import org.modeshape.jboss.security.JBossDomainAuthenticationProvider;
 import org.modeshape.jcr.ConfigurationException;
 import org.modeshape.jcr.JcrI18n;
 import org.modeshape.jcr.JcrRepository;
@@ -96,8 +99,21 @@ public class AuthenticatorService implements Service<JcrRepository> {
                 provider.set(keyStr, value);
             }
         }
-
-        providers.add(provider);
+        
+        // compute the position of the provider in the list of existing providers, making sure any custom providers go first
+        int providerPosition = 0;
+        for (int i = 0; i < providers.size(); i++) {
+            providerPosition = i;
+            Document document = (Document)providers.get(i);
+            String className = document.getString(FieldName.CLASSNAME);
+            boolean isBuiltinProvider = !StringUtil.isBlank(className) && 
+                                        (className.equalsIgnoreCase(JBossDomainAuthenticationProvider.class.getName()) ||
+                                        className.equalsIgnoreCase("servlet"));
+            if (isBuiltinProvider) {
+                break;
+            }
+        }
+        providers.add(providerPosition, provider);
 
         // Get the changes and validate them ...
         Changes changes = configEditor.getChanges();

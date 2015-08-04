@@ -15,6 +15,7 @@
  */
 package org.modeshape.test.integration;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -58,10 +59,14 @@ public class SecurityIntegrationTest {
     @Resource( mappedName = "java:/jcr/defaultAnonymousRepository" )
     private JcrRepository defaultAnonymousRepository;
 
+    @Resource( mappedName = "java:/jcr/customAuthenticatorRepository" )
+    private JcrRepository customAuthenticatorRepository;
+
     @Deployment
     public static WebArchive createDeployment() {
         WebArchive archive = ShrinkWrap.create(WebArchive.class, "security-test.war")
-                .addAsWebInfResource(EmptyAsset.INSTANCE, ArchivePaths.create("beans.xml"));
+                                       .addClass(CustomAuthenticationProvider.class)
+                                       .addAsWebInfResource(EmptyAsset.INSTANCE, ArchivePaths.create("beans.xml"));
         // Add our custom Manifest, which has the additional Dependencies entry ...
         archive.setManifest(new File("src/main/webapp/META-INF/MANIFEST.MF"));
         return archive;
@@ -151,6 +156,20 @@ public class SecurityIntegrationTest {
             fail("The default anonymous role should be 'readonly'");
         } catch (AccessDeniedException e) {
            //expected
+        }
+    }
+
+    @Test
+    @FixFor( "MODE-2496" )
+    public void customAuthenticationProvidersShouldBeInvokedFirst() throws Exception {
+        // authenticate using some credentials which are part of the default security domain and check that the custom
+        // provider is invoked first and roles are granted which are not configured as such in the security domain
+        Session session = customAuthenticatorRepository.login(new SimpleCredentials("guest", "guest".toCharArray()));
+        try {
+            assertEquals("arquillian", session.getUserID());
+            session.checkPermission("/", "admin");
+        } finally {
+            session.logout();
         }
     }
 }
