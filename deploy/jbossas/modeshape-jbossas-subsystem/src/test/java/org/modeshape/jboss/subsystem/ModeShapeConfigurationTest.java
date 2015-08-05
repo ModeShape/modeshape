@@ -95,6 +95,11 @@ public class ModeShapeConfigurationTest extends AbstractSubsystemBaseTest {
     @Test
     public void testOutputPersistenceOfConfigurationWithFileBinaryStorage() throws Exception {
         parse(readResource("modeshape-file-binary-storage.xml"));
+    }  
+    
+    @Test(expected = XMLStreamException.class)
+    public void shouldValidateFileBinaryStoreAttributesAgainstSchema() throws Exception {
+        parse(readResource("modeshape-invalid-file-binary-storage.xml"));
     }
 
     @Test

@@ -465,9 +465,12 @@ public class ModeShapeSubsystemXMLReader_2_1 implements XMLStreamConstants, XMLE
                         ModelAttributes.MIME_TYPE_DETECTION.parseAndSetParameter(attrValue, storageType, reader);
                         break;
                     case STORE_NAME:
-                        storeName = attrValue.trim();
-                        ModelAttributes.STORE_NAME.parseAndSetParameter(attrValue, storageType, reader);
-                        break;
+                        if (nested) {
+                            // part of a composite binary store
+                            storeName = attrValue.trim();
+                            ModelAttributes.STORE_NAME.parseAndSetParameter(attrValue, storageType, reader);
+                            break;
+                        }
                     default:
                         throw ParseUtils.unexpectedAttribute(reader, i);
                 }
@@ -526,9 +529,12 @@ public class ModeShapeSubsystemXMLReader_2_1 implements XMLStreamConstants, XMLE
                         ModelAttributes.MIME_TYPE_DETECTION.parseAndSetParameter(attrValue, storageType, reader);
                         break;
                     case STORE_NAME:
-                        storeName = attrValue.trim();
-                        ModelAttributes.STORE_NAME.parseAndSetParameter(attrValue, storageType, reader);
-                        break;
+                        if (nested) {
+                            // part of a composite binary store
+                            storeName = attrValue.trim();
+                            ModelAttributes.STORE_NAME.parseAndSetParameter(attrValue, storageType, reader);
+                            break;
+                        }
                     default:
                         throw ParseUtils.unexpectedAttribute(reader, i);
                 }
@@ -578,9 +584,12 @@ public class ModeShapeSubsystemXMLReader_2_1 implements XMLStreamConstants, XMLE
                         ModelAttributes.MIME_TYPE_DETECTION.parseAndSetParameter(attrValue, storageType, reader);
                         break;
                     case STORE_NAME:
-                        storeName = attrValue.trim();
-                        ModelAttributes.STORE_NAME.parseAndSetParameter(attrValue, storageType, reader);
-                        break;
+                        if (nested) {
+                            // part of a composite binary store
+                            storeName = attrValue.trim();
+                            ModelAttributes.STORE_NAME.parseAndSetParameter(attrValue, storageType, reader);
+                            break;
+                        }
                     default:
                         throw ParseUtils.unexpectedAttribute(reader, i);
                 }
@@ -632,9 +641,12 @@ public class ModeShapeSubsystemXMLReader_2_1 implements XMLStreamConstants, XMLE
                         ModelAttributes.MIME_TYPE_DETECTION.parseAndSetParameter(attrValue, storageType, reader);
                         break;
                     case STORE_NAME:
-                        storeName = attrValue.trim();
-                        ModelAttributes.STORE_NAME.parseAndSetParameter(attrValue, storageType, reader);
-                        break;
+                        if (nested) {
+                            // part of a composite binary store
+                            storeName = attrValue.trim();
+                            ModelAttributes.STORE_NAME.parseAndSetParameter(attrValue, storageType, reader);
+                            break;
+                        }
                     default:
                         storageType.get(attrName).set(attrValue);
                         break;
