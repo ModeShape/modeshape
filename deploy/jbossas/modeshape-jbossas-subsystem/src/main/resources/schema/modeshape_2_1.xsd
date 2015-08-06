@@ -825,7 +825,8 @@
                     file is located for the binary store. If not provided, the repository's configuration file will be used.
                 </xs:documentation>
             </xs:annotation>
-        </xs:attribute>        <xs:attribute name="chunk-size" type="xs:integer">
+        </xs:attribute>        
+        <xs:attribute name="chunk-size" type="xs:integer">
             <xs:annotation>
                 <xs:documentation>The size (in bytes) of a segment which dictates into how many segments a binary value is split.
                     Each chunk is stored as an entry in the cache. If not provided, defaults to 1048576 bytes (1 MB).
