@@ -44,8 +44,10 @@ public interface SecurityContext {
     /**
      * Returns whether the authenticated user has the given role.
      * 
-     * @param roleName the name of the role to check
+     * @param roleName the name of the role to check. The name of the role will always come from ModeShape and will be one of 
+     * ModeShape's built-in roles. 
      * @return true if the user has the role and is logged in; false otherwise
+     * @see org.modeshape.jcr.ModeShapeRoles
      */
     boolean hasRole( String roleName );
 
