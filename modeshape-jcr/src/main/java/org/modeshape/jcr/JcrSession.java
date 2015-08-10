@@ -1372,6 +1372,9 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
                         hasPermission = acm.hasPermission(path, actions);
                     }
                     return hasPermission;
+                } else {
+                    return authorizer.hasPermission(context, repositoryName, repositoryName, workspaceName, null,
+                                                    actions);
                 }
             }
 
@@ -1387,6 +1390,8 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
                         hasPermission = acm.hasPermission(path, actions);
                     }
                     return hasPermission;
+                } else {
+                    return authorizer.hasPermission(authorizerContext, null, actions);
                 }
             }
 
@@ -1767,11 +1772,13 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
 
     @Override
     public synchronized void logout() {
+        // get the user id first, because calling terminate may cleanup the security context and loose this information
+        String userID = getUserID();
         terminate(true);
         try {
             RunningState running = repository.runningState();
             long lifetime = Math.abs(System.nanoTime() - this.nanosCreated);
-            Map<String, String> payload = Collections.singletonMap("userId", getUserID());
+            Map<String, String> payload = Collections.singletonMap("userId", userID);
             running.statistics().recordDuration(DurationMetric.SESSION_LIFETIME, lifetime, TimeUnit.NANOSECONDS, payload);
             running.statistics().decrement(ValueMetric.SESSION_COUNT);
             running.removeSession(this);
