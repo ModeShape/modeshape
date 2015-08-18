@@ -18,7 +18,7 @@ package org.modeshape.web.server;
 import java.io.Serializable;
 import java.util.Collection;
 import javax.servlet.ServletContext;
-import org.modeshape.web.client.RemoteException;
+import org.modeshape.web.shared.RemoteException;
 import org.modeshape.web.shared.RepositoryName;
 
 /**

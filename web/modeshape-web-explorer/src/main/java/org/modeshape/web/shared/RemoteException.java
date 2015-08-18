@@ -26,6 +26,7 @@ public class RemoteException extends Exception implements IsSerializable {
     
     private static final long serialVersionUID = 1L;
     private int code;
+    private String msg;
     
     public RemoteException() {
         super();
@@ -38,6 +39,18 @@ public class RemoteException extends Exception implements IsSerializable {
     public RemoteException(int code, String e) {
         super(e);
         this.code = code;
+    }
+    
+    public RemoteException(Exception e) {
+        msg = e.getMessage();
+        if (msg == null || msg.length() == 0) {
+            msg = e.getClass().getName();
+        }
+    }
+    
+    @Override
+    public String getMessage() {
+        return msg != null ? msg : super.getMessage();
     }
     
     public int code() {

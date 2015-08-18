@@ -135,4 +135,13 @@ public class JcrProperty implements Serializable {
     public void setProtected( boolean isProtected ) {
         this.isProtected = isProtected;
     }
+    
+    /**
+     * Test this property for binary type.
+     * 
+     * @return true if this property is of binary type.
+     */
+    public boolean isBinary() {
+        return this.type.equalsIgnoreCase("Binary");
+    }
 }

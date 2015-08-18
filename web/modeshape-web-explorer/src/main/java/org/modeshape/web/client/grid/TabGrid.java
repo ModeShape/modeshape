@@ -84,15 +84,15 @@ public abstract class TabGrid<R extends HLayout, V> extends VLayout {
         }
         
         int i = 0;
-        try {
         for (V value : values) {
-            viewPort.addMember(records[i]);
+            try {
+                viewPort.addMember(records[i]);
             updateRecord(i, records[i], value);
             records[i].show();
             i++;
-        }
-        } catch (Exception e) {
-            SC.say(Integer.toString(i));
+            } catch (Exception e) {
+                SC.say(e.getMessage() + ":::;" + Integer.toString(i));
+            }
         }
     }
     
