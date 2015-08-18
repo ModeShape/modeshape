@@ -25,11 +25,13 @@ import org.modeshape.web.shared.ModalDialog;
  */
 public class RefreshSessionDialog extends ModalDialog {
 
+    private final static String TITLE = "Refresh session";
+    
     private CheckboxItem keepChanges = new CheckboxItem();
     private Contents contents;
     
     public RefreshSessionDialog(Contents contents) {
-        super("Add mixin", 450, 150);
+        super(TITLE, 450, 150);
         this.contents = contents;
         
         keepChanges.setName("name");
