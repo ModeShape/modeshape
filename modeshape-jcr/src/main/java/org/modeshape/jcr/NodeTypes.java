@@ -162,6 +162,8 @@ public class NodeTypes {
     private final Set<Name> nodeTypeNamesThatAreShareable = new HashSet<>();
 
     private final Set<Name> nodeTypeNamesWithNoChildNodeDefns = new HashSet<>();
+    
+    private final Set<Name> nodeTypeNamesThatAreUnorderableCollections = new HashSet<>();
 
     /**
      * The map of mandatory (and perhaps auto-created) property definitions for a node type keyed by the name of the node type.
@@ -238,6 +240,10 @@ public class NodeTypes {
                     nodeTypeNamesThatAreShareable.add(name);
                 }
 
+                if (nodeType.isNodeType(ModeShapeLexicon.UNORDERED_COLLECTION)) {
+                    nodeTypeNamesThatAreUnorderableCollections.add(name);
+                }   
+               
                 boolean fullyDefined = true;
                 if (nodeType.isNodeType(JcrMixLexicon.CREATED)) {
                     createdNodeTypeNames.add(name);
@@ -603,6 +609,35 @@ public class NodeTypes {
      */
     public boolean isVersionable( Name nodeTypeName ) {
         return nodeTypeName != null && versionableNodeTypeNames.contains(nodeTypeName);
+    }
+
+    /**
+     * Determine if the named node type is or subtypes the 'mode:unorderedCollection' type.
+     *
+     * @param nodeTypeName the node type name; may be null
+     * @return true if any of the named node type is versionable, or false otherwise
+     */
+    public boolean isUnorderedCollection( Name nodeTypeName ) {
+        return nodeTypeName != null && nodeTypeNamesThatAreUnorderableCollections.contains(nodeTypeName);
+    }
+
+    /**
+     * Determine the order of magnitude for an unordered collection, based on its type.
+     * 
+     * @param nodeTypeName the primary type of the collection; may not be null.
+     * @return the order of magnitude, as a power of 16
+     */
+    public int getOrderOfMagnitudeForUnorderedCollection( Name nodeTypeName ) {
+        if (isTypeOrSubtype(nodeTypeName, ModeShapeLexicon.TINY_UNORDERED_COLLECTION)) {
+            return 1;
+        } else if (isTypeOrSubtype(nodeTypeName, ModeShapeLexicon.SMALL_UNORDERED_COLLECTION)) {
+            return 2;
+        } else if (isTypeOrSubtype(nodeTypeName, ModeShapeLexicon.LARGE_UNORDERED_COLLECTION)) {
+            return 3;
+        } else if (isTypeOrSubtype(nodeTypeName, ModeShapeLexicon.HUGE_UNORDERED_COLLECTION)) {
+            return 4;
+        }
+        throw new IllegalArgumentException("Unknown unordered collection type: " + nodeTypeName);
     }
 
     /**

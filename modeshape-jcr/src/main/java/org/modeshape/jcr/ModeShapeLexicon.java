@@ -122,4 +122,12 @@ public class ModeShapeLexicon {
     @Deprecated
     public static final Name IS_DEEP = new BasicName(Namespace.URI, "isDeep");
 
+    /**
+     * Unordered collections
+     */
+     public static final Name UNORDERED_COLLECTION = new BasicName(Namespace.URI, "unorderedCollection"); 
+     public static final Name TINY_UNORDERED_COLLECTION = new BasicName(Namespace.URI, "unorderedTinyCollection"); 
+     public static final Name SMALL_UNORDERED_COLLECTION = new BasicName(Namespace.URI, "unorderedSmallCollection"); 
+     public static final Name LARGE_UNORDERED_COLLECTION = new BasicName(Namespace.URI, "unorderedLargeCollection"); 
+     public static final Name HUGE_UNORDERED_COLLECTION = new BasicName(Namespace.URI, "unorderedHugeCollection"); 
 }

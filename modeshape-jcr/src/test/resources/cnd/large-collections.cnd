@@ -1,0 +1,15 @@
+<mix = "http://www.jcp.org/jcr/mix/1.0">
+<mode = "http://www.modeshape.org/1.0">
+<test = "http://www.modeshape.org/test/1.0">
+
+[test:tinyCollection] > mode:unorderedTinyCollection
+  orderable 
+  - * (undefined) multiple 
+  - * (undefined) 
+  + * (nt:base) = nt:unstructured sns version 
+
+[test:smallCollection] > mode:unorderedSmallCollection
+  orderable 
+  - * (undefined) multiple 
+  - * (undefined) 
+  + * (nt:base) = nt:unstructured sns version 

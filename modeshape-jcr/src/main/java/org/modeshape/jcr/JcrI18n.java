@@ -209,6 +209,10 @@ public final class JcrI18n {
     public static I18n propertyNoLongerSatisfiesConstraints;
     public static I18n propertyNoLongerHasValidDefinition;
     public static I18n propertyIsProtected;
+    public static I18n operationNotSupportedForUnorderedCollections;
+    public static I18n unorderedCollectionsCannotBeVersioned;
+    public static I18n unorderedCollectionsDontAllowSNS;
+    
 
     public static I18n cannotRemoveRootNode;
     public static I18n cannotRemoveParentNodeOfTarget;

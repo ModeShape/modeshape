@@ -1082,6 +1082,9 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
             MutableCachedNode mutableSrcParent = srcParent.mutable();
             MutableCachedNode mutableDestParent = destParentNode.mutable();
             if (mutableSrcParent.equals(mutableDestParent)) {
+                if (nodeTypeManager().nodeTypes().isUnorderedCollection(srcParent.getPrimaryTypeName())) {
+                    throw new ConstraintViolationException(JcrI18n.operationNotSupportedForUnorderedCollections.text("rename"));
+                }
                 // It's just a rename ...
                 mutableSrcParent.renameChild(sessionCache, srcNode.key(), destPath.getLastSegment().getName());
             } else {
@@ -2139,6 +2142,10 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
             // mix:versionable
             // ---------------
             if (initializeVersionHistory) {
+                // unordered collections cannot be versioned
+                if (nodeTypeCapabilities.isUnorderedCollection(primaryType)) {
+                    throw new ConstraintViolationException(JcrI18n.unorderedCollectionsCannotBeVersioned.text());   
+                }
                 // See if there is a version history for the node ...
                 NodeKey versionableKey = node.getKey();
                 if (!systemContent.hasVersionHistory(versionableKey)) {

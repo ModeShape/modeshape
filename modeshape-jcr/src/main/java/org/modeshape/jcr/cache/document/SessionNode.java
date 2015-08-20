@@ -1131,14 +1131,20 @@ public class SessionNode implements MutableCachedNode {
     }
 
     private boolean allowsSNS( NodeCache cache ) {
-        Name primaryType = getPrimaryType(cache);
-        Set<Name> mixinTypes = getMixinTypes(cache);
         RepositoryEnvironment repositoryEnvironment = workspace(cache).repositoryEnvironment();
         if ( repositoryEnvironment == null) {
             return true;
         }
         NodeTypes nodeTypes = repositoryEnvironment.nodeTypes();
-        return nodeTypes == null || nodeTypes.allowsNameSiblings(primaryType, mixinTypes);
+        if (nodeTypes == null) {
+            return true;
+        }
+        Name primaryType = getPrimaryType(cache);
+        if (nodeTypes.isUnorderedCollection(primaryType)) {
+            return false;
+        }
+        Set<Name> mixinTypes = getMixinTypes(cache);
+        return nodeTypes.allowsNameSiblings(primaryType, mixinTypes);
     }
 
     @Override

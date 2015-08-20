@@ -140,6 +140,22 @@
     < 'STRING', 'URI', 'BINARY', 'LONG', 'DOUBLE', 'DECIMAL', 'BOOLEAN', 
       'DATE', 'NAME', 'PATH', 'REFERENCE', 'WEAKREFERENCE', 'UNDEFINED'
 
+// -----------------------
+// Large unordered collections
+// -----------------------
+// Abstract base type for all unordered collections.
 
+[mode:unorderedCollection] abstract
+  + * (nt:base) = nt:unstructured abort 
 
+// Tiny unordered collection, where the number of range buckets is 16
+[mode:unorderedTinyCollection] > mode:unorderedCollection
 
+// Small unordered collection, where the number of range buckets is 256
+[mode:unorderedSmallCollection] > mode:unorderedCollection
+
+// Large unordered collection, where the number of range buckets is 4096
+[mode:unorderedLargeCollection] > mode:unorderedCollection
+
+// Very large unordered collection, where the number of range buckets is 65536
+[mode:unorderedHugeCollection] > mode:unorderedCollection

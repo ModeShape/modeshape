@@ -840,6 +840,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         checkSession();
         ChildReferences childReferences = node().getChildReferences(sessionCache());
         if (childReferences.isEmpty()) return JcrEmptyNodeIterator.INSTANCE;
+        // always use an iterator over the child references here because stuff like permissions need to be checked
         return new JcrChildNodeIterator(new ChildNodeResolver(session, key()), childReferences.iterator());
     }
 
@@ -1136,6 +1137,16 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
             throw new VersionException(msg.text(segment, readable(parentPathStr), childDefn.getName(), opv));
         }
 
+        Name primaryTypeName = getPrimaryTypeName();
+        if (nodeTypes.isUnorderedCollection(primaryTypeName)) {
+            // this is an unordered collection subtype which has a SNS definition, or we would have failed earlier, so we must
+            // search for existing children with the same name
+            ChildReference ref = node.getChildReferences(cache).getChild(childName);
+            if (ref != null) {
+                throw new ConstraintViolationException(JcrI18n.unorderedCollectionsDontAllowSNS.text(path(), childName));
+            }
+        }
+        
         // If there isn't a desired key, check if the document store doesn't require a certain key format (this is especially used
         // by federation)
         if (desiredKey == null) {
@@ -1148,8 +1159,10 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
             }
             if (documentStoreKey != null) {
                 desiredKey = new NodeKey(documentStoreKey);
-            }
+            } 
         }
+
+      
 
         // We can create the child, so start by building the required properties ...
         PropertyFactory propFactory = session.propertyFactory();
@@ -1361,6 +1374,11 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         if (!getPrimaryNodeType().hasOrderableChildNodes()) {
             String msg = JcrI18n.notOrderable.text(getPrimaryNodeType().getName(), location());
             throw new UnsupportedRepositoryOperationException(msg);
+        }
+
+        NodeTypes nodeTypes = session().nodeTypeManager().nodeTypes();
+        if (nodeTypes != null && nodeTypes.isUnorderedCollection(getPrimaryTypeName())) {
+            throw new ConstraintViolationException(JcrI18n.operationNotSupportedForUnorderedCollections.text("reorder"));            
         }
 
         Path srcPath = session.pathFactory().create(srcChildRelPath);
