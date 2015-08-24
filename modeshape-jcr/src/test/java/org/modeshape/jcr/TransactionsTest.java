@@ -469,7 +469,7 @@ public class TransactionsTest extends SingleUseAbstractTest {
     }
 
     @Test
-    @FixFor( "MODE-2489" )
+    @FixFor( "MODE-2495" )
     public void shouldSupportMultipleThreadsChangingTheSameUserTransaction() throws Exception {
         // Start the repository using the JBoss Transactions transaction manager ...
         InputStream config = getClass().getClassLoader().getResourceAsStream("config/repo-config-inmemory-jbosstxn.json");

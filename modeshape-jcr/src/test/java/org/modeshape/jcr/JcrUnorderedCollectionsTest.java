@@ -27,10 +27,13 @@ import javax.jcr.ImportUUIDBehavior;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.nodetype.ConstraintViolationException;
+import javax.jcr.query.Query;
+import javax.jcr.query.QueryResult;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
+import org.modeshape.jcr.query.JcrQuery;
 
 /**
  * Unit test for various operations around large unorderable collections.
@@ -107,6 +110,20 @@ public class JcrUnorderedCollectionsTest extends MultiUseAbstractTest {
         assertEquals("Incorrect regexp iterator result", childCount, tinyCollection.getNodes("child*").getSize());
         assertEquals(2, tinyCollection.getNodes("child_1|child_2").getSize());   
         assertEquals(0, tinyCollection.getNodes("child1|child2").getSize());
+
+        //query the children
+        JcrQueryManager queryManager = session.getWorkspace().getQueryManager();
+        Query query = queryManager.createQuery(
+                "select node.[jcr:path] from [nt:unstructured] as node where node.[jcr:name] like 'child%'",
+                JcrQuery.JCR_SQL2);
+        QueryResult rs = query.execute();
+        NodeIterator nodes = rs.getNodes();
+        assertEquals(childCount, nodes.getSize());
+        Set<String> results = new HashSet<>();
+        while (nodes.hasNext()) {
+            results.add(nodes.nextNode().getPath());
+        }
+        assertEquals("Incorrect query result", allChildren, results);
 
         //remove half the nodes
         int removeCount = childCount / 2;

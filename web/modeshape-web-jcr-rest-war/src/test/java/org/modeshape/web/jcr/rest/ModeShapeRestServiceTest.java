@@ -34,6 +34,8 @@ import java.util.Iterator;
 import java.util.List;
 import javax.ws.rs.core.MediaType;
 import org.apache.http.HttpHost;
+import org.codehaus.jettison.json.JSONArray;
+import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 import org.junit.After;
 import org.junit.Before;
@@ -415,7 +417,8 @@ public class ModeShapeRestServiceTest extends AbstractRestTest {
 
     @Test
     public void shouldRetrieveNtBaseNodeType() throws Exception {
-        doGet(nodeTypesUrl("nt:base")).isOk().isJSONObjectLikeFile("get/nt_base_nodeType_response.json");
+        JSONObject object = doGet(nodeTypesUrl("nt:base")).isOk().json();
+        assertTrue(object.has("nt:base"));
     }
 
     @Test
@@ -425,13 +428,24 @@ public class ModeShapeRestServiceTest extends AbstractRestTest {
 
     @Test
     public void shouldImportCNDFile() throws Exception {
-        doPost(fileStream("post/node_types.cnd"), nodeTypesUrl()).isOk().isJSONArrayLikeFile("post/cnd_import_response.json");
+        String response = doPost(fileStream("post/node_types.cnd"), nodeTypesUrl()).isOk().contentAsString();
+        assertCNDImport(response);
     }
 
     @Test
     public void shouldImportCNDFileViaMultiPartRequest() throws Exception {
-        doPostMultiPart("post/node_types.cnd", FileUploadForm.PARAM_NAME, nodeTypesUrl(), MediaType.TEXT_PLAIN).isOk()
-                                                                                                               .isJSONArrayLikeFile("post/cnd_import_response.json");
+        String response = doPostMultiPart("post/node_types.cnd", FileUploadForm.PARAM_NAME, nodeTypesUrl(), MediaType.TEXT_PLAIN)
+                .isOk().contentAsString();
+        assertNotNull(response);
+        assertCNDImport(response);
+    }
+
+    private void assertCNDImport( String response ) throws JSONException {
+        JSONArray array = new JSONArray(response);
+        assertEquals(3, array.length());
+        assertEquals("nt:base", array.getJSONObject(0).keys().next().toString());
+        assertEquals("nt:unstructured", array.getJSONObject(1).keys().next().toString());
+        assertEquals("mix:created", array.getJSONObject(2).keys().next().toString());
     }
 
     @Test
