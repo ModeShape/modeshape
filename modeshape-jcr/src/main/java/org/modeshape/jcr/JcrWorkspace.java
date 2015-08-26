@@ -201,7 +201,7 @@ class JcrWorkspace implements org.modeshape.jcr.api.Workspace {
             validateCopyForExternalNode(sourceNode, parentNode);
 
             NodeTypes nodeTypes = repository().nodeTypeManager().getNodeTypes();
-            if (nodeTypes.isUnorderedCollection(sourceNode.getPrimaryTypeName())) {
+            if (nodeTypes.isUnorderedCollection(sourceNode.getPrimaryTypeName(), sourceNode.getMixinTypeNames())) {
                 throw new ConstraintViolationException(JcrI18n.operationNotSupportedForUnorderedCollections.text("copy"));    
             }
             
@@ -381,7 +381,7 @@ class JcrWorkspace implements org.modeshape.jcr.api.Workspace {
             validateCloneForExternalNodes(sameWorkspace, sourceSession, sourceNode, parentNode);
             
             NodeTypes nodeTypes = repository().nodeTypeManager().getNodeTypes();
-            if (nodeTypes.isUnorderedCollection(sourceNode.getPrimaryTypeName())) {
+            if (nodeTypes.isUnorderedCollection(sourceNode.getPrimaryTypeName(), sourceNode.getMixinTypeNames())) {
                 throw new ConstraintViolationException(JcrI18n.operationNotSupportedForUnorderedCollections.text("clone"));
             }
 

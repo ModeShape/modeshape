@@ -869,21 +869,20 @@ public class DocumentTranslator implements DocumentConstants {
     public ChildReferences getChildReferences( WorkspaceCache cache,
                                                Document document ) {
         Name primaryType = getPrimaryType(document);
+        Set<Name> mixinTypes = getMixinTypes(document);
         NodeTypes nodeTypes = getNodeTypes(cache);
 
-        boolean isUnorderedCollection = nodeTypes != null && nodeTypes.isUnorderedCollection(primaryType);
+        boolean isUnorderedCollection = nodeTypes != null && nodeTypes.isUnorderedCollection(primaryType, mixinTypes);
+        if (isUnorderedCollection) {
+            return new BucketedChildReferences(document, this);
+        }
+
         boolean hasChildren = document.containsField(CHILDREN);
         boolean hasFederatedSegments = document.containsField(FEDERATED_SEGMENTS);
-        if (!hasChildren && !hasFederatedSegments && !isUnorderedCollection) {
+        if (!hasChildren && !hasFederatedSegments) {
             return ImmutableChildReferences.EMPTY_CHILD_REFERENCES;
         }
 
-        if (isUnorderedCollection) {
-            // the base 'mode:unordered' node types do not contain a PRB field...
-            return document.containsField(PRB) ?  new BucketedChildReferences(document, this) : ImmutableChildReferences.EMPTY_CHILD_REFERENCES; 
-        }
-        
-        Set<Name> mixinTypes = getMixinTypes(document);
         boolean allowsSNS = nodeTypes == null || nodeTypes.allowsNameSiblings(primaryType, mixinTypes);
         ChildReferences internalChildRefs = hasChildren ? ImmutableChildReferences.create(this, document, CHILDREN, allowsSNS) : ImmutableChildReferences.EMPTY_CHILD_REFERENCES;
         ChildReferences externalChildRefs = hasFederatedSegments ? ImmutableChildReferences.create(this, document,
@@ -1526,20 +1525,13 @@ public class DocumentTranslator implements DocumentConstants {
         return new BucketedChildReferences.Bucket(bucketId, schematicEntry.getContent(), this);
     }
     
-    protected void setUnorderedCollectionInfo( EditableDocument document, int prb ) {
-        document.setNumber(PRB, prb);
-        // store an empty array of buckets 
-        document.setArray(BUCKETS, Schematic.newArray());
-        // and  0 size
-        document.setNumber(SIZE, 0);
-    }
-
     protected void addChildrenToBuckets( EditableDocument parentDoc,
                                          ChildReferences appended ) {
         assert appended != null;
         
         long totalAdditions = 0;
-        Integer prb = parentDoc.getInteger(PRB);
+        Integer bucketIdLength = parentDoc.getInteger(BUCKET_ID_LENGTH);     
+        assert bucketIdLength != null;
         String parentKey = getKey(parentDoc);
 
         // add all the new children into their corresponding buckets, creating each bucket if it does not exist
@@ -1550,7 +1542,7 @@ public class DocumentTranslator implements DocumentConstants {
         // first collect all the new references into buckets...
         for (ChildReference inserted : appended) {
             Name insertedName = inserted.getName();
-            BucketId bucketId = new BucketId(insertedName, prb);
+            BucketId bucketId = new BucketId(insertedName, bucketIdLength);
             Set<ChildReference> additions = additionsPerBucket.get(bucketId);
             if (additions == null) {
                 additions = new HashSet<>();
@@ -1576,7 +1568,7 @@ public class DocumentTranslator implements DocumentConstants {
 
             if (newBucket) {
                 // store the bucket id into the parent
-                parentDoc.getArray(BUCKETS).add(bucketId.toString());
+                parentDoc.getOrCreateArray(BUCKETS).add(bucketId.toString());
             }
         }
 
@@ -1592,8 +1584,8 @@ public class DocumentTranslator implements DocumentConstants {
                                                                         EditableDocument parentDoc,
                                                                         Set<NodeKey> removals )  {
         assert removals != null && !removals.isEmpty();
-        Integer prb = parentDoc.getInteger(PRB);
-        assert prb != null;
+        Integer bucketIdLength = parentDoc.getInteger(BUCKET_ID_LENGTH);
+        assert bucketIdLength != null;
 
         long totalRemovals = 0;
 
@@ -1601,7 +1593,7 @@ public class DocumentTranslator implements DocumentConstants {
         Map<BucketId, Set<NodeKey>> removalsPerBucket = new HashMap<>(removals.size());
         for (NodeKey removedKey : removals) {
             Name removedName = wsCache.getNode(removedKey).getName(wsCache);
-            BucketId bucketId = new BucketId(removedName, prb);
+            BucketId bucketId = new BucketId(removedName, bucketIdLength);
             Set<NodeKey> bucketRemovals = removalsPerBucket.get(bucketId);
             if (bucketRemovals == null) {
                 bucketRemovals = new HashSet<>();
@@ -1652,6 +1644,22 @@ public class DocumentTranslator implements DocumentConstants {
         for (Object bucketId : bucketsIds) {
             String bucketKey = bucketKey(parentDocKey.toString(), bucketId.toString());
             documentStore.remove(bucketKey);
+        }
+    }
+    
+    protected void addInternalProperties(EditableDocument doc, Map<String, Object> properties) {
+        if (properties.isEmpty()) {
+            return;
+        }
+        doc.putAll(properties);
+    }
+
+    protected void removeInteralProperties(EditableDocument doc, Set<String> properties) {
+        if (properties.isEmpty()) {
+            return;
+        }
+        for (String propertyName : properties) {
+            doc.remove(propertyName);
         }
     }
 }

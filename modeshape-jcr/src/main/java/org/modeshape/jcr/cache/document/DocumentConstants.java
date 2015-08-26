@@ -46,7 +46,7 @@ public interface DocumentConstants {
     public static final String REFERENCE_FIELD = "$ref";
     public static final String WEAK_REFERENCE_FIELD = "$wref";
     public static final String SIMPLE_REFERENCE_FIELD = "$sref";
-    public static final String PRB = "$prb";
+    public static final String BUCKET_ID_LENGTH = "$bucketIdLen";
     public static final String SIZE = "$size";
     public static final String BUCKETS = "$buckets";
 

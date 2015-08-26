@@ -3,13 +3,11 @@
 <test = "http://www.modeshape.org/test/1.0">
 
 [test:tinyCollection] > mode:unorderedTinyCollection
-  orderable 
   - * (undefined) multiple 
   - * (undefined) 
-  + * (nt:base) = nt:unstructured sns version 
+  + * (nt:base) = nt:unstructured 
 
 [test:smallCollection] > mode:unorderedSmallCollection
-  orderable 
   - * (undefined) multiple 
   - * (undefined) 
-  + * (nt:base) = nt:unstructured sns version 
+  + * (nt:base) = nt:unstructured 

@@ -17,8 +17,8 @@ package org.modeshape.test.performance;
 
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
@@ -28,6 +28,7 @@ import javax.jcr.NodeIterator;
 import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
+import javax.jcr.Workspace;
 import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.document.Json;
 import org.junit.After;
@@ -37,7 +38,6 @@ import org.junit.Test;
 import org.modeshape.common.FixFor;
 import org.modeshape.common.annotation.Performance;
 import org.modeshape.common.statistic.Stopwatch;
-import org.modeshape.jcr.JcrSession;
 import org.modeshape.jcr.ModeShapeEngine;
 import org.modeshape.jcr.RepositoryConfiguration;
 
@@ -80,6 +80,7 @@ public class InMemoryPerformanceTest {
         engine.deploy(config);
         repository = engine.startRepository(config.getName()).get();
         session = repository.login();
+        registerNodeTypes("cnd/large-collections.cnd", session);
         MODESHAPE_STARTUP.stop();
         STARTUP.stop();
     }
@@ -390,7 +391,7 @@ public class InMemoryPerformanceTest {
         int totalNodeCount = 1000000;
         int childrenPerNode = 1000;
         int propertiesPerNode = 0;
-        String nodeType = "mode:unorderedLargeCollection";
+        String nodeType = "test:largeCollection";
 
         session.getRootNode().addNode("testRoot", nodeType);
         session.save();
@@ -411,7 +412,7 @@ public class InMemoryPerformanceTest {
         int batchSize = 1000;
         int propertiesPerNode = 1;
         String parentAbsPath = "/testRoot";
-        String nodeType = "mode:unorderedLargeCollection";
+        String nodeType = "test:largeCollection";
         
         session.getRootNode().addNode("testRoot", nodeType);
         session.save();
@@ -683,5 +684,13 @@ public class InMemoryPerformanceTest {
             units = " microsecond(s)";
         }
         return "total = " + stopwatch.getTotalDuration() + "; avg = " + avgDuration + units;
+    }
+
+    protected static void registerNodeTypes( String resourceName, Session session ) throws RepositoryException, IOException {
+        InputStream stream = InMemoryPerformanceTest.class.getClassLoader().getResourceAsStream(resourceName);
+        assertThat(stream, is(notNullValue()));
+        Workspace workspace = session.getWorkspace();
+        org.modeshape.jcr.api.nodetype.NodeTypeManager ntMgr = (org.modeshape.jcr.api.nodetype.NodeTypeManager)workspace.getNodeTypeManager();
+        ntMgr.registerNodeTypes(stream, true);
     }
 }

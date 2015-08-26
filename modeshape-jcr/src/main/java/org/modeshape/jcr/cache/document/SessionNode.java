@@ -45,9 +45,9 @@ import org.modeshape.jcr.JcrI18n;
 import org.modeshape.jcr.JcrLexicon;
 import org.modeshape.jcr.JcrNtLexicon;
 import org.modeshape.jcr.JcrSession;
-import org.modeshape.jcr.api.Binary;
 import org.modeshape.jcr.ModeShapeLexicon;
 import org.modeshape.jcr.NodeTypes;
+import org.modeshape.jcr.api.Binary;
 import org.modeshape.jcr.cache.CachedNode;
 import org.modeshape.jcr.cache.ChildReference;
 import org.modeshape.jcr.cache.ChildReferences;
@@ -108,6 +108,8 @@ public class SessionNode implements MutableCachedNode {
     private final boolean isNew;
     private volatile LockChange lockChange;
     private final AtomicReference<PermissionChanges> permissionChanges = new AtomicReference<>();
+    private final ConcurrentMap<String, Object> addedInternalProperties = new ConcurrentHashMap<>();
+    private final Set<String> removedInternalProperties = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
 
     public SessionNode( NodeKey key,
                         boolean isNew ) {
@@ -1131,20 +1133,14 @@ public class SessionNode implements MutableCachedNode {
     }
 
     private boolean allowsSNS( NodeCache cache ) {
+        Name primaryType = getPrimaryType(cache);
+        Set<Name> mixinTypes = getMixinTypes(cache);
         RepositoryEnvironment repositoryEnvironment = workspace(cache).repositoryEnvironment();
         if ( repositoryEnvironment == null) {
             return true;
         }
         NodeTypes nodeTypes = repositoryEnvironment.nodeTypes();
-        if (nodeTypes == null) {
-            return true;
-        }
-        Name primaryType = getPrimaryType(cache);
-        if (nodeTypes.isUnorderedCollection(primaryType)) {
-            return false;
-        }
-        Set<Name> mixinTypes = getMixinTypes(cache);
-        return nodeTypes.allowsNameSiblings(primaryType, mixinTypes);
+        return nodeTypes == null || nodeTypes.allowsNameSiblings(primaryType, mixinTypes);
     }
 
     @Override
@@ -1625,6 +1621,28 @@ public class SessionNode implements MutableCachedNode {
     }
 
     @Override
+    public void addInternalProperty( String name, Object value ) {
+        removedInternalProperties.remove(name);
+        addedInternalProperties.putIfAbsent(name, value);
+    }
+
+    @Override
+    public Map<String, Object> getAddedInternalProperties() {
+        return addedInternalProperties;
+    }
+
+    @Override
+    public boolean removeInternalProperty( String name ) {
+        addedInternalProperties.remove(name);
+        return removedInternalProperties.add(name);
+    }
+
+    @Override
+    public Set<String> getRemovedInternalProperties() {
+        return removedInternalProperties;
+    }
+
+    @Override
     public String toString() {
         return getString(null);
     }
@@ -1680,6 +1698,34 @@ public class SessionNode implements MutableCachedNode {
                         sb.append(',');
                     }
                     sb.append(" -").append(name.getString(registry));
+                }
+            }
+            sb.append('}');
+        }
+        boolean addInternalProps = !addedInternalProperties.isEmpty();
+        boolean removedInternalProps = !removedInternalProperties.isEmpty();
+        if (addInternalProps || removedInternalProps) {
+            sb.append(" internal props: {");
+            if (addInternalProps) {
+                boolean first = true;
+                for (Map.Entry<String, Object> entry : addedInternalProperties.entrySet()) {
+                    if (first) {
+                        first = false;
+                    } else {
+                        sb.append(',');
+                    }
+                    sb.append(" +").append(entry.getKey()).append("=").append(entry.getValue());
+                }
+            }
+            if (removedInternalProps) {
+                boolean first = true;
+                for (String name : removedInternalProperties) {
+                    if (first) {
+                        first = false;
+                    } else {
+                        sb.append(',');
+                    }
+                    sb.append(" -").append(name);
                 }
             }
             sb.append('}');

@@ -124,7 +124,6 @@ public class WritableSessionCache extends AbstractSessionCache {
     private LinkedHashSet<NodeKey> changedNodesInOrder;
     private Map<NodeKey, ReferrerChanges> referrerChangesForRemovedNodes;
     private final Transactions txns;
-    private NodeTypes nodeTypes;
     
     /**
      * Track the binary keys which are being referenced/unreferenced by nodes so they can be locked in ISPN
@@ -147,7 +146,6 @@ public class WritableSessionCache extends AbstractSessionCache {
         this.referrerChangesForRemovedNodes = new HashMap<NodeKey, ReferrerChanges>();
         this.binaryReferencesByNodeKey = new ConcurrentHashMap<NodeKey, Set<BinaryKey>>();
         this.txns = repositoryEnvironment.getTransactions();
-        this.nodeTypes = repositoryEnvironment.nodeTypes();
     }
 
     protected final void assertInSession( SessionNode node ) {
@@ -155,10 +153,11 @@ public class WritableSessionCache extends AbstractSessionCache {
     }
     
     protected NodeTypes nodeTypes() {
-        if (this.nodeTypes == null && workspaceCache().repositoryEnvironment() != null) {
-            this.nodeTypes = workspaceCache().repositoryEnvironment().nodeTypes();
-        }  
-        return this.nodeTypes;
+        RepositoryEnvironment repositoryEnvironment = workspaceCache().repositoryEnvironment();
+        if (repositoryEnvironment != null) {
+            return repositoryEnvironment.nodeTypes();
+        }
+        return null;
     }
 
     @Override
@@ -952,12 +951,12 @@ public class WritableSessionCache extends AbstractSessionCache {
                         removedNodes = new HashSet<>();
                     }
                     Name primaryType = persisted.getPrimaryType(this);
-                    boolean isUnorderedCollection = nodeTypes != null && nodeTypes.isUnorderedCollection(primaryType);
+                    Set<Name> mixinTypes = persisted.getMixinTypes(this);
+                    boolean isUnorderedCollection = nodeTypes != null && nodeTypes.isUnorderedCollection(primaryType, mixinTypes);
                     if (isUnorderedCollection && removedUnorderedCollections == null) {
                         removedUnorderedCollections = new HashSet<>();
                     }
-                    
-                    Set<Name> mixinTypes = persisted.getMixinTypes(this);
+                   
                     Path path = workspacePaths.getPath(persisted);
                     NodeKey parentKey = persisted.getParentKey(persistedCache);
                     CachedNode parent = getNode(parentKey);
@@ -1004,7 +1003,7 @@ public class WritableSessionCache extends AbstractSessionCache {
                 // should be there and shouldn't require a looking in the cache...
                 Name primaryType = node.getPrimaryType(this);
                 Set<Name> mixinTypes = node.getMixinTypes(this);
-                boolean isUnorderedCollection = nodeTypes != null && nodeTypes.isUnorderedCollection(primaryType);
+                boolean isUnorderedCollection = nodeTypes != null && nodeTypes.isUnorderedCollection(primaryType, mixinTypes);
                
                 CachedNode persisted = null;
                 Path newPath = null;
@@ -1016,19 +1015,13 @@ public class WritableSessionCache extends AbstractSessionCache {
                     doc = Schematic.newDocument();
                     translator.setKey(doc, key);
                     translator.setParents(doc, newParent, null, additionalParents);
-                    if (isUnorderedCollection) {
-                        int prb = nodeTypes.getOrderOfMagnitudeForUnorderedCollection(primaryType);
-                        translator.setUnorderedCollectionInfo(doc, prb);
-                    }
-
+                    translator.addInternalProperties(doc, node.getAddedInternalProperties());
+                    
                     SessionNode mutableParent = mutable(newParent);
-                    Name parentPrimaryType = mutableParent.getPrimaryType(this);
                     Set<Name> parentMixinTypes = mutableParent.getMixinTypes(this);
-                    boolean isParentUnorderedCollection = nodeTypes != null && nodeTypes.isUnorderedCollection(
-                            parentPrimaryType);
                     boolean parentAllowsSNS = nodeTypes != null && nodeTypes.allowsNameSiblings(primaryType, parentMixinTypes);
-                    if (isParentUnorderedCollection || !parentAllowsSNS) {
-                        // if the parent of the *new* node is an unordered collection or doesn't allow SNS, we can optimize the path lookup by
+                    if (!parentAllowsSNS) {
+                        // if the parent of the *new* node doesn't allow SNS, we can optimize the path lookup by
                         // looking directly at the parent's appended nodes because:
                         // a) "this" is a new node
                         // b) the parent must be already in this cache 
@@ -1056,6 +1049,10 @@ public class WritableSessionCache extends AbstractSessionCache {
                         // just moments before we got our transaction to save ...
                         throw new DocumentNotFoundException(keyStr);
                     }
+                    // process any internal properties first
+                    translator.addInternalProperties(doc, node.getAddedInternalProperties());
+                    translator.removeInteralProperties(doc, node.getRemovedInternalProperties());
+                    
                     // only after we're certain the document exists in the store can we safely compute this path
                     newPath = sessionPaths.getPath(node);
                     if (newParent != null) {

@@ -26,6 +26,7 @@ import java.util.Set;
 import javax.jcr.ImportUUIDBehavior;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
+import javax.jcr.UnsupportedRepositoryOperationException;
 import javax.jcr.nodetype.ConstraintViolationException;
 import javax.jcr.query.Query;
 import javax.jcr.query.QueryResult;
@@ -210,7 +211,7 @@ public class JcrUnorderedCollectionsTest extends MultiUseAbstractTest {
         try {
             col.addNode("child");
             fail("Unorderable collections should not support SNS");
-        } catch (javax.jcr.nodetype.ConstraintViolationException e) {
+        } catch (javax.jcr.ItemExistsException e) {
             //expected
         }
         session.refresh(false);
@@ -222,7 +223,7 @@ public class JcrUnorderedCollectionsTest extends MultiUseAbstractTest {
         try {
             col.addNode("child");
             fail("Unorderable collections should not support SNS");
-        } catch (javax.jcr.nodetype.ConstraintViolationException e) {
+        } catch (javax.jcr.ItemExistsException e) {
             //expected
         }
         
@@ -249,13 +250,7 @@ public class JcrUnorderedCollectionsTest extends MultiUseAbstractTest {
         try {
             col.orderBefore("child1", null);
             fail("Reorderings should not be supported for large collections");
-        } catch (ConstraintViolationException e) {
-            // expected
-        }
-        try {
-            col.orderBefore("child2", "child1");
-            fail("Reorderings should not be supported for large collections");
-        } catch (ConstraintViolationException e) {
+        } catch (UnsupportedRepositoryOperationException e) {
             // expected
         }
     } 
@@ -411,5 +406,53 @@ public class JcrUnorderedCollectionsTest extends MultiUseAbstractTest {
         session.getRootNode().addNode("col", "test:smallCollection");
         session.save();
         session.getWorkspace().getFederationManager().createProjection("/col", "dummy", "/", "dummy");
+    }
+
+    @Test
+    @FixFor( "MODE-2109" )
+    public void shouldAllowAddingAndRemovingMixinsOnlyIfNodeIsEmpty() throws Exception {
+        Node collection = session.getRootNode().addNode("collection");
+        collection.addNode("child");
+        session.save();
+        String mixin = ModeShapeLexicon.LARGE_UNORDERED_COLLECTION.getString();
+        try {
+            collection.addMixin(mixin);
+            fail("Unordered collection mixin should not be allowed if node has children");
+        } catch (ConstraintViolationException e) {
+            //expected
+        }
+        session.getNode("/collection/child").remove();
+        session.save();
+        
+        collection.addMixin(mixin);
+        collection.addNode("child1");
+        collection.addNode("child2");
+        session.save();
+        NodeIterator children = collection.getNodes();
+        assertEquals(2, children.getSize());
+        try {
+            collection.removeMixin(mixin);
+            fail("Unordered collection mixin should not be removed if node has children");
+        } catch (ConstraintViolationException e) {
+            //expected
+        }
+
+        try {
+            collection.addMixin("mix:versionable");
+            fail("Unordered collections should not be versionable");
+        } catch (ConstraintViolationException e) {
+            //expected
+        }
+        while (children.hasNext()) {
+            children.nextNode().remove();
+        }
+        session.save();
+        try {
+            collection.addMixin(ModeShapeLexicon.SMALL_UNORDERED_COLLECTION.getString());
+            fail("Second unordered collection mixin should not be allowed");
+        } catch (ConstraintViolationException e) {
+           //expected
+        }
+        session.save();
     }
 }

@@ -16,6 +16,8 @@
 package org.modeshape.jcr.cache.document;
 
 import java.util.Objects;
+import org.modeshape.common.annotation.Immutable;
+import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.util.SecureHash;
 import org.modeshape.jcr.value.Name;
 
@@ -25,16 +27,18 @@ import org.modeshape.jcr.value.Name;
  * @author Horia Chiorean (hchiorea@redhat.com)
  * @see BucketedChildReferences
  */
-class BucketId implements Comparable<BucketId> {
+@ThreadSafe
+@Immutable
+final class BucketId implements Comparable<BucketId> {
     private final String id;
 
-    protected BucketId( Name name, int prb ) {
-        this(name.getString(), prb);
+    protected BucketId( Name name, int length ) {
+        this(name.getString(), length);
     }
 
-    protected BucketId( String nameString, int prb ) {
+    protected BucketId( String nameString, int length ) {
         String sha1 = SecureHash.sha1(nameString);
-        this.id = sha1.substring(0, prb);
+        this.id = sha1.substring(0, length);
     }
 
     protected BucketId( String id ) {

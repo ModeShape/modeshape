@@ -55,7 +55,7 @@ public class SessionChildReferences extends AbstractChildReferences {
 
     @Override
     public long size() {
-        return persisted.size() + (appended != null ? appended.size() : 0);
+        return persisted.size() + (appended != null ? appended.size() : 0) - (changedChildren != null ? changedChildren.removalCount() : 0);
     }
 
     @Override

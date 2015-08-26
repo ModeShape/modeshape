@@ -28,6 +28,8 @@ import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.regex.Pattern;
 import org.infinispan.schematic.document.Document;
+import org.modeshape.common.annotation.Immutable;
+import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.jcr.cache.ChildReference;
 import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.value.Name;
@@ -37,30 +39,41 @@ import org.modeshape.jcr.value.ValueFactory;
 
 /**
  * A child references implementation which uses separate buckets for groups of children, based on the SHA1 of the name of each 
- * child and the an order of magnitude constant (named 'prb') stored in the parent document. 
+ * child and the an internal field stored in the parent document which indicates the length (i.e. how many of the
+ * first SHA1 chars) of the ID of each bucket.
  * See <a href='https://issues.jboss.org/browse/MODE-2109'>MODE-2109</a>
  * 
  * @author Horia Chiorean (hchiorea@redhat.com)
  */
-class BucketedChildReferences extends AbstractChildReferences {
+@Immutable
+@ThreadSafe
+final class BucketedChildReferences extends AbstractChildReferences {
     
     private final long size;
-    private final int prb;
+    private final int bucketIdLength;
     private final String parentKey;
     private final DocumentTranslator translator;
-    private final LinkedHashMap<BucketId, Bucket> rangeBucketsById;
+    private final Map<BucketId, Bucket> rangeBucketsById;
     private final Set<BucketId> bucketIds; 
     
     protected BucketedChildReferences( Document parent, DocumentTranslator translator ) {
         // the power of 16 which indicates how many buckets
-        this.prb = parent.getInteger(DocumentConstants.PRB);
-        this.size = parent.getLong(DocumentConstants.SIZE);
+        this.bucketIdLength = parent.getInteger(DocumentConstants.BUCKET_ID_LENGTH);
+        
+        Long size = parent.getLong(DocumentConstants.SIZE);
+        this.size = size != null ? size : 0;
+        
         this.parentKey = translator.getKey(parent);
         this.translator = translator;
+        
         List<?> bucketsArray = parent.getArray(DocumentConstants.BUCKETS);
-        this.bucketIds = new HashSet<>(bucketsArray.size());
-        for (Object bucketId : bucketsArray) {
-            this.bucketIds.add(new BucketId(bucketId.toString()));
+        if (bucketsArray == null) {
+            this.bucketIds = Collections.emptySet();
+        } else {
+            this.bucketIds = new HashSet<>(bucketsArray.size());
+            for (Object bucketId : bucketsArray) {
+                this.bucketIds.add(new BucketId(bucketId.toString()));
+            }
         }
         this.rangeBucketsById = new LinkedHashMap<>(bucketIds.size());
     }
@@ -221,7 +234,7 @@ class BucketedChildReferences extends AbstractChildReferences {
             } else {
                 // this is a simple string which we'll collect
                 String name = pattern.toString();
-                bucketsToSearch.add(new BucketId(name, prb));
+                bucketsToSearch.add(new BucketId(name, bucketIdLength));
             }
         }
         // all the patterns are simple strings, without wildcards, so we can take advantage of that and find out which buckets
@@ -253,7 +266,7 @@ class BucketedChildReferences extends AbstractChildReferences {
     }
     
     protected Bucket bucketFor(Name name) {
-        return loadBucket(new BucketId(name, prb));
+        return loadBucket(new BucketId(name, bucketIdLength));
     }
 
     protected Bucket loadBucket(BucketId bucketId) {

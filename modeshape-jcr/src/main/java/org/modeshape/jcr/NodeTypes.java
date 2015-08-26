@@ -22,6 +22,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -145,7 +146,7 @@ public class NodeTypes {
      */
     private final Set<Name> etagNodeTypeNames = new HashSet<>();
     /**
-     * The set of names for the node types that are 'mix:versionable'. See {@link #isVersionable(Name, Set)}
+     * The set of names for the node types that are 'mix:versionable'. See {@link #isVersionable(Name, Collection)}
      */
     private final Set<Name> versionableNodeTypeNames = new HashSet<>();
     /**
@@ -210,6 +211,7 @@ public class NodeTypes {
         if (nodeTypes != null) {
             JcrNodeType ntUnstructured = null;
             for (JcrNodeType nodeType : nodeTypes) {
+                boolean isUnorderedCollection = false;
                 Name name = nodeType.getInternalName();
 
                 // Store the node type in the quick-lookup maps ...
@@ -265,6 +267,10 @@ public class NodeTypes {
                     versionableNodeTypeNames.add(name);
                     fullyDefined = false;
                 }
+                if (nodeType.isNodeType(ModeShapeLexicon.UNORDERED_COLLECTION)) {
+                    nodeTypeNamesThatAreUnorderableCollections.add(name);
+                    isUnorderedCollection = true;
+                }
                 for (JcrPropertyDefinition propDefn : nodeType.allPropertyDefinitions()) {
                     if (propDefn.isMandatory() && !propDefn.isProtected()) {
                         mandatoryPropertiesNodeTypes.put(name, propDefn);
@@ -301,6 +307,7 @@ public class NodeTypes {
                     }
                 }
                 if (!nodeType.isAbstract()
+                    && !isUnorderedCollection
                     && (allowsResidualWithSameNameSiblings || allowsOnlySameNameSiblings || mixinWithNoChildNodeDefinitions)) {
                     nodeTypeNamesThatAllowSameNameSiblings.add(name);
                 }
@@ -591,6 +598,10 @@ public class NodeTypes {
      */
     public boolean allowsNameSiblings( Name primaryType,
                                        Set<Name> mixinTypes ) {
+        if (isUnorderedCollection(primaryType, mixinTypes)) {
+            // regardless of the actual types, if at least one of them is an unordered collection, SNS are not allowed
+            return false;
+        }
         if (nodeTypeNamesThatAllowSameNameSiblings.contains(primaryType)) return true;
         if (mixinTypes != null && !mixinTypes.isEmpty()) {
             for (Name mixinType : mixinTypes) {
@@ -612,32 +623,51 @@ public class NodeTypes {
     }
 
     /**
-     * Determine if the named node type is or subtypes the 'mode:unorderedCollection' type.
+     * Determine if the named node type or any of the mixin types subtypes the 'mode:unorderedCollection' type.
      *
      * @param nodeTypeName the node type name; may be null
-     * @return true if any of the named node type is versionable, or false otherwise
+     * @param mixinTypes the mixin type names; may be null or empty
+     * @return true if any of the named node type is an unordered collection, or false otherwise
      */
-    public boolean isUnorderedCollection( Name nodeTypeName ) {
-        return nodeTypeName != null && nodeTypeNamesThatAreUnorderableCollections.contains(nodeTypeName);
+    public boolean isUnorderedCollection( Name nodeTypeName, Collection<Name> mixinTypes ) {
+        if (nodeTypeName != null && nodeTypeNamesThatAreUnorderableCollections.contains(nodeTypeName)) {
+            return true;
+        }
+        if (mixinTypes != null && !mixinTypes.isEmpty()) {
+            for (Name mixin : mixinTypes) {
+                if (nodeTypeNamesThatAreUnorderableCollections.contains(mixin)) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     /**
-     * Determine the order of magnitude for an unordered collection, based on its type.
+     * Determine the length of a bucket ID for an unordered collection, based on its type and possible mixins.
      * 
      * @param nodeTypeName the primary type of the collection; may not be null.
+     * @param mixinTypes the mixin type names; may be null or empty
      * @return the order of magnitude, as a power of 16
      */
-    public int getOrderOfMagnitudeForUnorderedCollection( Name nodeTypeName ) {
-        if (isTypeOrSubtype(nodeTypeName, ModeShapeLexicon.TINY_UNORDERED_COLLECTION)) {
-            return 1;
-        } else if (isTypeOrSubtype(nodeTypeName, ModeShapeLexicon.SMALL_UNORDERED_COLLECTION)) {
-            return 2;
-        } else if (isTypeOrSubtype(nodeTypeName, ModeShapeLexicon.LARGE_UNORDERED_COLLECTION)) {
-            return 3;
-        } else if (isTypeOrSubtype(nodeTypeName, ModeShapeLexicon.HUGE_UNORDERED_COLLECTION)) {
-            return 4;
+    public int getBucketIdLengthForUnorderedCollection( Name nodeTypeName, Set<Name> mixinTypes ) {
+        Set<Name> allTypes = new LinkedHashSet<>();
+        allTypes.add(nodeTypeName);
+        if (mixinTypes != null && !mixinTypes.isEmpty()) {
+            allTypes.addAll(mixinTypes);
         }
-        throw new IllegalArgumentException("Unknown unordered collection type: " + nodeTypeName);
+        for (Name typeName : allTypes) {
+            if (isTypeOrSubtype(typeName, ModeShapeLexicon.TINY_UNORDERED_COLLECTION)) {
+                return 1;
+            } else if (isTypeOrSubtype(typeName, ModeShapeLexicon.SMALL_UNORDERED_COLLECTION)) {
+                return 2;
+            } else if (isTypeOrSubtype(typeName, ModeShapeLexicon.LARGE_UNORDERED_COLLECTION)) {
+                return 3;
+            } else if (isTypeOrSubtype(typeName, ModeShapeLexicon.HUGE_UNORDERED_COLLECTION)) {
+                return 4;
+            }
+        }
+        throw new IllegalArgumentException("None of the node types are known unordered collection types: " + allTypes);
     }
 
     /**
@@ -648,7 +678,7 @@ public class NodeTypes {
      * @return true if any of the named node types is versionable, or false if there are none
      */
     public boolean isVersionable( Name primaryType,
-                                  Set<Name> mixinTypes ) {
+                                  Collection<Name> mixinTypes ) {
         if (primaryType != null && versionableNodeTypeNames.contains(primaryType)) return true;
         for (Name mixinType : mixinTypes) {
             if (versionableNodeTypeNames.contains(mixinType)) return true;
@@ -2023,6 +2053,7 @@ public class NodeTypes {
 
         boolean foundExact = false;
         boolean foundResidual = false;
+        boolean foundSNS = false;
         Name primaryItemName = nodeType.getInternalPrimaryItemName();
 
         for (JcrNodeDefinition node : nodeType.getDeclaredChildNodeDefinitions()) {
@@ -2033,6 +2064,10 @@ public class NodeTypes {
 
             if (primaryItemName != null && primaryItemName.equals(node.getInternalName())) {
                 foundExact = true;
+            }
+            
+            if (node.allowsSameNameSiblings()) {
+                foundSNS = true;
             }
         }
 
@@ -2051,6 +2086,14 @@ public class NodeTypes {
 
         if (primaryItemName != null && !foundExact && !foundResidual) {
             throw new RepositoryException(JcrI18n.invalidPrimaryItemName.text(primaryItemName));
+        }
+
+        Name internalName = nodeType.getInternalName();
+        if (isUnorderedCollection(internalName, supertypeNames)) {
+            boolean isVersionable = isVersionable(internalName, supertypeNames);
+            if (isVersionable || foundSNS || nodeType.hasOrderableChildNodes()) {
+                throw new RepositoryException(JcrI18n.invalidUnorderedCollectionType.text(internalName.toString()));
+            }
         }
     }
 
@@ -2449,7 +2492,7 @@ public class NodeTypes {
             this.childName = strings.create(childName);
             this.childPrimaryType = strings.create(childPrimaryType);
             this.parentPrimaryType = strings.create(parentPrimaryType);
-            StringBuilder parentMixinTypesStr = new StringBuilder('{');
+            StringBuilder parentMixinTypesStr = new StringBuilder("{");
             for (Name mixin : parentMixinTypes) {
                 if (parentMixinTypesStr.length() > 1) parentMixinTypesStr.append(',');
                 parentMixinTypesStr.append(strings.create(mixin));

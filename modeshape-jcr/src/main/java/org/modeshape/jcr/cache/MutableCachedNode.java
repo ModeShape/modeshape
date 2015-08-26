@@ -440,6 +440,40 @@ public interface MutableCachedNode extends CachedNode {
     public PermissionChanges removeACL(SessionCache cache);
 
     /**
+     * Adds an internal property to this cached node. Internal properties are stored only in the internal document and have no
+     * JCR relevance.
+     *
+     * @param name a {@code String} the name of the property; may not be null.
+     * @param value a {@code String} the value of the property; may not be null.
+     */
+    public void addInternalProperty(String name, Object value);
+
+    /**
+     * Returns a map of all the internal properties added for this node. Internal properties are stored as-is in the document and have no
+     * JCR relevance.
+     * 
+     * @return a {@link Map} of (propertyName, propertyValue) pairs. never {@code null} but possibly empty.
+     */
+    public Map<String, Object> getAddedInternalProperties();
+
+    /**
+     * Removes an internal property from this cached node. Internal properties are stored as-is in the document and have no
+     * JCR relevance.
+     *
+     * @param name a {@code String} the name of the property; may not be null.
+     * @return {@code true} if the property was removed, {@code false} otherwise.
+     */
+    public boolean removeInternalProperty(String name);
+
+    /**
+     * Returns a set of all the internal properties which have been removed from this node. Internal properties are stored 
+     * as-is the document and have no JCR relevance.
+     * 
+     * @return a {@link Set} of property names; never {@code null} but possibly empty.
+     */
+    public Set<String> getRemovedInternalProperties();
+
+    /**
      * Interface which exposes all the changes that have occurred on a {@link MutableCachedNode} instance
      */
     public interface NodeChanges {

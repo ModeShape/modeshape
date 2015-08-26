@@ -49,7 +49,7 @@ public class ModeShapeFederationManager implements FederationManager {
                                   String externalPath,
                                   String alias ) throws RepositoryException {
         AbstractJcrNode node = session.getNode(absNodePath);
-        if (session.nodeTypeManager().nodeTypes().isUnorderedCollection(node.getPrimaryTypeName())) {
+        if (session.nodeTypeManager().nodeTypes().isUnorderedCollection(node.getPrimaryTypeName(), node.getMixinTypeNames())) {
             throw new ConstraintViolationException(JcrI18n.operationNotSupportedForUnorderedCollections.text("create projection"));    
         }
         NodeKey parentNodeToBecomeFederatedKey = node.key();

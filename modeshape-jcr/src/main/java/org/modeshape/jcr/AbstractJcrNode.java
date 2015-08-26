@@ -82,6 +82,7 @@ import org.modeshape.jcr.cache.NodeNotFoundInParentException;
 import org.modeshape.jcr.cache.PropertyTypeUtil;
 import org.modeshape.jcr.cache.SessionCache;
 import org.modeshape.jcr.cache.SiblingCounter;
+import org.modeshape.jcr.cache.document.DocumentConstants;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.NamespaceRegistry;
 import org.modeshape.jcr.value.Path;
@@ -840,8 +841,10 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         checkSession();
         ChildReferences childReferences = node().getChildReferences(sessionCache());
         if (childReferences.isEmpty()) return JcrEmptyNodeIterator.INSTANCE;
-        // always use an iterator over the child references here because stuff like permissions need to be checked
-        return new JcrChildNodeIterator(new ChildNodeResolver(session, key()), childReferences.iterator());
+        // if we don't require permission checking, we should use the child references directly since it may have precomputed the size
+        return session.checkPermissionsWhenIteratingChildren() ?
+             new JcrChildNodeIterator(new ChildNodeResolver(session, key()), childReferences.iterator()) :
+             new JcrChildNodeIterator(new ChildNodeResolver(session, key()), childReferences);
     }
 
     protected NodeIterator getNodesInternal() throws RepositoryException {
@@ -1137,16 +1140,6 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
             throw new VersionException(msg.text(segment, readable(parentPathStr), childDefn.getName(), opv));
         }
 
-        Name primaryTypeName = getPrimaryTypeName();
-        if (nodeTypes.isUnorderedCollection(primaryTypeName)) {
-            // this is an unordered collection subtype which has a SNS definition, or we would have failed earlier, so we must
-            // search for existing children with the same name
-            ChildReference ref = node.getChildReferences(cache).getChild(childName);
-            if (ref != null) {
-                throw new ConstraintViolationException(JcrI18n.unorderedCollectionsDontAllowSNS.text(path(), childName));
-            }
-        }
-        
         // If there isn't a desired key, check if the document store doesn't require a certain key format (this is especially used
         // by federation)
         if (desiredKey == null) {
@@ -1161,8 +1154,6 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
                 desiredKey = new NodeKey(documentStoreKey);
             } 
         }
-
-      
 
         // We can create the child, so start by building the required properties ...
         PropertyFactory propFactory = session.propertyFactory();
@@ -1196,6 +1187,12 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         // Check if the child node is referenceable
         if (capabilities.getNodeType(childPrimaryNodeTypeName).isNodeType(JcrMixLexicon.REFERENCEABLE)) {
             newChild.setProperty(cache, propFactory.create(JcrLexicon.UUID, session.nodeIdentifier(newChild.getKey())));
+        }
+        
+        if (nodeTypes.isUnorderedCollection(childPrimaryNodeTypeName, null)) {
+            // we're adding a new unordered collection so we need to set some internal (non JCR) information
+            int bucketIdLength = nodeTypes.getBucketIdLengthForUnorderedCollection(childPrimaryNodeTypeName, null);
+            newChild.addInternalProperty(DocumentConstants.BUCKET_ID_LENGTH, bucketIdLength);
         }
 
         // And get or create the JCR node ...
@@ -1374,11 +1371,6 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         if (!getPrimaryNodeType().hasOrderableChildNodes()) {
             String msg = JcrI18n.notOrderable.text(getPrimaryNodeType().getName(), location());
             throw new UnsupportedRepositoryOperationException(msg);
-        }
-
-        NodeTypes nodeTypes = session().nodeTypeManager().nodeTypes();
-        if (nodeTypes != null && nodeTypes.isUnorderedCollection(getPrimaryTypeName())) {
-            throw new ConstraintViolationException(JcrI18n.operationNotSupportedForUnorderedCollections.text("reorder"));            
         }
 
         Path srcPath = session.pathFactory().create(srcChildRelPath);
@@ -2515,6 +2507,12 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
             Property uuidProp = session.propertyFactory().create(JcrLexicon.UUID, getIdentifier());
             mutable.setProperty(cache, uuidProp);
         }
+        
+        if (nodeTypes.isUnorderedCollection(mixinTypeName, null)) {
+            // we're making a node an unordered collection, so we need to set some internal data on the document..
+            int bucketIdLength = nodeTypes.getBucketIdLengthForUnorderedCollection(mixinTypeName, null);
+            mutable.addInternalProperty(DocumentConstants.BUCKET_ID_LENGTH, bucketIdLength);
+        }
 
         // And auto-create any properties that are defined by the new primary type ...
         autoCreateItemsFor(mixinType);
@@ -2695,6 +2693,18 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
 
         // Change the mixin types property (atomically, even if some other operation snuck in and added the mixin) ...
         MutableCachedNode mutable = mutable();
+
+        if (nodeTypes.isUnorderedCollection(removedMixinName, null)) {
+            if (hasNodes()) {
+                // we're removing a large unordered collection mixin which is not possible if this node has children
+                throw new ConstraintViolationException(JcrI18n.cannotRemoveUnorderedCollectionMixin.text(removedMixinName,
+                                                                                                         getPath()));
+            } else {
+                // we're removing a large collection mixin from an empty node, so we need to remove some internal data from the document...
+                mutable.removeInternalProperty(DocumentConstants.BUCKET_ID_LENGTH);    
+            }
+        }
+
         mutable.removeMixin(cache, removedMixinName);
 
         // If there were protected properties or children, remove them
@@ -2731,7 +2741,9 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
     public boolean canAddMixin( String mixinName ) throws NoSuchNodeTypeException, RepositoryException {
         CheckArg.isNotEmpty(mixinName, "mixinName");
 
-        JcrNodeType mixinType = session().nodeTypeManager().getNodeType(mixinName);
+        JcrNodeTypeManager jcrNodeTypeManager = session().nodeTypeManager();
+        NodeTypes nodeTypes = session().nodeTypes();
+        JcrNodeType mixinType = jcrNodeTypeManager.getNodeType(mixinName);
         if (!mixinType.isMixin()) return false;
         if (isLockedByAnotherSession()) return false;
         if (!isCheckedOut()) return false;
@@ -2740,9 +2752,22 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         final Name mixinNameObj = mixinType.getInternalName();
         if (isNodeType(mixinNameObj)) return true;
 
-        // do not allow versionable mixin on external nodes
-        if (isExternal() && session().nodeTypes().isVersionable(mixinNameObj)) {
+        // do not allow versionable mixin on external nodes or large collections
+        boolean isNodeUnorderedCollection = nodeTypes.isUnorderedCollection(getPrimaryTypeName(), getMixinTypeNames());
+        if ((isExternal() || isNodeUnorderedCollection) && session().nodeTypes().isVersionable(mixinNameObj)) {
             return false;
+        }
+
+        boolean isMixinUnorderedCollection = nodeTypes.isUnorderedCollection(mixinNameObj, null);
+        if (isMixinUnorderedCollection) {
+            if (isNodeUnorderedCollection) {
+                // do not allow 2 unordered large collections
+                return false;
+            } else if (hasNodes()){
+                // we're trying to make a new node an unordered collection.
+                // this is possible only if the node doesn't have any children
+                return false;
+            }
         }
 
         // ------------------------------------------------------------------------------
@@ -2777,7 +2802,6 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
 
             CachedNode node = node();
             NodeCache cache = cache();
-            NodeTypes nodeTypes = session.nodeTypes();
             // Need to figure out if the child node requires an SNS definition
             ChildReferences refs = node.getChildReferences(cache());
             // Create a sibling counter that reduces the count by 1, since we're always dealing with existing children
