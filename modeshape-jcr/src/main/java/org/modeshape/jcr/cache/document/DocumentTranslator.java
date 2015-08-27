@@ -868,15 +868,21 @@ public class DocumentTranslator implements DocumentConstants {
 
     public ChildReferences getChildReferences( WorkspaceCache cache,
                                                Document document ) {
+        Name primaryType = getPrimaryType(document);
+        Set<Name> mixinTypes = getMixinTypes(document);
+        NodeTypes nodeTypes = getNodeTypes(cache);
+
+        boolean isUnorderedCollection = nodeTypes != null && nodeTypes.isUnorderedCollection(primaryType, mixinTypes);
+        if (isUnorderedCollection) {
+            return new BucketedChildReferences(document, this);
+        }
+
         boolean hasChildren = document.containsField(CHILDREN);
         boolean hasFederatedSegments = document.containsField(FEDERATED_SEGMENTS);
         if (!hasChildren && !hasFederatedSegments) {
             return ImmutableChildReferences.EMPTY_CHILD_REFERENCES;
         }
-        
-        Name primaryType = getPrimaryType(document);
-        Set<Name> mixinTypes = getMixinTypes(document);
-        NodeTypes nodeTypes = getNodeTypes(cache);
+
         boolean allowsSNS = nodeTypes == null || nodeTypes.allowsNameSiblings(primaryType, mixinTypes);
         ChildReferences internalChildRefs = hasChildren ? ImmutableChildReferences.create(this, document, CHILDREN, allowsSNS) : ImmutableChildReferences.EMPTY_CHILD_REFERENCES;
         ChildReferences externalChildRefs = hasFederatedSegments ? ImmutableChildReferences.create(this, document,
@@ -1504,5 +1510,156 @@ public class DocumentTranslator implements DocumentConstants {
      */
     protected Integer getCacheTtlSeconds( Document document ) {
         return document.getInteger(CACHE_TTL_SECONDS);
+    }
+    
+    protected String bucketKey( String parentKey, String bucketId ) {
+        return parentKey + "/" + bucketId;
+    }
+    
+    protected BucketedChildReferences.Bucket loadBucket( String parentKey, BucketId bucketId ) {
+        String bucketKey = bucketKey(parentKey, bucketId.toString());
+        SchematicEntry schematicEntry = documentStore.get(bucketKey);
+        if (schematicEntry == null) {
+            return null;
+        }
+        return new BucketedChildReferences.Bucket(bucketId, schematicEntry.getContent(), this);
+    }
+    
+    protected void addChildrenToBuckets( EditableDocument parentDoc,
+                                         ChildReferences appended ) {
+        assert appended != null;
+        
+        long totalAdditions = 0;
+        Integer bucketIdLength = parentDoc.getInteger(BUCKET_ID_LENGTH);     
+        assert bucketIdLength != null;
+        String parentKey = getKey(parentDoc);
+
+        // add all the new children into their corresponding buckets, creating each bucket if it does not exist
+        // we don't need to worry about locking here because the parent document should've already been locked at the beginning
+        // of the transaction ensuring (theoretically ;) linearizability 
+        Map<BucketId, Set<ChildReference>> additionsPerBucket = new HashMap<>((int)appended.size());
+
+        // first collect all the new references into buckets...
+        for (ChildReference inserted : appended) {
+            Name insertedName = inserted.getName();
+            BucketId bucketId = new BucketId(insertedName, bucketIdLength);
+            Set<ChildReference> additions = additionsPerBucket.get(bucketId);
+            if (additions == null) {
+                additions = new HashSet<>();
+                additionsPerBucket.put(bucketId, additions);
+            }
+            additions.add(inserted);
+            ++totalAdditions;
+        }
+
+        //then insert them into each bucket
+        for (Map.Entry<BucketId, Set<ChildReference>> entry : additionsPerBucket.entrySet()) {
+            BucketId bucketId = entry.getKey();
+            String bucketKey = bucketKey(parentKey, bucketId.toString());
+            boolean newBucket = !documentStore.containsKey(bucketKey);
+            EditableDocument bucketDoc = documentStore.edit(bucketKey, true, false);
+            assert bucketDoc != null;
+            for (ChildReference ref : entry.getValue()) {
+                // we store each key,name pair directly in the bucket
+                String key = ref.getKey().toString();
+                String name = strings.create(ref.getName());
+                bucketDoc.setString(key, name);
+            }
+
+            if (newBucket) {
+                // store the bucket id into the parent
+                parentDoc.getOrCreateArray(BUCKETS).add(bucketId.toString());
+            }
+        }
+
+        Long currentSize = parentDoc.getLong(SIZE);
+        if (currentSize == null) {
+            parentDoc.setNumber(SIZE, totalAdditions);
+        } else {
+            parentDoc.setNumber(SIZE, currentSize + totalAdditions);
+        }
+    }
+    
+    protected Map<BucketId, Set<NodeKey>> preRemoveChildrenFromBuckets( WorkspaceCache wsCache,
+                                                                        EditableDocument parentDoc,
+                                                                        Set<NodeKey> removals )  {
+        assert removals != null && !removals.isEmpty();
+        Integer bucketIdLength = parentDoc.getInteger(BUCKET_ID_LENGTH);
+        assert bucketIdLength != null;
+
+        long totalRemovals = 0;
+
+        // figure out the bucket where each removed node belongs
+        Map<BucketId, Set<NodeKey>> removalsPerBucket = new HashMap<>(removals.size());
+        for (NodeKey removedKey : removals) {
+            Name removedName = wsCache.getNode(removedKey).getName(wsCache);
+            BucketId bucketId = new BucketId(removedName, bucketIdLength);
+            Set<NodeKey> bucketRemovals = removalsPerBucket.get(bucketId);
+            if (bucketRemovals == null) {
+                bucketRemovals = new HashSet<>();
+                removalsPerBucket.put(bucketId, bucketRemovals);
+            }
+            bucketRemovals.add(removedKey);
+            ++totalRemovals;
+        }
+
+        Long currentSize = parentDoc.getLong(SIZE);
+        if (totalRemovals > 0 && currentSize != null) {
+            parentDoc.setNumber(SIZE, currentSize - totalRemovals);
+        }
+
+        return removalsPerBucket;
+    }
+
+    protected void persistBucketRemovalChanges( NodeKey parentKey,
+                                                Map<BucketId, Set<NodeKey>> removalsPerBucket ) {
+        EditableDocument parentDoc = documentStore.edit(parentKey.toString(), false, false);
+        // for each bucket, get the corresponding document (locking it) and make the children changes
+        for (Map.Entry<BucketId, Set<NodeKey>> entry : removalsPerBucket.entrySet()) {
+            BucketId bucketId = entry.getKey();
+            Set<NodeKey> removalsFromBucket = entry.getValue();
+            String bucketIdString = bucketId.toString();
+            String bucketKey = bucketKey(parentKey.toString(), bucketIdString);
+            EditableDocument bucketDoc = documentStore.edit(bucketKey, false, true);
+            assert bucketDoc != null;
+            for (NodeKey toRemove : removalsFromBucket) {
+                // keys are stored directly in the bucket
+                bucketDoc.remove(toRemove.toString());
+            }
+            if (bucketDoc.isEmpty()) {
+                documentStore.remove(bucketKey);
+                parentDoc.getArray(BUCKETS).remove((Object)bucketIdString);
+            } 
+        }
+    }
+    
+    protected void removeAllBucketsFromUnorderedCollection( NodeKey parentDocKey ) {
+        // should already have been loaded into the cache
+        EditableDocument parentDoc = documentStore.edit(parentDocKey.toString(), false, false);
+        assert parentDoc != null;
+        EditableArray bucketsIds = parentDoc.getArray(BUCKETS);
+        if (bucketsIds == null || bucketsIds.isEmpty()) {
+            return;
+        }
+        for (Object bucketId : bucketsIds) {
+            String bucketKey = bucketKey(parentDocKey.toString(), bucketId.toString());
+            documentStore.remove(bucketKey);
+        }
+    }
+    
+    protected void addInternalProperties(EditableDocument doc, Map<String, Object> properties) {
+        if (properties.isEmpty()) {
+            return;
+        }
+        doc.putAll(properties);
+    }
+
+    protected void removeInteralProperties(EditableDocument doc, Set<String> properties) {
+        if (properties.isEmpty()) {
+            return;
+        }
+        for (String propertyName : properties) {
+            doc.remove(propertyName);
+        }
     }
 }

@@ -6,7 +6,7 @@
         xmlns="urn:infinispan:config:7.2">
     <cache-container default-cache="levelDBRepository">
         <local-cache name="levelDBRepository" statistics="false">
-            <eviction strategy="LIRS" max-entries="50000"/>
+            <eviction strategy="LIRS" max-entries="100000"/>
             <transaction
                     mode="NON_XA"
                     transaction-manager-lookup="org.infinispan.transaction.lookup.JBossStandaloneJTAManagerLookup"

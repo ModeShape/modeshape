@@ -209,6 +209,9 @@ public final class JcrI18n {
     public static I18n propertyNoLongerSatisfiesConstraints;
     public static I18n propertyNoLongerHasValidDefinition;
     public static I18n propertyIsProtected;
+    public static I18n operationNotSupportedForUnorderedCollections;
+    public static I18n invalidUnorderedCollectionType;
+    
 
     public static I18n cannotRemoveRootNode;
     public static I18n cannotRemoveParentNodeOfTarget;
@@ -408,6 +411,7 @@ public final class JcrI18n {
     public static I18n cannotCreateChildOnCheckedInNodeSinceOpvOfChildDefinitionIsNotIgnore;
     public static I18n cannotRemoveChildOnCheckedInNodeSinceOpvOfChildDefinitionIsNotIgnore;
     public static I18n cannotRemoveFromProtectedNode;
+    public static I18n cannotRemoveUnorderedCollectionMixin;
     public static I18n cannotRemoveVersion;
     public static I18n pendingMergeConflicts;
     public static I18n invalidVersion;

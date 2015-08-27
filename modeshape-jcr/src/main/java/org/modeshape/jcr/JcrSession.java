@@ -1082,6 +1082,9 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
             MutableCachedNode mutableSrcParent = srcParent.mutable();
             MutableCachedNode mutableDestParent = destParentNode.mutable();
             if (mutableSrcParent.equals(mutableDestParent)) {
+                if (nodeTypeManager().nodeTypes().isUnorderedCollection(srcParent.getPrimaryTypeName(), srcParent.getMixinTypeNames())) {
+                    throw new ConstraintViolationException(JcrI18n.operationNotSupportedForUnorderedCollections.text("rename"));
+                }
                 // It's just a rename ...
                 mutableSrcParent.renameChild(sessionCache, srcNode.key(), destPath.getLastSegment().getName());
             } else {

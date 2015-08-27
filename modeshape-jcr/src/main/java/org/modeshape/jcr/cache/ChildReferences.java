@@ -232,7 +232,7 @@ public interface ChildReferences extends Iterable<ChildReference> {
         /**
          * Get the set of changes for this context.
          *
-         * @return the changes; never null
+         * @return the changes; can be null if there are no changes
          */
         Changes changes();
     }

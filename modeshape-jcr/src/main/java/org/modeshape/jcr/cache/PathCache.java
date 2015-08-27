@@ -47,4 +47,8 @@ public class PathCache {
     public boolean removePath( NodeKey key ) {
         return paths.remove(key) != null;
     }
+    
+    public void put(NodeKey key, Path path) {
+        this.paths.put(key, path);
+    }
 }

@@ -140,6 +140,19 @@
     < 'STRING', 'URI', 'BINARY', 'LONG', 'DOUBLE', 'DECIMAL', 'BOOLEAN', 
       'DATE', 'NAME', 'PATH', 'REFERENCE', 'WEAKREFERENCE', 'UNDEFINED'
 
+// -----------------------
+// Large unordered collections
+// -----------------------
+[mode:unorderedCollection] mixin abstract
 
+// Tiny unordered collection, where the number of range buckets is 16
+[mode:unorderedTinyCollection] > mode:unorderedCollection mixin
 
+// Small unordered collection, where the number of range buckets is 256
+[mode:unorderedSmallCollection] > mode:unorderedCollection mixin
 
+// Large unordered collection, where the number of range buckets is 4096
+[mode:unorderedLargeCollection] > mode:unorderedCollection mixin
+
+// Very large unordered collection, where the number of range buckets is 65536
+[mode:unorderedHugeCollection] > mode:unorderedCollection mixin

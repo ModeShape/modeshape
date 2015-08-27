@@ -17,6 +17,7 @@
 package org.modeshape.jcr;
 
 import javax.jcr.RepositoryException;
+import javax.jcr.nodetype.ConstraintViolationException;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.StringUtil;
 import org.modeshape.jcr.api.federation.FederationManager;
@@ -47,7 +48,11 @@ public class ModeShapeFederationManager implements FederationManager {
                                   String sourceName,
                                   String externalPath,
                                   String alias ) throws RepositoryException {
-        NodeKey parentNodeToBecomeFederatedKey = session.getNode(absNodePath).key();
+        AbstractJcrNode node = session.getNode(absNodePath);
+        if (session.nodeTypeManager().nodeTypes().isUnorderedCollection(node.getPrimaryTypeName(), node.getMixinTypeNames())) {
+            throw new ConstraintViolationException(JcrI18n.operationNotSupportedForUnorderedCollections.text("create projection"));    
+        }
+        NodeKey parentNodeToBecomeFederatedKey = node.key();
 
         String projectionAlias = !StringUtil.isBlank(alias) ? alias : externalPath;
         if (projectionAlias.endsWith("/")) {
@@ -66,8 +71,8 @@ public class ModeShapeFederationManager implements FederationManager {
         SessionCache sessionCache = this.session.spawnSessionCache(false);
         String externalNodeKey = documentStore.createExternalProjection(parentNodeToBecomeFederatedKey.toString(), sourceName,
                                                                         externalPath, projectionAlias);
-        MutableCachedNode node = sessionCache.mutable(parentNodeToBecomeFederatedKey);
-        node.addFederatedSegment(externalNodeKey, projectionAlias);
+        MutableCachedNode mutable = sessionCache.mutable(parentNodeToBecomeFederatedKey);
+        mutable.addFederatedSegment(externalNodeKey, projectionAlias);
         sessionCache.save();
     }
 

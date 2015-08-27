@@ -22,6 +22,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -52,6 +53,7 @@ import org.modeshape.common.util.CheckArg;
 import org.modeshape.jcr.ExecutionContext;
 import org.modeshape.jcr.JcrI18n;
 import org.modeshape.jcr.JcrLexicon;
+import org.modeshape.jcr.NodeTypes;
 import org.modeshape.jcr.TimeoutException;
 import org.modeshape.jcr.api.Binary;
 import org.modeshape.jcr.api.value.DateTime;
@@ -148,6 +150,14 @@ public class WritableSessionCache extends AbstractSessionCache {
 
     protected final void assertInSession( SessionNode node ) {
         assert this.changedNodes.get(node.getKey()) == node : "Node " + node.getKey() + " is not in this session";
+    }
+    
+    protected NodeTypes nodeTypes() {
+        RepositoryEnvironment repositoryEnvironment = workspaceCache().repositoryEnvironment();
+        if (repositoryEnvironment != null) {
+            return repositoryEnvironment.nodeTypes();
+        }
+        return null;
     }
 
     @Override
@@ -921,9 +931,13 @@ public class WritableSessionCache extends AbstractSessionCache {
         PathCache workspacePaths = new PathCache(persistedCache);
 
         Set<NodeKey> removedNodes = null;
+        Set<NodeKey> removedUnorderedCollections = null;
         Set<BinaryKey> unusedBinaryKeys = new HashSet<>();
         Set<BinaryKey> usedBinaryKeys = new HashSet<>();
         Set<NodeKey> renamedExternalNodes = new HashSet<>();
+        Map<NodeKey, Map<BucketId, Set<NodeKey>>> unorderedCollectionBucketRemovals = null;
+        
+        NodeTypes nodeTypes = nodeTypes();
         for (NodeKey key : changedNodesInOrder) {
             SessionNode node = changedNodes.get(key);
             String keyStr = key.toString();
@@ -938,6 +952,11 @@ public class WritableSessionCache extends AbstractSessionCache {
                     }
                     Name primaryType = persisted.getPrimaryType(this);
                     Set<Name> mixinTypes = persisted.getMixinTypes(this);
+                    boolean isUnorderedCollection = nodeTypes != null && nodeTypes.isUnorderedCollection(primaryType, mixinTypes);
+                    if (isUnorderedCollection && removedUnorderedCollections == null) {
+                        removedUnorderedCollections = new HashSet<>();
+                    }
+                   
                     Path path = workspacePaths.getPath(persisted);
                     NodeKey parentKey = persisted.getParentKey(persistedCache);
                     CachedNode parent = getNode(parentKey);
@@ -955,6 +974,9 @@ public class WritableSessionCache extends AbstractSessionCache {
                     }
                     changes.nodeRemoved(key, parentKey, path, primaryType, mixinTypes, parentPrimaryType, parentMixinTypes);
                     removedNodes.add(key);
+                    if (isUnorderedCollection) {
+                        removedUnorderedCollections.add(key);
+                    }
 
                     // if there were any referrer changes for the removed nodes, we need to process them
                     ReferrerChanges referrerChanges = referrerChangesForRemovedNodes.get(key);
@@ -981,11 +1003,10 @@ public class WritableSessionCache extends AbstractSessionCache {
                 // should be there and shouldn't require a looking in the cache...
                 Name primaryType = node.getPrimaryType(this);
                 Set<Name> mixinTypes = node.getMixinTypes(this);
-
+                boolean isUnorderedCollection = nodeTypes != null && nodeTypes.isUnorderedCollection(primaryType, mixinTypes);
+               
                 CachedNode persisted = null;
-                // when editing existing nodes delay the loading of the session path because for some external nodes/connectors 
-                // this may not be available (see below)
-                Path newPath = node.isNew() ? sessionPaths.getPath(node) : null;
+                Path newPath = null;
                 NodeKey newParent = node.newParent();
                 EditableDocument doc = null;
                 ChangedAdditionalParents additionalParents = node.additionalParents();
@@ -994,6 +1015,27 @@ public class WritableSessionCache extends AbstractSessionCache {
                     doc = Schematic.newDocument();
                     translator.setKey(doc, key);
                     translator.setParents(doc, newParent, null, additionalParents);
+                    translator.addInternalProperties(doc, node.getAddedInternalProperties());
+                    
+                    SessionNode mutableParent = mutable(newParent);
+                    Set<Name> parentMixinTypes = mutableParent.getMixinTypes(this);
+                    boolean parentAllowsSNS = nodeTypes != null && nodeTypes.allowsNameSiblings(primaryType, parentMixinTypes);
+                    if (!parentAllowsSNS) {
+                        // if the parent of the *new* node doesn't allow SNS, we can optimize the path lookup by
+                        // looking directly at the parent's appended nodes because:
+                        // a) "this" is a new node
+                        // b) the parent must be already in this cache 
+                        // c) no SNS are allowed meaning that we don't care about the already existent child references  
+                        // and determining the path in a regular fashion *can* very expensive because it requires loading all of the parent's child references
+                        MutableChildReferences appended = mutableParent.appended(false);
+                        assert appended != null;
+                        Path parentPath = sessionPaths.getPath(mutableParent);
+                        newPath = pathFactory().create(parentPath, appended.getChild(key).getName());
+                        sessionPaths.put(key, newPath);
+                    } else {
+                        // do a regular lookup of the path, which *will load* the parent's child references
+                        newPath = sessionPaths.getPath(node);
+                    }                    
                     // Create an event ...
                     changes.nodeCreated(key, newParent, newPath, primaryType, mixinTypes, node.changedProperties());
                 } else {
@@ -1007,6 +1049,10 @@ public class WritableSessionCache extends AbstractSessionCache {
                         // just moments before we got our transaction to save ...
                         throw new DocumentNotFoundException(keyStr);
                     }
+                    // process any internal properties first
+                    translator.addInternalProperties(doc, node.getAddedInternalProperties());
+                    translator.removeInteralProperties(doc, node.getRemovedInternalProperties());
+                    
                     // only after we're certain the document exists in the store can we safely compute this path
                     newPath = sessionPaths.getPath(node);
                     if (newParent != null) {
@@ -1126,10 +1172,14 @@ public class WritableSessionCache extends AbstractSessionCache {
                 ChangedChildren changedChildren = node.changedChildren();
                 MutableChildReferences appended = node.appended(false);
                 if ((changedChildren == null || changedChildren.isEmpty()) && (appended != null && !appended.isEmpty())) {
-                    // Just appended children ...
-                    translator.changeChildren(doc, changedChildren, appended);
+                    // Just appended children ...  
+                    if (!isUnorderedCollection) {
+                        translator.changeChildren(doc, changedChildren, appended);
+                    } else {
+                        translator.addChildrenToBuckets(doc, appended);
+                    }
                 } else if (changedChildren != null && !changedChildren.isEmpty()) {
-                    if (!changedChildren.getRemovals().isEmpty()) {
+                    if (!changedChildren.getRemovals().isEmpty() && !isUnorderedCollection) {
                         // This node is not being removed (or added), but it has removals, and we have to calculate the paths
                         // of the removed nodes before we actually change the child references of this node.
                         for (NodeKey removed : changedChildren.getRemovals()) {
@@ -1149,7 +1199,33 @@ public class WritableSessionCache extends AbstractSessionCache {
                     }
 
                     // Now change the children ...
-                    translator.changeChildren(doc, changedChildren, appended);
+                    if (!isUnorderedCollection) {
+                        // this is a regular node
+                        translator.changeChildren(doc, changedChildren, appended);
+                    } else {
+                        // there are both added & removed children for this collection
+                        if (appended != null && !appended.isEmpty()) {
+                            // process additions first
+                            translator.addChildrenToBuckets(doc, appended);
+                        }
+                        if (changedChildren.removalCount() > 0){
+                            // when removing nodes from unordered collections, a 2 step process is required
+                            // 1. collect all the nodes which will be removed from each bucket, without persisting the actual bucket
+                            // changes in ISPN. This is because if bucket changes are persisted here, we may have to process a deleted
+                            // child later on while not having any more information
+                            // 2. after all the changed nodes have been processed, make the actual changes to the bucket documents
+                            // see below
+                            Map<BucketId, Set<NodeKey>> removalsPerBucket = translator.preRemoveChildrenFromBuckets(workspaceCache(),
+                                                                                                                    doc,
+                                                                                                                    changedChildren.getRemovals());
+                            if (!removalsPerBucket.isEmpty()) {
+                                if (unorderedCollectionBucketRemovals == null) {
+                                    unorderedCollectionBucketRemovals = new LinkedHashMap<>();
+                                }
+                                unorderedCollectionBucketRemovals.put(key, removalsPerBucket);
+                            }
+                        }
+                    }
 
                     // Generate events for renames, as this is only captured in the parent node ...
                     Map<NodeKey, Name> newNames = changedChildren.getNewNames();
@@ -1311,6 +1387,21 @@ public class WritableSessionCache extends AbstractSessionCache {
                 }
             }
         }
+        
+        // persist any bucket document changes resulted from removing children from unordered collections
+        if (unorderedCollectionBucketRemovals != null) {
+            for (Map.Entry<NodeKey, Map<BucketId, Set<NodeKey>>> entry : unorderedCollectionBucketRemovals.entrySet()) {
+                translator.persistBucketRemovalChanges(entry.getKey(), entry.getValue());                
+            }
+        }
+
+        // Remove all the buckets from all the unordered collections which have been removed...
+        // This will only remove the buckets, not the original nodes which are processed below
+        if (removedUnorderedCollections != null) {
+            for (NodeKey removedUnorderedCollectionKey : removedUnorderedCollections) {
+                translator.removeAllBucketsFromUnorderedCollection(removedUnorderedCollectionKey);
+            }
+        }
 
         if (removedNodes != null) {
             assert !removedNodes.isEmpty();
@@ -1411,7 +1502,7 @@ public class WritableSessionCache extends AbstractSessionCache {
         //return a transient workspace cache, which contains the latest view of the nodes which will be changed
         return workspaceCache().persistedCache(changedNodesInOrder);
     }
-
+   
     private Transactions.TransactionFunction binaryUsageUpdateFunction( final Set<BinaryKey> usedBinaries,
                                                                         final Set<BinaryKey> unusedBinaries ) {
         final BinaryStore binaryStore = getContext().getBinaryStore();

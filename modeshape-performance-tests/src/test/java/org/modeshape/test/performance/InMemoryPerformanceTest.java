@@ -18,6 +18,7 @@ package org.modeshape.test.performance;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
@@ -27,6 +28,7 @@ import javax.jcr.NodeIterator;
 import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
+import javax.jcr.Workspace;
 import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.document.Json;
 import org.junit.After;
@@ -78,6 +80,7 @@ public class InMemoryPerformanceTest {
         engine.deploy(config);
         repository = engine.startRepository(config.getName()).get();
         session = repository.login();
+        registerNodeTypes("cnd/large-collections.cnd", session);
         MODESHAPE_STARTUP.stop();
         STARTUP.stop();
     }
@@ -380,6 +383,66 @@ public class InMemoryPerformanceTest {
         System.out.println("Total time to insert " + totalNumberOfNodes + " nodes in batches of " + childrenPerNode + ": "
                            + sw.getSimpleStatistics());
     }
+    
+    @Test
+    @Performance
+    @FixFor( "MODE-2109" )
+    public void insertNodesInFlatHierarchyWithinUnorderedCollection() throws Exception {
+        int totalNodeCount = 1000000;
+        int childrenPerNode = 1000;
+        int propertiesPerNode = 0;
+        String nodeType = "test:largeCollection";
+
+        session.getRootNode().addNode("testRoot", nodeType);
+        session.save();
+        Stopwatch sw = new Stopwatch();
+        sw.start();
+        int totalNumberOfNodes = createSubgraphBreadthFirst(1, nodeType, "/testRoot", totalNodeCount, childrenPerNode,
+                                                            propertiesPerNode, false);
+        sw.stop();
+        System.out.println("Total time to insert " + totalNumberOfNodes + " nodes in batches of " + childrenPerNode + ": "
+                           + sw.getSimpleStatistics());
+    }
+
+    @Test
+    @Performance
+    @FixFor( "MODE-2109" )
+    public void insertNodesInLargeCollection() throws Exception {
+        int totalNodeCount = 1000000;
+        int batchSize = 1000;
+        int propertiesPerNode = 1;
+        String parentAbsPath = "/testRoot";
+        String nodeType = "test:largeCollection";
+        
+        session.getRootNode().addNode("testRoot", nodeType);
+        session.save();
+        Stopwatch sw = new Stopwatch();
+        sw.start();
+        Session insertingSession = null;
+        for (int i = 0; i < totalNodeCount; i++) {
+            insertingSession = insertingSession == null ? repository.login() : insertingSession;
+            Stopwatch sessionWatch = new Stopwatch();
+            sessionWatch.start();
+            Node parentNode = insertingSession.getNode(parentAbsPath);
+            Node child = parentNode.addNode("childNode" + i);
+            for (int j = 0; j != propertiesPerNode; ++j) {
+                String value = (j % 5 == 0) ? LARGE_STRING_VALUE : SMALL_STRING_VALUE;
+                child.setProperty("property" + j, value);
+            }
+            if (i > 0 && (i + 1)  % batchSize == 0) {
+                insertingSession.save();
+                sessionWatch.stop();
+                long size = parentNode.getNodes().getSize();
+                System.out.println("Time to insert " + batchSize + " nodes " + sessionWatch.getSimpleStatistics() + "; Total size:" + size);
+                insertingSession.logout();
+                insertingSession = null;
+            }
+        }
+        sw.stop();
+        long totalNumberOfNodes = session.getNode(parentAbsPath).getNodes().getSize();
+        System.out.println("Total time to insert " + totalNumberOfNodes + " nodes in batches of " + batchSize + ": "
+                           + sw.getSimpleStatistics());
+    }
 
     @Test
     @Performance
@@ -621,5 +684,13 @@ public class InMemoryPerformanceTest {
             units = " microsecond(s)";
         }
         return "total = " + stopwatch.getTotalDuration() + "; avg = " + avgDuration + units;
+    }
+
+    protected static void registerNodeTypes( String resourceName, Session session ) throws RepositoryException, IOException {
+        InputStream stream = InMemoryPerformanceTest.class.getClassLoader().getResourceAsStream(resourceName);
+        assertThat(stream, is(notNullValue()));
+        Workspace workspace = session.getWorkspace();
+        org.modeshape.jcr.api.nodetype.NodeTypeManager ntMgr = (org.modeshape.jcr.api.nodetype.NodeTypeManager)workspace.getNodeTypeManager();
+        ntMgr.registerNodeTypes(stream, true);
     }
 }
