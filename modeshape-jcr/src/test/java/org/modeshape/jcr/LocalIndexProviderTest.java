@@ -1211,4 +1211,29 @@ public class LocalIndexProviderTest extends AbstractIndexProviderTest {
         assertTrue(indexManager().getIndexNames("missing", "default", IndexManager.IndexStatus.ENABLED).isEmpty());
         assertTrue(indexManager().getIndexNames(LOCAL_PROVIDER_NAME, "missing", IndexManager.IndexStatus.ENABLED).isEmpty());
     }
+
+    @Test
+    @FixFor( "MODE-2498")
+    public void shouldSelectCorrectIndexWhenMultipleIndexesUseTheSameAncestorProperty() throws Exception {
+        registerNodeType("mix:custom", true, true, "mix:title");
+        registerNodeType("mix:custom2", true, true, "mix:title");
+        registerValueIndex("custom_names", "mix:custom", null, "*", "jcr:name", PropertyType.NAME);
+        registerValueIndex("custom2_names", "mix:custom2", null, "*", "jcr:name", PropertyType.NAME);
+
+        //print = true;
+
+        // Add a node that uses this type ...
+        Node root = session().getRootNode();
+        Node book1 = root.addNode("myFirstBook");
+        book1.addMixin("mix:custom");
+        book1.setProperty("jcr:title", "The Title");
+
+        waitForIndexes();
+        session.save();
+        waitForIndexes();
+
+        // Compute a query plan that should use this index ...
+        Query query = jcrSql2Query("SELECT * FROM [mix:custom] as custom where custom.[jcr:name] = 'myFirstBook'");
+        validateQuery().rowCount(1L).useIndex("custom_names").validate(query, query.execute());
+    }
 }

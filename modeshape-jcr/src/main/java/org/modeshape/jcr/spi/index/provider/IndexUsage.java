@@ -66,22 +66,14 @@ public class IndexUsage {
     private final QueryContext context;
     private final Name indexedNodeTypeName;
     private final Set<String> selectedNamesOrAliases;
-    private final boolean selectedNodeTypeMatchesIndex;
-
+   
     public IndexUsage( QueryContext context,
                        IndexCostCalculator calculator,
                        IndexDefinition defn ) {
         this.context = context;
         this.defn = defn;
         this.indexedNodeTypeName = name(defn.getNodeTypeName());
-        boolean matchedAtLeastOneNodeType = false;
         this.selectedNamesOrAliases = calculator.selectedNodeTypes();
-        for (String nodeTypeOrAlias : selectedNamesOrAliases) {
-            Name selectedNodeTypeName = name(nodeTypeOrAlias);
-            matchedAtLeastOneNodeType = nodeTypes().isTypeOrSubtype(selectedNodeTypeName, indexedNodeTypeName);
-            if (matchedAtLeastOneNodeType) break;
-        }
-        this.selectedNodeTypeMatchesIndex = matchedAtLeastOneNodeType;
     }
 
     /**
@@ -318,12 +310,7 @@ public class IndexUsage {
     }
 
     protected final boolean matchesSelectorName( String selectorName ) {
-        if (selectedNamesOrAliases.contains(selectorName)) {
-            // Now we know that the supplied selector name matches the selected node type, but return whether
-            // that selected node type matches the index's node type ...
-            return selectedNodeTypeMatchesIndex;
-        }
-        return false;
+        return selectedNamesOrAliases.contains(selectorName); 
     }
 
     protected final NodeTypes nodeTypes() {
