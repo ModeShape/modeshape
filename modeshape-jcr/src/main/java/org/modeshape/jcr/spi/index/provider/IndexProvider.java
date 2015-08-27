@@ -541,17 +541,59 @@ public abstract class IndexProvider {
                 public void apply( String workspaceName,
                                    ManagedIndex index,
                                    IndexDefinition defn ) {
-                    if (!defn.isEnabled()) return;
-                    if (!defn.getWorkspaceMatchRule().usedInWorkspace(workspaceName)) return;
-                    logger().trace("Considering index '{0}' in '{1}' provider for query in workspace '{2}'", defn.getName(),
-                                   getName(), workspaceName);
-                    planUseOfIndex(context, calculator, workspaceName, index, defn);
+                    boolean traceEnabled = logger().isTraceEnabled();
+                    if (!defn.isEnabled()) {
+                        if (traceEnabled) {
+                            logger().trace("Skipping index '{0}' in '{1}' provider because it is not enabled",
+                                           defn.getName(), getName());
+                        }
+                        return;
+                    }
+                    if (!defn.getWorkspaceMatchRule().usedInWorkspace(workspaceName)) {
+                        if (traceEnabled) {
+                            logger().trace("Skipping index '{0}' in '{1}' provider for query because it doest not match the '{2}' workspace",  
+                                           defn.getName(), getName(), workspaceName);
+                        }
+                        return;
+                    }
+
+                    if (matchesType(defn, calculator, context)) {
+                        if (traceEnabled) {
+                            logger().trace("Considering index '{0}' in '{1}' provider for query in workspace '{2}'",
+                                           defn.getName(),
+                                           getName(), 
+                                           workspaceName);
+                        }
+                        planUseOfIndex(context, calculator, workspaceName, index, defn);
+                    } else if (traceEnabled) {
+                        logger().trace("Skipping index '{0}' in '{1}' provider for query because the index definition node type '{2}' does not match the selected node types '{3}'",
+                                       defn.getName(), getName(), defn.getNodeTypeName(), calculator.selectedNodeTypes());
+                    }
                 }
             };
             for (String workspaceName : context.getWorkspaceNames()) {
                 onEachIndexInWorkspace(workspaceName, planningOp);
             }
         }
+    }
+
+    private boolean matchesType( IndexDefinition defn,
+                                 IndexCostCalculator calculator,
+                                 QueryContext context ) {
+        final NodeTypes nodeTypes = context.getNodeTypes();
+        final NameFactory nameFactory = context.getExecutionContext().getValueFactories().getNameFactory();
+        // check of the node type of the index defn matches the request node type(s) from the query
+        String indexedNodeType = defn.getNodeTypeName();
+        Name indexedNodeTypeName = nameFactory.create(indexedNodeType);
+        Set<String> selectedNodeTypes = calculator.selectedNodeTypes();
+        assert !selectedNodeTypes.isEmpty();
+        for (String nodeTypeOrAlias : selectedNodeTypes) {
+            Name selectedNodeTypeName = nameFactory.create(nodeTypeOrAlias);
+            if (nodeTypes.isTypeOrSubtype(selectedNodeTypeName, indexedNodeTypeName)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**

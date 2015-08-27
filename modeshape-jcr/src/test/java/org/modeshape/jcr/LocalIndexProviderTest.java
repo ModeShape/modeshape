@@ -1234,6 +1234,6 @@ public class LocalIndexProviderTest extends AbstractIndexProviderTest {
 
         // Compute a query plan that should use this index ...
         Query query = jcrSql2Query("SELECT * FROM [mix:custom] as custom where custom.[jcr:name] = 'myFirstBook'");
-        validateQuery().rowCount(1L).validate(query, query.execute());
+        validateQuery().rowCount(1L).useIndex("custom_names").validate(query, query.execute());
     }
 }

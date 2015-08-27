@@ -347,7 +347,7 @@ public class LocalIndexProvider extends IndexProvider {
                 long cardinality = localIndex.estimateCardinality(constraint, context.getVariables());
                 long total = localIndex.estimateTotalCount();
                 Float selectivity = null;
-                if (total >= 0L) {
+                if (total > 0L) {
                     double ratio = (double)cardinality / (double)total;
                     selectivity = cardinality <= total ? new Float(ratio) : MAX_SELECTIVITY;
                 }

@@ -999,7 +999,7 @@ public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
                 JcrSession session = repository.login();
                 session.getRootNode().addNode("testRoot");
                 session.save();
-                String sql = "select [jcr:path] from [nt:base] where [jcr:name] = 'testRoot'";
+                String sql = "select [jcr:path] from [nt:unstructured] where [jcr:name] = 'testRoot'";
                 Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
                 ValidateQuery.validateQuery().rowCount(1).useIndex("nodesByName").validate(query, query.execute());
                 session.logout();
@@ -1015,7 +1015,7 @@ public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
                 // then force a reindex of a certain path 
                 session.getWorkspace().reindex("/testRoot");
                 //then check that still only 1 node is returned
-                String sql = "select [jcr:path] from [nt:base] where [jcr:name] = 'testRoot'";
+                String sql = "select [jcr:path] from [nt:unstructured] where [jcr:name] = 'testRoot'";
                 Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
                 ValidateQuery.validateQuery().rowCount(1).useIndex("nodesByName").validate(query, query.execute());
                 return null;
