@@ -5,23 +5,17 @@ We hope you enjoy it!
 
 ## What's new
 
-ModeShape 4 is a major upgrade over 3.x and offers significant improvements in clustering, performance, query, and events.
-All JCR 2.0 (JSR-283) features are supported, and ModeShape 4 has complete integration with Wildfly 8, allowing deployed applications 
-to simply lookup and use repositories managed by ModeShape's service.
+This release addresses 18 bugs and 12 enhancements, most notably:
+- Wildfly 9 support. Starting with this version, the ModeShape AS kit can be run both on Wildfly 8 and Wildly 9.
 
-ModeShape &version; is licensed under the Apache Software License, 2.0.
+- Support for large collections of flat nodes. This is a long outstanding enhancement which allows large number of children (>500k)
+  to be stored under the same parent node. See [MODE-2109](https://issues.jboss.org/browse/MODE-2109) and [our documentation](https://docs.jboss.org/author/display/MODE40/Large+numbers+of+child+nodes#Largenumbersofchildnodes-Unorderedlargecollections)
+  for more information.
 
-This release addresses 18 bugs and 11 enhancements, the most important of which being that of moving to Infinispan 7.2.0.Final.
-This version of Infinispan has serveral fixes and improvements since Infinispan 6, including a fix for [MODE-2280](https://issues.jboss.org/browse/MODE-2280).
-This change meant, however, that our Wildfly integration kit had to be adapted in order to be able to integrate with Infinispan 
-in library mode rather than via the Wildfly subsystem.
-
-** If you're using the Wildfly kit, when moving to ModeShape &version; you will have to update your cache configuration 
-as described [in this section of the documentation](https://docs.jboss.org/author/display/MODE40/Configuring+ModeShape+in+Wildfly#ConfiguringModeShapeinWildfly-MigratingfromModeShape4.2%28orlower%29toModeShape4.3%28orgreater%29)**
-
-In addition to the Infinispan related changes, we've enhanced the [Backup & Restore API](https://docs.jboss.org/author/display/MODE40/Backup+and+restore)
-allowing a more fine-grained control over what parts of a repository are backed up and then restored. We've also added the ability
-to perform a full repository backup & restore [via the REST Service](https://docs.jboss.org/author/display/MODE40/REST+Service#RESTService-26.Backuparepository)
+- Enhanced look & feel for the Repository Explorer web application, together with a number of bug fixes.
+ 
+- New example of how to use and embed a custom authorization and authentication provider in your own application. 
+  The example can be found [here](https://github.com/ModeShape/modeshape-examples/tree/4.4.0.Final/modeshape-custom-security-example)  
 
 ## Features
 
