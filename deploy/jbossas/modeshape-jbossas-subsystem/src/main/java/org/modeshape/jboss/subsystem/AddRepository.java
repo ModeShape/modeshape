@@ -122,6 +122,7 @@ public class AddRepository extends AbstractAddStepHandler {
         final String optInitialTime = attribute(context, model, ModelAttributes.DOCUMENT_OPTIMIZATION_INITIAL_TIME, null);
         final int optIntervalInHours = attribute(context, model, ModelAttributes.DOCUMENT_OPTIMIZATION_INTERVAL).asInt();
         final Integer optTarget = intAttribute(context, model, ModelAttributes.DOCUMENT_OPTIMIZATION_CHILD_COUNT_TARGET, null);
+        final Integer eventBusSize = intAttribute(context, model, ModelAttributes.EVENT_BUS_SIZE, null);
         final Integer optTolerance = intAttribute(context,
                                                   model,
                                                   ModelAttributes.DOCUMENT_OPTIMIZATION_CHILD_COUNT_TOLERANCE,
@@ -137,6 +138,10 @@ public class AddRepository extends AbstractAddStepHandler {
         String jndiAlias = ModeShapeJndiNames.jndiNameFrom(model, repositoryName);
         if (jndiName.equals(jndiAlias)) {
             jndiAlias = null;
+        }
+        
+        if (eventBusSize != null) {
+            configDoc.setNumber(FieldName.EVENT_BUS_SIZE, eventBusSize);
         }
 
         // Parse the cache configuration

@@ -191,6 +191,9 @@ public class ModeShapeSubsystemXMLReader_2_1 implements XMLStreamConstants, XMLE
                                                                                                          repository,
                                                                                                          reader);
                         break;
+                    case EVENT_BUS_SIZE: 
+                        ModelAttributes.EVENT_BUS_SIZE.parseAndSetParameter(attrValue, repository, reader);
+                        break;
                     default:
                         throw ParseUtils.unexpectedAttribute(reader, i);
                 }

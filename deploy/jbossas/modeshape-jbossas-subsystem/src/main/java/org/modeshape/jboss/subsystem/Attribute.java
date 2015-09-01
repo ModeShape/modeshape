@@ -43,6 +43,7 @@ public enum Attribute {
     DOCUMENT_OPTIMIZATION_INTERVAL("document-optimization-interval"),
     DOCUMENT_OPTIMIZATION_CHILD_COUNT_TARGET("document-optimization-child-count-target"),
     DOCUMENT_OPTIMIZATION_CHILD_COUNT_TOLERANCE("document-optimization-child-count-tolerance"),
+    EVENT_BUS_SIZE("event-bus-size"),
     ENABLE_MONITORING("enable-monitoring"),
     GARBAGE_COLLECTION_THREAD_POOL("garbage-collection-thread-pool"),
     GARBAGE_COLLECTION_INITIAL_TIME("garbage-collection-initial-time"),

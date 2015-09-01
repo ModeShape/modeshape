@@ -309,6 +309,14 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
+        <xs:attribute name="event-bus-size" type="xs:int" use="optional" default="1024">
+            <xs:annotation>
+                <xs:documentation>
+                    The maximum number of events that can co-exit in the event bus, before blocking and waiting for the slowest consumer(s) 
+                    to finish and free up subsequent slots. Should be a power of 2, or the system will auto-adjust to the closest power of 2
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
     </xs:complexType>
 
     <xs:complexType name="workspaces">

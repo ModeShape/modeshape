@@ -408,8 +408,10 @@
                 </text-extractors>
                 <file-binary-storage mime-type-detection="content"/>
             </repository>
-            <repository name="preconfiguredRepository" anonymous-roles="admin" cache-config="modeshape/infinispan-test-caches.xml">
-                <workspaces>
+            <repository name="preconfiguredRepository" anonymous-roles="admin"
+                        cache-config="modeshape/infinispan-test-caches.xml"
+                        event-bus-size="2048">
+            <workspaces>
                     <workspace name="default"/>
                     <workspace name="other"/>
                     <workspace name="extra">

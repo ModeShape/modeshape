@@ -290,6 +290,10 @@ public final class RingBuffer<T, C> {
         if (gcConsumer != null) gcConsumer.ignore(runner.getPointer());
     }
 
+    protected int getBufferSize() {
+        return bufferSize;
+    }
+
     /**
      * Checks if there are any consumers registered.
      * 

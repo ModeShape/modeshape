@@ -57,6 +57,7 @@ import org.infinispan.transaction.lookup.GenericTransactionManagerLookup;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.collection.Problems;
 import org.modeshape.common.collection.SimpleProblems;
+import org.modeshape.common.collection.ring.RingBufferBuilder;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.common.text.Inflector;
 import org.modeshape.common.util.CheckArg;
@@ -230,7 +231,12 @@ public class RepositoryConfiguration {
         /**
          * The name for the field whose value is a document containing the monitoring information.
          */
-        public static final String MONITORING = "monitoring";
+        public static final String MONITORING = "monitoring";   
+        
+        /**
+         * The name for the field whose value is the size of the event buffer
+         */
+        public static final String EVENT_BUS_SIZE = "eventBusSize";
 
         /**
          * The name for the optional field specifying whether the monitoring system is enabled or disabled.
@@ -491,6 +497,11 @@ public class RepositoryConfiguration {
          * The default value of the {@link FieldName#TRANSACTION_MODE} field is '{@value} '.
          */
         public static final TransactionMode TRANSACTION_MODE = TransactionMode.AUTO;
+
+        /**
+         * The default value of the {@link FieldName#EVENT_BUS_SIZE} field is '{@value}'
+         */
+        public static final int EVENT_BUS_SIZE = RingBufferBuilder.DEFAULT_BUFFER_SIZE;
 
         /**
          * The default value of the {@link FieldName#JAAS_POLICY_NAME} field is '{@value} '.
@@ -1388,6 +1399,10 @@ public class RepositoryConfiguration {
     public TransactionMode getTransactionMode() {
         String mode = doc.getString(FieldName.TRANSACTION_MODE);
         return mode != null ? TransactionMode.valueOf(mode.trim().toUpperCase()) : Default.TRANSACTION_MODE;
+    }
+    
+    public int getEventBusSize() {
+        return doc.getInteger(FieldName.EVENT_BUS_SIZE, Default.EVENT_BUS_SIZE);
     }
 
     /**

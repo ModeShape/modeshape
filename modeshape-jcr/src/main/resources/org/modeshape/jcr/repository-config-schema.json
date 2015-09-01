@@ -23,6 +23,11 @@
             "description" : "Whether the repository should expect and detect whether JCR clients modify the content within transactions. The default value of 'auto' will automatically detect the use of both user- and container-managed transactions and also works when the JCR client does not use transactions; this will work in most situations. The value of 'none' specifies that the repository should not attempt to detect existing transactions; this setting is an optimization that should be used *only* if JCR clients will never use transactions to change the repository content.",
             "enum" : [ "auto", "none" ]
         },
+        "eventBusSize" : {
+            "type" : "number",
+            "description" : "The maximum number of events that can co-exit in the event bus, before blocking and waiting for the slowest consumer(s) to finish and free up subsequent slots. Should be a power of 2, or the system will auto-adjust to the closest power of 2",
+            "default" : 1024
+        },
         "monitoring" : {
             "type" : "object",
             "description" : "The specification for the monitoring system for the repository.",
