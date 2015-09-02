@@ -384,6 +384,17 @@ public class ModelAttributes {
                                                                                                                                                            FieldName.OPTIMIZATION_CHILD_COUNT_TOLERANCE)
                                                                                                                                                    .build();
 
+    public static final SimpleAttributeDefinition EVENT_BUS_SIZE = new MappedAttributeDefinitionBuilder(
+            ModelKeys.EVENT_BUS_SIZE, ModelType.INT).setXmlName(
+            Attribute.EVENT_BUS_SIZE.getLocalName())
+                                                    .setAllowExpression(false)
+                                                    .setAllowNull(true)
+                                                    .setMeasurementUnit(MeasurementUnit.NONE)
+                                                    .setFlags(AttributeAccess.Flag.RESTART_NONE)
+                                                    .setFieldPathInRepositoryConfiguration(
+                                                            FieldName.EVENT_BUS_SIZE)
+                                                    .build();
+
     public static final SimpleAttributeDefinition INDEX_KIND = new MappedAttributeDefinitionBuilder(ModelKeys.INDEX_KIND,
                                                                                                     ModelType.STRING).setXmlName(Attribute.INDEX_KIND.getLocalName())
                                                                                                                      .setAllowExpression(
@@ -850,7 +861,7 @@ public class ModelAttributes {
         DOCUMENT_OPTIMIZATION_INITIAL_TIME, DOCUMENT_OPTIMIZATION_INTERVAL, DOCUMENT_OPTIMIZATION_CHILD_COUNT_TARGET,
         DOCUMENT_OPTIMIZATION_CHILD_COUNT_TOLERANCE, JOURNAL_PATH, JOURNAL_RELATIVE_TO, MAX_DAYS_TO_KEEP_RECORDS,
         JOURNAL_GC_INITIAL_TIME, JOURNAL_GC_THREAD_POOL, ASYNC_WRITES, JOURNALING, SEQUENCER_THREAD_POOL_NAME, SEQUENCER_MAX_POOL_SIZE, 
-        TEXT_EXTRACTOR_THREAD_POOL_NAME, TEXT_EXTRACTOR_MAX_POOL_SIZE};
+        TEXT_EXTRACTOR_THREAD_POOL_NAME, TEXT_EXTRACTOR_MAX_POOL_SIZE, EVENT_BUS_SIZE};
 
     public static final AttributeDefinition[] FILE_BINARY_STORAGE_ATTRIBUTES = {MINIMUM_BINARY_SIZE, MINIMUM_STRING_SIZE, PATH,
         RELATIVE_TO, STORE_NAME, MIME_TYPE_DETECTION};

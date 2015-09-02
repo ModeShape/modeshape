@@ -17,7 +17,9 @@
 package org.modeshape.common.collection.ring;
 
 import java.util.concurrent.Executor;
+import org.modeshape.common.CommonI18n;
 import org.modeshape.common.collection.ring.RingBuffer.ConsumerAdapter;
+import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.CheckArg;
 
 /**
@@ -87,12 +89,13 @@ public class RingBufferBuilder<T, C> {
 
     private final Executor executor;
     private final ConsumerAdapter<T, C> adapter;
+    private final Logger logger = Logger.getLogger(getClass());
     private int bufferSize = DEFAULT_BUFFER_SIZE;
     private boolean garbageCollect = DEFAULT_GARBAGE_COLLECT_ENTITIES;
     private boolean singleProducer = true;
     private String name = DEFAULT_NAME;
     private WaitStrategy waitStrategy;
-
+    
     /**
      * @param executor the executor that should be used to create threads to run {@link Consumer}s; may not be null
      * @param adapter the adapter for consumers; may not be null
@@ -107,9 +110,28 @@ public class RingBufferBuilder<T, C> {
 
     public RingBufferBuilder<T, C> ofSize( int bufferSize ) {
         CheckArg.isPositive(bufferSize, "bufferSize");
-        CheckArg.isPowerOfTwo(bufferSize, "bufferSize");
+        try {
+            CheckArg.isPowerOfTwo(bufferSize, "bufferSize");
+        } catch (IllegalArgumentException e) {
+            int nextPowerOf2 = nextPowerOf2(bufferSize);
+            logger.warn(CommonI18n.incorrectRingBufferSize, bufferSize, nextPowerOf2);
+            bufferSize = nextPowerOf2;
+        }
         this.bufferSize = bufferSize;
         return this;
+    }
+    
+    private int nextPowerOf2(int number) {
+        if (number <= 0) {
+            return 1;
+        }
+        --number;
+        number = number | (number >> 1);
+        number = number | (number >> 2);
+        number = number | (number >> 4);
+        number = number | (number >> 8);
+        number = number | (number >> 16);
+        return ++number;
     }
 
     public RingBufferBuilder<T, C> garbageCollect( boolean gcEntries ) {

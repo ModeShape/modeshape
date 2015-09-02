@@ -17,6 +17,7 @@
 package org.modeshape.common.collection.ring;
 
 import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -25,6 +26,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import org.junit.Before;
 import org.junit.Test;
+import org.modeshape.common.FixFor;
 import org.modeshape.common.statistic.Stopwatch;
 
 /**
@@ -286,6 +288,18 @@ public class RingBufferTest {
 
         print("");
         print("Time to add " + count + " entries: " + sw.getAverageDuration());
+    }
+    
+    @Test
+    @FixFor( "MODE-2195" )
+    public void shouldAutomaticallySetTheBufferSizeToTheNextPowerOf2() throws Exception {
+        Executor executor = Executors.newCachedThreadPool();
+        RingBuffer<Long, Consumer<Long>> ringBuffer = RingBufferBuilder.withSingleProducer(executor, Long.class).ofSize(5)
+                                                                       .garbageCollect(false).build();    
+        assertEquals(8, ringBuffer.getBufferSize());
+
+        ringBuffer = RingBufferBuilder.withSingleProducer(executor, Long.class).ofSize(1023).garbageCollect(false).build();
+        assertEquals(1024, ringBuffer.getBufferSize());
     }
 
     protected void print( String message ) {

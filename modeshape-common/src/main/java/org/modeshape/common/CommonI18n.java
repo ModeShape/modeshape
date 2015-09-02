@@ -121,6 +121,8 @@ public final class CommonI18n {
 
     public static I18n errorWhileClosingRingBufferConsumer;
     public static I18n errorClosingWrappedStream;
+    
+    public static I18n incorrectRingBufferSize;
 
     private CommonI18n() {
     }

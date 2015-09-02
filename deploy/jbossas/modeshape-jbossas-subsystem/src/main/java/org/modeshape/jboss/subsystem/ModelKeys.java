@@ -45,6 +45,7 @@ public class ModelKeys {
     static final String DOCUMENT_OPTIMIZATION_INTERVAL = "document-optimization-interval";
     static final String DOCUMENT_OPTIMIZATION_CHILD_COUNT_TARGET = "document-optimization-child-count-target";
     static final String DOCUMENT_OPTIMIZATION_CHILD_COUNT_TOLERANCE = "document-optimization-child-count-tolerance";
+    static final String EVENT_BUS_SIZE = "event-bus-size";
     static final String ENABLE_MONITORING = "enable-monitoring";
     static final String GARBAGE_COLLECTION_THREAD_POOL = "garbage-collection-thread-pool";
     static final String GARBAGE_COLLECTION_INITIAL_TIME = "garbage-collection-initial-time";
