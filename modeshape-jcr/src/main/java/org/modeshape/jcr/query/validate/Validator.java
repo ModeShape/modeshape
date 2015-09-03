@@ -31,6 +31,7 @@ import org.modeshape.jcr.query.PseudoColumns;
 import org.modeshape.jcr.query.QueryContext;
 import org.modeshape.jcr.query.model.AllNodes;
 import org.modeshape.jcr.query.model.ArithmeticOperand;
+import org.modeshape.jcr.query.model.Cast;
 import org.modeshape.jcr.query.model.ChildCount;
 import org.modeshape.jcr.query.model.ChildNode;
 import org.modeshape.jcr.query.model.ChildNodeJoinCondition;
@@ -359,6 +360,8 @@ public class Validator extends AbstractVisitor {
             ArithmeticOperand arith = (ArithmeticOperand)operand;
             verifyOrdering(arith.getLeft());
             verifyOrdering(arith.getRight());
+        } else if (operand instanceof Cast) {
+            verifyOrdering(((Cast)operand).getOperand());                        
         }
     }
 
@@ -469,6 +472,8 @@ public class Validator extends AbstractVisitor {
             ArithmeticOperand arith = (ArithmeticOperand)operand;
             verifyComparison(arith.getLeft(), op, rhs);
             verifyComparison(arith.getRight(), op, rhs);
+        } else if (operand instanceof Cast) {
+            verifyComparison(((Cast)operand).getOperand(), op, rhs); 
         }
     }
 

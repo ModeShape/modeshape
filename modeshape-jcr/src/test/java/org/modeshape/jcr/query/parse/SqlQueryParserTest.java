@@ -19,6 +19,7 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsNull.nullValue;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
@@ -36,6 +37,7 @@ import org.modeshape.jcr.api.value.DateTime;
 import org.modeshape.jcr.query.model.And;
 import org.modeshape.jcr.query.model.Between;
 import org.modeshape.jcr.query.model.BindVariableName;
+import org.modeshape.jcr.query.model.Cast;
 import org.modeshape.jcr.query.model.ChildCount;
 import org.modeshape.jcr.query.model.ChildNode;
 import org.modeshape.jcr.query.model.Constraint;
@@ -1473,6 +1475,63 @@ public class SqlQueryParserTest {
     public void shouldFailToParseDynamicOperandFromStringContainingUpperWithoutOpeningParenthesis() {
         parser.parseDynamicOperand(tokens("Upper tableA.property other"), typeSystem, mock(Source.class));
     }
+
+
+    // ----------------------------------------------------------------------------------------------------------------
+    // parseDynamicOperand - CAST
+    // ----------------------------------------------------------------------------------------------------------------
+
+    @Test
+    @FixFor( "MODE-2166" )
+    public void shouldParseDynamicOperandFromStringContainingCast() {
+        DynamicOperand operand = parser.parseDynamicOperand(tokens("CAST(tableA.property AS DOUBLE)"), typeSystem, mock(Source.class));
+        assertThat(operand, is(instanceOf(Cast.class)));
+        Cast cast = (Cast)operand;
+        assertThat(cast.selectorName(), is(selectorName("tableA")));
+        assertThat(cast.getOperand(), is(instanceOf(PropertyValue.class)));
+        PropertyValue value = (PropertyValue)cast.getOperand();
+        assertThat(value.getPropertyName(), is("property"));
+        assertThat(value.selectorName(), is(selectorName("tableA")));
+        assertEquals(PropertyType.DOUBLE.toString(), cast.getDesiredTypeName());
+    }
+
+    @Test
+    @FixFor( "MODE-2166" )
+    public void shouldParseDynamicOperandFromStringContainingCastOfLowerCaseOfAnotherOperand() {
+        DynamicOperand operand = parser.parseDynamicOperand(tokens("CAST(LOWER(tableA.property) AS DATE)"),
+                                                            typeSystem,
+                                                            mock(Source.class));
+        assertThat(operand, is(instanceOf(Cast.class)));
+        Cast cast = (Cast)operand;
+        assertThat(cast.selectorName(), is(selectorName("tableA")));
+        assertThat(cast.getOperand(), is(instanceOf(LowerCase.class)));
+        assertEquals(PropertyType.DATE.toString(), cast.getDesiredTypeName());
+        LowerCase lower = (LowerCase)cast.getOperand();
+        assertThat(lower.selectorName(), is(selectorName("tableA")));
+        assertThat(lower.getOperand(), is(instanceOf(PropertyValue.class)));
+        PropertyValue value = (PropertyValue)lower.getOperand();
+        assertThat(value.getPropertyName(), is("property"));
+        assertThat(value.selectorName(), is(selectorName("tableA")));
+    }
+
+    @Test( expected = ParsingException.class )
+    @FixFor( "MODE-2166" )
+    public void shouldFailToParseDynamicOperandFromStringContainingCastWithoutClosingParenthesis() {
+        parser.parseDynamicOperand(tokens("CAST(tableA.property AS integer"), typeSystem, mock(Source.class));
+    }
+
+    @Test( expected = ParsingException.class )
+    @FixFor( "MODE-2166" )
+    public void shouldFailToParseDynamicOperandFromStringContainingCastWithoutAs() {
+        parser.parseDynamicOperand(tokens("CAST(tableA.property  something)"), typeSystem, mock(Source.class));
+    }
+
+    @Test( expected = ParsingException.class )
+    @FixFor( "MODE-2166" )
+    public void shouldFailToParseDynamicOperandFromStringContainingCastWithInvalidType() {
+        parser.parseDynamicOperand(tokens("CAST(tableA.property AS invalid)"), typeSystem, mock(Source.class));
+    }
+
 
     // ----------------------------------------------------------------------------------------------------------------
     // parseDynamicOperand - CHILDCOUNT

@@ -37,6 +37,7 @@ import org.modeshape.jcr.query.model.ArithmeticOperand;
 import org.modeshape.jcr.query.model.ArithmeticOperator;
 import org.modeshape.jcr.query.model.Between;
 import org.modeshape.jcr.query.model.BindVariableName;
+import org.modeshape.jcr.query.model.Cast;
 import org.modeshape.jcr.query.model.ChildCount;
 import org.modeshape.jcr.query.model.ChildNode;
 import org.modeshape.jcr.query.model.ChildNodeJoinCondition;
@@ -1122,6 +1123,17 @@ public class BasicSqlQueryParser implements QueryParser {
         } else if (tokens.canConsume("UPPER", "(")) {
             result = upperCase(parseDynamicOperand(tokens, typeSystem, source));
             tokens.consume(")");
+        } else if (tokens.canConsume("CAST", "(")) {
+            DynamicOperand operand = parseDynamicOperand(tokens, typeSystem, source);
+            tokens.consume("AS");
+            String type = tokens.consume();
+            TypeFactory<?> typeFactory = typeSystem.getTypeFactory(type);
+            if (typeFactory == null) {
+                String msg = GraphI18n.invalidPropertyType.text(type, pos.getLine(), pos.getColumn());
+                throw new ParsingException(pos, msg);
+            }
+            result = cast(operand, type);
+            tokens.consume(")");
         } else if (tokens.canConsume("NAME", "(")) {
             if (tokens.canConsume(")")) {
                 if (source instanceof Selector) {
@@ -1435,6 +1447,10 @@ public class BasicSqlQueryParser implements QueryParser {
     protected UpperCase upperCase( DynamicOperand operand ) {
         return new UpperCase(operand);
     }
+    
+    protected Cast cast( DynamicOperand operand, String desiredType ) {
+        return new Cast(operand, desiredType); 
+    }                                       
 
     protected NodeName nodeName( SelectorName selector ) {
         return new NodeName(selector);

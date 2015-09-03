@@ -79,6 +79,7 @@ import org.modeshape.jcr.query.model.And;
 import org.modeshape.jcr.query.model.ArithmeticOperand;
 import org.modeshape.jcr.query.model.Between;
 import org.modeshape.jcr.query.model.BindVariableName;
+import org.modeshape.jcr.query.model.Cast;
 import org.modeshape.jcr.query.model.ChildCount;
 import org.modeshape.jcr.query.model.ChildNode;
 import org.modeshape.jcr.query.model.ChildNodeJoinCondition;
@@ -1727,6 +1728,9 @@ public class ScanningQueryEngine implements org.modeshape.jcr.query.QueryEngine 
             TypeFactory<?> rightType = determineType(arith.getRight(), context, columns);
             return types.getCompatibleType(leftType, rightType);
         }
+        if (operand instanceof Cast) {
+            return types.getTypeFactory(((Cast)operand).getDesiredTypeName());
+        }
         return types.getStringFactory();
     }
 
@@ -1870,6 +1874,55 @@ public class ScanningQueryEngine implements org.modeshape.jcr.query.QueryEngine 
                 @Override
                 public String toString() {
                     return "(uppercase " + delegate + ")";
+                }
+            };
+        }
+        if (operand instanceof Cast) {
+            final Cast cast = (Cast)operand;
+            final ExtractFromRow delegate = createExtractFromRow(cast.getOperand(), context, columns, sources, defaultType,
+                                                                 allowMultiValued, false);
+            final String desiredTypeName = cast.getDesiredTypeName();
+            final TypeFactory<?> typeFactory = context.getTypeSystem().getTypeFactory(desiredTypeName);
+            final Class<?> desiredType = typeFactory.getType();
+            return new ExtractFromRow() {
+                @Override
+                public TypeFactory<?> getType() {
+                    return typeFactory;
+                }
+
+                @Override
+                public Object getValueInRow( RowAccessor row ) {
+                    Object valueInRow = delegate.getValueInRow(row);
+                    if (valueInRow == null) {
+                        return null;
+                    }
+                    if (valueInRow instanceof Object[]) {
+                        // multi valued prop
+                        Object[] values = (Object[])valueInRow;
+                        Object[] convertedValues = new Object[values.length];
+                        for (int i = 0; i < values.length; i++) {
+                            Object originalValue = values[i];
+                            if (desiredType.isAssignableFrom(originalValue.getClass())) {
+                                // short circuit if someone is trying to do a cast to same type as the original
+                                return values;
+                            }
+                            Object convertedValue = typeFactory.create(originalValue);
+                            convertedValues[i] = convertedValue;
+                        }
+                        return convertedValues;
+                    } else {
+                        // single valued prop
+                        if (desiredType.isAssignableFrom(valueInRow.getClass()))  {
+                            // short circuit if someone is trying to do a cast to same type as the original
+                            return valueInRow;
+                        }
+                        return typeFactory.create(valueInRow);
+                    }
+                }
+
+                @Override
+                public String toString() {
+                    return "(cast " + delegate + ")";
                 }
             };
         }
