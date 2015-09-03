@@ -30,6 +30,7 @@ import org.modeshape.jcr.query.model.ArithmeticOperand;
 import org.modeshape.jcr.query.model.ArithmeticOperator;
 import org.modeshape.jcr.query.model.Between;
 import org.modeshape.jcr.query.model.BindVariableName;
+import org.modeshape.jcr.query.model.Cast;
 import org.modeshape.jcr.query.model.ChildCount;
 import org.modeshape.jcr.query.model.ChildNode;
 import org.modeshape.jcr.query.model.ChildNodeJoinCondition;
@@ -431,6 +432,12 @@ public class PlanUtil {
             SelectorName replacement = rewrittenSelectors.get(operation.selectorName());
             if (replacement == null) return operand;
             return new UpperCase(replaceReferencesToRemovedSource(context, operation.getOperand(), rewrittenSelectors));
+        }
+        if (operand instanceof Cast) {
+            Cast operation = (Cast) operand;
+            SelectorName replacement = rewrittenSelectors.get(operation.selectorName());
+            if (replacement == null) return operand;
+            return new Cast(replaceReferencesToRemovedSource(context, operation.getOperand(), rewrittenSelectors), operation.getDesiredTypeName());
         }
         if (operand instanceof NodeName) {
             NodeName name = (NodeName)operand;
@@ -897,6 +904,10 @@ public class PlanUtil {
         if (operand instanceof UpperCase) {
             UpperCase operation = (UpperCase)operand;
             return new UpperCase(replaceViewReferences(context, operation.getOperand(), mapping, node));
+        } 
+        if (operand instanceof Cast) {
+            Cast operation = (Cast)operand;
+            return new Cast(replaceViewReferences(context, operation.getOperand(), mapping, node), operation.getDesiredTypeName());
         }
         if (operand instanceof NodeName) {
             NodeName name = (NodeName)operand;
@@ -1247,6 +1258,13 @@ public class PlanUtil {
             DynamicOperand newOperand = replaceAliasesWithProperties(context, oldOperand, propertyByAlias);
             if (oldOperand == newOperand) return operation;
             return new UpperCase(newOperand);
+        } 
+        if (operand instanceof Cast) {
+            Cast operation = (Cast)operand;
+            DynamicOperand oldOperand = operation.getOperand();
+            DynamicOperand newOperand = replaceAliasesWithProperties(context, oldOperand, propertyByAlias);
+            if (oldOperand == newOperand) return operation;
+            return new Cast(newOperand, operation.getDesiredTypeName());
         }
         if (operand instanceof NodeName) {
             return operand;

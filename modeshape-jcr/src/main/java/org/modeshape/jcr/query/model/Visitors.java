@@ -542,6 +542,10 @@ public class Visitors {
         @Override
         public void visit( Relike obj ) {
         }
+
+        @Override
+        public void visit( Cast cast ) {
+        }
     }
 
     /**
@@ -874,6 +878,13 @@ public class Visitors {
         public void visit( UpperCase upperCase ) {
             strategy.visit(upperCase);
             enqueue(upperCase.getOperand());
+            visitNext();
+        }
+
+        @Override
+        public void visit( Cast cast ) {
+            strategy.visit(cast);
+            enqueue(cast.getOperand());
             visitNext();
         }
     }
@@ -1403,6 +1414,14 @@ public class Visitors {
             append(')');
         }
 
+        @Override
+        public void visit( Cast cast ) {
+            append("CAST(");
+            cast.getOperand().accept(this);
+            append(" AS ");
+            append(cast.getDesiredTypeName());
+            append(")");
+        }
     }
 
     public static class JcrSql2Writer extends ReadableVisitor {

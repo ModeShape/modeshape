@@ -39,6 +39,7 @@ import org.modeshape.jcr.api.query.qom.Relike;
 import org.modeshape.jcr.api.query.qom.SetCriteria;
 import org.modeshape.jcr.query.QueryContext;
 import org.modeshape.jcr.query.model.And;
+import org.modeshape.jcr.query.model.Cast;
 import org.modeshape.jcr.query.model.Comparison;
 import org.modeshape.jcr.query.model.FullTextSearch;
 import org.modeshape.jcr.query.model.Length;
@@ -203,6 +204,9 @@ public class IndexUsage {
         if (operand instanceof UpperCase) {
             return applies((UpperCase)operand);
         }
+        if (operand instanceof Cast) {
+            return applies((Cast)operand);
+        }
         if (operand instanceof LowerCase) {
             return applies((LowerCase)operand);
         }
@@ -246,6 +250,10 @@ public class IndexUsage {
     }
 
     protected boolean applies( UpperCase operand ) {
+        return applies(operand.getOperand());
+    }
+    
+    protected boolean applies( Cast operand ) {
         return applies(operand.getOperand());
     }
 

@@ -100,4 +100,5 @@ public interface Visitor {
 
     void visit( UpperCase obj );
 
+    void visit( Cast cast);
 }

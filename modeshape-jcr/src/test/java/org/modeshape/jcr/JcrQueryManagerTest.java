@@ -4949,6 +4949,24 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         }
     }
 
+    @Test
+    @FixFor( "MODE-2166" )
+    public void shouldSupportCastDynamicOperand() throws Exception {
+        String sql = "SELECT car.[jcr:path] FROM [car:Car] as car WHERE CAST(car.[car:year] AS long) = 1967";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        QueryResult result = query.execute();
+        validateQuery().rowCount(1).hasNodesAtPaths("/Cars/Utility/Toyota Land Cruiser").validate(query, result);                            
+    } 
+    
+    @Test(expected = org.modeshape.jcr.value.ValueFormatException.class)
+    @FixFor( "MODE-2166" )
+    public void shouldFailWhenAttemptingToCastToInvalidType() throws Exception {
+        String sql = "SELECT car.[jcr:path] FROM [car:Car] as car WHERE CAST(car.[car:maker] AS DATE) = 'Toyota'";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        QueryResult result = query.execute();
+        validateQuery().validate(query, result);                            
+    }
+
     private void registerNodeType( String typeName ) throws RepositoryException {
         NodeTypeManager nodeTypeManager = session.getWorkspace().getNodeTypeManager();
 

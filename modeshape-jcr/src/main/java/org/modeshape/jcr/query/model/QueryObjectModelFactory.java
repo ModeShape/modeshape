@@ -18,8 +18,10 @@ package org.modeshape.jcr.query.model;
 import java.util.ArrayList;
 import java.util.List;
 import javax.jcr.RepositoryException;
+import javax.jcr.query.InvalidQueryException;
 import javax.jcr.query.qom.BindVariableValue;
 import org.modeshape.common.util.CheckArg;
+import org.modeshape.jcr.api.query.qom.Cast;
 import org.modeshape.jcr.api.query.qom.Operator;
 import org.modeshape.jcr.api.query.qom.QueryObjectModelConstants;
 import org.modeshape.jcr.query.JcrQueryContext;
@@ -418,6 +420,13 @@ public class QueryObjectModelFactory implements org.modeshape.jcr.api.query.qom.
     public ChildCount childCount( String selectorName ) {
         CheckArg.isNotNull(selectorName, "selectorName");
         return new ChildCount(selectorName(selectorName));
+    }
+
+    @Override
+    public Cast cast( javax.jcr.query.qom.DynamicOperand operand,
+                      String desiredType ) throws InvalidQueryException, RepositoryException {
+        DynamicOperand jcrOperand = CheckArg.getInstanceOf(operand, DynamicOperand.class, "operand");
+        return new org.modeshape.jcr.query.model.Cast(jcrOperand, desiredType);
     }
 
     @Override

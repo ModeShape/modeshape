@@ -162,6 +162,18 @@ public interface QueryObjectModelFactory extends javax.jcr.query.qom.QueryObject
     public ChildCount childCount( String selectorName ) throws InvalidQueryException, RepositoryException;
 
     /**
+     * Creates a dynamic operand that casts another operand to a desired type.
+     *
+     * @param operand a {@link DynamicOperand} instance, may not be null.
+     * @param desiredType a name of the type instance, may not be null.
+     * @return a {@link Cast} operand instance
+     * @throws InvalidQueryException if a particular validity test is possible on this method, the implementation chooses to perform
+     * that test (and not leave it until later, on {@link #createQuery}), and the parameters given fail that test
+     * @throws RepositoryException if the operation otherwise fails
+     */
+    public Cast cast(DynamicOperand operand, String desiredType) throws InvalidQueryException, RepositoryException;
+
+    /**
      * Evaluates to a <code>LONG</code> value equal to the depth of a node in the specified selector.
      * <p>
      * The query is invalid if <code>selector</code> is not the name of a selector in the query.
