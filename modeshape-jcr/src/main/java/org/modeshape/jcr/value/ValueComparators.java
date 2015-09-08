@@ -20,12 +20,15 @@ import java.io.InputStream;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.net.URI;
+import java.text.Collator;
 import java.util.Calendar;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.Locale;
 import java.util.UUID;
 import javax.jcr.RepositoryException;
 import org.modeshape.common.annotation.Immutable;
+import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.SecureHash;
 import org.modeshape.jcr.GraphI18n;
 import org.modeshape.jcr.api.value.DateTime;
@@ -43,6 +46,16 @@ public final class ValueComparators {
      * A comparator of string values.
      */
     public static final Comparator<String> STRING_COMPARATOR = new StringComparator();
+
+    /**
+     * A comparator of string values which is locale-dependent.
+     *
+     * @param locale a {@link Locale} instance, may not be null
+     * @return a string comparator
+     */
+    public static Comparator<String> collatorComparator(Locale locale) {
+        return new CollatorComparator(locale);
+    }
 
     /**
      * A comparator of long values.
@@ -145,6 +158,40 @@ public final class ValueComparators {
         @Override
         public int hashCode() {
             return 1;
+        }
+    }
+    
+    protected static final class CollatorComparator implements Comparator<String>, Serializable {
+        private static final long serialVersionUID = 1L;
+        private Locale locale;
+        private transient Collator collator;
+
+        protected CollatorComparator( Locale locale ) {
+            CheckArg.isNotNull(locale, "locale");
+            this.locale = locale;
+        }
+
+        @Override
+        public int compare( String o1,
+                            String o2 ) {
+            return collator().compare(o1, o2);
+        }
+
+        @Override
+        public boolean equals( Object obj ) {
+            return obj instanceof CollatorComparator;
+        }
+
+        @Override
+        public int hashCode() {
+            return 1;
+        }
+        
+        private Collator collator() {   
+            if (collator == null) {
+                collator = Collator.getInstance(locale);
+            }
+            return collator;
         }
     }
 

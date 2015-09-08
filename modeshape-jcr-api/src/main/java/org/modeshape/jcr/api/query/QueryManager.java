@@ -15,6 +15,7 @@
  */
 package org.modeshape.jcr.api.query;
 
+import java.util.Locale;
 import javax.jcr.Node;
 import javax.jcr.RepositoryException;
 import javax.jcr.query.InvalidQueryException;
@@ -32,6 +33,23 @@ public interface QueryManager extends javax.jcr.query.QueryManager {
     @Override
     public Query createQuery( String statement,
                               String language ) throws InvalidQueryException, RepositoryException;
+
+    /**
+     * Extends the default {@link QueryManager#createQuery(String, String)} method by allowing an additional {@link Locale}
+     * to be passed in. This locale will be taken into account when performing comparisons of string properties.
+     *
+     * @param statement a <code>String</code>
+     * @param language a <code>String</code>
+     * @param locale a {@code Locale}, may not be {@code null}
+     * @return a <code>Query</code> object
+     *
+     * @throws InvalidQueryException if the query statement is syntactically invalid or the specified language is not supported.
+     * @throws RepositoryException   if another error occurs. 
+     * @see QueryManager#createQuery(String, String) 
+     */
+    public Query createQuery( String statement,
+                              String language,
+                              Locale locale ) throws InvalidQueryException, RepositoryException;
 
     @Override
     public Query getQuery( Node node ) throws InvalidQueryException, RepositoryException;

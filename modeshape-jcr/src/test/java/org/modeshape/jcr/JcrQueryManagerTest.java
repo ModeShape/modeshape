@@ -49,6 +49,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.Locale;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
@@ -4904,7 +4905,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
     public void shouldSupportCaseOperandsForMultiValuedProperties() throws Exception {
         Node metaData = session.getRootNode().addNode("metaData", "nt:unstructured");
         metaData.setProperty("lowerCase", new String[]{"a", "b", "c"});        
-        metaData.setProperty("upperCase", new String[]{"A", "B", "C"});
+        metaData.setProperty("upperCase", new String[] { "A", "B", "C" });
         session.save();
 
         try {
@@ -4965,6 +4966,40 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
         QueryResult result = query.execute();
         validateQuery().validate(query, result);                            
+    }
+    
+    @Test
+    @FixFor( "MODE-1727" )
+    public void shouldPerformOrderByUsingCustomLocale() throws Exception {
+        Node testRoot = session.getRootNode().addNode("words", "nt:unstructured");
+        Node word1 = testRoot.addNode("word1", "modetest:simpleType");
+        word1.setProperty("fieldA", "peach");
+        Node word2 = testRoot.addNode("word2", "modetest:simpleType");
+        word2.setProperty("fieldA", "péché");
+        Node word3 = testRoot.addNode("word3", "modetest:simpleType");
+        word3.setProperty("fieldA", "pêche");
+        Node word4 = testRoot.addNode("word4", "modetest:simpleType");
+        word4.setProperty("fieldA", "sin");
+        session.save();
+
+        String sql = "SELECT word.[jcr:path] FROM [modetest:simpleType] as word ORDER BY word.fieldA ASC";
+
+        try {
+            Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+            QueryResult result = query.execute();
+            validateQuery()
+                    .rowCount(4)
+                    .hasNodesAtPaths("/words/word1", "/words/word2", "/words/word3", "/words/word4").validate(query, result);
+
+            query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2, Locale.FRENCH);
+            result = query.execute();
+            validateQuery()
+                    .rowCount(4)
+                    .hasNodesAtPaths("/words/word1", "/words/word3", "/words/word2", "/words/word4").validate(query, result);
+        } finally {
+            session.getNode("/words").remove();
+            session.save();
+        }
     }
 
     private void registerNodeType( String typeName ) throws RepositoryException {

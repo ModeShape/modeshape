@@ -20,6 +20,7 @@ import java.net.URI;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import org.modeshape.common.util.Base64;
@@ -58,6 +59,17 @@ public final class ValueTypeSystem extends TypeSystem {
      * @throws IllegalArgumentException if the value factories are null
      */
     public ValueTypeSystem( ValueFactories valueFactories ) {
+        this(valueFactories, null);
+    }
+   
+    /**
+     * Create a type system using the supplied value factories and locale
+     * 
+     * @param valueFactories the value factories;
+     * @param locale the locale, may not be null
+     * @throws IllegalArgumentException if the value factories are null
+     */
+    public ValueTypeSystem( final ValueFactories valueFactories, final Locale locale ) {
         this.valueFactories = valueFactories;
         this.defaultTypeName = PropertyType.STRING.getName().toUpperCase();
         Map<PropertyType, TypeFactory<?>> factories = new HashMap<>();
@@ -71,6 +83,12 @@ public final class ValueTypeSystem extends TypeSystem {
             @Override
             public String asReadableString( Object value ) {
                 return stringValueFactory.create(value);
+            }
+
+            @Override
+            @SuppressWarnings( { "unchecked", "rawtypes" } )
+            public Comparator<String> getComparator() {
+                return locale == null ? super.getComparator() : ValueComparators.collatorComparator(locale);
             }
         };
         this.booleanFactory = new Factory<Boolean>(valueFactories.getBooleanFactory());
