@@ -20,6 +20,7 @@ import java.security.AccessController;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
@@ -113,6 +114,7 @@ public final class ExecutionContext implements ThreadPoolFactory, Cloneable, Nam
     private final UriFactory uriFactory;
     private final ValueFactory<Object> objectFactory;
     private final TypeSystem typeSystem;
+    private final Locale locale;
 
     /**
      * Create an instance of an execution context that uses the {@link AccessController#getContext() current JAAS calling context}
@@ -122,7 +124,7 @@ public final class ExecutionContext implements ThreadPoolFactory, Cloneable, Nam
     @SuppressWarnings( "synthetic-access" )
     public ExecutionContext() {
         this(new NullSecurityContext(), null, null, null, null, null, null, null, null, null, null, null, null, null, null, null,
-             null, null, null, null, null, null, null);
+             null, null, null, null, null, null, null, null);
         initializeDefaultNamespaces(this.getNamespaceRegistry());
         assert securityContext != null;
     }
@@ -132,7 +134,7 @@ public final class ExecutionContext implements ThreadPoolFactory, Cloneable, Nam
              context.binaryStore, context.data, context.processId, context.decoder, context.encoder, context.stringFactory,
              context.binaryFactory, context.booleanFactory, context.dateFactory, context.decimalFactory, context.doubleFactory,
              context.longFactory, context.nameFactory, context.pathFactory, context.referenceFactory,
-             context.weakReferenceFactory, context.simpleReferenceFactory, context.uriFactory, context.objectFactory);
+             context.weakReferenceFactory, context.simpleReferenceFactory, context.uriFactory, context.objectFactory, context.locale);
     }
 
     /**
@@ -164,6 +166,7 @@ public final class ExecutionContext implements ThreadPoolFactory, Cloneable, Nam
      * @param simpleReferenceFactory the simple reference factory that should be used; if null, a default implementation will be used
      * @param uriFactory the URI factory that should be used; if null, a default implementation will be used
      * @param objectFactory the object factory that should be used; if null, a default implementation will be used
+     * @param locale an optional Locale than can be used; if null it will be ignored
      */
     protected ExecutionContext( SecurityContext securityContext,
                                 NamespaceRegistry namespaceRegistry,
@@ -187,7 +190,8 @@ public final class ExecutionContext implements ThreadPoolFactory, Cloneable, Nam
                                 ReferenceFactory weakReferenceFactory,
                                 ReferenceFactory simpleReferenceFactory,
                                 UriFactory uriFactory,
-                                ValueFactory<Object> objectFactory ) {
+                                ValueFactory<Object> objectFactory, 
+                                Locale locale ) {
         assert securityContext != null;
         this.securityContext = securityContext;
 
@@ -299,9 +303,10 @@ public final class ExecutionContext implements ThreadPoolFactory, Cloneable, Nam
         this.simpleReferenceFactory = simpleReferenceFactory;
         this.uriFactory = uriFactory;
         this.objectFactory = objectFactory;
+        this.locale = locale;
 
         // Assign the things that depend on a ValueFactories implementation ...
-        this.typeSystem = new ValueTypeSystem(valueFactories);
+        this.typeSystem = new ValueTypeSystem(valueFactories, locale);
         this.propertyFactory = propertyFactory == null ? new BasicPropertyFactory(valueFactories) : propertyFactory;
     }
 
@@ -456,7 +461,7 @@ public final class ExecutionContext implements ThreadPoolFactory, Cloneable, Nam
         return new ExecutionContext(securityContext, namespaceRegistry, propertyFactory, threadPools, binaryStore, data,
                                     processId, decoder, encoder, stringFactory, binaryFactory, booleanFactory, dateFactory,
                                     decimalFactory, doubleFactory, longFactory, nameFactory, pathFactory, referenceFactory,
-                                    weakReferenceFactory, simpleReferenceFactory, uriFactory, objectFactory);
+                                    weakReferenceFactory, simpleReferenceFactory, uriFactory, objectFactory, locale);
     }
 
     /**
@@ -472,7 +477,7 @@ public final class ExecutionContext implements ThreadPoolFactory, Cloneable, Nam
         return new ExecutionContext(securityContext, namespaceRegistry, propertyFactory, threadPools, binaryStore, data,
                                     processId, decoder, encoder, stringFactory, binaryFactory, booleanFactory, dateFactory,
                                     decimalFactory, doubleFactory, longFactory, nameFactory, pathFactory, referenceFactory,
-                                    weakReferenceFactory, simpleReferenceFactory, uriFactory, objectFactory);
+                                    weakReferenceFactory, simpleReferenceFactory, uriFactory, objectFactory, locale);
     }
 
     /**
@@ -487,7 +492,7 @@ public final class ExecutionContext implements ThreadPoolFactory, Cloneable, Nam
         return new ExecutionContext(securityContext, namespaceRegistry, propertyFactory, threadPoolFactory, binaryStore, data,
                                     processId, decoder, encoder, stringFactory, binaryFactory, booleanFactory, dateFactory,
                                     decimalFactory, doubleFactory, longFactory, nameFactory, pathFactory, referenceFactory,
-                                    weakReferenceFactory, simpleReferenceFactory, uriFactory, objectFactory);
+                                    weakReferenceFactory, simpleReferenceFactory, uriFactory, objectFactory, locale);
     }
 
     /**
@@ -501,7 +506,7 @@ public final class ExecutionContext implements ThreadPoolFactory, Cloneable, Nam
         return new ExecutionContext(securityContext, namespaceRegistry, propertyFactory, threadPools, binaryStore, data,
                                     processId, decoder, encoder, stringFactory, binaryFactory, booleanFactory, dateFactory,
                                     decimalFactory, doubleFactory, longFactory, nameFactory, pathFactory, referenceFactory,
-                                    weakReferenceFactory, simpleReferenceFactory, uriFactory, objectFactory);
+                                    weakReferenceFactory, simpleReferenceFactory, uriFactory, objectFactory, locale);
     }
 
     /**
@@ -517,7 +522,7 @@ public final class ExecutionContext implements ThreadPoolFactory, Cloneable, Nam
         return new ExecutionContext(securityContext, namespaceRegistry, propertyFactory, threadPools, binaryStore, data,
                                     processId, decoder, encoder, stringFactory, binaryFactory, booleanFactory, dateFactory,
                                     decimalFactory, doubleFactory, longFactory, nameFactory, pathFactory, referenceFactory,
-                                    weakReferenceFactory, simpleReferenceFactory, uriFactory, objectFactory);
+                                    weakReferenceFactory, simpleReferenceFactory, uriFactory, objectFactory, locale);
     }
 
     /**
@@ -540,7 +545,7 @@ public final class ExecutionContext implements ThreadPoolFactory, Cloneable, Nam
         return new ExecutionContext(securityContext, namespaceRegistry, propertyFactory, threadPools, binaryStore, newData,
                                     processId, decoder, encoder, stringFactory, binaryFactory, booleanFactory, dateFactory,
                                     decimalFactory, doubleFactory, longFactory, nameFactory, pathFactory, referenceFactory,
-                                    weakReferenceFactory, simpleReferenceFactory, uriFactory, objectFactory);
+                                    weakReferenceFactory, simpleReferenceFactory, uriFactory, objectFactory, locale);
     }
 
     protected ExecutionContext with( ReferenceFactory referenceFactory ) {
@@ -557,7 +562,7 @@ public final class ExecutionContext implements ThreadPoolFactory, Cloneable, Nam
         return new ExecutionContext(securityContext, namespaceRegistry, propertyFactory, threadPools, binaryStore, data,
                                     processId, decoder, encoder, stringFactory, binaryFactory, booleanFactory, dateFactory,
                                     decimalFactory, doubleFactory, longFactory, nameFactory, pathFactory, strongFactory,
-                                    weakFactory, simpleReferenceFactory, uriFactory, objectFactory);
+                                    weakFactory, simpleReferenceFactory, uriFactory, objectFactory, locale);
     }
 
     /**
@@ -591,7 +596,7 @@ public final class ExecutionContext implements ThreadPoolFactory, Cloneable, Nam
         return new ExecutionContext(securityContext, namespaceRegistry, propertyFactory, threadPools, binaryStore, newData,
                                     processId, decoder, encoder, stringFactory, binaryFactory, booleanFactory, dateFactory,
                                     decimalFactory, doubleFactory, longFactory, nameFactory, pathFactory, referenceFactory,
-                                    weakReferenceFactory, simpleReferenceFactory, uriFactory, objectFactory);
+                                    weakReferenceFactory, simpleReferenceFactory, uriFactory, objectFactory, locale);
     }
 
     /**
@@ -606,7 +611,21 @@ public final class ExecutionContext implements ThreadPoolFactory, Cloneable, Nam
         return new ExecutionContext(securityContext, namespaceRegistry, propertyFactory, threadPools, binaryStore, data,
                                     processId, decoder, encoder, stringFactory, binaryFactory, booleanFactory, dateFactory,
                                     decimalFactory, doubleFactory, longFactory, nameFactory, pathFactory, referenceFactory,
-                                    weakReferenceFactory, simpleReferenceFactory, uriFactory, objectFactory);
+                                    weakReferenceFactory, simpleReferenceFactory, uriFactory, objectFactory, locale);
+    }
+
+    /**
+     * Create a new execution context that mirrors this context but that contains the supplied locale.
+     *
+     * @param locale a {@code Locale} instance
+     * @return the execution context that is identical with this execution context, but which uses the supplied locale; never null
+     * @since 4.5
+     */
+    public ExecutionContext with(Locale locale) {
+        return new ExecutionContext(securityContext, namespaceRegistry, propertyFactory, threadPools, binaryStore, data,
+                                    processId, decoder, encoder, stringFactory, binaryFactory, booleanFactory, dateFactory,
+                                    decimalFactory, doubleFactory, longFactory, nameFactory, pathFactory, referenceFactory,
+                                    weakReferenceFactory, simpleReferenceFactory, uriFactory, objectFactory, locale);
     }
 
     @Override

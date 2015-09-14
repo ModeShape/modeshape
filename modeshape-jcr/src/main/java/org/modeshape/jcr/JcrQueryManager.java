@@ -20,6 +20,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -96,7 +97,17 @@ class JcrQueryManager implements QueryManager {
                                                           String language ) throws InvalidQueryException, RepositoryException {
         CheckArg.isNotNull(statement, "statement");
         CheckArg.isNotNull(language, "language");
-        return createQuery(statement, language, null);
+        return createQuery(statement, language, null, null);
+    }
+
+    @Override
+    public org.modeshape.jcr.api.query.Query createQuery( String statement, 
+                                                          String language,
+                                                          Locale locale ) throws InvalidQueryException, RepositoryException {
+        CheckArg.isNotNull(statement, "statement");
+        CheckArg.isNotNull(language, "language");
+        CheckArg.isNotNull(locale, "locale");
+        return createQuery(statement, language, null, locale);
     }
 
     /**
@@ -107,13 +118,15 @@ class JcrQueryManager implements QueryManager {
      * @param expression the original query expression as supplied by the client; may not be null
      * @param language the language in which the expression is represented; may not be null
      * @param storedAtPath the path at which this query was stored, or null if this is not a stored query
+     * @param locale an optional {@link Locale} instance or null if no specific locale is to be used.
      * @return query the JCR query object; never null
      * @throws InvalidQueryException if expression is invalid or language is unsupported
      * @throws RepositoryException if the session is no longer live
      */
     public org.modeshape.jcr.api.query.Query createQuery( String expression,
                                                           String language,
-                                                          Path storedAtPath ) throws InvalidQueryException, RepositoryException {
+                                                          Path storedAtPath, 
+                                                          Locale locale ) throws InvalidQueryException, RepositoryException {
         session.checkLive();
         // Look for a parser for the specified language ...
         QueryParsers queryParsers = session.repository().runningState().queryParsers();
@@ -137,7 +150,7 @@ class JcrQueryManager implements QueryManager {
             if (parser.getLanguage().equals(QueryLanguage.JCR_SQL2)) {
                 hints.qualifyExpandedColumnNames = true;
             }
-            return resultWith(expression, parser.getLanguage(), command, hints, storedAtPath);
+            return resultWith(expression, parser.getLanguage(), command, hints, storedAtPath, locale);
         } catch (ParsingException e) {
             // The query is not well-formed and cannot be parsed ...
             String reason = e.getMessage();
@@ -151,7 +164,7 @@ class JcrQueryManager implements QueryManager {
 
     /**
      * Creates a new JCR {@link Query} by specifying the query expression itself, the language in which the query is stated, the
-     * {@link QueryCommand} representation. This method is more efficient than {@link #createQuery(String, String, Path)} if the
+     * {@link QueryCommand} representation. This method is more efficient than {@link #createQuery(String, String, Path, Locale)} if the
      * QueryCommand is created directly.
      * 
      * @param command the query command; may not be null
@@ -173,7 +186,7 @@ class JcrQueryManager implements QueryManager {
             hints.showPlan = true;
             hints.hasFullTextSearch = true; // always include the score
             hints.qualifyExpandedColumnNames = true; // always qualify expanded names with the selector name in JCR-SQL2
-            return resultWith(expression, QueryLanguage.JCR_SQL2, command, hints, null);
+            return resultWith(expression, QueryLanguage.JCR_SQL2, command, hints, null, null);
         } catch (org.modeshape.jcr.query.parse.InvalidQueryException e) {
             // The query was parsed, but there is an error in the query
             String reason = e.getMessage();
@@ -196,7 +209,7 @@ class JcrQueryManager implements QueryManager {
         String statement = jcrNode.getProperty(JcrLexicon.STATEMENT).getString();
         String language = jcrNode.getProperty(JcrLexicon.LANGUAGE).getString();
 
-        return createQuery(statement, language, jcrNode.path());
+        return createQuery(statement, language, jcrNode.path(), null);
     }
 
     @Override
@@ -210,7 +223,8 @@ class JcrQueryManager implements QueryManager {
                                                             String language,
                                                             QueryCommand command,
                                                             PlanHints hints,
-                                                            Path storedAtPath ) {
+                                                            Path storedAtPath, 
+                                                            Locale locale ) {
         if (command instanceof SelectQuery) {
             SelectQuery query = (SelectQuery)command;
             return new QueryObjectModel(context, expression, language, query, hints, storedAtPath);
@@ -219,17 +233,23 @@ class JcrQueryManager implements QueryManager {
             SetQuery query = (SetQuery)command;
             return new SetQueryObjectModel(this.context, expression, language, query, hints, storedAtPath);
         }
-        JcrQueryContext context = new SessionQueryContext(session);
+        JcrQueryContext context = new SessionQueryContext(session, locale);
         return new JcrQuery(context, expression, language, command, hints, storedAtPath);
     }
 
     protected static class SessionQueryContext implements JcrQueryContext {
         private final JcrSession session;
         private final ValueFactories factories;
-
+        private final ExecutionContext executionContext; 
+        
         protected SessionQueryContext( JcrSession session ) {
-            this.session = session;
-            this.factories = session.context().getValueFactories();
+            this(session, null);
+        }
+
+        protected SessionQueryContext( JcrSession session, Locale locale ) {
+            this.session = session;  
+            this.executionContext = (locale == null) ? session.context() : session.context().with(locale);
+            this.factories = executionContext.getValueFactories();
         }
 
         @Override
@@ -257,7 +277,6 @@ class JcrQueryManager implements QueryManager {
             Schemata schemata = session.workspace().nodeTypeManager().schemata();
             NodeTypes nodeTypes = session.repository().nodeTypeManager().getNodeTypes();
             RepositoryIndexes indexDefns = session.repository().queryManager().getIndexes();
-            ExecutionContext context = session.context();
             String workspaceName = session.workspaceName();
             JcrRepository.RunningState state = session.repository().runningState();
             RepositoryQueryManager queryManager = state.queryManager();
@@ -273,7 +292,7 @@ class JcrQueryManager implements QueryManager {
             } else {
                 workspaceNames = Collections.singleton(workspaceName);
             }
-            return queryManager.query(context, repoCache, workspaceNames, overriddenNodeCaches, query, schemata, indexDefns,
+            return queryManager.query(executionContext, repoCache, workspaceNames, overriddenNodeCaches, query, schemata, indexDefns,
                                       nodeTypes, hints, variables);
         }
 
