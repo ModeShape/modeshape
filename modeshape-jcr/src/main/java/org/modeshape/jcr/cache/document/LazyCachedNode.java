@@ -225,26 +225,35 @@ public class LazyCachedNode implements CachedNode, Serializable {
         assert currentParent != null;
 
         // Get our parent's child references to find which one points to us ...
-        ChildReferences currentReferences = currentParent.getChildReferences(cache);
-        ChildReference parentRefToMe = null;
-        if (currentReferences.supportsGetChildReferenceByKey()) {
-            // Just using the node key is faster if it is supported by the implementation ...
-            parentRefToMe = currentReferences.getChild(key);
-        } else {
-            // Directly look up the ChildReference by going to the cache (and possibly connector) ...
-            NodeKey parentKey = getParentKey(cache);
-            parentRefToMe = cache.getChildReference(parentKey, key);
+        int retryCount = 1;
+        ChildReference parentRefToMe = searchReferenceForSelf(cache, currentParent);
+        NodeKey parentKey = getParentKey(cache);
+        while (parentRefToMe == null && retryCount-- > 0) {
+            // we weren't able to find this node with its reported parent, so clear the parent from the
+            // ws cache and try getting the child reference from the latest persisted copy of the parent 
+            // see https://issues.jboss.org/browse/MODE-2502
+            assert parentRefToMe == null;
+            cache.purge(parentKey);
+            currentParent = parent(cache);
+            parentRefToMe = searchReferenceForSelf(cache, currentParent);
         }
+        
         if (parentRefToMe != null) {
             // We found a new ChildReference instance from the current parent, so cache it ...
             parentRefToSelf.set(new NonRootParentReferenceToSelf(currentParent, parentRefToMe));
             return parentRefToSelf.get().childReferenceInParent(); // always get the most recent
-        }
-        assert parentRefToMe == null;
+        } 
         // This node references a parent, but that parent no longer has a child reference to this node. Perhaps this node is
         // in the midst of being moved or removed. Either way, we don't have much choice but to throw an exception about
         // us not being found...
-        throw new NodeNotFoundInParentException(key, getParentKey(cache));
+        throw new NodeNotFoundInParentException(key, parentKey);
+    }
+
+    private ChildReference searchReferenceForSelf( WorkspaceCache cache, CachedNode currentParent ) {
+        ChildReferences currentReferences = currentParent.getChildReferences(cache);
+        return currentReferences.supportsGetChildReferenceByKey() ?
+               currentReferences.getChild(key) :
+               cache.getChildReference(getParentKey(cache), key);
     }
 
     protected Map<Name, Property> properties() {
