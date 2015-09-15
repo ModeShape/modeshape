@@ -220,6 +220,10 @@ public class WorkspaceCache implements DocumentCache {
             this.nodesByKey.remove(nodeKey);
         }
     }
+    
+    final void purge(NodeKey key) {
+        this.nodesByKey.remove(key);
+    }
 
     @Override
     public NodeKey getRootKey() {
