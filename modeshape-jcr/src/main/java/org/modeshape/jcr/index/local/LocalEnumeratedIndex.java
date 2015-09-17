@@ -81,12 +81,14 @@ final class LocalEnumeratedIndex implements LocalIndex<String> {
         // Read all of the existing collections ...
         boolean foundContent = false;
         for (String collectionName : db.getAll().keySet()) {
-            foundContent = true;
             String prefix = this.name + "/enumerated/";
-            if (collectionName.startsWith(prefix) && collectionName.length() > prefix.length()) {
-                String valueString = collectionName.substring(prefix.length());
-                Set<String> keysForValue = createOrGetKeySet(valueString);
-                nodeKeySetsByValue.put(valueString, keysForValue);
+            if (collectionName.startsWith(prefix)) {
+                foundContent = true;
+                if (collectionName.length() > prefix.length()) {
+                    String valueString = collectionName.substring(prefix.length());
+                    Set<String> keysForValue = createOrGetKeySet(valueString);
+                    nodeKeySetsByValue.put(valueString, keysForValue);
+                }
             }
         }
         // Add any that were not found in the DB ...

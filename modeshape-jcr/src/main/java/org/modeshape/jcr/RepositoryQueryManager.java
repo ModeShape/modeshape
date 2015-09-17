@@ -27,6 +27,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import javax.jcr.RepositoryException;
+import org.joda.time.DateTime;
 import org.modeshape.common.annotation.GuardedBy;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.CheckArg;
@@ -47,6 +48,8 @@ import org.modeshape.jcr.cache.PathCache;
 import org.modeshape.jcr.cache.RepositoryCache;
 import org.modeshape.jcr.cache.change.ChangeSet;
 import org.modeshape.jcr.cache.change.ChangeSetListener;
+import org.modeshape.jcr.cache.document.WorkspaceCache;
+import org.modeshape.jcr.journal.ChangeJournal;
 import org.modeshape.jcr.query.BufferManager;
 import org.modeshape.jcr.query.CancellableQuery;
 import org.modeshape.jcr.query.QueryContext;
@@ -414,6 +417,43 @@ class RepositoryQueryManager implements ChangeSetListener {
             // It's just a regular node in the workspace ...
             reindexContent(workspaceName, cache, node, depth, path.isRoot(), getIndexWriter());
         }
+    }
+    
+    protected void reindexSince( JcrWorkspace workspace,
+                                 long timestamp ) {
+        IndexWriter indexWriter = getIndexWriter();
+        if (indexWriter.canBeSkipped()) {
+            // There's no indexes that require updating ...
+            return;
+        }
+        WorkspaceCache cache = workspace.getSession().cache().getWorkspace();
+        String workspaceName = workspace.getName();   
+        ChangeJournal journal = runningState.journal();
+        assert journal != null;
+        Set<NodeKey> changedNodesSinceTimestamp = journal.changedNodesSince(new DateTime(timestamp));
+        if (changedNodesSinceTimestamp.isEmpty()) {
+            // there are no nodes which have been changed since the given timestamp
+            return;
+        }      
+        // take each of node keys that have been changed since the given timestamp and reindex each one
+        for (NodeKey nodeKey : changedNodesSinceTimestamp) {
+            CachedNode node = cache.getNode(nodeKey);
+            if (node != null) {
+                // only if the node still exists in the repository
+                reindexContent(workspaceName, cache, node, 1, true, indexWriter);
+            }
+        }
+    }
+
+    protected Future<Boolean> reindexSinceAsync( final JcrWorkspace workspace,
+                                                 final long timestamp ) {
+        return indexingExecutorService.submit(new Callable<Boolean>() {
+            @Override
+            public Boolean call() throws Exception {
+                reindexSince(workspace, timestamp);
+                return Boolean.TRUE;
+            }
+        });    
     }
 
     protected void reindexContent( final String workspaceName,

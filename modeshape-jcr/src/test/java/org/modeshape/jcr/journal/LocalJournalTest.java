@@ -20,6 +20,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -28,6 +29,7 @@ import java.util.UUID;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.modeshape.common.FixFor;
 import org.modeshape.common.util.FileUtil;
 import org.modeshape.jcr.api.value.DateTime;
 import org.modeshape.jcr.cache.NodeKey;
@@ -85,7 +87,7 @@ public class LocalJournalTest {
         journal().notify(process2Changes2);
         timestamp2 = new org.joda.time.DateTime(process2Changes2.getTimestamp().getMilliseconds());
 
-        // p3 has 2 changesets
+        // p3 has 2 changesets and 1 empty one
         ChangeSet process3Changes1 = TestChangeSet.create("j3", 2);
         journal().notify(process3Changes1);
 
@@ -135,6 +137,16 @@ public class LocalJournalTest {
         assertEquals(1, journal().recordsNewerThan(timestamp3, true, false).size());
         // find records older than max, exclusive
         assertEquals(0, journal().recordsNewerThan(new org.joda.time.DateTime(Long.MAX_VALUE), true, false).size());
+    }
+
+    @Test
+    @FixFor( "MODE-1903" )
+    public void shouldReturnNodeChangesBasedOnTimestamp() throws Exception {
+        assertEquals(14, journal().changedNodesSince(new org.joda.time.DateTime(-1)).size());
+        assertEquals(7, journal().changedNodesSince(timestamp1).size());
+        assertEquals(5, journal().changedNodesSince(timestamp2).size());
+        assertEquals(2, journal().changedNodesSince(timestamp3).size());
+        assertEquals(0, journal().changedNodesSince(new org.joda.time.DateTime(Long.MAX_VALUE)).size());
     }
 
     @Test
@@ -195,12 +207,15 @@ public class LocalJournalTest {
         private List<Change> changes;
         private DateTime timestamp;
         private String journalId;
+        private Set<NodeKey> nodeChanges;
 
         private TestChangeSet( List<Change> changes,
-                               String journalId ) {
+                               String journalId,
+                               Set<NodeKey> changedNodes) {
             this.changes = changes;
             this.timestamp = new JodaDateTime();
             this.journalId = journalId;
+            this.nodeChanges = changedNodes;
         }
 
         @Override
@@ -245,7 +260,7 @@ public class LocalJournalTest {
 
         @Override
         public Set<NodeKey> changedNodes() {
-            return null;
+            return nodeChanges;
         }
 
         @Override
@@ -290,9 +305,13 @@ public class LocalJournalTest {
             for (int i = 0; i < changesCount; i++) {
                 changes.add(new Change() {});
             }
+            Set<NodeKey> nodeChanges = new HashSet<>(changesCount);
+            for (int i = 0; i < changesCount; i++) {
+                nodeChanges.add(new NodeKey(UUID.randomUUID().toString()));
+            }
             // sleep 1 second to make sure that successive calls won't have the same TS
             Thread.sleep(1);
-            return new TestChangeSet(changes, journalId);
+            return new TestChangeSet(changes, journalId, nodeChanges);
         }
     }
 }

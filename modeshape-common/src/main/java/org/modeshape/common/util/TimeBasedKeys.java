@@ -40,7 +40,7 @@ import org.modeshape.common.annotation.ThreadSafe;
  * long key = keys.nextKey();
  * </pre>
  * 
- * Because the keys are time-based, the geneartor can also identify the range of keys that were created before or after a given
+ * Because the keys are time-based, the generator can also identify the range of keys that were created before or after a given
  * instant in time, or within a range of times. For example, all keys obtained after January 10, 2014 at 12:12:41.845-06:00 (which
  * has a <code>System.currentTimeMillis()</code> value of {@code 1389378406}) will be greater than or equal to the following
  * value:

@@ -18,15 +18,16 @@ package org.modeshape.jcr.journal;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.infinispan.schematic.document.ThreadSafe;
 import org.joda.time.DateTime;
-import org.modeshape.common.SystemFailureException;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.jcr.JcrI18n;
+import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.cache.change.ChangeSet;
 import org.modeshape.jcr.clustering.ClusteringService;
 import org.modeshape.jcr.clustering.MessageConsumer;
@@ -101,16 +102,17 @@ public class ClusteredJournal extends MessageConsumer<DeltaMessage> implements C
         }
     }
 
-    private void waitForReconciliationToComplete() {
+    private void waitForReconciliationToComplete() throws InterruptedException {
         try {
-            reconciliationLatch.await(MAX_MINUTES_TO_WAIT_FOR_RECONCILIATION, TimeUnit.MINUTES);
+            if (!reconciliationLatch.await(MAX_MINUTES_TO_WAIT_FOR_RECONCILIATION, TimeUnit.MINUTES)) {
+                LOGGER.warn(JcrI18n.journalHasNotCompletedReconciliation,journalId(), clusterName(), MAX_MINUTES_TO_WAIT_FOR_RECONCILIATION);    
+            }
         } catch (InterruptedException e) {
-            Thread.interrupted();
-        }
-
-        if (!deltaReconciliationCompleted()) {
-            throw new SystemFailureException(JcrI18n.journalHasNotCompletedReconciliation.text(journalId(), clusterName(),
-                                                                                               MAX_MINUTES_TO_WAIT_FOR_RECONCILIATION));
+            LOGGER.warn(JcrI18n.journalHasNotCompletedReconciliation, journalId(), clusterName(),
+                        MAX_MINUTES_TO_WAIT_FOR_RECONCILIATION);
+            if (Thread.interrupted()) {
+                throw e;
+            }
         }
     }
 
@@ -139,6 +141,11 @@ public class ClusteredJournal extends MessageConsumer<DeltaMessage> implements C
                                      boolean inclusive,
                                      boolean descendingOrder ) {
         return localJournal.recordsNewerThan(changeSetTime, inclusive, descendingOrder);
+    }
+
+    @Override
+    public Set<NodeKey> changedNodesSince( DateTime time ) {
+        return localJournal.changedNodesSince(time);
     }
 
     @Override

@@ -18,7 +18,9 @@ package org.modeshape.jcr.journal;
 
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.Set;
 import org.joda.time.DateTime;
+import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.cache.change.ChangeSetListener;
 
 /**
@@ -72,7 +74,16 @@ public interface ChangeJournal extends ChangeSetListener {
      */
     public Records recordsNewerThan( DateTime changeSetTime,
                                      boolean inclusive,
-                                     boolean descendingOrder );
+                                     boolean descendingOrder);
+
+    /**
+     * Returns all node keys which are part of change sets that are newer or equal to a given timestamp.
+     * 
+     * @param time the {@link DateTime} of the changes representing the lower bound; may be null indicating
+     *        that *all the node keys* should be returned.
+     * @return a {@link Set} of {@link NodeKey}instances; never {@code null}
+     */
+    public Set<NodeKey> changedNodesSince( DateTime time );
 
     /**
      * Adds one or more journal records to a journal.

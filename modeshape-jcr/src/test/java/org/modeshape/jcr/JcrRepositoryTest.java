@@ -1629,6 +1629,13 @@ public class JcrRepositoryTest {
         repository.shutdown();
     }
 
+    @Test(expected = RepositoryException.class)
+    @FixFor( "MODE-1269" )
+    public void shouldNotAllowIncrementalIndexingIfJournalIsNotEnabled() throws Exception {
+        session = createSession();
+        session.getWorkspace().reindexSince(System.currentTimeMillis());
+    }
+
     protected void nodeExists( Session session,
                                String parentPath,
                                String childName,

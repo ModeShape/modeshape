@@ -901,6 +901,34 @@ class JcrWorkspace implements org.modeshape.jcr.api.Workspace {
     }
 
     @Override
+    public void reindexSince( long timestamp ) throws RepositoryException {
+        // First check permissions ...
+        session.checkPermission(workspaceName, Path.ROOT_PATH, ModeShapePermissions.INDEX_WORKSPACE);
+        
+        // then if the journal is available
+        JcrRepository.RunningState runningState = repository().runningState();
+        if (runningState.journal() == null) {
+            throw new RepositoryException(JcrI18n.cannotReindexJournalNotEnabled.text(timestamp, repository().getName()));           
+        }
+        
+        runningState.queryManager().reindexSince(this, timestamp);
+    }
+
+    @Override
+    public Future<Boolean> reindexSinceAsync( long timestamp ) throws RepositoryException {
+        // First check permissions ...
+        session.checkPermission(workspaceName, Path.ROOT_PATH, ModeShapePermissions.INDEX_WORKSPACE);
+
+        // then if the journal is available
+        JcrRepository.RunningState runningState = repository().runningState();
+        if (runningState.journal() == null) {
+            throw new RepositoryException(JcrI18n.cannotReindexJournalNotEnabled.text(timestamp, repository().getName()));
+        }
+
+        return runningState.queryManager().reindexSinceAsync(this, timestamp);
+    }
+
+    @Override
     public Future<Boolean> reindexAsync() throws RepositoryException {
         // First check permissions ...
         session.checkPermission(workspaceName, Path.ROOT_PATH, ModeShapePermissions.INDEX_WORKSPACE);

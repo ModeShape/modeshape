@@ -48,9 +48,7 @@ public class ClusteredJournalTest extends LocalJournalTest {
 
     @Override
     public void before() throws Exception {
-        this.defaultJournal = startNewJournal(
-                "target/default_clustered_journal",
-                                              "default-journal-cluster");
+        this.defaultJournal = startNewJournal("target/default_clustered_journal", "default-journal-cluster");
         insertTestRecords();
     }
 
