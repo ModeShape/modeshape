@@ -59,4 +59,12 @@ public interface IndexWriter {
               Set<Name> mixinTypes,
               Properties properties );
 
+    /**
+     * Removes information from the indexes about a node. 
+     *
+     * @param workspace the workspace to which the node belongs; may not be null
+     * @param key a {@link NodeKey} instance, never {@code null}
+     */
+    void remove( String workspace, NodeKey key );
+
 }

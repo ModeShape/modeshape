@@ -1355,7 +1355,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         protected final void postInitialize() throws Exception {
             try {
                 // Have the query manager tell the providers to initialize the indexes. This may cause a background reindexing ...
-                queryManager().reindexIfNeeded();
+                queryManager().reindex();
 
                 // Register the background processes.
                 // Do this last since we want the repository running before these are started ...

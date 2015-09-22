@@ -79,11 +79,10 @@ public interface ChangeJournal extends ChangeSetListener {
     /**
      * Returns all node keys which are part of change sets that are newer or equal to a given timestamp.
      * 
-     * @param time the {@link DateTime} of the changes representing the lower bound; may be null indicating
-     *        that *all the node keys* should be returned.
+     * @param timestamp the timestamp of the changes representing the lower bound; 
      * @return a {@link Set} of {@link NodeKey}instances; never {@code null}
      */
-    public Set<NodeKey> changedNodesSince( DateTime time );
+    public Set<NodeKey> changedNodesSince( long timestamp );
 
     /**
      * Adds one or more journal records to a journal.
@@ -98,6 +97,13 @@ public interface ChangeJournal extends ChangeSetListener {
      * @return a {@link String}, never {@code null}
      */
     public String journalId();
+
+    /**
+     * Checks if this journal is active (i.e. can accept requests) or not.
+     *
+     * @return {@code true} if the journal has started, {@code false otherwise}
+     */
+    public boolean started();
 
     /**
      * An {@link Iterable} extension which provides information about the number of entries the underlying collection holds.

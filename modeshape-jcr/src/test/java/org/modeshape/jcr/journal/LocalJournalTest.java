@@ -100,6 +100,11 @@ public class LocalJournalTest {
     }
 
     @Test
+    public void shouldDetectedStartedState() throws Exception {
+        assertTrue("Journal should've been started", localJournal().started());        
+    }
+    
+    @Test
     public void shouldReturnAllRecords() throws Exception {
         assertEquals(8, journal().allRecords(false).size());
     }
@@ -142,11 +147,11 @@ public class LocalJournalTest {
     @Test
     @FixFor( "MODE-1903" )
     public void shouldReturnNodeChangesBasedOnTimestamp() throws Exception {
-        assertEquals(14, journal().changedNodesSince(new org.joda.time.DateTime(-1)).size());
-        assertEquals(7, journal().changedNodesSince(timestamp1).size());
-        assertEquals(5, journal().changedNodesSince(timestamp2).size());
-        assertEquals(2, journal().changedNodesSince(timestamp3).size());
-        assertEquals(0, journal().changedNodesSince(new org.joda.time.DateTime(Long.MAX_VALUE)).size());
+        assertEquals(14, journal().changedNodesSince(-1).size());
+        assertEquals(7, journal().changedNodesSince(timestamp1.getMillis()).size());
+        assertEquals(5, journal().changedNodesSince(timestamp2.getMillis()).size());
+        assertEquals(2, journal().changedNodesSince(timestamp3.getMillis()).size());
+        assertEquals(0, journal().changedNodesSince(Long.MAX_VALUE).size());
     }
 
     @Test

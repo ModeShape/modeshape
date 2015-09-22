@@ -1,0 +1,33 @@
+{
+    "name" : "Clustered Repository with Incremental Indexes 2",
+    "workspaces" : {
+        "predefined" : ["otherWorkspace"],
+        "default" : "default",
+        "allowCreation" : true
+    },
+    "storage" : {
+        "cacheName" : "persistentRepository",
+        "cacheConfiguration" : "config/infinispan-clustered-persistent-2.xml"
+    },
+    "journaling" : {
+        "location" : "target/clustered/journal2"
+    },
+    "indexProviders" : {
+        "local" : {
+            "classname" : "org.modeshape.jcr.index.local.LocalIndexProvider",
+            "directory" : "target/clustered/repo2_indexes"
+        }
+    },
+    "indexes" : {
+        "titleIndex" : {
+            "kind" : "value",
+            "provider" : "local",
+            "nodeType" : "mix:title",
+            "columns" : "jcr:title(STRING)"
+        }
+    },
+    "reindexing" : {
+        "async" : false,
+        "mode" : "incremental"
+    }
+}

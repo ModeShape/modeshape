@@ -64,6 +64,10 @@
             "directory" : "/a/b/c/foo",
         }
     },
+    "reindexing" : {
+        "async" : false,
+        "mode" : "incremental"
+    },
     "textExtraction": {
         "threadPool" : "test",
             "extractors" : {

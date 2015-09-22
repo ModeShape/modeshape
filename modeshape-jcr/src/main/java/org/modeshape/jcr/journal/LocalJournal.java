@@ -72,7 +72,7 @@ public class LocalJournal implements ChangeJournal {
      */
     private BTreeMap<Long, JournalRecord> records;
     private long searchTimeDelta;
-    private volatile boolean stopped = false;
+    private volatile boolean stopped;
 
     /**
      * Creates a new journal instance, in stopped state.
@@ -95,6 +95,11 @@ public class LocalJournal implements ChangeJournal {
 
     protected LocalJournal( String journalLocation ) {
         this(journalLocation, false, DEFAULT_MAX_TIME_TO_KEEP_FILES);
+    }
+
+    @Override
+    public boolean started() {
+        return !stopped;
     }
 
     @SuppressWarnings( "rawtypes" )
@@ -132,7 +137,7 @@ public class LocalJournal implements ChangeJournal {
             Atomic.String journalAtomic = this.journalDB.getAtomicString(JOURNAL_ID_FIELD);
             //only write the value the first time
             if (StringUtil.isBlank(journalAtomic.get())) {
-                journalAtomic.set("journal_" + UUID.randomUUID().toString());
+                journalAtomic.set("Journal_" + UUID.randomUUID().toString());
             }
             this.journalId = journalAtomic.get();
             this.stopped = false;
@@ -253,8 +258,8 @@ public class LocalJournal implements ChangeJournal {
     }
 
     @Override
-    public Set<NodeKey> changedNodesSince( DateTime time ) {
-        Records records = recordsNewerThan(time, true, false);
+    public Set<NodeKey> changedNodesSince( long timestamp ) {
+        Records records = recordsNewerThan(new DateTime(timestamp), true, false);
         if (records.isEmpty()) {
             return Collections.emptySet();
         }

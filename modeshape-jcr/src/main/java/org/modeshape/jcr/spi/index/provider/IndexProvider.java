@@ -23,7 +23,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicLong;
 import javax.jcr.RepositoryException;
 import org.modeshape.common.annotation.GuardedBy;
 import org.modeshape.common.annotation.ThreadSafe;
@@ -172,13 +171,7 @@ public abstract class IndexProvider {
      * publicly-accessible {@link #publicWriter}. Never null.
      */
     private volatile IndexWriter delegateWriter = EMPTY_WRITER;
-
-    /**
-     * The latest timestamp at which *any* indexes managed by this provider have been successfully updated (either added/removed
-     * or changed).
-     */
-    private AtomicLong latestIndexUpdateTime;
-
+    
     @SuppressWarnings( "synthetic-access" )
     private final IndexWriter publicWriter = new IndexWriter() {
         @Override
@@ -199,6 +192,11 @@ public abstract class IndexProvider {
                          Set<Name> mixinTypes,
                          Properties properties ) {
             delegateWriter.add(workspace, key, path, primaryType, mixinTypes, properties);
+        }
+
+        @Override
+        public void remove( String workspace, NodeKey key ) {
+            delegateWriter.remove(workspace, key);
         }
     };
 
@@ -262,19 +260,10 @@ public abstract class IndexProvider {
         if (!initialized) {
             try {
                 doInitialize();
-                initLastIndexUpdateTime();
                 initialized = true;
             } catch (RuntimeException e) {
                 throw new RepositoryException(e);
             }
-        }
-    }
-
-    private void initLastIndexUpdateTime() {
-        Long latestIndexUpdateTime = readLatestIndexUpdateTime();
-        if (latestIndexUpdateTime != null) {
-            this.latestIndexUpdateTime = new AtomicLong();
-            this.latestIndexUpdateTime.set(latestIndexUpdateTime);
         }
     }
     
@@ -430,6 +419,18 @@ public abstract class IndexProvider {
     }
 
     /**
+     * Return the latest time at which this provider successfully updated its indexes.  
+     * 
+     * @return a {@code Long} instance which either contains the latest update time or {@code null} which means that
+     * this provider does not support incremental reindexing.
+     *
+     */
+    public Long getLatestIndexUpdateTime() {
+        // by default don't support incremental reindexing
+        return null;
+    }
+
+    /**
      * Get this provider's {@link ProvidedIndex} instances for the given workspace.
      *
      * @param workspaceName the name of the workspace; may not be null
@@ -457,41 +458,6 @@ public abstract class IndexProvider {
         }
     }
 
-    /**
-     * Reads a timestamp which indicates the latest time at which a particular provider has last stored *any* index updates
-     * successfully.  
-     * 
-     * @return either a non-null valid timestamp which indicates that this provider can handle incremental indexing, 
-     * or {@code null} which indicates that a provider doesn't support incremental indexing.
-     */
-    protected Long readLatestIndexUpdateTime() {
-        // null means the provider doesn't support incremental indexing
-        return null;
-    }
-
-    /**
-     * Writes a new timestamp which indicates that a successful index update operation (i.e. any operation which changes the values
-     * in the indexes) has been performed. This will only be called by the repository if a particular index provider indicated
-     * that it has the ability to read & write these timestamps via {@link #readLatestIndexUpdateTime()}
-     * 
-     * @param updateTime the time which should be stored as the latest update
-     */
-    protected void writeLatestUpdateTime( long updateTime ) {
-        // nothing by default    
-    } 
-    
-    protected final void indexesSuccessfullyUpdatedAt(long time) {
-        // if the latest update time is null, it means the index provider doesn't support incremental indexes, so there's
-        // nothing to really do
-        if (latestIndexUpdateTime != null) {
-            long latestTime = latestIndexUpdateTime.get();
-            if (latestTime < time) {
-                latestIndexUpdateTime.compareAndSet(latestTime, time);
-                writeLatestUpdateTime(latestIndexUpdateTime.get());
-            }
-        }
-    }
-    
     /**
      * Perform the specified operation on each of the managed indexes.
      *
@@ -930,6 +896,19 @@ public abstract class IndexProvider {
                     }
                 }
             }
+
+            @Override
+            public void remove( String workspace, NodeKey key ) {
+                Collection<IndexChangeAdapter> adapters = adaptersByWorkspaceName.get(workspace);
+                if (adapters != null) {
+                    // There are adapters for this workspace ...
+                    for (IndexChangeAdapter adapter : adaptersByWorkspaceName.get(workspace)) {
+                        if (adapter != null) {
+                            adapter.removeValues(key);
+                        }
+                    }
+                }
+            }
         };
     }
 
@@ -1113,8 +1092,6 @@ public abstract class IndexProvider {
             if (changeSet.getWorkspaceName() != null) {
                 // This is a change in the content of a workspace ...
                 managedIndex.getIndexChangeAdapter().notify(changeSet);
-                // mark the current time as the latest time at which indexes were successfully updated
-                IndexProvider.this.indexesSuccessfullyUpdatedAt(System.currentTimeMillis());
             }
         }
 
