@@ -40,7 +40,7 @@ import org.modeshape.common.annotation.ThreadSafe;
  * long key = keys.nextKey();
  * </pre>
  * 
- * Because the keys are time-based, the geneartor can also identify the range of keys that were created before or after a given
+ * Because the keys are time-based, the generator can also identify the range of keys that were created before or after a given
  * instant in time, or within a range of times. For example, all keys obtained after January 10, 2014 at 12:12:41.845-06:00 (which
  * has a <code>System.currentTimeMillis()</code> value of {@code 1389378406}) will be greater than or equal to the following
  * value:
@@ -92,12 +92,14 @@ public final class TimeBasedKeys {
     /**
      * Create a new generator that uses the specified number of bits for the counter portion of the keys.
      * 
-     * @param bitsUsedInCounter the number of bits in the counter portion of the keys; must be a positive number between 1 and 32.
+     * @param bitsUsedInCounter the number of bits in the counter portion of the keys; must be a positive number for which theere
+     * is enough space to left shift without overflowing.
      * @return the generator instance; never null
      */
     public static TimeBasedKeys create( int bitsUsedInCounter ) {
-        CheckArg.isLessThanOrEqualTo(bitsUsedInCounter, 32, "bitsUsedInCounter");
         CheckArg.isPositive(bitsUsedInCounter, "bitsUsedInCounter");
+        int maxAvailableBitsToShift = Long.numberOfLeadingZeros(System.currentTimeMillis());
+        CheckArg.isLessThan(bitsUsedInCounter, maxAvailableBitsToShift, "bitsUsedInCounter");
         return new TimeBasedKeys((short)bitsUsedInCounter);
     }
 

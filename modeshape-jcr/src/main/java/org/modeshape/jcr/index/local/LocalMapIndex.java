@@ -53,6 +53,7 @@ abstract class LocalMapIndex<T, V> implements LocalIndex<V> {
     private final DB db;
     protected final Comparator<T> comparator;
     private final boolean isNew;
+    private final IndexUpdater indexUpdater;
 
     LocalMapIndex( String name,
                    String workspaceName,
@@ -69,6 +70,7 @@ abstract class LocalMapIndex<T, V> implements LocalIndex<V> {
         this.workspace = workspaceName;
         this.converter = converter;
         this.db = db;
+        this.indexUpdater = new IndexUpdater(db);
         if (db.exists(name)) {
             logger.debug("Reopening storage for '{0}' index in workspace '{1}'", name, workspaceName);
             this.options = db.getHashMap(name + "/options");
@@ -140,7 +142,7 @@ abstract class LocalMapIndex<T, V> implements LocalIndex<V> {
 
     @Override
     public void commit() {
-        db.commit();
+        indexUpdater.commit();
     }
 
     @Override

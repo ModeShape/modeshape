@@ -54,6 +54,10 @@ public final class JcrI18n {
     public static I18n indexProviderMissingPlanner;
     public static I18n errorNotifyingNodeTypesListener;
     public static I18n errorIndexing;
+    public static I18n cannotReindexJournalNotEnabled;
+    public static I18n warnIncrementalIndexingJournalNotEnabled;
+    public static I18n warnIncrementalIndexingJournalNotStarted;
+    public static I18n warnIncrementalIndexingNotSupported;
 
     public static I18n cannotConvertValue;
     public static I18n loginFailed;

@@ -64,6 +64,7 @@ final class LocalEnumeratedIndex implements LocalIndex<String> {
     private final Set<String> possibleValues;
     private final String workspaceName;
     private final boolean isNew;
+    private final IndexUpdater indexUpdater;
 
     LocalEnumeratedIndex( String name,
                           String workspaceName,
@@ -75,18 +76,21 @@ final class LocalEnumeratedIndex implements LocalIndex<String> {
         this.workspace = workspaceName;
         this.converter = converter;
         this.db = db;
+        this.indexUpdater = new IndexUpdater(db);
         this.workspaceName = workspaceName;
         this.possibleValues = possibleValues != null ? new HashSet<String>(possibleValues) : new HashSet<String>();
         this.nodeKeySetsByValue = new ConcurrentSkipListMap<>();
         // Read all of the existing collections ...
         boolean foundContent = false;
         for (String collectionName : db.getAll().keySet()) {
-            foundContent = true;
             String prefix = this.name + "/enumerated/";
-            if (collectionName.startsWith(prefix) && collectionName.length() > prefix.length()) {
-                String valueString = collectionName.substring(prefix.length());
-                Set<String> keysForValue = createOrGetKeySet(valueString);
-                nodeKeySetsByValue.put(valueString, keysForValue);
+            if (collectionName.startsWith(prefix)) {
+                foundContent = true;
+                if (collectionName.length() > prefix.length()) {
+                    String valueString = collectionName.substring(prefix.length());
+                    Set<String> keysForValue = createOrGetKeySet(valueString);
+                    nodeKeySetsByValue.put(valueString, keysForValue);
+                }
             }
         }
         // Add any that were not found in the DB ...
@@ -201,7 +205,7 @@ final class LocalEnumeratedIndex implements LocalIndex<String> {
 
     @Override
     public void commit() {
-        db.commit();
+        indexUpdater.commit();
     }
 
     @Override

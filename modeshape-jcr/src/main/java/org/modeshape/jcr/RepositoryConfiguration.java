@@ -437,6 +437,9 @@ public class RepositoryConfiguration {
         public static final String PATH_EXPRESSIONS = "pathExpressions";
         public static final String JDBC_DRIVER_CLASS = "driverClass";
         public static final String CONNECTION_URL = "url";
+        public static final String REINDEXING = "reindexing";
+        public static final String ASYNC = "async";
+        public static final String REINDEXING_MODE = "mode";
 
         public static final String GARBAGE_COLLECTION = "garbageCollection";
         public static final String INITIAL_TIME = "initialTime";
@@ -954,6 +957,15 @@ public class RepositoryConfiguration {
      */
     public InitialContent getInitialContent() {
         return new InitialContent(doc.getDocument(FieldName.WORKSPACES));
+    }
+
+    /**
+     * Returns the reindexing configuration.
+     * 
+     * @return a {@link org.modeshape.jcr.RepositoryConfiguration.Reindexing} instance, never {@code null}.
+     */
+    public Reindexing getReindexing() {
+        return new Reindexing(doc.getDocument(FieldName.REINDEXING));
     }
 
     /**
@@ -1889,6 +1901,46 @@ public class RepositoryConfiguration {
             if (component.getName().equals(name)) return true;
         }
         return false;
+    }
+
+    /**
+     * Possible reindexing modes.
+     */
+    public enum ReindexingMode {
+        IF_MISSING,
+        INCREMENTAL
+    }
+    
+    /**
+     * The reindexing configuration information.
+     */
+    @Immutable
+    public class Reindexing {
+        private final Document reindexing;
+
+        protected Reindexing( Document reindexing ) {
+            this.reindexing = reindexing;
+        }
+
+        /**
+         * Get whether the reindexing should be done synchronously or asynchronously
+         * 
+         * @return {@code true} if the reindexing should be performed asynchronously, {@code false} otherwise
+         */
+        public boolean isAsync() {
+            return reindexing == null || reindexing.getBoolean(FieldName.ASYNC, true);
+        }
+
+        /**
+         * Gets the way reindexing should be performed.
+         * 
+         * @return a {@link ReindexingMode} instance, never {@code null}
+         */
+        public ReindexingMode mode() {
+            String defaultMode = ReindexingMode.IF_MISSING.name();
+            String reindexingMode = reindexing == null ? defaultMode : reindexing.getString(FieldName.REINDEXING_MODE, defaultMode);
+            return ReindexingMode.valueOf(reindexingMode.toUpperCase());
+        }
     }
 
     /**

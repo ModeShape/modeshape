@@ -171,7 +171,7 @@ public abstract class IndexProvider {
      * publicly-accessible {@link #publicWriter}. Never null.
      */
     private volatile IndexWriter delegateWriter = EMPTY_WRITER;
-
+    
     @SuppressWarnings( "synthetic-access" )
     private final IndexWriter publicWriter = new IndexWriter() {
         @Override
@@ -192,6 +192,11 @@ public abstract class IndexProvider {
                          Set<Name> mixinTypes,
                          Properties properties ) {
             delegateWriter.add(workspace, key, path, primaryType, mixinTypes, properties);
+        }
+
+        @Override
+        public void remove( String workspace, NodeKey key ) {
+            delegateWriter.remove(workspace, key);
         }
     };
 
@@ -261,7 +266,7 @@ public abstract class IndexProvider {
             }
         }
     }
-
+    
     /**
      * Method called by the code calling {@link #initialize} (typically via reflection) to signal that the initialize method is
      * completed. See initialize() for details, and no this method is indeed used.
@@ -411,6 +416,18 @@ public abstract class IndexProvider {
         }
         ProvidedIndex providedIndex = byWorkspaceNames.get(workspaceName);
         return providedIndex == null ? null : providedIndex.managed();
+    }
+
+    /**
+     * Return the latest time at which this provider successfully updated its indexes.  
+     * 
+     * @return a {@code Long} instance which either contains the latest update time or {@code null} which means that
+     * this provider does not support incremental reindexing.
+     *
+     */
+    public Long getLatestIndexUpdateTime() {
+        // by default don't support incremental reindexing
+        return null;
     }
 
     /**
@@ -875,6 +892,19 @@ public abstract class IndexProvider {
                     for (IndexChangeAdapter adapter : adaptersByWorkspaceName.get(workspace)) {
                         if (adapter != null) {
                             adapter.reindex(workspace, key, path, primaryType, mixinTypes, properties, queryable);
+                        }
+                    }
+                }
+            }
+
+            @Override
+            public void remove( String workspace, NodeKey key ) {
+                Collection<IndexChangeAdapter> adapters = adaptersByWorkspaceName.get(workspace);
+                if (adapters != null) {
+                    // There are adapters for this workspace ...
+                    for (IndexChangeAdapter adapter : adaptersByWorkspaceName.get(workspace)) {
+                        if (adapter != null) {
+                            adapter.removeValues(key);
                         }
                     }
                 }

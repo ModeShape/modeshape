@@ -51,4 +51,9 @@ public final class NoOpQueryIndexWriter implements IndexWriter {
                      Set<Name> mixinTypes,
                      Properties properties ) {
     }
+
+    @Override
+    public void remove( String workspace, NodeKey key ) {
+        
+    }
 }

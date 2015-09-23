@@ -1,5 +1,5 @@
 {
-    "name" : "Clustered Repository with Journaling",
+    "name" : "Clustered Repository with Incremental Indexes 2",
     "workspaces" : {
         "predefined" : ["otherWorkspace"],
         "default" : "default",
@@ -25,5 +25,9 @@
             "nodeType" : "mix:title",
             "columns" : "jcr:title(STRING)"
         }
+    },
+    "reindexing" : {
+        "async" : false,
+        "mode" : "incremental"
     }
 }

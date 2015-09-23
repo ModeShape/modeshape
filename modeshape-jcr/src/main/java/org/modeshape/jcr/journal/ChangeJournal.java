@@ -19,6 +19,7 @@ package org.modeshape.jcr.journal;
 import java.util.Collections;
 import java.util.Iterator;
 import org.joda.time.DateTime;
+import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.cache.change.ChangeSetListener;
 
 /**
@@ -72,7 +73,16 @@ public interface ChangeJournal extends ChangeSetListener {
      */
     public Records recordsNewerThan( DateTime changeSetTime,
                                      boolean inclusive,
-                                     boolean descendingOrder );
+                                     boolean descendingOrder);
+
+    /**
+     * Returns the node keys which are part of change sets that are newer or equal to a given timestamp.
+     * 
+     * @param timestamp the timestamp of the changes representing the lower bound; 
+     * @return an {@link Iterator} of {@link NodeKey}instances; never {@code null}, but may contain duplicate keys if the 
+     * underl
+     */
+    public Iterator<NodeKey> changedNodesSince( long timestamp );
 
     /**
      * Adds one or more journal records to a journal.
@@ -87,6 +97,13 @@ public interface ChangeJournal extends ChangeSetListener {
      * @return a {@link String}, never {@code null}
      */
     public String journalId();
+
+    /**
+     * Checks if this journal is active (i.e. can accept requests) or not.
+     *
+     * @return {@code true} if the journal has started, {@code false otherwise}
+     */
+    public boolean started();
 
     /**
      * An {@link Iterable} extension which provides information about the number of entries the underlying collection holds.

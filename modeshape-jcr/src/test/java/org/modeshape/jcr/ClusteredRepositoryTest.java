@@ -247,6 +247,183 @@ public class ClusteredRepositoryTest {
         } finally {
             TestingUtil.killRepositories(repository1, repository2);
         }
+    } 
+    
+    @Test
+    @FixFor( "MODE-1903" )
+    public void shouldReindexContentInClusterBasedOnTimestsamp() throws Exception {
+        FileUtil.delete("target/clustered");
+        JcrRepository repository1 = null;
+        JcrRepository repository2 = null;
+        try {
+            // Start the first process completely ...
+            repository1 = TestingUtil.startRepositoryWithConfig("config/clustered-repo-with-journaling-config-1.json");
+            Thread.sleep(300);
+
+            // Start the second process completely ...
+            repository2 = TestingUtil.startRepositoryWithConfig("config/clustered-repo-with-journaling-config-2.json");
+            Thread.sleep(300);
+
+            // make 1 change which should be propagated in the cluster
+            Session session1 = repository1.login();
+            Node node = session1.getRootNode().addNode("repo1_node1");
+            node.addMixin("mix:title");
+            node.setProperty("jcr:title", "title1");
+            session1.save();
+            Thread.sleep(300);
+            
+            // remote events should've been sent out and processed through the cluster causing indexes to be updated on both cluster nodes 
+            Session session2 = repository2.login();
+            Query query = session2.getWorkspace().getQueryManager().createQuery("select node.[jcr:path] from [mix:title] as node where node.[jcr:title] = 'title1'",
+                                                                                Query.JCR_SQL2);
+            
+            validateQuery().hasNodesAtPaths("/repo1_node1").useIndex("titleIndex").validate(query, query.execute());
+            session2.logout();
+            
+            // shut the second repo down
+            long priorToShutdown = System.currentTimeMillis();
+            assertTrue("Second repository has not shutdown in the expected amount of time", repository2.shutdown().get(3,
+                                                                                                                       TimeUnit.SECONDS));
+            
+            // add a new node in the first repo
+            node = session1.getRootNode().addNode("repo1_node2");
+            node.addMixin("mix:title");
+            node.setProperty("jcr:title", "title2");
+            session1.save();
+            
+            // start the 2nd repo back up - at the end of this the journals should be up-to-date and ISPN should've done the state
+            // transfer
+            repository2 = TestingUtil.startRepositoryWithConfig("config/clustered-repo-with-journaling-config-2.json");
+            Thread.sleep(300);
+
+            // run a query to check that the index are not yet up-to-date
+            session2 = repository2.login();
+            org.modeshape.jcr.api.Workspace workspace2 = (org.modeshape.jcr.api.Workspace)session2.getWorkspace();
+
+            query = workspace2.getQueryManager().createQuery(
+                    "select node.[jcr:path] from [mix:title] as node where node.[jcr:title] = 'title2'",
+                    Query.JCR_SQL2);
+            validateQuery().rowCount(0).useIndex("titleIndex").validate(query, query.execute());
+            
+            // reindex since before stopping the repository
+            workspace2.reindexSince(priorToShutdown);
+            
+            // run a new query to check that we got the change
+            query = workspace2.getQueryManager().createQuery(
+                    "select node.[jcr:path] from [mix:title] as node where node.[jcr:title] = 'title2'",
+                    Query.JCR_SQL2);
+
+            validateQuery().hasNodesAtPaths("/repo1_node2").useIndex("titleIndex").validate(query, query.execute());
+        } finally {
+            TestingUtil.killRepositories(repository1, repository2); 
+        }
+    }  
+    
+    @Test
+    @FixFor( "MODE-1903" )
+    public void shouldReindexContentInClusterIncrementally() throws Exception {
+        FileUtil.delete("target/clustered");
+        JcrRepository repository1 = null;
+        JcrRepository repository2 = null;
+        try {
+            // Start the first process completely ...
+            repository1 = TestingUtil.startRepositoryWithConfig("config/clustered-repo-with-incremental-indexes-config-1.json");
+            Thread.sleep(300);
+
+            // Start the second process completely ...
+            repository2 = TestingUtil.startRepositoryWithConfig("config/clustered-repo-with-incremental-indexes-config-2.json");
+            Thread.sleep(300);
+
+            // make 1 change which should be propagated in the cluster
+            Session session1 = repository1.login();
+            Node node = session1.getRootNode().addNode("repo1_node1");
+            node.addMixin("mix:title");
+            node.setProperty("jcr:title", "title1");
+            session1.save();
+            Thread.sleep(300);
+            
+            // shut the second repo down
+            assertTrue("Second repository has not shutdown in the expected amount of time", 
+                       repository2.shutdown().get(3, TimeUnit.SECONDS));
+            
+            // add a new node in the first repo
+            node = session1.getRootNode().addNode("repo1_node2");
+            node.addMixin("mix:title");
+            node.setProperty("jcr:title", "title2");
+            session1.save();
+            
+            // start the 2nd repo back up - at the end of this the journals should be up-to-date and ISPN should've done the state
+            // transfer
+            repository2 = TestingUtil.startRepositoryWithConfig("config/clustered-repo-with-incremental-indexes-config-2.json");
+            Thread.sleep(300);
+
+            // run a query to check that the index are not yet up-to-date
+            Session session2 = repository2.login();
+            org.modeshape.jcr.api.Workspace workspace2 = (org.modeshape.jcr.api.Workspace)session2.getWorkspace();
+
+            // run queries to check that reindexing has worked
+            Query query = workspace2.getQueryManager().createQuery(
+                    "select node.[jcr:path] from [mix:title] as node where node.[jcr:title] = 'title2'",
+                    Query.JCR_SQL2);
+            validateQuery().hasNodesAtPaths("/repo1_node2").useIndex("titleIndex").validate(query, query.execute());
+
+            // shut the first repo down
+            assertTrue("First repository has not shutdown in the expected amount of time", repository1.shutdown().get(3, TimeUnit.SECONDS));
+            
+            // add a new node in the second repo
+            node = session2.getRootNode().addNode("repo2_node1");
+            node.addMixin("mix:title");
+            node.setProperty("jcr:title", "title3");
+            session2.save();
+
+            // start the 1st repo back up - at the end of this the journals should be up-to-date and ISPN should've done the state
+            // transfer
+            repository1 = TestingUtil.startRepositoryWithConfig("config/clustered-repo-with-incremental-indexes-config-1.json");
+            Thread.sleep(300);            
+
+            session1 = repository1.login();
+            query = session1.getWorkspace().getQueryManager().createQuery(
+                    "select node.[jcr:path] from [mix:title] as node where node.[jcr:title] = 'title3'",
+                    Query.JCR_SQL2);
+            validateQuery().hasNodesAtPaths("/repo2_node1").useIndex("titleIndex").validate(query, query.execute());
+            
+            // shut the second repo down
+            assertTrue("Second repository has not shutdown in the expected amount of time",
+                       repository2.shutdown().get(3, TimeUnit.SECONDS));
+
+            // remove a node from the first repo and change a value for the other node
+            session1.getNode("/repo1_node2").remove();
+            session1.getNode("/repo1_node1").setProperty("jcr:title", "title1_edited");
+            session1.save();
+            
+            // bring the 2nd repo back up
+            // start the 2nd repo back up - at the end of this the journals should be up-to-date and ISPN should've done the state
+            // transfer
+            repository2 = TestingUtil.startRepositoryWithConfig("config/clustered-repo-with-incremental-indexes-config-2.json");
+            Thread.sleep(300);
+
+            // run a query to check that the indexes are synced
+            session2 = repository2.login();
+            workspace2 = (org.modeshape.jcr.api.Workspace)session2.getWorkspace();
+
+            query = workspace2.getQueryManager().createQuery(
+                    "select node.[jcr:path] from [mix:title] as node where node.[jcr:title] = 'title2'",
+                    Query.JCR_SQL2);
+            validateQuery().rowCount(0).useIndex("titleIndex").validate(query, query.execute());
+
+            query = workspace2.getQueryManager().createQuery(
+                    "select node.[jcr:path] from [mix:title] as node where node.[jcr:title] = 'title1'",
+                    Query.JCR_SQL2);
+            validateQuery().rowCount(0).useIndex("titleIndex").validate(query, query.execute());
+
+            query = workspace2.getQueryManager().createQuery(
+                    "select node.[jcr:path] from [mix:title] as node where node.[jcr:title] = 'title1_edited'",
+                    Query.JCR_SQL2);
+            validateQuery().hasNodesAtPaths("/repo1_node1").useIndex("titleIndex").validate(query, query.execute());
+            
+        } finally {
+            TestingUtil.killRepositories(repository1, repository2); 
+        }
     }
 
     private void assertChangesArePropagatedInCluster( Session process1Session,
@@ -322,6 +499,11 @@ public class ClusteredRepositoryTest {
         NodeIterator nodes = query.execute().getNodes();
         assertEquals(howMany, nodes.getSize());
     }
+
+    protected ValidateQuery.ValidationBuilder validateQuery() {
+        return ValidateQuery.validateQuery().printDetail(false);
+    }
+
 
     protected class ClusteringEventListener implements EventListener {
         private final List<String> paths;

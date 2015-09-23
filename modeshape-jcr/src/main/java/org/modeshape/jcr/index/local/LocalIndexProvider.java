@@ -60,7 +60,7 @@ public class LocalIndexProvider extends IndexProvider {
 
     private static final Float MAX_SELECTIVITY = new Float(1.0f);
     private static final String DB_FILENAME = "local-indexes.db";
-
+    
     /**
      * The directory in which the indexes are to be stored. This needs to be set, or the {@link #path} and {@link #relativeTo}
      * need to be set.
@@ -77,6 +77,7 @@ public class LocalIndexProvider extends IndexProvider {
      */
     private String relativeTo;
     private DB db;
+    private IndexUpdater indexUpdater;
 
     /**
      * A bunch of MapDB specific options which can be used to further tweak this provider
@@ -173,7 +174,10 @@ public class LocalIndexProvider extends IndexProvider {
             dbMaker.asyncWriteEnable();
             logger().debug("MapDB async writes enabled for index provider {0}", getName());
         }
-        this.db = dbMaker.make(); 
+        // we always want to have the close via the shutdown hook; it should be idempotent
+        dbMaker.closeOnJvmShutdown();
+        this.db = dbMaker.make();
+        this.indexUpdater = new IndexUpdater(db);
         
         logger().trace("Found the index files {0} in index database for repository '{1}' at: {2}", db.getCatalog(),
                        getRepositoryName(), file.getAbsolutePath());
@@ -190,6 +194,11 @@ public class LocalIndexProvider extends IndexProvider {
                 db = null;
             }
         }
+    }
+
+    @Override
+    public Long getLatestIndexUpdateTime() {
+        return indexUpdater.latestIndexUpdateTime();         
     }
 
     @Override

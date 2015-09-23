@@ -461,8 +461,6 @@ public class IndexChangeAdapters {
         protected abstract void addValue( NodeKey key,
                                           Object value );
 
-        protected abstract void removeValues( NodeKey key );
-
         @Override
         protected void addNode( String workspaceName,
                                 NodeKey key,

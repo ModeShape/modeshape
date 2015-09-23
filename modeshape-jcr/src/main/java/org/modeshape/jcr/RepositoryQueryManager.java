@@ -15,7 +15,11 @@
  */
 package org.modeshape.jcr;
 
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
@@ -30,6 +34,7 @@ import javax.jcr.RepositoryException;
 import org.modeshape.common.annotation.GuardedBy;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.CheckArg;
+import org.modeshape.common.util.ImmediateFuture;
 import org.modeshape.jcr.JcrRepository.RunningState;
 import org.modeshape.jcr.RepositoryIndexManager.ScanOperation;
 import org.modeshape.jcr.RepositoryIndexManager.ScanningRequest;
@@ -47,8 +52,11 @@ import org.modeshape.jcr.cache.PathCache;
 import org.modeshape.jcr.cache.RepositoryCache;
 import org.modeshape.jcr.cache.change.ChangeSet;
 import org.modeshape.jcr.cache.change.ChangeSetListener;
+import org.modeshape.jcr.cache.document.WorkspaceCache;
+import org.modeshape.jcr.journal.ChangeJournal;
 import org.modeshape.jcr.query.BufferManager;
 import org.modeshape.jcr.query.CancellableQuery;
+import org.modeshape.jcr.query.CompositeIndexWriter;
 import org.modeshape.jcr.query.QueryContext;
 import org.modeshape.jcr.query.QueryEngine;
 import org.modeshape.jcr.query.QueryEngineBuilder;
@@ -103,7 +111,7 @@ class RepositoryQueryManager implements ChangeSetListener {
                 // refresh the index writer
                 this.indexManager.refreshIndexWriter();
                 // It's initialized, so we have to call it ...
-                reindexIfNeeded();
+                reindexIfNeeded(true);
             }
         }
         // If not yet initialized, the "reindexIfNeeded" method will be called by the JcrRepository.
@@ -249,16 +257,88 @@ class RepositoryQueryManager implements ChangeSetListener {
         }
         return queryEngine;
     }
+    
+    protected void reindex() {
+        RepositoryConfiguration.Reindexing reindexingCfg = repoConfig.getReindexing();
+        boolean async = reindexingCfg.isAsync();
+        RepositoryConfiguration.ReindexingMode mode = reindexingCfg.mode();
+        switch (mode) {
+            case INCREMENTAL: {
+                final ChangeJournal journal = runningState.journal();
+                if (journal == null) {
+                    logger.warn(JcrI18n.warnIncrementalIndexingJournalNotEnabled, repoConfig.getName());
+                    break;
+                } else if (!journal.started()) {
+                    logger.warn(JcrI18n.warnIncrementalIndexingJournalNotStarted, repoConfig.getName());
+                    break;
+                } else {
+                    if (!async) {
+                        reindexIncrementally(journal);
+                    } else {
+                        indexingExecutorService.submit(new Callable<Void>() {
+                            @Override
+                            public Void call() throws Exception {
+                                reindexIncrementally(journal);
+                                return null;
+                            }
+                        }); 
+                    }
+                    break;
+                }
+            }
+            case IF_MISSING: {
+                reindexIfNeeded(async);
+                break;
+            }
+            default: {
+                throw new IllegalArgumentException("Unknown indexing mode: " + mode.toString());
+            }
+        }
+    }
+
+    private void reindexIncrementally( ChangeJournal journal ) {
+        // each provider may have a different timestamp when it last updated its indexes successfully. 
+        // so for simplicity we'll use the lowest (earliest) timestamp of them all when reindexing
+        long earliestTimestamp = Long.MAX_VALUE;
+        List<IndexProvider> incrementalIndexingProviders = new ArrayList<>();
+        for (IndexProvider provider : indexManager.getProviders()) {
+            Long latestIndexUpdateTime = provider.getLatestIndexUpdateTime();
+            if (latestIndexUpdateTime == null) {
+                logger.warn(JcrI18n.warnIncrementalIndexingNotSupported, provider.getName());
+                continue;
+            }
+            incrementalIndexingProviders.add(provider);
+            earliestTimestamp = Math.min(earliestTimestamp, latestIndexUpdateTime);
+        }
+        if (incrementalIndexingProviders.isEmpty()) {
+            // none of the providers support incremental reindexing so nothing to do...
+            return;
+        }
+        assert earliestTimestamp != Long.MAX_VALUE;
+        Iterator<NodeKey> changedNodes = journal.changedNodesSince(earliestTimestamp);
+        IndexWriter writer = CompositeIndexWriter.create(incrementalIndexingProviders);
+        RepositoryCache repositoryCache = runningState.repositoryCache();
+        for (String workspaceName : repositoryCache.getWorkspaceNames()) {
+            if (logger.isDebugEnabled()) {
+                logger.debug("Performing incremental reindexing since '{0}' for repository '{1}' on workspace '{2}'",
+                             new Date(earliestTimestamp), repositoryCache.getName(), workspaceName);
+            }
+            WorkspaceCache workspaceCache = repositoryCache.getWorkspaceCache(workspaceName);
+            reindexSince(workspaceCache, writer, changedNodes);
+        }
+    }
 
     /**
      * Reindex the repository only if there is at least one provider that required scanning and reindexing.
+     *
+     * @param async whether the reindexing should be performed asynchronously or not
      */
-    protected void reindexIfNeeded() {
+    protected void reindexIfNeeded( boolean async ) {
         final ScanningRequest request = toBeScanned.drain();
         if (!request.isEmpty()) {
             final IndexWriter writer = indexManager.getIndexWriterForProviders(request.providerNames());
             final RepositoryCache repoCache = runningState.repositoryCache();
-            scan(true, writer, new Callable<Void>() {
+            scan(async, writer, new Callable<Void>() {
                 @Override
                 public Void call() throws Exception {
                     // Scan each of the workspace-path pairs ...
@@ -283,6 +363,11 @@ class RepositoryQueryManager implements ChangeSetListener {
                                     }
                                 }
                                 if (node != null) {
+                                    if (logger.isDebugEnabled()) {
+                                        logger.debug("Performing full reindexing for repository '{0}' and workspace '{1}'", 
+                                                     repoCache.getName(),
+                                                     workspaceName);
+                                    }
                                     // If we find a node to start at, then scan the content ...
                                     boolean scanSystemContent = repoCache.getSystemWorkspaceName().equals(workspaceName);
                                     reindexContent(workspaceName, workspaceCache, node, Integer.MAX_VALUE, scanSystemContent,
@@ -414,6 +499,70 @@ class RepositoryQueryManager implements ChangeSetListener {
             // It's just a regular node in the workspace ...
             reindexContent(workspaceName, cache, node, depth, path.isRoot(), getIndexWriter());
         }
+    }
+    
+    protected void reindexSince( JcrWorkspace workspace,
+                                 long timestamp ) {
+        ChangeJournal journal = runningState.journal();
+        assert journal != null;
+        Iterator<NodeKey> changedNodes = journal.changedNodesSince(timestamp);
+        if (!changedNodes.hasNext()) {
+            // there are no nodes which have been changed since the given timestamp
+            return;
+        }
+        reindexSince(workspace.getSession().cache().getWorkspace(), getIndexWriter(), changedNodes);
+    }
+    
+    protected void reindexSince( final WorkspaceCache cache,
+                                 final IndexWriter writer,
+                                 final Iterator<NodeKey> changedNodes ) {
+        if (writer.canBeSkipped()) {
+            // There's no indexes that require updating ...
+            return;
+        }
+        String workspaceName = cache.getWorkspaceName();
+        String workspaceKey = NodeKey.keyForWorkspaceName(workspaceName);
+      
+        // take each of node keys that have been changed since the given timestamp and reindex each one if they belong to this WS
+        while (changedNodes.hasNext()) {
+            NodeKey nodeKey = changedNodes.next();
+            if (!workspaceKey.equals(nodeKey.getWorkspaceKey())) {
+                // this node does not belong to this WS cache, so ignore it...
+                continue;
+            }
+            CachedNode node = cache.getNode(nodeKey);
+            if (node != null) {
+                // the node still exists in the repository so reindex based on the latest available data...
+                reindexContent(workspaceName, cache, node, 1, true, writer);
+            } else {
+                // the node has been removed from the repository so clear the information from the indexes...
+                writer.remove(workspaceName, nodeKey);
+            }
+        }   
+    }
+
+    protected Future<Boolean> reindexSinceAsync( final JcrWorkspace workspace,
+                                                 final long timestamp ) {
+        ChangeJournal journal = runningState.journal();
+        assert journal != null;
+        Iterator<NodeKey> changedNodes = journal.changedNodesSince(timestamp);
+        if (!changedNodes.hasNext()) {
+            // there are no nodes which have been changed since the given timestamp
+            return new ImmediateFuture<>(Boolean.FALSE);
+        }
+        return reindexSinceAsync(workspace.getSession().cache().getWorkspace(), getIndexWriter(), changedNodes);
+    }
+    
+    protected Future<Boolean> reindexSinceAsync( final WorkspaceCache cache,
+                                                 final IndexWriter indexWriter,
+                                                 final Iterator<NodeKey> changedNodes ) {
+        return indexingExecutorService.submit(new Callable<Boolean>() {
+            @Override
+            public Boolean call() throws Exception {
+                reindexSince(cache, indexWriter, changedNodes);
+                return Boolean.TRUE;
+            }
+        });    
     }
 
     protected void reindexContent( final String workspaceName,

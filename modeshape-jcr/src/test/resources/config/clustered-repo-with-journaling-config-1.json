@@ -11,5 +11,19 @@
     },
     "journaling" : {
         "location" : "target/clustered/journal1"
+    },
+    "indexProviders" : {
+        "local" : {
+            "classname" : "org.modeshape.jcr.index.local.LocalIndexProvider",
+            "directory" : "target/clustered/repo1_indexes"
+        }
+    },
+    "indexes" : {
+        "titleIndex" : {
+            "kind" : "value",
+            "provider" : "local",
+            "nodeType" : "mix:title",
+            "columns" : "jcr:title(STRING)"
+        }
     }
 }

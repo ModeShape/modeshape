@@ -200,11 +200,7 @@ final class SequencingRunner implements Runnable {
                         // outputSession
                         LOGGER.trace("Saving session used by {0}", logMsg);
                         outputSession.save();
-
-                        // fire the sequencing event after save (hopefully by this time the transaction has been committed)
-                        LOGGER.trace("Firing events resulting from {0}", logMsg);
-                        fireSequencingEvent(selectedNode, outputNodes, outputSession, sequencerName);
-
+                        
                         long durationInNanos = Math.abs(System.nanoTime() - start);
                         Map<String, String> payload = new HashMap<String, String>();
                         payload.put("sequencerName", sequencer.getClass().getName());
@@ -212,9 +208,18 @@ final class SequencingRunner implements Runnable {
                         payload.put("outputPath", outputNode.getPath());
                         stats.recordDuration(DurationMetric.SEQUENCER_EXECUTION_TIME, durationInNanos, TimeUnit.NANOSECONDS,
                                              payload);
+
+                        // fire the sequencing event after save (hopefully by this time the transaction has been committed)
+                        // and after the metrics have been updated
+                        LOGGER.trace("Firing events resulting from {0}", logMsg);
+                        fireSequencingEvent(selectedNode, outputNodes, outputSession, sequencerName);
                     }
                 } catch (Throwable t) {
-                    fireSequencingFailureEvent(selectedNode, inputSession, t, sequencerName);
+                    try {
+                        fireSequencingFailureEvent(selectedNode, inputSession, t, sequencerName);
+                    } catch (Exception e) {
+                        LOGGER.debug(e, "Error while trying to fire sequencing failure event");
+                    }
                     // let it bubble down, because we still want to log it and update the stats
                     throw t;
                 }

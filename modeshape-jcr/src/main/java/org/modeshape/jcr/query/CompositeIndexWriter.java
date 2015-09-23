@@ -77,4 +77,11 @@ public class CompositeIndexWriter implements IndexWriter {
             writer.add(workspace, key, path, primaryType, mixinTypes, properties);
         }
     }
+
+    @Override
+    public void remove( String workspace, NodeKey key ) {
+        for (IndexWriter writer : writers) {
+            writer.remove(workspace, key);
+        } 
+    }
 }

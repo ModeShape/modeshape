@@ -67,4 +67,13 @@ public class IndexChangeAdapter extends ChangeSetAdapter {
         }
     }
 
+    /**
+     * Remove all values from the index for the given node key.
+     * 
+     * @param key a {@code NodeKey} instance, never {@code null}
+     */
+    protected void removeValues( NodeKey key ) {
+        //nothing by default   
+    }
+
 }

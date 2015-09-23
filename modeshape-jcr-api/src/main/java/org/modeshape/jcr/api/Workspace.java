@@ -92,6 +92,15 @@ public interface Workspace extends javax.jcr.Workspace {
     void reindex( String path ) throws RepositoryException;
 
     /**
+     * Reindex only the nodes from this workspace that have changed since the given timestamp. This only works if the repository
+     * has journaling enabled. This method blocks until the indexing is completed.
+     * 
+     * @param timestamp a {@code long} timestamp starting with which all changed nodes will be reindexed.
+     * @throws RepositoryException if anything fails.
+     */
+    void reindexSince( long timestamp ) throws RepositoryException;
+
+    /**
      * Asynchronously crawl and re-index the content in this workspace.
      *
      * @return a future representing the asynchronous operation; never null
@@ -117,5 +126,22 @@ public interface Workspace extends javax.jcr.Workspace {
      */
     Future<Boolean> reindexAsync( String path ) throws RepositoryException;
 
+    /**
+     * Asynchronously reindex only the nodes from this workspace that have changed since the given timestamp. 
+     * This only works if the repository has journaling enabled.
+     *
+     * @param timestamp a {@code long} timestamp starting with which all changed nodes will be reindexed.
+     * @return a future representing the asynchronous operation; never null
+     * @throws RepositoryException if anything fails.
+     * @see #reindexSince(long) 
+     */
+    Future<Boolean> reindexSinceAsync( long timestamp ) throws RepositoryException;
+
+    /**
+     * Returns the federation manager instance which can be used to connect to external sources.
+     * @return a {@link FederationManager} instance; never {@code null}
+     * @throws RepositoryException if anything unexpected fails.
+     * @see FederationManager
+     */
     FederationManager getFederationManager() throws RepositoryException;
 }
