@@ -1907,7 +1907,7 @@ public class RepositoryConfiguration {
      * Possible reindexing modes.
      */
     public enum ReindexingMode {
-        FULL,
+        IF_MISSING,
         INCREMENTAL
     }
     
@@ -1937,7 +1937,7 @@ public class RepositoryConfiguration {
          * @return a {@link ReindexingMode} instance, never {@code null}
          */
         public ReindexingMode mode() {
-            String defaultMode = ReindexingMode.FULL.name();
+            String defaultMode = ReindexingMode.IF_MISSING.name();
             String reindexingMode = reindexing == null ? defaultMode : reindexing.getString(FieldName.REINDEXING_MODE, defaultMode);
             return ReindexingMode.valueOf(reindexingMode.toUpperCase());
         }

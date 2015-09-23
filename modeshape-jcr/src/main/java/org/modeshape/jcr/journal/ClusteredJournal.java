@@ -18,8 +18,8 @@ package org.modeshape.jcr.journal;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import org.infinispan.schematic.document.ThreadSafe;
@@ -155,7 +155,7 @@ public class ClusteredJournal extends MessageConsumer<ClusteredJournal.DeltaMess
     }
 
     @Override
-    public Set<NodeKey> changedNodesSince( long timestamp ) {
+    public Iterator<NodeKey> changedNodesSince( long timestamp ) {
         return localJournal.changedNodesSince(timestamp);
     }
 

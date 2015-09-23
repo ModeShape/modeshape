@@ -839,8 +839,8 @@
                     "description" : "Whether on startup reindexing should be performed synchronously or asynchronously"
                 },
                 "mode" : {
-                    "enum" : ["full", "incremental"],
-                    "default" : "full",
+                    "enum" : ["if_missing", "incremental"],
+                    "default" : "if_missing",
                     "description" : "Specifies whether the entire repository will be reindexed if there is at least one provider which has an out-of-date index or whether the indexes for each provider will rebuilt only from the last successful update time. This only works if the repository journal is enabled."
                 }
             }

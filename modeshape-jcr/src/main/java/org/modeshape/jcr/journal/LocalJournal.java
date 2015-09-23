@@ -17,17 +17,18 @@
 package org.modeshape.jcr.journal;
 
 import java.io.File;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
-import java.util.LinkedHashSet;
 import java.util.NavigableMap;
-import java.util.Set;
+import java.util.NoSuchElementException;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import javax.jcr.RepositoryException;
 import org.infinispan.schematic.document.ThreadSafe;
 import org.joda.time.DateTime;
 import org.mapdb.Atomic;
+import org.mapdb.BTreeKeySerializer;
 import org.mapdb.BTreeMap;
 import org.mapdb.DB;
 import org.mapdb.DBMaker;
@@ -133,7 +134,10 @@ public class LocalJournal implements ChangeJournal {
                 dbMaker.asyncWriteEnable();
             }
             this.journalDB = dbMaker.make();
-            this.records = this.journalDB.createTreeMap(RECORDS_FIELD).counterEnable().makeOrGet();
+            this.records = this.journalDB.createTreeMap(RECORDS_FIELD)
+                                         .keySerializer(BTreeKeySerializer.ZERO_OR_POSITIVE_LONG)
+                                         .counterEnable()
+                                         .makeOrGet();
             Atomic.String journalAtomic = this.journalDB.getAtomicString(JOURNAL_ID_FIELD);
             //only write the value the first time
             if (StringUtil.isBlank(journalAtomic.get())) {
@@ -241,11 +245,14 @@ public class LocalJournal implements ChangeJournal {
         }
 
         NavigableMap<Long, JournalRecord> subMap = records.tailMap(searchBound, true);
-
+        if (subMap.isEmpty()) {
+            return Records.EMPTY;
+        }
         //process each of the records from the result and look at the timestamp of the changeset, so that we're sure we only include
         //the correct ones (we used a delta to make sure we get everything)
         long startKeyInSubMap = -1;
-        for (Long timeBasedKey : subMap.keySet()) {
+        for (Iterator<Long> timeBasedKeysIterator = subMap.keySet().iterator(); timeBasedKeysIterator.hasNext();) {
+            Long timeBasedKey = timeBasedKeysIterator.next();
             JournalRecord record = subMap.get(timeBasedKey);
             long recordChangeTimeMillisUTC = record.getChangeTimeMillis();
             if (((recordChangeTimeMillisUTC == changeSetMillisUTC) && inclusive)
@@ -258,16 +265,54 @@ public class LocalJournal implements ChangeJournal {
     }
 
     @Override
-    public Set<NodeKey> changedNodesSince( long timestamp ) {
-        Records records = recordsNewerThan(new DateTime(timestamp), true, false);
-        if (records.isEmpty()) {
-            return Collections.emptySet();
+    public Iterator<NodeKey> changedNodesSince( final long timestamp ) {
+        // we use a delta to make sure we get everything and we filter false positives later on
+        long searchBound = TIME_BASED_KEYS.getCounterStartingAt(timestamp - searchTimeDelta);
+        Collection<JournalRecord> journalRecords = records.tailMap(searchBound, true).values();
+        if (journalRecords.isEmpty()) {
+            return Collections.emptyListIterator();
         }
-        Set<NodeKey> results = new LinkedHashSet<>();
-        for (JournalRecord record : records) {
-            results.addAll(record.getChangeSet().changedNodes());
-        }
-        return results;
+        final Iterator<JournalRecord> recordsIterator = journalRecords.iterator();  
+        return new Iterator<NodeKey>() {
+            private Iterator<NodeKey> currentBatchOfKeys = null;
+            
+            @Override
+            public boolean hasNext() {
+                nextBatchOfKeys();
+                return currentBatchOfKeys != null && currentBatchOfKeys.hasNext();
+            }
+
+            @Override
+            public NodeKey next() {
+                nextBatchOfKeys();
+                if (currentBatchOfKeys == null) {
+                    throw new NoSuchElementException();
+                }
+                assert currentBatchOfKeys.hasNext();
+                return currentBatchOfKeys.next();
+            }
+
+            @Override
+            public void remove() {
+                throw new UnsupportedOperationException();
+            }
+            
+            private void nextBatchOfKeys() {
+                if ((currentBatchOfKeys == null || !currentBatchOfKeys.hasNext()) && recordsIterator.hasNext()) {
+                    while (recordsIterator.hasNext()) {
+                        JournalRecord record = recordsIterator.next();
+                        // we searched using a delta, so we must eliminate false positives
+                        if (record.getChangeTimeMillis() >= timestamp) {
+                            currentBatchOfKeys = record.getChangeSet().changedNodes().iterator();
+                            break;
+                        }
+                    }
+                }
+                if (currentBatchOfKeys != null && !currentBatchOfKeys.hasNext()) {
+                    currentBatchOfKeys = null;
+                }
+            }            
+        };
     }
 
     @Override
@@ -281,7 +326,8 @@ public class LocalJournal implements ChangeJournal {
     }
 
     private static Records recordsFrom( final NavigableMap<Long, JournalRecord> content, boolean descending ) {
-        final Iterator<Long> iterator = descending ? content.descendingKeySet().iterator() : content.keySet().iterator();
+        final Iterator<JournalRecord> iterator = descending ? content.descendingMap().values().iterator() : 
+                                                              content.values().iterator();
         return new Records() {
             @Override
             public int size() {
@@ -298,7 +344,7 @@ public class LocalJournal implements ChangeJournal {
 
                     @Override
                     public JournalRecord next() {
-                        return content.get(iterator.next());
+                        return iterator.next();
                     }
 
                     @Override

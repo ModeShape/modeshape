@@ -92,12 +92,14 @@ public final class TimeBasedKeys {
     /**
      * Create a new generator that uses the specified number of bits for the counter portion of the keys.
      * 
-     * @param bitsUsedInCounter the number of bits in the counter portion of the keys; must be a positive number between 1 and 32.
+     * @param bitsUsedInCounter the number of bits in the counter portion of the keys; must be a positive number for which theere
+     * is enough space to left shift without overflowing.
      * @return the generator instance; never null
      */
     public static TimeBasedKeys create( int bitsUsedInCounter ) {
-        CheckArg.isLessThanOrEqualTo(bitsUsedInCounter, 32, "bitsUsedInCounter");
         CheckArg.isPositive(bitsUsedInCounter, "bitsUsedInCounter");
+        int maxAvailableBitsToShift = Long.numberOfLeadingZeros(System.currentTimeMillis());
+        CheckArg.isLessThan(bitsUsedInCounter, maxAvailableBitsToShift, "bitsUsedInCounter");
         return new TimeBasedKeys((short)bitsUsedInCounter);
     }
 

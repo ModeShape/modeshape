@@ -17,6 +17,7 @@ package org.modeshape.jcr;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -285,7 +286,7 @@ class RepositoryQueryManager implements ChangeSetListener {
                     break;
                 }
             }
-            case FULL: {
+            case IF_MISSING: {
                 reindexIfNeeded(async);
                 break;
             }
@@ -314,7 +315,7 @@ class RepositoryQueryManager implements ChangeSetListener {
             return;
         }
         assert earliestTimestamp != Long.MAX_VALUE;
-        Set<NodeKey> changedNodes = journal.changedNodesSince(earliestTimestamp);
+        Iterator<NodeKey> changedNodes = journal.changedNodesSince(earliestTimestamp);
         IndexWriter writer = CompositeIndexWriter.create(incrementalIndexingProviders);
         RepositoryCache repositoryCache = runningState.repositoryCache();
         for (String workspaceName : repositoryCache.getWorkspaceNames()) {
@@ -504,8 +505,8 @@ class RepositoryQueryManager implements ChangeSetListener {
                                  long timestamp ) {
         ChangeJournal journal = runningState.journal();
         assert journal != null;
-        Set<NodeKey> changedNodes = journal.changedNodesSince(timestamp);
-        if (changedNodes.isEmpty()) {
+        Iterator<NodeKey> changedNodes = journal.changedNodesSince(timestamp);
+        if (!changedNodes.hasNext()) {
             // there are no nodes which have been changed since the given timestamp
             return;
         }
@@ -514,7 +515,7 @@ class RepositoryQueryManager implements ChangeSetListener {
     
     protected void reindexSince( final WorkspaceCache cache,
                                  final IndexWriter writer,
-                                 final Set<NodeKey> changedNodes ) {
+                                 final Iterator<NodeKey> changedNodes ) {
         if (writer.canBeSkipped()) {
             // There's no indexes that require updating ...
             return;
@@ -523,7 +524,8 @@ class RepositoryQueryManager implements ChangeSetListener {
         String workspaceKey = NodeKey.keyForWorkspaceName(workspaceName);
       
         // take each of node keys that have been changed since the given timestamp and reindex each one if they belong to this WS
-        for (NodeKey nodeKey : changedNodes) {
+        while (changedNodes.hasNext()) {
+            NodeKey nodeKey = changedNodes.next();
             if (!workspaceKey.equals(nodeKey.getWorkspaceKey())) {
                 // this node does not belong to this WS cache, so ignore it...
                 continue;
@@ -543,8 +545,8 @@ class RepositoryQueryManager implements ChangeSetListener {
                                                  final long timestamp ) {
         ChangeJournal journal = runningState.journal();
         assert journal != null;
-        Set<NodeKey> changedNodes = journal.changedNodesSince(timestamp);
-        if (changedNodes.isEmpty()) {
+        Iterator<NodeKey> changedNodes = journal.changedNodesSince(timestamp);
+        if (!changedNodes.hasNext()) {
             // there are no nodes which have been changed since the given timestamp
             return new ImmediateFuture<>(Boolean.FALSE);
         }
@@ -553,7 +555,7 @@ class RepositoryQueryManager implements ChangeSetListener {
     
     protected Future<Boolean> reindexSinceAsync( final WorkspaceCache cache,
                                                  final IndexWriter indexWriter,
-                                                 final Set<NodeKey> changedNodes ) {
+                                                 final Iterator<NodeKey> changedNodes ) {
         return indexingExecutorService.submit(new Callable<Boolean>() {
             @Override
             public Boolean call() throws Exception {

@@ -147,11 +147,21 @@ public class LocalJournalTest {
     @Test
     @FixFor( "MODE-1903" )
     public void shouldReturnNodeChangesBasedOnTimestamp() throws Exception {
-        assertEquals(14, journal().changedNodesSince(-1).size());
-        assertEquals(7, journal().changedNodesSince(timestamp1.getMillis()).size());
-        assertEquals(5, journal().changedNodesSince(timestamp2.getMillis()).size());
-        assertEquals(2, journal().changedNodesSince(timestamp3.getMillis()).size());
-        assertEquals(0, journal().changedNodesSince(Long.MAX_VALUE).size());
+        assertEquals(14, countChangedNodesSince(-1));
+        assertEquals(7, countChangedNodesSince(timestamp1.getMillis()));
+        assertEquals(5, countChangedNodesSince(timestamp2.getMillis()));
+        assertEquals(2, countChangedNodesSince(timestamp3.getMillis()));
+        assertEquals(0, countChangedNodesSince(Long.MAX_VALUE));
+    }
+    
+    private int countChangedNodesSince(long timestamp) {
+        int count = 0;
+        Iterator<NodeKey> iterator = journal().changedNodesSince(timestamp);
+        while (iterator.hasNext()) {
+            iterator.next();
+            ++count;
+        }
+        return count;
     }
 
     @Test
