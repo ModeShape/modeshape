@@ -706,6 +706,10 @@ class RepositoryIndexManager implements IndexManager, NodeTypes.Listener {
         this.indexes = indexes;
         return feedback;
     }
+    
+    protected boolean hasProviders() {
+        return !providers.isEmpty();
+    }
 
     protected static IndexChangeInfo changeInfoForProvider( AtomicReference<Map<Name, IndexChangeInfo>> changesByProviderName,
                                                             Name providerName ) {

@@ -438,7 +438,7 @@ public class RepositoryConfiguration {
         public static final String JDBC_DRIVER_CLASS = "driverClass";
         public static final String CONNECTION_URL = "url";
         public static final String REINDEXING = "reindexing";
-        public static final String ASYNC = "async";
+        public static final String REINDEXING_ASYNC = "async";
         public static final String REINDEXING_MODE = "mode";
 
         public static final String GARBAGE_COLLECTION = "garbageCollection";
@@ -1928,7 +1928,7 @@ public class RepositoryConfiguration {
          * @return {@code true} if the reindexing should be performed asynchronously, {@code false} otherwise
          */
         public boolean isAsync() {
-            return reindexing == null || reindexing.getBoolean(FieldName.ASYNC, true);
+            return reindexing == null || reindexing.getBoolean(FieldName.REINDEXING_ASYNC, true);
         }
 
         /**

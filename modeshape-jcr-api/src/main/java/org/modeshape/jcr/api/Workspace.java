@@ -97,6 +97,7 @@ public interface Workspace extends javax.jcr.Workspace {
      * 
      * @param timestamp a {@code long} timestamp starting with which all changed nodes will be reindexed.
      * @throws RepositoryException if anything fails.
+     * @since 4.5
      */
     void reindexSince( long timestamp ) throws RepositoryException;
 
@@ -134,6 +135,7 @@ public interface Workspace extends javax.jcr.Workspace {
      * @return a future representing the asynchronous operation; never null
      * @throws RepositoryException if anything fails.
      * @see #reindexSince(long) 
+     * @since 4.5
      */
     Future<Boolean> reindexSinceAsync( long timestamp ) throws RepositoryException;
 

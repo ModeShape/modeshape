@@ -259,6 +259,10 @@ class RepositoryQueryManager implements ChangeSetListener {
     }
     
     protected void reindex() {
+        if (!indexManager.hasProviders()) {
+            // there are no index providers, so nothing to reindex
+            return;
+        }
         RepositoryConfiguration.Reindexing reindexingCfg = repoConfig.getReindexing();
         boolean async = reindexingCfg.isAsync();
         RepositoryConfiguration.ReindexingMode mode = reindexingCfg.mode();

@@ -130,4 +130,7 @@ public class ModelKeys {
     static final String JOURNAL_GC_INITIAL_TIME = "journal-gc-initial-time";
     static final String JOURNAL_PATH = "journal-path";
     static final String JOURNAL_RELATIVE_TO = "journal-relative-to";
+    
+    static final String REINDEXING_ASYNC = "reindexing-async";
+    static final String REINDEXING_MODE = "reindexing-mode";
 }

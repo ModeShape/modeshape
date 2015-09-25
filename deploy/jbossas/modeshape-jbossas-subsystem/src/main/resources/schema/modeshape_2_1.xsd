@@ -94,6 +94,12 @@
                 </xs:annotation>
             </xs:element>
 
+            <xs:element name="reindexing" type="reindexing" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>The definition of the reindexing configuration</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+
             <xs:element name="text-extractors" type="text-extractors" minOccurs="0" maxOccurs="1">
                 <xs:annotation>
                     <xs:documentation>The definition of the custom text extractors.</xs:documentation>
@@ -533,6 +539,23 @@
         <xs:anyAttribute namespace="##any" processContents="lax"/>
     </xs:complexType>
 
+    <xs:complexType name="reindexing">
+        <xs:attribute name="async" type="xs:boolean" default="true">
+            <xs:annotation>
+                <xs:documentation>Whether the reindexing is performed asynchronously or not. Defaults to 'true'.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="mode" type="reindexing-mode" default="if_missing">
+            <xs:annotation>
+                <xs:documentation>
+                    The type of reindexing to be performed: 'incremental' will only reindex the nodes which have been changed
+                    since the last successful update of each provider, by using the journal.'if_missing' will reindex all the
+                    content from the repository only if there is at least one out-of-date index for any provider.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
     <xs:complexType name="sequencers">
         <xs:sequence minOccurs="0" maxOccurs="unbounded">
             <xs:element name="sequencer" type="sequencer" minOccurs="0" maxOccurs="unbounded">
@@ -889,6 +912,12 @@
             <xs:enumeration value="enumerated"/>
             <xs:enumeration value="text"/>
             <xs:enumeration value="nodetype"/>
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="reindexing-mode">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="incremental"/>
+            <xs:enumeration value="if_missing"/>
         </xs:restriction>
     </xs:simpleType>
     <xs:simpleType name="mime-type-detection">

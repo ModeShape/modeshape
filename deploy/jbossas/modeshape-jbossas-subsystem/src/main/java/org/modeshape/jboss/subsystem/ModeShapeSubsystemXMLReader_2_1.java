@@ -263,6 +263,12 @@ public class ModeShapeSubsystemXMLReader_2_1 implements XMLStreamConstants, XMLE
                 case INDEXES:
                     indexes = parseIndexes(reader, address, repositoryName);
                     break;
+                
+                // Reindexing...
+                case REINDEXIG: {
+                    parseReindexing(reader, repository);
+                    break;
+                }
 
                 // External sources ...
                 case EXTERNAL_SOURCES:
@@ -358,6 +364,29 @@ public class ModeShapeSubsystemXMLReader_2_1 implements XMLStreamConstants, XMLE
                 }
             }
         }
+    }
+
+    private void parseReindexing( final XMLExtendedStreamReader reader,
+                                  final ModelNode repository ) throws XMLStreamException {
+        if (reader.getAttributeCount() > 0) {
+            for (int i = 0; i < reader.getAttributeCount(); i++) {
+                String attrName = reader.getAttributeLocalName(i);
+                String attrValue = reader.getAttributeValue(i);
+                Attribute attribute = Attribute.forName(attrName);
+                switch (attribute) {
+                    // Set these as properties on the repository ModelNode ...
+                    case REINDEXING_ASNC:
+                        ModelAttributes.REINDEXING_ASYNC.parseAndSetParameter(attrValue, repository, reader);
+                        break;
+                    case REINDEXING_MODE:
+                        ModelAttributes.REINDEXING_MODE.parseAndSetParameter(attrValue, repository, reader);
+                        break;
+                    default:
+                        throw ParseUtils.unexpectedAttribute(reader, i);
+                }
+            }
+        }
+        requireNoElements(reader);
     }
 
     private void parseJournaling( final XMLExtendedStreamReader reader,
