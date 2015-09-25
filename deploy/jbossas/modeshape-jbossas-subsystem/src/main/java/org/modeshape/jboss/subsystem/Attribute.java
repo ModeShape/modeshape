@@ -87,7 +87,9 @@ public enum Attribute {
     NODE_TYPE("node-type"),
     THREAD_POOL_NAME("thread-pool-name"),
     MAX_POOL_SIZE("max-pool-size"),
-    COLUMNS("columns");
+    COLUMNS("columns"),
+    REINDEXING_ASNC("async"),
+    REINDEXING_MODE("mode");
 
     private final String name;
 

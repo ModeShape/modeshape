@@ -165,6 +165,11 @@ public class ModeShapeConfigurationTest extends AbstractSubsystemBaseTest {
     @Test
     public void testOutputPersistenceOfConfigurationWithMimeTypeDetection() throws Exception {
         parse(readResource("modeshape-mime-type-detection.xml"));
+    } 
+    
+    @Test
+    public void testOutputPersistenceOfConfigurationWithReindexing() throws Exception {
+        parse(readResource("modeshape-reindexing.xml"));
     }
 
     @Test

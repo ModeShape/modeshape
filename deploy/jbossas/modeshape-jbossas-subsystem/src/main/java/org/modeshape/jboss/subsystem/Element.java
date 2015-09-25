@@ -53,7 +53,8 @@ public enum Element {
     NODE_TYPE("node-type"),
     EXTERNAL_SOURCES("external-sources"),
     SOURCE("source"),
-    PROJECTION("projection");
+    PROJECTION("projection"),
+    REINDEXIG("reindexing");
 
     private final String name;
 

@@ -1,0 +1,14 @@
+<subsystem xmlns="urn:jboss:domain:modeshape:2.1">
+  <repository name="sample1">
+      <reindexing async="false" mode="incremental"/>
+  </repository>
+  <repository name="sample2">
+      <reindexing async="true" mode="if_missing"/>
+  </repository>
+  <repository name="sample3">
+      <reindexing async="false"/>
+  </repository>
+  <repository name="sample4">
+      <reindexing mode="incremental"/>
+  </repository>
+</subsystem>

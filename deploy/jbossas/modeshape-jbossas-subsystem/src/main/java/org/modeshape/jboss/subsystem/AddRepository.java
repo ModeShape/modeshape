@@ -187,6 +187,9 @@ public class AddRepository extends AbstractAddStepHandler {
         // Text Extraction
         parseTextExtraction(model, configDoc);
         
+        // Reindexing
+        parseReindexing(model, configDoc);
+        
         // Journaling
         parseJournaling(repositoryService, context, model, configDoc);
 
@@ -314,6 +317,19 @@ public class AddRepository extends AbstractAddStepHandler {
             EditableDocument sequencing = configDoc.getOrCreateDocument(FieldName.TEXT_EXTRACTION);
             int maxPoolSize = model.get(ModelKeys.TEXT_EXTRACTORS_MAX_POOL_SIZE).asInt();
             sequencing.set(FieldName.MAX_POOL_SIZE, maxPoolSize);
+        }
+    }
+   
+    private void parseReindexing( ModelNode model, EditableDocument configDoc ) {
+        if (model.hasDefined(ModelKeys.REINDEXING_ASYNC)) {
+            EditableDocument reindexing = configDoc.getOrCreateDocument(FieldName.REINDEXING);
+            boolean async = model.get(ModelKeys.REINDEXING_ASYNC).asBoolean();
+            reindexing.set(FieldName.REINDEXING_ASYNC, async);
+        }
+        if (model.hasDefined(ModelKeys.REINDEXING_MODE)) {
+            EditableDocument reindexing = configDoc.getOrCreateDocument(FieldName.REINDEXING);
+            String mode = model.get(ModelKeys.REINDEXING_MODE).asString();
+            reindexing.set(FieldName.REINDEXING_MODE, mode);
         }
     }
 

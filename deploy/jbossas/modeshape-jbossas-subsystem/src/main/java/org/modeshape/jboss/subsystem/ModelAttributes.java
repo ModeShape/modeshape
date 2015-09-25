@@ -63,6 +63,10 @@ public class ModelAttributes {
                                                                                           RepositoryConfiguration.FieldValue.KIND_TEXT,
                                                                                           RepositoryConfiguration.FieldValue.KIND_UNIQUE,
                                                                                           RepositoryConfiguration.FieldValue.KIND_VALUE);
+    private static final ParameterValidator REINDEXING_MODE_VALIDATOR = new StringSetValidator(true,
+                                                                                          true,
+                                                                                          RepositoryConfiguration.ReindexingMode.IF_MISSING.name(),
+                                                                                          RepositoryConfiguration.ReindexingMode.INCREMENTAL.name());
     private static final ParameterValidator MIME_TYPE_DETECTION_VALIDATOR = new StringSetValidator(true,
                                                                                           true,
                                                                                           RepositoryConfiguration.FieldValue.MIMETYPE_DETECTION_CONTENT,
@@ -393,6 +397,27 @@ public class ModelAttributes {
                                                     .setFlags(AttributeAccess.Flag.RESTART_NONE)
                                                     .setFieldPathInRepositoryConfiguration(
                                                             FieldName.EVENT_BUS_SIZE)
+                                                    .build();
+
+    public static final SimpleAttributeDefinition REINDEXING_ASYNC = new MappedAttributeDefinitionBuilder(
+            ModelKeys.REINDEXING_ASYNC, ModelType.BOOLEAN).setXmlName(
+            Attribute.REINDEXING_ASNC.getLocalName())
+                                                    .setAllowExpression(false)
+                                                    .setAllowNull(true)
+                                                    .setMeasurementUnit(MeasurementUnit.NONE)
+                                                    .setFieldPathInRepositoryConfiguration(FieldName.REINDEXING, FieldName.REINDEXING_ASYNC)
+                                                    .setFlags(AttributeAccess.Flag.RESTART_NONE)
+                                                    .build();
+
+    public static final SimpleAttributeDefinition REINDEXING_MODE = new MappedAttributeDefinitionBuilder(
+            ModelKeys.REINDEXING_MODE, ModelType.STRING).setXmlName(
+            Attribute.REINDEXING_MODE.getLocalName())
+                                                    .setAllowExpression(false)
+                                                    .setValidator(REINDEXING_MODE_VALIDATOR)
+                                                    .setAllowNull(true)
+                                                    .setMeasurementUnit(MeasurementUnit.NONE)
+                                                    .setFieldPathInRepositoryConfiguration(FieldName.REINDEXING, FieldName.REINDEXING_MODE)
+                                                    .setFlags(AttributeAccess.Flag.RESTART_NONE)
                                                     .build();
 
     public static final SimpleAttributeDefinition INDEX_KIND = new MappedAttributeDefinitionBuilder(ModelKeys.INDEX_KIND,
@@ -861,7 +886,7 @@ public class ModelAttributes {
         DOCUMENT_OPTIMIZATION_INITIAL_TIME, DOCUMENT_OPTIMIZATION_INTERVAL, DOCUMENT_OPTIMIZATION_CHILD_COUNT_TARGET,
         DOCUMENT_OPTIMIZATION_CHILD_COUNT_TOLERANCE, JOURNAL_PATH, JOURNAL_RELATIVE_TO, MAX_DAYS_TO_KEEP_RECORDS,
         JOURNAL_GC_INITIAL_TIME, JOURNAL_GC_THREAD_POOL, ASYNC_WRITES, JOURNALING, SEQUENCER_THREAD_POOL_NAME, SEQUENCER_MAX_POOL_SIZE, 
-        TEXT_EXTRACTOR_THREAD_POOL_NAME, TEXT_EXTRACTOR_MAX_POOL_SIZE, EVENT_BUS_SIZE};
+        TEXT_EXTRACTOR_THREAD_POOL_NAME, TEXT_EXTRACTOR_MAX_POOL_SIZE, EVENT_BUS_SIZE, REINDEXING_ASYNC, REINDEXING_MODE};
 
     public static final AttributeDefinition[] FILE_BINARY_STORAGE_ATTRIBUTES = {MINIMUM_BINARY_SIZE, MINIMUM_STRING_SIZE, PATH,
         RELATIVE_TO, STORE_NAME, MIME_TYPE_DETECTION};

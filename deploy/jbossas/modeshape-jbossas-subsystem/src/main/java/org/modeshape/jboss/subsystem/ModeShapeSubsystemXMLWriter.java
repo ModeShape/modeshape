@@ -102,6 +102,7 @@ public class ModeShapeSubsystemXMLWriter implements XMLStreamConstants, XMLEleme
         writeAuthenticators(writer, repository);
         writeIndexProviders(writer, repository);
         writeIndexes(writer, repository);
+        writeReindexing(writer, repository);
         writeBinaryStorage(writer, repository);
         writeSequencing(writer, repository);
         writeExternalSources(writer, repository);
@@ -174,6 +175,23 @@ public class ModeShapeSubsystemXMLWriter implements XMLStreamConstants, XMLEleme
             writer.writeStartElement(Element.INITIAL_CONTENT.getLocalName());
             writer.writeCharacters(repository.get(ModelKeys.DEFAULT_INITIAL_CONTENT).asString());
             writer.writeEndElement();
+        }
+        if (started) {
+            writer.writeEndElement();
+        }
+    } 
+    
+    private void writeReindexing( XMLExtendedStreamWriter writer,
+                                  ModelNode repository ) throws XMLStreamException {
+        boolean started = false;
+        // Write these model attributes of 'repository' onto the 'reindexing' XML element ...
+        if (ModelAttributes.REINDEXING_ASYNC.isMarshallable(repository, false)) {
+            started = startIfNeeded(writer, Element.REINDEXIG, started);
+            ModelAttributes.REINDEXING_ASYNC.marshallAsAttribute(repository, writer);
+        }
+        if (ModelAttributes.REINDEXING_MODE.isMarshallable(repository, false)) {
+            started = startIfNeeded(writer, Element.REINDEXIG, started);
+            ModelAttributes.REINDEXING_MODE.marshallAsAttribute(repository, writer);
         }
         if (started) {
             writer.writeEndElement();
