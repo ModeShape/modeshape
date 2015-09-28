@@ -1358,6 +1358,24 @@ public class ImportExportTest extends SingleUseAbstractTest {
         assertEquals("b", ((Property) session.getItem("/b/a/jcr:b")).getString());
     }
 
+    @Test
+    @FixFor( "MODE-2504" )
+    public void shouldAllowReorderingAfterImport() throws RepositoryException, IOException {
+        session.getRootNode().addNode("firstLevelNode");
+
+        final InputStream xmlStream1 = resourceStream("io/child1-system-view.xml");
+        session.importXML("/firstLevelNode", xmlStream1, ImportUUIDBehavior.IMPORT_UUID_COLLISION_THROW);
+
+        final InputStream xmlStream2 = resourceStream("io/child2-system-view.xml");
+        session.importXML("/firstLevelNode", xmlStream2, ImportUUIDBehavior.IMPORT_UUID_COLLISION_THROW);
+
+        // now when we call the orderBefore, any operation on non-existing child of /firstLevelNode fails with NPE:
+        session.getNode("/firstLevelNode").orderBefore("child2", "child1");
+        assertTrue(session.nodeExists("/firstLevelNode/child1"));
+        assertTrue(session.nodeExists("/firstLevelNode/child2"));   
+        assertFalse(session.nodeExists("/firstLevelNode/nonexisting"));
+    }
+
     // ----------------------------------------------------------------------------------------------------------------
     // Utilities
     // ----------------------------------------------------------------------------------------------------------------

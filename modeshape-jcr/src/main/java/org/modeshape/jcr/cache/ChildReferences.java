@@ -246,7 +246,7 @@ public interface ChildReferences extends Iterable<ChildReference> {
          * Get the references to the children with the supplied name that were inserted.
          *
          * @param name the name; may not be null
-         * @return the iterator over the insertions; never null but possibly empty
+         * @return the iterator over the insertions; or {@code null} if there are no insertions with this name
          */
         Iterator<ChildInsertions> insertions( Name name );
 
@@ -262,7 +262,8 @@ public interface ChildReferences extends Iterable<ChildReference> {
          * Get the set of child references that were inserted before the node with the supplied key.
          *
          * @param key the node key for the node before which the inserted nodes are to be returned; may not be null
-         * @return the nodes that were inserted before the node with the supplied key
+         * @return the nodes that were inserted before the node with the supplied key or {@code null} if there are no insertions
+         * before the given key.
          */
         ChildInsertions insertionsBefore( ChildReference key );
 

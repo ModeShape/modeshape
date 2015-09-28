@@ -2193,7 +2193,7 @@ public class SessionNode implements MutableCachedNode {
          * 
          * @return the number of inserted references; never negative
          */
-        public int size() {
+        private int size() {
             return inserted.size();
         }
 
@@ -2208,7 +2208,7 @@ public class SessionNode implements MutableCachedNode {
          * @param key the key for the inserted child reference
          * @return the child reference; may be null if the node was not inserted
          */
-        public ChildReference inserted( NodeKey key ) {
+        private ChildReference inserted( NodeKey key ) {
             Lock lock = this.lock.readLock();
             try {
                 lock.lock();
@@ -2230,7 +2230,7 @@ public class SessionNode implements MutableCachedNode {
 
         }
 
-        public Iterator<ChildInsertions> insertions( Name name ) {
+        private Iterator<ChildInsertions> insertions( Name name ) {
             Lock lock = this.lock.readLock();
             try {
                 lock.lock();
@@ -2260,13 +2260,13 @@ public class SessionNode implements MutableCachedNode {
             }
         }
 
-        public ChildInsertions insertionsBefore( NodeKey key ) {
+        private ChildInsertions insertionsBefore( NodeKey key ) {
             // This is safe to return without locking (that's why we used a ConcurrentMap) ...
             return insertedBefore.get(key);
         }
 
-        public void insertBefore( ChildReference before,
-                                  ChildReference inserted ) {
+        private void insertBefore( ChildReference before,
+                                   ChildReference inserted ) {
             Lock lock = this.lock.writeLock();
             try {
                 lock.lock();
@@ -2295,7 +2295,7 @@ public class SessionNode implements MutableCachedNode {
             }
         }
 
-        public boolean remove( NodeKey key ) {
+        private boolean remove( NodeKey key ) {
             Lock lock = this.lock.writeLock();
             try {
                 lock.lock();
@@ -2324,37 +2324,13 @@ public class SessionNode implements MutableCachedNode {
                 lock.unlock();
             }
         }
-
-        public boolean remove( ChildReference inserted ) {
-            Lock lock = this.lock.writeLock();
-            try {
-                lock.lock();
-                if (this.inserted.remove(inserted.getKey())) {
-                    AtomicInteger count = this.insertedNames.get(inserted.getName());
-                    if (count != null) {
-                        if (count.decrementAndGet() == 0) {
-                            this.insertedNames.remove(inserted.getName());
-                        }
-                    }
-                    for (Insertions insertions : insertedBefore.values()) {
-                        if (insertions.remove(inserted)) {
-                            insertedBefore.remove(insertions.insertedBefore(), new Insertions(insertions.insertedBefore()));
-                        }
-                    }
-                    return true;
-                }
-                return false;
-            } finally {
-                lock.unlock();
-            }
-        }
-
+        
         @Override
         public String toString() {
             return toString(new StringBuilder()).toString();
         }
 
-        public StringBuilder toString( StringBuilder sb ) {
+        protected StringBuilder toString( StringBuilder sb ) {
             int number = size();
             sb.append(number).append(' ').append(Inflector.getInstance().pluralize("insertion", number)).append(": ");
             Iterator<Insertions> iter = iterator();

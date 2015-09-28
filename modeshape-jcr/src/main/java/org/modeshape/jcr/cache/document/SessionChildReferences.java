@@ -110,6 +110,9 @@ public class SessionChildReferences extends AbstractChildReferences {
                 if (ref == null && changedChildren != null && changedChildren.insertionCount() > 0) {
                     //look in added and then reordered (which don't appear as appended)
                     Iterator<ChildInsertions> insertionsWithName = changedChildren.insertions(name);
+                    if (insertionsWithName == null) {
+                        return null;
+                    }
                     while (insertionsWithName.hasNext()) {
                         for (ChildReference inserted : insertionsWithName.next().inserted()) {
                             if (inserted.getSnsIndex() == snsIndex) {
