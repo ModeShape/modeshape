@@ -107,7 +107,7 @@ final class BucketedChildReferences extends AbstractChildReferences {
         if (ref == null) {
             // we don't have a reference in our data, look at the changes
             Iterator<ChildInsertions> iterator = changes.insertions(name);
-            if (iterator.hasNext()) {
+            if (iterator != null && iterator.hasNext()) {
                 ChildInsertions inserted = iterator.next();
                 Iterator<ChildReference> iter = inserted.inserted().iterator();
                 // we don't support SNS, renames or reorderings so we'll always return the fist insertion
