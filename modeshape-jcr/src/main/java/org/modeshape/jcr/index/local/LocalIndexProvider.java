@@ -18,11 +18,7 @@ package org.modeshape.jcr.index.local;
 
 import java.io.File;
 import java.nio.file.Paths;
-import java.util.Collections;
-import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
-import javax.jcr.query.qom.Constraint;
-import javax.jcr.query.qom.JoinCondition;
 import org.mapdb.DB;
 import org.mapdb.DBMaker;
 import org.modeshape.common.collection.Problems;
@@ -30,20 +26,16 @@ import org.modeshape.jcr.ExecutionContext;
 import org.modeshape.jcr.JcrI18n;
 import org.modeshape.jcr.NodeTypes;
 import org.modeshape.jcr.NodeTypes.Supplier;
-import org.modeshape.jcr.api.index.IndexColumnDefinition;
 import org.modeshape.jcr.api.index.IndexDefinition;
 import org.modeshape.jcr.api.query.qom.QueryObjectModelConstants;
-import org.modeshape.jcr.api.query.qom.Relike;
 import org.modeshape.jcr.cache.change.ChangeSetAdapter.NodeTypePredicate;
 import org.modeshape.jcr.query.QueryContext;
 import org.modeshape.jcr.query.model.Comparison;
 import org.modeshape.jcr.query.model.FullTextSearch;
 import org.modeshape.jcr.spi.index.IndexCostCalculator;
-import org.modeshape.jcr.spi.index.IndexCostCalculator.Costs;
-import org.modeshape.jcr.spi.index.IndexFeedback;
 import org.modeshape.jcr.spi.index.provider.IndexProvider;
 import org.modeshape.jcr.spi.index.provider.IndexUsage;
-import org.modeshape.jcr.spi.index.provider.ManagedIndex;
+import org.modeshape.jcr.spi.index.provider.ManagedIndexBuilder;
 
 /**
  * An {@link IndexProvider} implementation that maintains indexes on the local file system using MapDB.
@@ -57,8 +49,7 @@ import org.modeshape.jcr.spi.index.provider.ManagedIndex;
  * @author Randall Hauch (rhauch@redhat.com)
  */
 public class LocalIndexProvider extends IndexProvider {
-
-    private static final Float MAX_SELECTIVITY = new Float(1.0f);
+    
     private static final String DB_FILENAME = "local-indexes.db";
     
     /**
@@ -206,135 +197,25 @@ public class LocalIndexProvider extends IndexProvider {
                                        IndexDefinition defn,
                                        NodeTypes.Supplier nodeTypeSupplier,
                                        Problems problems ) {
-        ManagedLocalIndexBuilder.create(context, defn, nodeTypeSupplier, null).validate(problems);
+        // first perform some custom validations
+        LocalIndexBuilder.validate(defn, problems);
+    }
+    
+    @Override
+    protected ManagedIndexBuilder getIndexBuilder( IndexDefinition defn, 
+                                                   String workspaceName,
+                                                   Supplier nodeTypesSupplier,
+                                                   NodeTypePredicate matcher ) {
+        return LocalIndexBuilder.create(context(), defn, nodeTypesSupplier, workspaceName, matcher, db);
     }
 
     @Override
-    protected ManagedIndex createIndex( final IndexDefinition defn,
-                                        final String workspaceName,
-                                        Supplier nodeTypesSupplier,
-                                        NodeTypePredicate matcher,
-                                        IndexFeedback feedback ) {
-        ManagedLocalIndexBuilder<?> builder = ManagedLocalIndexBuilder.create(context(), defn, nodeTypesSupplier, matcher);
-        logger().debug("Index provider '{0}' is creating index in workspace '{1}': {2}", getName(), workspaceName, defn);
-        final ManagedLocalIndex index = builder.build(workspaceName, db);
-        if (!index.isNew()) {
-            // the index already exists, so we should not scan anything
-            return index;
-        }
-        feedback.scan(workspaceName, new IndexFeedback.IndexingCallback() {
-
-            @SuppressWarnings( "synthetic-access" )
-            @Override
-            public void beforeIndexing() {
-                logger().debug(
-                        "Disabling index '{0}' from provider '{1}' in workspace '{2}' while it is reindexed. It will not be used in queries until reindexing has completed",
-                        defn.getName(), defn.getProviderName(), workspaceName);
-                index.enable(false);
-            }
-
-            @SuppressWarnings( "synthetic-access" )
-            @Override
-            public void afterIndexing() {
-                index.enable(true);
-                logger().debug("Enabled index '{0}' from provider '{1}' in workspace '{2}' after reindexing has completed",
-                               defn.getName(), defn.getProviderName(), workspaceName);
-            }
-        });
-        return index;
-    }
-
-    @Override
-    protected ManagedIndex updateIndex( IndexDefinition oldDefn,
-                                        final IndexDefinition updatedDefn,
-                                        ManagedIndex existingIndex,
-                                        final String workspaceName,
-                                        Supplier nodeTypesSupplier,
-                                        NodeTypePredicate matcher,
-                                        IndexFeedback feedback ) {
-        if (!isChanged(oldDefn, updatedDefn)) {
-            // Nothing about the index definition that we care about really changed, so don't do anything ...
-            logger().debug("Index provider '{0}' is not updating index in workspace '{1}' because there were no changes: {2}",
-                           getName(), workspaceName, updatedDefn);
-            return existingIndex;
-        }
-        // This is very crude, but we'll just destroy the old index and rebuild the new one ...
-        existingIndex.shutdown(true);
-        ManagedLocalIndexBuilder<?> builder = ManagedLocalIndexBuilder.create(context(), updatedDefn, nodeTypesSupplier, matcher);
-        logger().debug("Index provider '{0}' is updating index in workspace '{1}': {2}", getName(), workspaceName, updatedDefn);
-        final ManagedLocalIndex index = builder.build(workspaceName, db);
-        if (index.isNew()) {
-            feedback.scan(workspaceName, new IndexFeedback.IndexingCallback() {
-
-                @SuppressWarnings( "synthetic-access" )
-                @Override
-                public void beforeIndexing() {
-                    logger().debug("Disabling index '{0}' from provider '{1}' in workspace '{2}' while it is reindexed. It will not be used in queries until reindexing has completed",
-                                   updatedDefn.getName(), updatedDefn.getProviderName(), workspaceName);
-                    index.enable(false);
-                }
-
-                @SuppressWarnings( "synthetic-access" )
-                @Override
-                public void afterIndexing() {
-                    index.enable(true);
-                    logger().debug("Enabled index '{0}' from provider '{1}' in workspace '{2}' after reindexing has completed",
-                                   updatedDefn.getName(), updatedDefn.getProviderName(), workspaceName);
-                }
-            });
-        }
-        return index;
-    }
-
-    @Override
-    protected void removeIndex( IndexDefinition oldDefn,
-                                ManagedIndex existingIndex,
-                                String workspaceName ) {
-        logger().debug("Index provider '{0}' is removing index in workspace '{1}': {2}", getName(), workspaceName, oldDefn);
-        existingIndex.shutdown(true);
-    }
-
-    private boolean isChanged( IndexDefinition defn1,
-                               IndexDefinition defn2 ) {
-        if (defn1.getKind() != defn2.getKind()) return true;
-        if (defn1.size() != defn2.size()) return true;
-        for (int i = 0; i != defn1.size(); ++i) {
-            IndexColumnDefinition col1 = defn1.getColumnDefinition(i);
-            IndexColumnDefinition col2 = defn2.getColumnDefinition(i);
-            if (isChanged(col1, col2)) return true;
-        }
-        // We don't care about any properties ...
-        return false;
-    }
-
-    private boolean isChanged( IndexColumnDefinition defn1,
-                               IndexColumnDefinition defn2 ) {
-        if (defn1.getColumnType() != defn2.getColumnType()) return true;
-        if (!defn1.getPropertyName().equals(defn2.getPropertyName())) return true;
-        return false;
-    }
-
-    @Override
-    protected void planUseOfIndex( QueryContext context,
-                                   IndexCostCalculator calculator,
-                                   String workspaceName,
-                                   ManagedIndex index,
-                                   final IndexDefinition defn ) {
-        ManagedLocalIndex localIndex = (ManagedLocalIndex)index;
-        IndexUsage planner = new IndexUsage(context, calculator, defn) {
+    protected IndexUsage evaluateUsage( QueryContext context, IndexCostCalculator calculator, IndexDefinition defn ) {
+        return new IndexUsage(context, calculator, defn) {
             @Override
             protected boolean applies( FullTextSearch search ) {
                 // We don't support full text search criteria ...
                 return false;
-            }
-
-            @Override
-            protected boolean indexAppliesTo( Relike constraint ) {
-                // Relike can only work if the column types are all strings ...
-                for (IndexColumnDefinition columnDefn : defn) {
-                    if (columnDefn.getColumnType() != PropertyType.STRING) return false;
-                }
-                return super.indexAppliesTo(constraint);
             }
 
             @Override
@@ -345,38 +226,6 @@ public class LocalIndexProvider extends IndexProvider {
                 }
                 return super.indexAppliesTo(constraint);
             }
-
         };
-        // Does this index apply to any of the ANDed constraints?
-        for (Constraint constraint : calculator.andedConstraints()) {
-            if (planner.indexAppliesTo(constraint)) {
-                logger().trace("Index '{0}' in '{1}' provider applies to query in workspace '{2}' with constraint: {3}",
-                               defn.getName(), getName(), workspaceName, constraint);
-                // The index does apply to this constraint ...
-                long cardinality = localIndex.estimateCardinality(constraint, context.getVariables());
-                long total = localIndex.estimateTotalCount();
-                Float selectivity = null;
-                if (total > 0L) {
-                    double ratio = (double)cardinality / (double)total;
-                    selectivity = cardinality <= total ? new Float(ratio) : MAX_SELECTIVITY;
-                }
-                calculator.addIndex(defn.getName(), workspaceName, getName(), Collections.singleton(constraint), Costs.LOCAL,
-                                    cardinality, selectivity);
-            }
-        }
-
-        // Does this index apply to any of the join conditions ...
-        for (JoinCondition joinCondition : calculator.joinConditions()) {
-            if (planner.indexAppliesTo(joinCondition)) {
-                logger().trace("Index '{0}' in '{1}' provider applies to query in workspace '{2}' with constraint: {3}",
-                               defn.getName(), getName(), workspaceName, joinCondition);
-                // The index does apply to this constraint, but the number of values corresponds to the total number of values
-                // in the index (this is a JOIN CONDITON for which there is no literal values) ...
-                long total = localIndex.estimateTotalCount();
-                calculator.addIndex(defn.getName(), workspaceName, getName(), Collections.singleton(joinCondition), Costs.LOCAL,
-                                    total);
-            }
-
-        }
     }
 }

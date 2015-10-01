@@ -19,6 +19,7 @@ package org.modeshape.jcr.spi.index;
 import java.util.Collection;
 import java.util.Map;
 import javax.jcr.query.qom.Constraint;
+import javax.jcr.query.qom.JoinCondition;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.jcr.query.model.BindVariableName;
 import org.modeshape.jcr.spi.index.provider.Filter;
@@ -46,6 +47,13 @@ public interface IndexConstraints {
      * @return the constraints; never null but maybe empty
      */
     Collection<Constraint> getConstraints();
+
+    /**
+     * Get the join conditions that apply to the index to which this filter is submitted.
+     * 
+     * @return the conditions; never null but maybe empty
+     */
+    Collection<JoinCondition> getJoinConditions();
 
     /**
      * Get the variables that are to be substituted into the {@link BindVariableName} used in the query.

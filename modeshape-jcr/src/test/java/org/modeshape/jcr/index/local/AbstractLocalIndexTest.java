@@ -26,6 +26,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map;
 import javax.jcr.query.qom.Constraint;
+import javax.jcr.query.qom.JoinCondition;
 import org.junit.Before;
 import org.mapdb.BTreeKeySerializer;
 import org.mapdb.DB;
@@ -218,6 +219,11 @@ public abstract class AbstractLocalIndexTest {
             @Override
             public boolean hasConstraints() {
                 return true;
+            }
+
+            @Override
+            public Collection<JoinCondition> getJoinConditions() {
+                return Collections.emptyList();
             }
         };
     }

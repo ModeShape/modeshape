@@ -180,7 +180,8 @@ public class IndexQueryEngine extends ScanningQueryEngine {
             // Use the index to get a NodeSequence ...
             Index index = provider.getIndex(indexPlan.getName(), indexPlan.getWorkspaceName());
             if (index != null) {
-                return sources.fromIndex(index, indexPlan.getConstraints(), context.getVariables(), indexPlan.getParameters(),
+                return sources.fromIndex(index, indexPlan.getConstraints(), indexPlan.getJoinConditions(),
+                                         context.getVariables(), indexPlan.getParameters(),
                                          context.getExecutionContext().getValueFactories(), provider.batchSize());
             }
         }

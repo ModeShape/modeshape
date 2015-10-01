@@ -16,53 +16,52 @@
 
 package org.modeshape.jcr.index.local;
 
-import org.modeshape.jcr.spi.index.provider.Costable;
-import org.modeshape.jcr.spi.index.provider.Filter;
+import org.mapdb.DB;
+import org.modeshape.common.logging.Logger;
+import org.modeshape.jcr.spi.index.provider.ProvidedIndex;
 
 /**
+ * Base class for all local index types.
+ * 
  * @param <T> the type of value that is added to the index
  * @author Randall Hauch (rhauch@redhat.com)
+ * @author Horia Chiorean (hchiorea@redhat.com)
  */
-public interface LocalIndex<T> extends Filter, Costable {
+public abstract class LocalIndex<T> implements ProvidedIndex<T> {
 
-    /**
-     * Return whether this index is newly created and requires reindexing, or false if the index already exists.
-     * 
-     * @return true if the index is new and needs to be rebuilt, or false otherwise.
-     */
-    boolean isNew();
+    protected final Logger logger = Logger.getLogger(getClass());
 
-    /**
-     * Get the name of the index.
-     *
-     * @return the index name; never null
-     */
-    String getName();
+    protected final String name;
+    protected final String workspace;
+    protected final IndexUpdater indexUpdater;
+    protected final DB db;
 
-    /**
-     * Remove all of the index entries from the index. This is typically called prior to reindexing.
-     */
-    void removeAll();
+    protected LocalIndex( String name, String workspace, DB db ) {
+        assert name != null;
+        assert workspace != null;
+        
+        this.name = name;
+        this.workspace = workspace;
+        this.db = db;
+        this.indexUpdater = new IndexUpdater(db);
+    }
 
-    /**
-     * Shut down this index and release all runtime resources. If {@code destroyed} is {@code true}, then this index has been
-     * removed from the repository and will not be reused; thus all persistent resources should also be released. If
-     * {@code destroyed} is {@code false}, then this repository is merely shutting down and the index's persistent resources
-     * should be kept so that they are available when the repository is restarted.
-     *
-     * @param destroyed true if this index is being permanently removed from the repository and all runtime and persistent
-     *        resources can/should be released and cleaned up, or false if the repository is being shutdown and this index will be
-     *        needed the next time the repository is started
-     */
-    void shutdown( boolean destroyed );
+    @Override
+    public void add( String nodeKey, T[] values ) {
+        for (T value : values) {
+            add(nodeKey, value);
+        }
+    }
+    
+    @Override
+    public void remove( String nodeKey, T[] values ) {
+        for (T value : values) {
+            remove(nodeKey, value);
+        }
+    }
 
-    void add( String nodeKey,
-              T value );
-
-    void remove( String nodeKey );
-
-    void remove( String nodeKey,
-                 T value );
-
-    void commit();
+    @Override
+    public void commit() {
+        indexUpdater.commit();
+    }
 }
