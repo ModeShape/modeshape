@@ -28,7 +28,6 @@ import org.mapdb.Bind;
 import org.mapdb.DB;
 import org.mapdb.Fun;
 import org.mapdb.Serializer;
-import org.modeshape.common.logging.Logger;
 import org.modeshape.jcr.index.local.IndexValues.Converter;
 import org.modeshape.jcr.spi.index.IndexConstraints;
 import org.modeshape.jcr.value.ValueComparators;
@@ -40,20 +39,15 @@ import org.modeshape.jcr.value.ValueComparators;
  * @param <T> the type of value to be indexed
  * @param <V> the raw type of value to be added
  */
-abstract class LocalMapIndex<T, V> implements LocalIndex<V> {
+abstract class LocalMapIndex<T, V> extends LocalIndex<V> {
 
-    protected final Logger logger = Logger.getLogger(getClass());
-
-    protected final String name;
-    protected final String workspace;
     protected final BTreeMap<T, String> keysByValue;
     protected final NavigableSet<Fun.Tuple2<String, T>> valuesByKey;
     protected final ConcurrentMap<String, Object> options;
     private final Converter<T> converter;
-    private final DB db;
+   
     protected final Comparator<T> comparator;
     private final boolean isNew;
-    private final IndexUpdater indexUpdater;
 
     LocalMapIndex( String name,
                    String workspaceName,
@@ -61,16 +55,11 @@ abstract class LocalMapIndex<T, V> implements LocalIndex<V> {
                    Converter<T> converter,
                    BTreeKeySerializer<T> valueSerializer,
                    Serializer<T> valueRawSerializer ) {
-        assert name != null;
-        assert workspaceName != null;
-        assert db != null;
+        super(name, workspaceName, db);
+
         assert converter != null;
         assert valueSerializer != null;
-        this.name = name;
-        this.workspace = workspaceName;
         this.converter = converter;
-        this.db = db;
-        this.indexUpdater = new IndexUpdater(db);
         if (db.exists(name)) {
             logger.debug("Reopening storage for '{0}' index in workspace '{1}'", name, workspaceName);
             this.options = db.getHashMap(name + "/options");
@@ -111,7 +100,7 @@ abstract class LocalMapIndex<T, V> implements LocalIndex<V> {
     }
 
     @Override
-    public boolean isNew() {
+    public boolean requiresReindexing() {
         return isNew;
     }
 
@@ -136,13 +125,8 @@ abstract class LocalMapIndex<T, V> implements LocalIndex<V> {
     }
 
     @Override
-    public void removeAll() {
+    public void clearAllData() {
         keysByValue.clear();
-    }
-
-    @Override
-    public void commit() {
-        indexUpdater.commit();
     }
 
     @Override

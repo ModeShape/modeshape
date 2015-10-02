@@ -17,6 +17,7 @@
 package org.modeshape.jcr.spi.index.provider;
 
 import java.util.Set;
+import org.modeshape.common.logging.Logger;
 import org.modeshape.jcr.ExecutionContext;
 import org.modeshape.jcr.cache.CachedNode.Properties;
 import org.modeshape.jcr.cache.NodeKey;
@@ -25,18 +26,27 @@ import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.Path;
 
 /**
+ * Base class for all index-related changes.
+ * 
  * @author Randall Hauch (rhauch@redhat.com)
+ * @author Horia Chiorean (hchiorea@redhat.com)
  */
-public class IndexChangeAdapter extends ChangeSetAdapter {
+public abstract class IndexChangeAdapter extends ChangeSetAdapter {
 
-    private final String workspaceName;
+    protected final String workspaceName;
+    protected final ProvidedIndex<?> index;
+    protected final Logger logger; 
 
-    public IndexChangeAdapter( ExecutionContext context,
+    protected IndexChangeAdapter( ExecutionContext context,
                                String workspaceName,
-                               ChangeSetAdapter.NodeTypePredicate predicate ) {
+                               NodeTypePredicate predicate, 
+                               ProvidedIndex<?> index ) {
         super(context, predicate);
+        assert index != null;
+        this.index = index;
         assert workspaceName != null;
         this.workspaceName = workspaceName;
+        this.logger = Logger.getLogger(getClass());
     }
 
     @Override
@@ -66,14 +76,32 @@ public class IndexChangeAdapter extends ChangeSetAdapter {
             reindexNode(workspaceName, key, path, primaryType, mixinTypes, properties, queryable);
         }
     }
-
-    /**
-     * Remove all values from the index for the given node key.
-     * 
-     * @param key a {@code NodeKey} instance, never {@code null}
-     */
-    protected void removeValues( NodeKey key ) {
-        //nothing by default   
+    
+    protected static String nodeKey( NodeKey key ) {
+        return key.toString();
+    }
+    
+    protected void clearDataFor( NodeKey key ) {
+        index.remove(nodeKey(key));
     }
 
+    @SuppressWarnings("unchecked")
+    protected <T> ProvidedIndex<T> index() {
+        return (ProvidedIndex<T>)index;
+    }
+
+    @Override
+    protected void completeChanges() {
+        index.commit();
+    }
+
+    @Override
+    protected void completeWorkspaceChanges() {
+        index.commit();
+    }
+
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + "(\"" + index.getName() + "\")";
+    }
 }

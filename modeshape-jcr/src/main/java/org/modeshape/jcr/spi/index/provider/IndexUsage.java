@@ -17,6 +17,7 @@
 package org.modeshape.jcr.spi.index.provider;
 
 import java.util.Set;
+import javax.jcr.PropertyType;
 import javax.jcr.query.qom.ChildNodeJoinCondition;
 import javax.jcr.query.qom.Constraint;
 import javax.jcr.query.qom.DescendantNodeJoinCondition;
@@ -184,6 +185,10 @@ public class IndexUsage {
     }
 
     protected boolean indexAppliesTo( Relike constraint ) {
+        // Relike can only work if the column types are all strings ...
+        for (IndexColumnDefinition columnDefn : defn) {
+            if (columnDefn.getColumnType() != PropertyType.STRING) return false;
+        }
         return applies(constraint.getOperand2());
     }
 

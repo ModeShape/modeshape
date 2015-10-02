@@ -582,11 +582,12 @@ public final class JcrI18n {
     public static I18n indexProviderNameRequired;
     public static I18n indexProviderNameMustMatchProvider;
     public static I18n indexDefinitionIsInvalid;
+    public static I18n indexMustHaveOneColumnOfSpecificType;
     public static I18n localIndexProviderMustHaveDirectory;
     public static I18n localIndexProviderDirectoryMustBeReadable;
     public static I18n localIndexProviderDirectoryMustBeWritable;
-    public static I18n localIndexMustHaveOneColumnOfSpecificType;
     public static I18n localIndexProviderDoesNotSupportTextIndexes;
+    public static I18n localIndexProviderDoesNotSupportMultiColumnIndexes;
 
     private JcrI18n() {
     }

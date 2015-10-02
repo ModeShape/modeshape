@@ -243,6 +243,9 @@ class RepositoryIndexManager implements IndexManager, NodeTypes.Listener {
 
         // Set the execution context instance ...
         Reflection.setValue(provider, "context", repository.context());
+        
+        // Set the environment
+        Reflection.setValue(provider, "environment", repository.environment());
 
         provider.initialize();
 
@@ -491,7 +494,10 @@ class RepositoryIndexManager implements IndexManager, NodeTypes.Listener {
             if (provider == null) {
                 problems.addError(JcrI18n.indexProviderDoesNotExist, defn, repository.name());
             } else {
-                // Have the provider validate the index
+                // Perform some default validations that should be applied to all providers... 
+                provider.validateDefaultColumnTypes(context, defn, problems);
+                
+                // Then have the provider perform any custom validations
                 provider.validateProposedIndex(context, defn, nodeTypeManager, problems);
 
                 // Create an instance of our own definition implementation ...

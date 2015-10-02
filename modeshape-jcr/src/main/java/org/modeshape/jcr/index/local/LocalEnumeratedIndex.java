@@ -34,7 +34,7 @@ import org.modeshape.jcr.spi.index.IndexConstraints;
  *
  * @author Randall Hauch (rhauch@redhat.com)
  */
-final class LocalEnumeratedIndex implements LocalIndex<String> {
+final class LocalEnumeratedIndex extends LocalIndex<String> {
 
     private static final Logger LOGGER = Logger.getLogger(LocalEnumeratedIndex.class);
 
@@ -55,16 +55,10 @@ final class LocalEnumeratedIndex implements LocalIndex<String> {
         return new LocalEnumeratedIndex(name, workspaceName, db, converter, valueSerializer, null);
     }
 
-    private final String name;
-    private final String workspace;
-
     protected final ConcurrentNavigableMap<String, Set<String>> nodeKeySetsByValue;
     private final Converter<String> converter;
-    private final DB db;
     private final Set<String> possibleValues;
-    private final String workspaceName;
     private final boolean isNew;
-    private final IndexUpdater indexUpdater;
 
     LocalEnumeratedIndex( String name,
                           String workspaceName,
@@ -72,12 +66,9 @@ final class LocalEnumeratedIndex implements LocalIndex<String> {
                           Converter<String> converter,
                           BTreeKeySerializer<String> valueSerializer,
                           Set<String> possibleValues ) {
-        this.name = name;
-        this.workspace = workspaceName;
+        super(name, workspaceName, db);
+
         this.converter = converter;
-        this.db = db;
-        this.indexUpdater = new IndexUpdater(db);
-        this.workspaceName = workspaceName;
         this.possibleValues = possibleValues != null ? new HashSet<String>(possibleValues) : new HashSet<String>();
         this.nodeKeySetsByValue = new ConcurrentSkipListMap<>();
         // Read all of the existing collections ...
@@ -108,10 +99,10 @@ final class LocalEnumeratedIndex implements LocalIndex<String> {
         // Try to create the set ...
         Set<String> keySet = null;
         if (db.exists(collectionName)) {
-            LOGGER.debug("Reopening enum storage '{0}' for '{1}' index in workspace '{2}'", collectionName, name, workspaceName);
+            LOGGER.debug("Reopening enum storage '{0}' for '{1}' index in workspace '{2}'", collectionName, name, workspace);
             keySet = db.getHashSet(collectionName);
         } else {
-            LOGGER.debug("Creating enum storage '{0}' for '{1}' index in workspace '{2}'", collectionName, name, workspaceName);
+            LOGGER.debug("Creating enum storage '{0}' for '{1}' index in workspace '{2}'", collectionName, name, workspace);
             keySet = db.createHashSet(collectionName).make();
         }
         Set<String> previous = nodeKeySetsByValue.putIfAbsent(value, keySet);
@@ -133,7 +124,7 @@ final class LocalEnumeratedIndex implements LocalIndex<String> {
     }
     
     @Override
-    public boolean isNew() {
+    public boolean requiresReindexing() {
         return isNew;
     }
 
@@ -192,7 +183,7 @@ final class LocalEnumeratedIndex implements LocalIndex<String> {
     }
 
     @Override
-    public synchronized void removeAll() {
+    public synchronized void clearAllData() {
         for (Map.Entry<String, Set<String>> entry : nodeKeySetsByValue.entrySet()) {
             entry.getValue().clear();
             String collectionName = collectionName(entry.getKey());
@@ -201,11 +192,6 @@ final class LocalEnumeratedIndex implements LocalIndex<String> {
             }
         }
         nodeKeySetsByValue.clear();
-    }
-
-    @Override
-    public void commit() {
-        indexUpdater.commit();
     }
 
     @Override

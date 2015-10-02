@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import javax.jcr.query.qom.Constraint;
+import javax.jcr.query.qom.JoinCondition;
 import org.modeshape.jcr.JcrLexicon;
 import org.modeshape.jcr.NodeTypes;
 import org.modeshape.jcr.cache.CachedNode;
@@ -304,15 +305,17 @@ public class QuerySources {
      * Obtain a {@link NodeSequence} that uses the supplied index to find the node that satisfy the given constraints.
      *
      * @param index the index; may not be null
-     * @param constraints the constraints that apply to the index; may not be null or empty
+     * @param constraints the constraints that apply to the index; may not be null but can be empty
+     * @param joinConditions the join constraints that apply to the index; may not be but can be empty
      * @param variables the immutable map of variable values keyed by their name; never null but possibly empty
      * @param parameters the provider-specific index parameters; may not be null, but may be empty
      * @param valueFactories the value factories; never null
-     * @param batchSize the ideal number of nodes that are to be included in each batch; always positive
+     * @param batchSize the ideal number of nodes that are to be included in each batch; always positive     
      * @return the sequence of nodes; null if the index cannot be used (e.g., it might be rebuilding or in an inconsistent state)
      */
     public NodeSequence fromIndex( final Index index,
                                    final Collection<Constraint> constraints,
+                                   final Collection<JoinCondition> joinConditions, 
                                    final Map<String, Object> variables,
                                    final Map<String, Object> parameters,
                                    final ValueFactories valueFactories,
@@ -345,6 +348,11 @@ public class QuerySources {
             @Override
             public Map<String, Object> getParameters() {
                 return parameters;
+            }
+
+            @Override
+            public Collection<JoinCondition> getJoinConditions() {
+                return joinConditions;
             }
         };
         // Return a node sequence that will lazily get the results from the index ...

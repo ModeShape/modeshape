@@ -13,32 +13,41 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package org.modeshape.jcr.index.local;
+package org.modeshape.jcr.spi.index.provider;
 
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import javax.jcr.query.qom.Constraint;
+import org.modeshape.common.annotation.Immutable;
 import org.modeshape.jcr.api.index.IndexManager;
 import org.modeshape.jcr.spi.index.IndexConstraints;
-import org.modeshape.jcr.spi.index.provider.IndexChangeAdapter;
-import org.modeshape.jcr.spi.index.provider.ManagedIndex;
 
 /**
- * @author Randall Hauch (rhauch@redhat.com)
+ * A {@link ManagedIndex} implementation which wraps an index instance created by a particular provider, offering
+ * a default implementation for some index-related operations.
+ * 
+ * @author Horia Chiorean (hchiorea@redhat.com)
+ * @since 4.5
  */
-public class ManagedLocalIndex implements ManagedIndex {
-
-    private final LocalIndex<?> index;
+@Immutable
+public final class DefaultManagedIndex implements ManagedIndex {
+    
+    private final ProvidedIndex<?> index;
     private final IndexChangeAdapter adapter;
     private final AtomicBoolean enabled = new AtomicBoolean(true);
-    private final AtomicReference<IndexManager.IndexStatus> status = new AtomicReference<>(IndexManager.IndexStatus.ENABLED); 
+    private final AtomicReference<IndexManager.IndexStatus> status = new AtomicReference<>(IndexManager.IndexStatus.ENABLED);
 
-    ManagedLocalIndex( LocalIndex<?> index,
-                       IndexChangeAdapter adapter ) {
-        assert adapter != null;
+    /**
+     * Creates a new managed index instance which wraps an provider-specific instance and a change adapter. 
+     * 
+     * @param index a {@link ProvidedIndex} instance, may not be null.
+     * @param adapter a {@link IndexChangeAdapter} instance, may not be null.
+     */
+    public DefaultManagedIndex( ProvidedIndex<?> index, IndexChangeAdapter adapter ) {
         assert index != null;
+        assert adapter != null;
+        
         this.index = index;
         this.adapter = adapter;
     }
@@ -82,15 +91,15 @@ public class ManagedLocalIndex implements ManagedIndex {
     @Override
     public void shutdown( boolean destroyed ) {
         try {
-            index.shutdown(destroyed);
+           index.shutdown(destroyed);
         } finally {
             enable(false);
         }
     }
 
     @Override
-    public void removeAll() {
-        index.removeAll();
+    public void clearAllData() {
+        index.clearAllData();
     }
 
     @Override
@@ -102,8 +111,9 @@ public class ManagedLocalIndex implements ManagedIndex {
     public void updateStatus(IndexManager.IndexStatus currentStatus, IndexManager.IndexStatus newStatus) {
         this.status.compareAndSet(currentStatus, newStatus);
     }
-    
-    protected boolean isNew() {
-        return index.isNew();
+
+    @Override
+    public boolean requiresReindexing() {
+        return index.requiresReindexing();
     }
 }

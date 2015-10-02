@@ -49,6 +49,11 @@ import org.modeshape.jcr.spi.index.provider.IndexProvider;
 @NotThreadSafe
 public interface IndexCostCalculator {
 
+    /**
+     * A value representing the maximum selectivity of an index
+     */
+    Float MAX_SELECTIVITY = 1.0f;
+
     public static final class Costs {
         public static final int LOCAL = 100;
         public static final int REMOTE = 10000;
