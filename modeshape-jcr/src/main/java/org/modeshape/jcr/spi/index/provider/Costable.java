@@ -16,6 +16,7 @@
 
 package org.modeshape.jcr.spi.index.provider;
 
+import java.util.List;
 import java.util.Map;
 import javax.jcr.query.qom.Constraint;
 
@@ -25,14 +26,15 @@ import javax.jcr.query.qom.Constraint;
  * @author Randall Hauch (rhauch@redhat.com)
  */
 public interface Costable {
+    
     /**
-     * Compute the cost applying the given constraint.
+     * Compute the cost applying the given constraints joined together conceptually using AND.
      *
-     * @param constraint the constraint; never null
+     * @param andedConstraints the constraints; never null
      * @param variables the bound variables for the query that is being costed; never null
      * @return the approximate number of records that will be returned
      */
-    long estimateCardinality( Constraint constraint,
+    long estimateCardinality( List<Constraint> andedConstraints,
                               Map<String, Object> variables );
 
     /**

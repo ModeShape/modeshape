@@ -85,6 +85,7 @@ final class LocalDuplicateIndex<T> extends LocalMapIndex<UniqueKey<T>, T> {
 
     @Override
     public void add( String nodeKey,
+                     String propertyName, 
                      T value ) {
         logger.trace("Adding node '{0}' to '{1}' index with value '{2}'", nodeKey, name, value);
         keysByValue.put(new UniqueKey<T>(value, counter.getAndIncrement()), nodeKey);
@@ -92,6 +93,7 @@ final class LocalDuplicateIndex<T> extends LocalMapIndex<UniqueKey<T>, T> {
 
     @Override
     public void remove( String nodeKey,
+                        String propertyName, 
                         T value ) {
         // Find all of the actual unique values for the given value ...
         UniqueKey<T> fromKey = new UniqueKey<T>(value, 0);

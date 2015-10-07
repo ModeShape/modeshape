@@ -47,16 +47,16 @@ public abstract class LocalIndex<T> implements ProvidedIndex<T> {
     }
 
     @Override
-    public void add( String nodeKey, T[] values ) {
+    public void add( String nodeKey, String propertyName, T[] values ) {
         for (T value : values) {
-            add(nodeKey, value);
+            add(nodeKey, propertyName, value);
         }
     }
     
     @Override
-    public void remove( String nodeKey, T[] values ) {
+    public void remove( String nodeKey, String propertyName, T[] values ) {
         for (T value : values) {
-            remove(nodeKey, value);
+            remove(nodeKey, propertyName, value);
         }
     }
 

@@ -21,6 +21,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import javax.jcr.RepositoryException;
@@ -752,37 +753,46 @@ public abstract class IndexProvider {
         
         // Does this index apply to any of the ANDed constraints?
         int costEstimate = getCostEstimate();
+        List<Constraint> applicableConstraints = new ArrayList<>();
         for (Constraint constraint : calculator.andedConstraints()) {
             if (planner.indexAppliesTo(constraint)) {
                 logger().trace("Index '{0}' in '{1}' provider applies to query in workspace '{2}' with constraint: {3}",
                                defn.getName(), getName(), workspaceName, constraint);
                 // The index does apply to this constraint ...
-                long cardinality = index.estimateCardinality(constraint, context.getVariables());
-                long total = index.estimateTotalCount();
-                Float selectivity = null;
-                if (total > 0L) {
-                    double ratio = (double)cardinality / (double)total;
-                    selectivity = cardinality <= total ? new Float(ratio) : IndexCostCalculator.MAX_SELECTIVITY;
-                }
-                calculator.addIndex(defn.getName(), workspaceName, getName(), Collections.singleton(constraint),
-                                    costEstimate,
-                                    cardinality, selectivity);
+                applicableConstraints.add(constraint);
             }
         }
+        if (!applicableConstraints.isEmpty()) {
+            long cardinality = index.estimateCardinality(applicableConstraints, context.getVariables());
+            long total = index.estimateTotalCount();
+            Float selectivity = null;
+            if (total > 0L) {
+                double ratio = (double)cardinality / (double)total;
+                selectivity = cardinality <= total ? new Float(ratio) : IndexCostCalculator.MAX_SELECTIVITY;
+            }
+            calculator.addIndex(defn.getName(), workspaceName, getName(), applicableConstraints, costEstimate, cardinality, 
+                                selectivity);
+        }
 
+        Collection<JoinCondition> joinConditions = calculator.joinConditions();
+        if (joinConditions.isEmpty()) {
+            return;
+        }
+        List<JoinCondition> applicableJoins = new ArrayList<>();
         // Does this index apply to any of the join conditions ...
-        for (JoinCondition joinCondition : calculator.joinConditions()) {
+        for (JoinCondition joinCondition : joinConditions) {
             if (planner.indexAppliesTo(joinCondition)) {
                 logger().trace("Index '{0}' in '{1}' provider applies to query in workspace '{2}' with constraint: {3}",
                                defn.getName(), getName(), workspaceName, joinCondition);
-                // The index does apply to this constraint, but the number of values corresponds to the total number of values
-                // in the index (this is a JOIN CONDITON for which there is no literal values) ...
-                long total = index.estimateTotalCount();
-                calculator.addIndex(defn.getName(), workspaceName, getName(), Collections.singleton(joinCondition),
-                                    costEstimate,
-                                    total);
+                applicableJoins.add(joinCondition);
             }
-
+        }
+        
+        if (!applicableJoins.isEmpty()) {
+            // The index does apply to this constraint, but the number of values corresponds to the total number of values
+            // in the index (this is a JOIN CONDITON for which there is no literal values) ...
+            long total = index.estimateTotalCount();
+            calculator.addIndex(defn.getName(), workspaceName, getName(), applicableJoins, costEstimate, total);
         }
     }
 
