@@ -16,8 +16,8 @@
 
 package org.modeshape.jcr.index.local;
 
-import java.util.Collections;
 import java.util.Comparator;
+import java.util.List;
 import java.util.Map;
 import java.util.NavigableSet;
 import java.util.concurrent.ConcurrentMap;
@@ -119,9 +119,9 @@ abstract class LocalMapIndex<T, V> extends LocalIndex<V> {
     }
 
     @Override
-    public long estimateCardinality( Constraint constraint,
+    public long estimateCardinality( List<Constraint> andedConstraints,
                                      Map<String, Object> variables ) {
-        return Operations.createFilter(keysByValue, converter, Collections.singleton(constraint), variables).estimateCount();
+        return Operations.createFilter(keysByValue, converter, andedConstraints, variables).estimateCount();
     }
 
     @Override

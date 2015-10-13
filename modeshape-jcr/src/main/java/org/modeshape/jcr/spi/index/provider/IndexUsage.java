@@ -285,7 +285,7 @@ public class IndexUsage {
     }
 
     protected boolean applies( NodePath operand ) {
-        // This should apply to the 'jcr:name' pseudo-column on the index ...
+        // This should apply to the 'jcr:path' pseudo-column on the index ...
         return defn.appliesToProperty("jcr:path");
     }
 
@@ -319,7 +319,7 @@ public class IndexUsage {
     }
 
     protected boolean applies( FullTextSearch operand ) {
-        return true;
+        return defn.getKind() == IndexDefinition.IndexKind.TEXT;
     }
 
     protected final boolean matchesSelectorName( String selectorName ) {

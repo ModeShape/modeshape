@@ -76,6 +76,7 @@ class LocalUniqueIndex<T> extends LocalMapIndex<T, T> {
 
     @Override
     public void add( String nodeKey,
+                     String propertyName, 
                      T value ) {
         logger.trace("Adding node '{0}' to '{1}' index with value '{2}'", nodeKey, name, value);
         keysByValue.put(value, nodeKey);
@@ -83,6 +84,7 @@ class LocalUniqueIndex<T> extends LocalMapIndex<T, T> {
 
     @Override
     public void remove( String nodeKey,
+                        String propertyName, 
                         T value ) {
         // Find all of the T values (entry keys) for the given node key (entry values) ...
         for (T key : Fun.filter(valuesByKey, nodeKey)) {

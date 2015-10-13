@@ -67,28 +67,28 @@ public abstract class AbstractLocalIndexTest {
     protected void loadLongIndex( LocalUniqueIndex<Long> index,
                                   int numValues ) {
         for (int i = 1; i <= numValues; ++i) {
-            index.add(key(i), (long)(i * 10));
+            index.add(key(i), "test", (long)(i * 10));
         }
     }
 
     protected void loadStringIndex( LocalUniqueIndex<String> index,
                                     int numValues ) {
         for (int i = 1; i <= numValues; ++i) {
-            index.add(key(i), "" + (i * 10));
+            index.add(key(i), "test", "" + (i * 10));
         }
     }
 
     protected void loadLongIndexWithNoDuplicates( LocalDuplicateIndex<Long> index,
                                                   int numValues ) {
         for (int i = 1; i <= numValues; ++i) {
-            index.add(key(i), (long)(i * 10));
+            index.add(key(i), "test", (long)(i * 10));
         }
     }
 
     protected void loadStringIndexWithNoDuplicates( LocalDuplicateIndex<String> index,
                                                     int numValues ) {
         for (int i = 1; i <= numValues; ++i) {
-            index.add(key(i), "" + (i * 10));
+            index.add(key(i), "test", "" + (i * 10));
         }
     }
 

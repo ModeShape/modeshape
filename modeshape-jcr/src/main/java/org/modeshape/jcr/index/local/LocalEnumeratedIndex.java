@@ -16,8 +16,8 @@
 
 package org.modeshape.jcr.index.local;
 
-import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentNavigableMap;
@@ -25,7 +25,6 @@ import java.util.concurrent.ConcurrentSkipListMap;
 import javax.jcr.query.qom.Constraint;
 import org.mapdb.BTreeKeySerializer;
 import org.mapdb.DB;
-import org.modeshape.common.logging.Logger;
 import org.modeshape.jcr.index.local.IndexValues.Converter;
 import org.modeshape.jcr.spi.index.IndexConstraints;
 
@@ -35,8 +34,6 @@ import org.modeshape.jcr.spi.index.IndexConstraints;
  * @author Randall Hauch (rhauch@redhat.com)
  */
 final class LocalEnumeratedIndex extends LocalIndex<String> {
-
-    private static final Logger LOGGER = Logger.getLogger(LocalEnumeratedIndex.class);
 
     static LocalEnumeratedIndex create( String name,
                                         String workspaceName,
@@ -96,15 +93,16 @@ final class LocalEnumeratedIndex extends LocalIndex<String> {
 
     private Set<String> createOrGetKeySet( String value ) {
         String collectionName = collectionName(value);
-        // Try to create the set ...
-        Set<String> keySet = null;
-        if (db.exists(collectionName)) {
-            LOGGER.debug("Reopening enum storage '{0}' for '{1}' index in workspace '{2}'", collectionName, name, workspace);
-            keySet = db.getHashSet(collectionName);
-        } else {
-            LOGGER.debug("Creating enum storage '{0}' for '{1}' index in workspace '{2}'", collectionName, name, workspace);
-            keySet = db.createHashSet(collectionName).make();
+        if (logger.isDebugEnabled()) {
+            if (db.exists(collectionName)) {
+                logger.debug("Reopening enum storage '{0}' for '{1}' index in workspace '{2}'", collectionName, name,
+                             workspace);
+            } else {
+                logger.debug("Creating enum storage '{0}' for '{1}' index in workspace '{2}'", collectionName, name, workspace);
+            }
         }
+        // Try to create the set ...
+        Set<String> keySet = db.getHashSet(collectionName); // make sure this is ATOMIC !
         Set<String> previous = nodeKeySetsByValue.putIfAbsent(value, keySet);
         if (previous != null) keySet = previous;
         return keySet;
@@ -149,14 +147,15 @@ final class LocalEnumeratedIndex extends LocalIndex<String> {
     }
 
     @Override
-    public long estimateCardinality( Constraint constraint,
+    public long estimateCardinality( List<Constraint> andedConstraints,
                                      Map<String, Object> variables ) {
-        return Operations.createEnumeratedFilter(nodeKeySetsByValue, converter, Collections.singleton(constraint), variables)
+        return Operations.createEnumeratedFilter(nodeKeySetsByValue, converter, andedConstraints, variables)
                          .estimateCount();
     }
 
     @Override
     public void add( String nodeKey,
+                     String propertyName, 
                      String value ) {
         // Find the set ...
         Set<String> keySet = nodeKeySetsByValue.get(value);
@@ -175,6 +174,7 @@ final class LocalEnumeratedIndex extends LocalIndex<String> {
 
     @Override
     public void remove( String nodeKey,
+                        String propertyName, 
                         String value ) {
         Set<String> nodeKeySet = nodeKeySetsByValue.get(value);
         if (nodeKeySet != null) {

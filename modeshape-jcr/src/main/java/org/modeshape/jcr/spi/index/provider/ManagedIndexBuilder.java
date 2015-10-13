@@ -58,10 +58,10 @@ public abstract class ManagedIndexBuilder {
     protected final String workspaceName;
 
     protected ManagedIndexBuilder( ExecutionContext context,
-                                 IndexDefinition defn,
-                                 String workspaceName,
-                                 NodeTypes.Supplier nodeTypesSupplier,
-                                 ChangeSetAdapter.NodeTypePredicate matcher ) {
+                                   IndexDefinition defn,
+                                   String workspaceName,
+                                   NodeTypes.Supplier nodeTypesSupplier,
+                                   ChangeSetAdapter.NodeTypePredicate matcher ) {
         this.context = context;
         this.workspaceName = workspaceName;
         this.defn = defn;

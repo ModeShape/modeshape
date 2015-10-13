@@ -17,6 +17,7 @@
 package org.modeshape.jcr.spi.index.provider;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -24,6 +25,7 @@ import java.util.Set;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.jcr.ExecutionContext;
 import org.modeshape.jcr.JcrLexicon;
+import org.modeshape.jcr.ModeShapeLexicon;
 import org.modeshape.jcr.cache.CachedNode.Properties;
 import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.cache.change.AbstractPropertyChange;
@@ -319,12 +321,12 @@ public class IndexChangeAdapters {
             //then based on each of the adapters types, add information back to the index...
             if (!pathAdapters.isEmpty()) {
                 for (PathBasedChangeAdapter<?> pathAdapter : pathAdapters) {
-                    index().add(nodeKey, pathAdapter.valueOf(path));
+                    index().add(nodeKey, pathAdapter.propertyName, pathAdapter.valueOf(path));
                 }   
             }
             if (!propertyAdapters.isEmpty()) {
                 for (AbstractPropertyChangeAdapter<?> propertyAdapter : propertyAdapters) {
-                    Property property = properties.getProperty(propertyAdapter.propertyName());
+                    Property property = properties.getProperty(propertyAdapter.propertyName);
                     if (property != null) {
                         propertyAdapter.addValues(key, property);
                     }
@@ -378,11 +380,16 @@ public class IndexChangeAdapters {
     }
 
     protected static abstract class PathBasedChangeAdapter<T> extends IndexChangeAdapter {
+        protected final String propertyName;
+        
         protected PathBasedChangeAdapter( ExecutionContext context,
                                           NodeTypePredicate matcher,
                                           String workspaceName,
-                                          ProvidedIndex<?> index) {
+                                          ProvidedIndex<?> index,
+                                          Name propertyName) {
             super(context, workspaceName, matcher, index);
+            assert propertyName != null;
+            this.propertyName = propertyName.getString(context.getNamespaceRegistry());
         }
         
         protected T valueOf(Path path) {
@@ -392,7 +399,7 @@ public class IndexChangeAdapters {
         protected abstract T convertRoot( Path path );
 
         protected abstract T convert( Path path );
-
+        
         @Override
         protected void addNode( String workspaceName,
                                 NodeKey key,
@@ -400,7 +407,7 @@ public class IndexChangeAdapters {
                                 Name primaryType,
                                 Set<Name> mixinTypes,
                                 Properties properties ) {
-            index().add(nodeKey(key), valueOf(path));
+            index().add(nodeKey(key), propertyName, valueOf(path));
         }
 
         @Override
@@ -412,9 +419,9 @@ public class IndexChangeAdapters {
                                     Properties properties,
                                     boolean queryable ) {
             String nodeKey = nodeKey(key);
-            index().remove(nodeKey, valueOf(path));
+            index().remove(nodeKey, propertyName, valueOf(path));
             if (queryable) {
-                index().add(nodeKey(key), valueOf(path));
+                index().add(nodeKey(key), propertyName, valueOf(path));
             }            
         }
 
@@ -428,8 +435,8 @@ public class IndexChangeAdapters {
                                  Path newPath,
                                  Path oldPath ) {
             String nodeKey = nodeKey(key);
-            index().remove(nodeKey, valueOf(oldPath));
-            index().add(nodeKey, valueOf(newPath));
+            index().remove(nodeKey, propertyName, valueOf(oldPath));
+            index().add(nodeKey, propertyName, valueOf(newPath));
         }
 
         @Override
@@ -452,8 +459,8 @@ public class IndexChangeAdapters {
             PathFactory pathFactory = context.getValueFactories().getPathFactory();
             Path oldPath = pathFactory.create(newPath.subpath(0, newPath.size()), oldSegment);
             String nodeKey = nodeKey(key);
-            index().remove(nodeKey, valueOf(oldPath));
-            index().add(nodeKey, valueOf(newPath));
+            index().remove(nodeKey, propertyName, valueOf(oldPath));
+            index().add(nodeKey, propertyName, valueOf(newPath));
         }
 
         @Override
@@ -477,7 +484,7 @@ public class IndexChangeAdapters {
                                        NodeTypePredicate matcher,
                                        String workspaceName,
                                        ProvidedIndex<?> index ) {
-            super(context, matcher, workspaceName, index);
+            super(context, matcher, workspaceName, index, ModeShapeLexicon.DEPTH);
         }
 
         @Override
@@ -495,8 +502,8 @@ public class IndexChangeAdapters {
         public NodeNameChangeAdapter( ExecutionContext context,
                                       NodeTypePredicate matcher,
                                       String workspaceName,
-                                      ProvidedIndex<?> index ) {
-            super(context, matcher, workspaceName, index);
+                                      ProvidedIndex<?> index) {
+            super(context, matcher, workspaceName, index, JcrLexicon.NAME);
         }
 
         @Override
@@ -521,7 +528,7 @@ public class IndexChangeAdapters {
                                            NodeTypePredicate matcher,
                                            String workspaceName,
                                            ProvidedIndex<?> index ) {
-            super(context, matcher, workspaceName, index);
+            super(context, matcher, workspaceName, index, ModeShapeLexicon.LOCALNAME);
         }
 
         @Override
@@ -546,7 +553,7 @@ public class IndexChangeAdapters {
                                       NodeTypePredicate matcher,
                                       String workspaceName,
                                       ProvidedIndex<?> index ) {
-            super(context, matcher, workspaceName, index);
+            super(context, matcher, workspaceName, index, JcrLexicon.PATH);
         }
 
         @Override
@@ -586,6 +593,10 @@ public class IndexChangeAdapters {
                                           Object value );
         
         protected abstract void removeValues(NodeKey key, Property property);
+        
+        protected final String propertyName() {
+            return propertyName.getString(context.getNamespaceRegistry());
+        }
 
         @Override
         protected void addNode( String workspaceName,
@@ -642,10 +653,6 @@ public class IndexChangeAdapters {
                                    Set<Name> mixinTypes ) {
             index().remove(nodeKey(key));
         }
-
-        protected Name propertyName() {
-            return propertyName;
-        }
     }
 
     protected static class PropertyChangeAdapter<T> extends AbstractPropertyChangeAdapter<T> {
@@ -665,10 +672,11 @@ public class IndexChangeAdapters {
                 return;
             }
             String nodeKey = nodeKey(key);
+            String propertyName = propertyName();
             if (property.isMultiple()) {
-                index().add(nodeKey, property.getValuesAsArray(valueFactory));
+                index().add(nodeKey, propertyName, property.getValuesAsArray(valueFactory));
             } else {
-                index().add(nodeKey, convert(property.getFirstValue()));
+                index().add(nodeKey, propertyName,  convert(property.getFirstValue()));
             }
         }
 
@@ -678,7 +686,7 @@ public class IndexChangeAdapters {
             if (value == null) {
                 return;
             }
-            index().add(nodeKey(key), convert(value));
+            index().add(nodeKey(key), propertyName(), convert(value));
         }
 
         @Override
@@ -687,10 +695,11 @@ public class IndexChangeAdapters {
                 return;
             }
             String nodeKey = nodeKey(key);
+            String propertyName = propertyName();
             if (property.isMultiple()) {
-                index().remove(nodeKey, property.getValuesAsArray(valueFactory));
+                index().remove(nodeKey, propertyName, property.getValuesAsArray(valueFactory));
             } else {
-                index().remove(nodeKey, convert(property.getFirstValue())); 
+                index().remove(nodeKey, propertyName, convert(property.getFirstValue())); 
             }
         }
     }
@@ -726,18 +735,18 @@ public class IndexChangeAdapters {
         @Override
         protected void addValues( NodeKey key,
                                   Property property ) {
-            index().add(nodeKey(key), convert(property.getFirstValue()));
+            index().add(nodeKey(key), propertyName(), convert(property.getFirstValue()));
         }
 
         @Override
         protected final void addValue( NodeKey key,
                                        Object value ) {
-            index().add(nodeKey(key), convert(value));
+            index().add(nodeKey(key), propertyName(), convert(value));
         }
 
         @Override
         protected void removeValues( NodeKey key, Property property ) {
-            index().remove(nodeKey(key), convert(property.getFirstValue()));
+            index().remove(nodeKey(key), propertyName(), convert(property.getFirstValue()));
         }
     }
 
@@ -752,45 +761,57 @@ public class IndexChangeAdapters {
     }
 
     protected static final class NodeTypesChangeAdapter extends EnumeratedPropertyChangeAdapter {
+        private final String indexName;
         public NodeTypesChangeAdapter( ExecutionContext context,
                                        NodeTypePredicate matcher,
                                        String workspaceName,
                                        ProvidedIndex<?> index ) {
+            // note that this doesn't care about the property, for which it will use the name of the index
             super(context, matcher, workspaceName, null, index);
+            this.indexName = index.getName();
+            assert indexName != null;
         }
         
-        protected final void removeValue( NodeKey key,
-                                          Object value ) {
-            index().remove(nodeKey(key), convert(value));
-        }
-
-        @Override
-        protected void addNode( String workspaceName,
-                                NodeKey key,
-                                Path path,
-                                Name primaryType,
-                                Set<Name> mixinTypes,
-                                Properties properties ) {
-            addValue(key, primaryType);
-            if (!mixinTypes.isEmpty()) {
-                index().add(nodeKey(key), valueFactory.create(mixinTypes.toArray()));
-            }
-        }
-
         @Override
         protected void modifyProperties( NodeKey key,
                                          Map<Name, AbstractPropertyChange> propChanges ) {
+            List<Object> newValues = new ArrayList<>();
+            List<Object> oldValues = new ArrayList<>();
+            
             AbstractPropertyChange propChange = propChanges.get(JcrLexicon.PRIMARY_TYPE);
             if (propChange instanceof PropertyChanged) {
                 PropertyChanged change = (PropertyChanged)propChange;
-                removeValue(key, change.getOldProperty().getFirstValue());
-                addValue(key, change.getNewProperty().getFirstValue());
+                oldValues.add(change.getOldProperty().getFirstValue());
+                newValues.add(change.getNewProperty().getFirstValue());
+            } else if (propChange instanceof PropertyAdded) {
+                newValues.add(propChange.getProperty().getFirstValue());
+            } else if (propChange instanceof PropertyRemoved) {
+                oldValues.add(propChange.getProperty().getFirstValue());
             }
+            
             propChange = propChanges.get(JcrLexicon.MIXIN_TYPES);
             if (propChange instanceof PropertyChanged) {
                 PropertyChanged change = (PropertyChanged)propChange;
-                removeValues(key, change.getOldProperty());
-                addValues(key, change.getNewProperty());
+                Property oldProperty = change.getOldProperty();
+                if (!oldProperty.isEmpty()) {
+                    oldValues.addAll(Arrays.asList(oldProperty.getValuesAsArray()));
+                }
+                Property newProperty = change.getNewProperty();
+                if (!newProperty.isEmpty()) {
+                    newValues.addAll(Arrays.asList(newProperty.getValuesAsArray()));
+                }
+            } else if (propChange instanceof PropertyAdded) {
+                newValues.addAll(Arrays.asList(propChange.getProperty().getValuesAsArray()));
+            } else if (propChange instanceof PropertyRemoved) {
+                oldValues.addAll(Arrays.asList(propChange.getProperty().getValuesAsArray()));
+            }
+
+            String nodeKey = nodeKey(key);
+            if (!oldValues.isEmpty()) {
+                index().remove(nodeKey, indexName, valueFactory.create(oldValues.toArray()));
+            }
+            if (!newValues.isEmpty()) {
+                index().add(nodeKey, indexName, valueFactory.create(newValues.toArray()));
             }
         }
 
@@ -812,10 +833,17 @@ public class IndexChangeAdapters {
             if (!queryable) {
                 return;
             }
-            addValue(key, primaryType);
+            addTypeInformation(key, primaryType, mixinTypes);
+        }
+
+
+        private void addTypeInformation( NodeKey key, Name primaryType, Set<Name> mixinTypes ) {
+            List<Name> values = new ArrayList<>();
+            values.add(primaryType);
             if (!mixinTypes.isEmpty()) {
-                index().add(nodeKey, valueFactory.create(mixinTypes.toArray()));
+                values.addAll(mixinTypes);
             }
+            index().add(nodeKey(key), indexName, valueFactory.create(values.toArray()));
         }
     }
     
@@ -830,7 +858,7 @@ public class IndexChangeAdapters {
         protected void addValues( NodeKey key, Property property ) {
             StringBuilder builder = textFrom(property);
             if (builder.length() > 0) {
-                index().add(nodeKey(key), builder.toString());    
+                index().add(nodeKey(key), propertyName(), builder.toString());    
             }
         }
 
@@ -838,7 +866,7 @@ public class IndexChangeAdapters {
         protected void removeValues( NodeKey key, Property property ) {
             StringBuilder builder = textFrom(property);
             if (builder.length() > 0) {
-                index().remove(nodeKey(key), builder.toString());
+                index().remove(nodeKey(key),propertyName(), builder.toString());
             }
         }
         

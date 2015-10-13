@@ -15,6 +15,7 @@
  */
 package org.modeshape.jcr.spi.index.provider;
 
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
@@ -58,9 +59,9 @@ public final class DefaultManagedIndex implements ManagedIndex {
     }
 
     @Override
-    public long estimateCardinality( Constraint constraint,
+    public long estimateCardinality( List<Constraint> andedConstraints,
                                      Map<String, Object> variables ) {
-        return index.estimateCardinality(constraint, variables);
+        return index.estimateCardinality(andedConstraints, variables);
     }
 
     @Override

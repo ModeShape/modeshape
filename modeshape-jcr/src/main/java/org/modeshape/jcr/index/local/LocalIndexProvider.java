@@ -27,6 +27,7 @@ import org.modeshape.jcr.JcrI18n;
 import org.modeshape.jcr.NodeTypes;
 import org.modeshape.jcr.NodeTypes.Supplier;
 import org.modeshape.jcr.api.index.IndexDefinition;
+import org.modeshape.jcr.api.query.qom.ChildCount;
 import org.modeshape.jcr.api.query.qom.QueryObjectModelConstants;
 import org.modeshape.jcr.cache.change.ChangeSetAdapter.NodeTypePredicate;
 import org.modeshape.jcr.query.QueryContext;
@@ -225,6 +226,12 @@ public class LocalIndexProvider extends IndexProvider {
                     return false;
                 }
                 return super.indexAppliesTo(constraint);
+            }
+
+            @Override
+            protected boolean applies( ChildCount operand ) {
+                // this index can't handle this
+                return false;
             }
         };
     }

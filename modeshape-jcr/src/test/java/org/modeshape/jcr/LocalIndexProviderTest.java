@@ -1236,4 +1236,29 @@ public class LocalIndexProviderTest extends AbstractIndexProviderTest {
         Query query = jcrSql2Query("SELECT * FROM [mix:custom] as custom where custom.[jcr:name] = 'myFirstBook'");
         validateQuery().rowCount(1L).useIndex("custom_names").validate(query, query.execute());
     }
+
+    @Test
+    public void shouldSelectIndexWhenMultipleAndedConstraintsApply() throws Exception {
+        registerValueIndex("longValues", "nt:unstructured", "Long values index", "*", "value", PropertyType.LONG);
+        waitForIndexes();
+
+        Node root = session().getRootNode();
+        int valuesCount = 5;
+        for (int i = 0; i < valuesCount; i++) {
+            String name = String.valueOf(i+1);
+            Node node = root.addNode(name);
+            node.setProperty("value", (long) (i+1));
+        }
+        session.save();
+
+        String sql1 = "SELECT number.[jcr:name] FROM [nt:unstructured] as number WHERE (number.value > 1 AND number.value < 3) OR " +
+                      "(number.value > 3 AND number.value < 5)";
+        String sql2 = "SELECT number.[jcr:name] FROM [nt:unstructured] as number WHERE number.value <2";
+        Query query = jcrSql2Query(sql1 + " UNION " + sql2);         
+        validateQuery()
+                .rowCount(2L)
+                .useIndex("longValues")
+                .hasNodesAtPaths("/2", "/4", "/1")
+                .validate(query, query.execute());
+    }
 }

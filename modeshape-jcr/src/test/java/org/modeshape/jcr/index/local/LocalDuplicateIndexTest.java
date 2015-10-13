@@ -135,12 +135,12 @@ public class LocalDuplicateIndexTest extends AbstractLocalIndexTest {
         assertThat(index.estimateTotalCount(), is(9L));
 
         // Remove a value and key pair that's in the index, and verify they are indeed gone ...
-        index.remove(key(3), 30L);
+        index.remove(key(3), null, 30L);
         assertNoMatch(index, Operator.EQUAL_TO, 30L);
         assertThat(index.estimateTotalCount(), is(8L));
 
-        // Try to remove a non-existant value-key pair, and verify nothing is removed ...
-        index.remove(key(3), 3000L);
+        // Try to remove a non-existent value-key pair, and verify nothing is removed ...
+        index.remove(key(3), null, 3000L);
         assertNoMatch(index, Operator.EQUAL_TO, 30L);
         assertThat(index.estimateTotalCount(), is(8L));
     }
