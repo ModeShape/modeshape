@@ -28,6 +28,7 @@
         <module>modeshape-schematic</module>
         <module>modeshape-jcr</module>
         <module>modeshape-unit-test</module>
+        <module>index-providers</module>
         <module>sequencers</module>
         <module>extractors</module>
 
