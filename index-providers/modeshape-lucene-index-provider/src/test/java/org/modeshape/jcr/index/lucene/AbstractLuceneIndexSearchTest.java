@@ -118,7 +118,11 @@ public abstract class AbstractLuceneIndexSearchTest {
         }
     }
 
-    private <T> String addValue(String propertyName, T value) {
+    protected  <T> void addValues( String nodeKey, String propertyName, T... values ) {
+        index.add(nodeKey, propertyName, values);
+    }
+  
+    private <T> String insertValue( String propertyName, T value ) {
         String nodeKey = UUID.randomUUID().toString();
         index.add(nodeKey, propertyName, value);
         return nodeKey;
@@ -127,7 +131,7 @@ public abstract class AbstractLuceneIndexSearchTest {
     protected  <T> List<String> indexNodes(String propertyName, T...values) {
         List<String> result = new ArrayList<>();
         for (T value : values) {
-            result.add(addValue(propertyName, value));
+            result.add(insertValue(propertyName, value));
         }
         return result;
     }

@@ -85,6 +85,8 @@ public abstract class ChangeSetAdapter implements ChangeSetListener {
                     beginWorkspaceChanges();
                     final Map<Name, AbstractPropertyChange> propChanges = new HashMap<>();
                     NodeKey lastKey = null;
+                    Name lastPrimaryType = null;
+                    Set<Name> lastMixinTypes = null;
                     for (Change change : changeSet) {
                         if (change instanceof AbstractNodeChange) {
                             AbstractNodeChange anc = (AbstractNodeChange)change;
@@ -94,59 +96,62 @@ public abstract class ChangeSetAdapter implements ChangeSetListener {
                             if (!isQueryable(primaryType, mixinTypes)) continue;
 
                             if (change instanceof NodeAdded) {
-                                firePropertyChanges(lastKey, propChanges);
+                                firePropertyChanges(lastKey, lastPrimaryType, lastMixinTypes, propChanges);
                                 NodeAdded added = (NodeAdded)change;
                                 addNode(workspaceName, added.getKey(), added.getPath(), added.getPrimaryType(),
                                         added.getMixinTypes(), props(added.getProperties()));
                             } else if (change instanceof NodeRemoved) {
-                                firePropertyChanges(lastKey, propChanges);
+                                firePropertyChanges(lastKey, lastPrimaryType, lastMixinTypes, propChanges);
                                 NodeRemoved removed = (NodeRemoved)change;
                                 removeNode(workspaceName, removed.getKey(), removed.getParentKey(), removed.getPath(),
                                            removed.getPrimaryType(), removed.getMixinTypes());
                             } else if (change instanceof AbstractPropertyChange) {
                                 AbstractPropertyChange propChange = (AbstractPropertyChange)change;
-                                if (!propChange.getKey().equals(lastKey)) firePropertyChanges(lastKey, propChanges);
+                                if (!propChange.getKey().equals(lastKey)) firePropertyChanges(lastKey, lastPrimaryType, lastMixinTypes,
+                                                                                              propChanges);
                                 propChanges.put(propChange.getProperty().getName(), propChange);
                             } else if (change instanceof NodeChanged) {
-                                firePropertyChanges(lastKey, propChanges);
+                                firePropertyChanges(lastKey, lastPrimaryType, lastMixinTypes, propChanges);
                                 NodeChanged nodeChanged = (NodeChanged)change;
                                 changeNode(workspaceName, nodeChanged.getKey(), nodeChanged.getPath(),
                                            nodeChanged.getPrimaryType(), nodeChanged.getMixinTypes());
                             } else if (change instanceof NodeMoved) {
-                                firePropertyChanges(lastKey, propChanges);
+                                firePropertyChanges(lastKey, lastPrimaryType, lastMixinTypes, propChanges);
                                 NodeMoved moved = (NodeMoved)change;
                                 moveNode(workspaceName, moved.getKey(), moved.getPrimaryType(), moved.getMixinTypes(),
                                          moved.getNewParent(), moved.getOldParent(), moved.getNewPath(), moved.getOldPath()
                                         );
                             } else if (change instanceof NodeRenamed) {
-                                firePropertyChanges(lastKey, propChanges);
+                                firePropertyChanges(lastKey, lastPrimaryType, lastMixinTypes, propChanges);
                                 NodeRenamed renamed = (NodeRenamed)change;
                                 renameNode(workspaceName, renamed.getKey(), renamed.getPath(), renamed.getOldSegment(),
                                            renamed.getPrimaryType(), renamed.getMixinTypes());
                             } else if (change instanceof NodeReordered) {
-                                firePropertyChanges(lastKey, propChanges);
+                                firePropertyChanges(lastKey, lastPrimaryType, lastMixinTypes, propChanges);
                                 NodeReordered reordered = (NodeReordered)change;
                                 reorderNode(workspaceName, reordered.getKey(), reordered.getPrimaryType(),
                                             reordered.getMixinTypes(), reordered.getParent(), reordered.getPath(),
                                             reordered.getOldPath(), reordered.getReorderedBeforePath());
                             } else if (change instanceof NodeSequenced) {
-                                firePropertyChanges(lastKey, propChanges);
+                                firePropertyChanges(lastKey, lastPrimaryType, lastMixinTypes, propChanges);
                                 NodeSequenced s = (NodeSequenced)change;
                                 sequenced(workspaceName, s.getKey(), s.getPath(), s.getPrimaryType(), s.getMixinTypes(),
                                           s.getOutputNodeKey(), s.getOutputNodePath(), s.getOutputPath(), s.getUserId(),
                                           s.getSelectedPath(), s.getSequencerName());
                             } else if (change instanceof NodeSequencingFailure) {
-                                firePropertyChanges(lastKey, propChanges);
+                                firePropertyChanges(lastKey, lastPrimaryType, lastMixinTypes, propChanges);
                                 NodeSequencingFailure f = (NodeSequencingFailure)change;
                                 sequenceFailure(workspaceName, f.getKey(), f.getPath(), f.getPrimaryType(), f.getMixinTypes(),
                                                 f.getOutputPath(), f.getUserId(), f.getSelectedPath(), f.getSequencerName(),
                                                 f.getCause());
                             }
-                            lastKey = ((AbstractNodeChange)change).getKey();
+                            lastKey = anc.getKey();
+                            lastPrimaryType = anc.getPrimaryType();
+                            lastMixinTypes = anc.getMixinTypes();
                         }
                     }
                     if (lastKey != null) {
-                        firePropertyChanges(lastKey, propChanges);
+                        firePropertyChanges(lastKey, lastPrimaryType, lastMixinTypes, propChanges);
                     }
                 } finally {
                     completeWorkspaceChanges();
@@ -216,9 +221,11 @@ public abstract class ChangeSetAdapter implements ChangeSetListener {
     }
 
     private void firePropertyChanges( NodeKey key,
+                                      Name primaryType, 
+                                      Set<Name> mixinTypes, 
                                       Map<Name, AbstractPropertyChange> propChanges ) {
         if (!propChanges.isEmpty()) {
-            modifyProperties(key, propChanges);
+            modifyProperties(key, primaryType, mixinTypes, propChanges);
             propChanges.clear();
         }
     }
@@ -226,12 +233,15 @@ public abstract class ChangeSetAdapter implements ChangeSetListener {
     /**
      * Handle the addition, change, and removal of one or more properties of a single node. This method is called once for each
      * existing node whose properties are modified.
-     * 
+     *
      * @param key the unique key for the node; may not be null
+     * @param primaryType the primary type of the node for which the modifications occurred; never null
+     * @param mixinTypes the mixin types of the node for which the modifications occurred; never null but possibly empty
      * @param propChanges the map of property modification events, keyed by the names of the properties; never null and never
-     *        empty
      */
     protected void modifyProperties( NodeKey key,
+                                     Name primaryType, 
+                                     Set<Name> mixinTypes, 
                                      Map<Name, AbstractPropertyChange> propChanges ) {
     }
 

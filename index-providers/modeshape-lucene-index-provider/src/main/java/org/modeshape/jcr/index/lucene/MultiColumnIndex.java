@@ -36,6 +36,7 @@ import org.modeshape.jcr.value.PropertyType;
  * Whenever possible, prefer the {@link SingleColumnIndex} implementation to this one. 
  * </p>
  * @author Horia Chiorean (hchiorea@redhat.com)
+ * @since 4.5
  */
 @ThreadSafe
 @Immutable
@@ -44,10 +45,11 @@ class MultiColumnIndex extends LuceneIndex {
     private final DocumentIdCache cache;
     
     protected MultiColumnIndex( String name,
+                                String workspaceName, 
                                 LuceneConfig config,
                                 Map<String, PropertyType> propertyTypesByName,
                                 ExecutionContext context ) {
-        super(name, config, propertyTypesByName, context);
+        super(name, workspaceName, config, propertyTypesByName, context);
         // we keep track of the node keys which are added/removed in the commit data
         // this is an optimization to avoid searching for a document each time an update or partial remove is performed
         this.cache = new DocumentIdCache();
@@ -130,7 +132,9 @@ class MultiColumnIndex extends LuceneIndex {
     @Override
     public void remove( String nodeKey ) {
         super.remove(nodeKey);
-        cache.remove(nodeKey);
+        if (documentExists(nodeKey)) {
+            cache.remove(nodeKey);
+        }
     }
 
     private boolean documentExists( String nodeKey ) {

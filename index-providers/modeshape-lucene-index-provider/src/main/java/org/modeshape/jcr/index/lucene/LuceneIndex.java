@@ -62,9 +62,10 @@ public abstract class LuceneIndex implements ProvidedIndex<Object> {
     protected final StringFactory stringFactory;
     protected final Searcher searcher;
    
-    protected LuceneIndex( String name, 
-                           LuceneConfig config, 
-                           Map<String, PropertyType> propertyTypesByName, 
+    protected LuceneIndex( String name,
+                           String workspaceName, 
+                           LuceneConfig config,
+                           Map<String, PropertyType> propertyTypesByName,
                            ExecutionContext context ) {
         assert !propertyTypesByName.isEmpty();
         this.propertyTypesByName = propertyTypesByName;                
@@ -72,7 +73,7 @@ public abstract class LuceneIndex implements ProvidedIndex<Object> {
         this.context = context;
         this.stringFactory = context.getValueFactories().getStringFactory();
         this.config = config;
-        this.writer = config.newWriter(name);
+        this.writer = config.newWriter(workspaceName, name);
         this.searcher = new Searcher(config, writer, name);
     }
 
@@ -125,7 +126,7 @@ public abstract class LuceneIndex implements ProvidedIndex<Object> {
 
     @Override
     public Results filter( IndexConstraints constraints ) {
-        return searcher.filter(constraints.getConstraints(), queryFactory(constraints.getVariables()));
+        return searcher.filter(constraints, queryFactory(constraints.getVariables()));
     }
 
     @Override

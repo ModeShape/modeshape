@@ -1,0 +1,31 @@
+{
+    "name": "Persistent repo no indexes",
+    "storage": {
+        "cacheName": "persistentRepository"
+    },
+    "workspaces": {
+        "default": "default",
+        "predefined" : ["other"],
+        "allowCreation": true
+    },
+    "indexProviders" : {
+        "lucene" : {
+            "classname" : "lucene",
+            "lockFactoryClass" : "org.apache.lucene.store.NoLockFactory",
+            "directoryClass" : "org.apache.lucene.store.RAMDirectory",
+            "analyzerClass" : "org.apache.lucene.analysis.ro.RomanianAnalyzer",
+            "codec" : "Lucene53"
+        }
+    },
+    "indexes" : {
+        "titleIndex" : {
+            "kind" : "value",
+            "provider" : "lucene",
+            "nodeType" : "mix:title",
+            "columns" : "jcr:title(STRING)"
+        }
+    },
+    "reindexing" : {
+        "async" : false //make sure this is sync to avoid waiting in tests after registering indexes
+    }
+}

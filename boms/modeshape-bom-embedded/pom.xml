@@ -80,6 +80,7 @@
         <poi.version>3.11-beta2</poi.version>
         <jcommander.version>1.5</jcommander.version>
         <wsdl4j.version>1.6.2</wsdl4j.version>
+        <version.org.apache.lucene>5.3.1</version.org.apache.lucene>
         <!-- ***************** -->
         <!-- Repository Deployment URLs -->
         <!-- ***************** -->
@@ -241,6 +242,11 @@
             <dependency>
                 <groupId>org.modeshape</groupId>
                 <artifactId>modeshape-extractor-tika</artifactId>
+                <version>${project.version}</version>
+            </dependency> 
+            <dependency>
+                <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-lucene-index-provider</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -610,6 +616,27 @@
                 <artifactId>cassandra-driver-core</artifactId>
                 <version>${cassandra-cql-driver}</version>
                 <scope>provided</scope>
+            </dependency>
+            
+            <!-- 
+                Index providers
+            -->
+
+            <!-- Lucene Index Provider -->
+            <dependency>
+                <groupId>org.apache.lucene</groupId>
+                <artifactId>lucene-core</artifactId>
+                <version>${version.org.apache.lucene}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.lucene</groupId>
+                <artifactId>lucene-analyzers-common</artifactId>
+                <version>${version.org.apache.lucene}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.lucene</groupId>
+                <artifactId>lucene-queryparser</artifactId>
+                <version>${version.org.apache.lucene}</version>
             </dependency>
 
             <!--

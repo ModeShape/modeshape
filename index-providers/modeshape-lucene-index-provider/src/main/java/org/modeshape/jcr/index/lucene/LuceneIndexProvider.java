@@ -17,8 +17,12 @@ package org.modeshape.jcr.index.lucene;
 
 import java.io.File;
 import java.nio.file.Paths;
+import java.util.Collection;
 import javax.jcr.RepositoryException;
+import javax.jcr.query.qom.ChildNodeJoinCondition;
+import javax.jcr.query.qom.DescendantNodeJoinCondition;
 import javax.jcr.query.qom.DynamicOperand;
+import javax.jcr.query.qom.JoinCondition;
 import org.modeshape.common.collection.Problems;
 import org.modeshape.jcr.ExecutionContext;
 import org.modeshape.jcr.NodeTypes;
@@ -27,6 +31,7 @@ import org.modeshape.jcr.api.query.qom.ChildCount;
 import org.modeshape.jcr.cache.change.ChangeSetAdapter;
 import org.modeshape.jcr.query.QueryContext;
 import org.modeshape.jcr.query.model.FullTextSearch;
+import org.modeshape.jcr.query.model.Or;
 import org.modeshape.jcr.spi.index.IndexCostCalculator;
 import org.modeshape.jcr.spi.index.provider.IndexProvider;
 import org.modeshape.jcr.spi.index.provider.IndexUsage;
@@ -70,14 +75,14 @@ public class LuceneIndexProvider extends IndexProvider {
     private String lockFactoryClass;
     private String directoryClass;
     private String analyzerClass;
-    private String codecName;
+    private String codec;
     
     private LuceneConfig luceneConfig;
     
     @Override
     protected void doInitialize() throws RepositoryException {
         String baseDir = baseDir(); 
-        this.luceneConfig = new LuceneConfig(baseDir, lockFactoryClass, directoryClass, analyzerClass, codecName, environment());
+        this.luceneConfig = new LuceneConfig(baseDir, lockFactoryClass, directoryClass, analyzerClass, codec, environment());
     }
 
     private String baseDir() throws RepositoryException {
@@ -127,7 +132,7 @@ public class LuceneIndexProvider extends IndexProvider {
     }
 
     @Override
-    protected IndexUsage evaluateUsage( QueryContext context, IndexCostCalculator calculator, final IndexDefinition defn ) {
+    protected IndexUsage evaluateUsage( QueryContext context, final IndexCostCalculator calculator, final IndexDefinition defn ) {
         return new IndexUsage(context, calculator, defn) {
             @Override
             protected boolean applies( ChildCount operand ) {
@@ -138,10 +143,30 @@ public class LuceneIndexProvider extends IndexProvider {
             @Override
             protected boolean applies( DynamicOperand operand ) {
                 if (IndexDefinition.IndexKind.TEXT == defn.getKind() && !(operand instanceof FullTextSearch)) {
-                    // text indexes can ONLY apply to FTS operands...
+                    // text indexes only support FTS operands...
                     return false;
                 }
                 return super.applies(operand);
+            }
+
+            @Override
+            protected boolean indexAppliesTo( Or or ) {
+                boolean appliesToConstraints = super.indexAppliesTo(or);
+                if (!appliesToConstraints) {
+                    return false;
+                }
+                Collection<JoinCondition> joinConditions = calculator.joinConditions();
+                if (joinConditions.isEmpty()) {
+                    return true;
+                }
+                for (JoinCondition joinCondition : joinConditions) {
+                    if (joinCondition instanceof ChildNodeJoinCondition || joinCondition instanceof DescendantNodeJoinCondition) {
+                        // the index can't handle OUTER JOINS with OR criteria (see https://issues.jboss.org/browse/MODE-2054)
+                        // so reject it, making the query engine fallback to the default behavior which works
+                        return false;
+                    }
+                }
+                return true;
             }
         };
     }

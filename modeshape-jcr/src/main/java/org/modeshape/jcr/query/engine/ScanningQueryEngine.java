@@ -1164,6 +1164,7 @@ public class ScanningQueryEngine implements org.modeshape.jcr.query.QueryEngine 
                 return NodeSequence.NO_PASS_ROW_FILTER;
             }
             final NodeKey parentKey = parent.getKey();
+            final boolean isParentRoot = parentPath.isRoot();
             final String selectorName = childConstraint.getSelectorName();
             final int index = columns.getSelectorIndex(selectorName);
             return new RowFilter() {
@@ -1171,6 +1172,7 @@ public class ScanningQueryEngine implements org.modeshape.jcr.query.QueryEngine 
                 public boolean isCurrentRowValid( Batch batch ) {
                     CachedNode node = batch.getNode(index);
                     if (node == null) return false;
+                    if (isParentRoot) return true;
                     if (parentKey.equals(node.getParentKey(cache))) return true;
                     // Don't have to check the additional parents since we only find shared nodes in the original location ...
                     return false;

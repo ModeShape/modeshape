@@ -155,6 +155,9 @@ public class IndexUsage {
         if (constraint instanceof PropertyExistence) {
             return indexAppliesTo((PropertyExistence)constraint);
         }
+        if (constraint instanceof FullTextSearch) {
+            return applies((FullTextSearch)constraint);
+        }
         return false;
     }
 
@@ -242,9 +245,6 @@ public class IndexUsage {
         if (operand instanceof ReferenceValue) {
             return applies((ReferenceValue)operand);
         }
-        if (operand instanceof FullTextSearch) {
-            return applies((FullTextSearch)operand);
-        }
         return false;
     }
 
@@ -318,8 +318,18 @@ public class IndexUsage {
         return false;
     }
 
-    protected boolean applies( FullTextSearch operand ) {
-        return defn.getKind() == IndexDefinition.IndexKind.TEXT;
+    protected boolean applies( FullTextSearch constraint ) {
+        if (defn.getKind() != IndexDefinition.IndexKind.TEXT) {
+            return false;
+        }
+        if (!matchesSelectorName(constraint.getSelectorName())) {
+            return false;
+        }
+        String propertyName = constraint.getPropertyName();
+        if (propertyName != null && !defn.appliesToProperty(propertyName)) {
+            return false;
+        }
+        return true;
     }
 
     protected final boolean matchesSelectorName( String selectorName ) {

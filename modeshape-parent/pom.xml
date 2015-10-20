@@ -1601,7 +1601,7 @@
                 <scope>runtime</scope>
             </dependency>
 
-            <!-- Index Providers -->
+            <!-- Lucene Index Provider -->
             <dependency>
                 <groupId>org.apache.lucene</groupId>
                 <artifactId>lucene-core</artifactId>
@@ -1617,7 +1617,6 @@
                 <artifactId>lucene-queryparser</artifactId>
                 <version>${version.org.apache.lucene}</version>
             </dependency> 
-            
           
             <!--
                Web Modules dependencies

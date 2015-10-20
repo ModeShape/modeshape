@@ -18,7 +18,7 @@ package org.modeshape.jcr.index.lucene.query;
 import java.text.CharacterIterator;
 import java.text.StringCharacterIterator;
 import java.util.regex.Pattern;
-import org.apache.lucene.document.Document;
+import org.apache.lucene.index.IndexableField;
 import org.apache.lucene.search.Query;
 import org.modeshape.common.annotation.Immutable;
 
@@ -38,9 +38,15 @@ public class RelikeQuery extends ConstantScoreWeightQuery {
     }
 
     @Override
-    protected boolean isValid( Document document ) {
-        String value = document.getField(field()).stringValue();
-        return like(relikeValue, value);
+    protected boolean areValid( IndexableField... fields ) {
+        for (IndexableField field : fields) {
+            String value = field.stringValue();
+            if (value != null && like(relikeValue, value)) {
+                // if at least one value matches, return true
+                return true;
+            }
+        }
+        return false;
     }
     
     public String toString( String field ) {

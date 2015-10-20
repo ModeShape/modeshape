@@ -27,5 +27,13 @@
             <groupId>org.apache.lucene</groupId>
             <artifactId>lucene-queryparser</artifactId>
         </dependency>
+        <!-- 
+            Required to text FTS on binary properties...
+        -->
+        <dependency>
+            <groupId>org.modeshape</groupId>
+            <artifactId>modeshape-extractor-tika</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>      
 </project>

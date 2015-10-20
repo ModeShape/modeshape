@@ -16,7 +16,7 @@
 package org.modeshape.jcr.index.lucene.query;
 
 import javax.jcr.query.qom.Comparison;
-import org.apache.lucene.document.Document;
+import org.apache.lucene.index.IndexableField;
 import org.apache.lucene.search.Query;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.jcr.index.lucene.query.CaseOperations.CaseOperation;
@@ -79,10 +79,16 @@ public abstract class CompareQuery<ValueType> extends ConstantScoreWeightQuery {
     }
 
     @Override
-    protected boolean isValid( Document document ) {
-        String valueAsString = document.get(field());
-        ValueType value = valueAsString != null ? valueTypeFactory.create(caseOperation.execute(valueAsString)) : null;
-        return evaluator.satisfiesConstraint(value, constraintValue);
+    protected boolean areValid( IndexableField... fields ) {
+        for (IndexableField field : fields) {
+            String valueAsString = field.stringValue();
+            ValueType value = valueAsString != null ? valueTypeFactory.create(caseOperation.execute(valueAsString)) : null;
+            if (evaluator.satisfiesConstraint(value, constraintValue)) {
+                // if *any* value matches, we'll accept it
+                return true;
+            }
+        }
+        return false;
     }
   
     @Override

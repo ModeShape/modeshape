@@ -29,7 +29,7 @@ public class MultiColumnIndexPersistenceTest extends SingleColumnIndexPersistenc
 
     @Override
     protected LuceneIndex createIndex( String name ) {
-        return new MultiColumnIndex(name + "-multi-valued", config, PropertiesTestUtil.ALLOWED_PROPERTIES, context);
+        return new MultiColumnIndex(name + "-multi-valued", "default", config, PropertiesTestUtil.ALLOWED_PROPERTIES, context);
     }
 
     @Test

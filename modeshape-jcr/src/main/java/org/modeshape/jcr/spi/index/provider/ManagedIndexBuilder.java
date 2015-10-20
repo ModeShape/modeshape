@@ -136,17 +136,34 @@ public abstract class ManagedIndexBuilder {
                 if (defn.size() > 1) {
                     throw new IllegalArgumentException("Cannot have a multi column node-type index");
                 }
-                changeAdapters.add(IndexChangeAdapters.forNodeTypes(context, matcher, workspaceName, index));
+                String property = defn.getColumnDefinition(0).getPropertyName();
+                if (property == null) {
+                    property = defn.getName();
+                }
+                changeAdapters.add(IndexChangeAdapters.forNodeTypes(property, context, matcher, workspaceName, index));
                 break;
             case TEXT: 
                 index = buildTextIndex(context, defn, workspaceName, nodeTypesSupplier, matcher);
                 ValueFactory<String> valueFactory = (ValueFactory<String>)context.getValueFactories().getValueFactory(PropertyType.STRING);
                 for (int i = 0; i < defn.size(); i++) {
                     IndexColumnDefinition columnDef = defn.getColumnDefinition(i);
+                    PropertyType type = determineActualPropertyType(columnDef);
                     Name propertyName = name(columnDef.getPropertyName());
                     assert propertyName != null;
-                    changeAdapters.add(IndexChangeAdapters.forTextProperty(context, matcher, workspaceName,
-                                                                           propertyName, valueFactory, index));
+                    if (isNodeNameIndex(columnDef, type)) {
+                        // FTS on jcr:name
+                        changeAdapters.add(IndexChangeAdapters.forNodeName(context, matcher, workspaceName, index));
+                    } else if (isNodeLocalNameIndex(columnDef, type)) {
+                        // FTS on mode:localName
+                        changeAdapters.add(IndexChangeAdapters.forNodeLocalName(context, matcher, workspaceName, index));
+                    } else if (isNodePathIndex(columnDef, type)) {
+                        // FTS on jcr:path
+                        changeAdapters.add(IndexChangeAdapters.forNodePath(context, matcher, workspaceName, index));
+                    } else {
+                        // default to a property....
+                        changeAdapters.add(IndexChangeAdapters.forTextProperty(context, matcher, workspaceName,
+                                                                               propertyName, valueFactory, index));
+                    }
                 }
                 break;
             default: {

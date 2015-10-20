@@ -1,10 +1,10 @@
 {
     "name" : "Test Repository",
     "indexProviders" : {
-        "local" : {
-            "classname" : "org.modeshape.jcr.index.local.LocalIndexProvider",
-            "directory" : "target/LocalIndexProviderQueryTest"
-        },
+        "lucene" : {
+            "classname" : "lucene",
+            "directory" : "target/LuceneIndexProviderQueryTest"
+        }
     },
     "node-types" : [
         "cnd/cars.cnd"
@@ -12,40 +12,52 @@
     "indexes" : {
         "carsByYear" : {
             "kind" : "value",
-            "provider" : "local",
+            "provider" : "lucene",
             "nodeType" : "car:Car",
             "columns" : "car:year(LONG)",
             "description" : "Index for 'car:year' property, which is defined in CND as a string, but all values must be longs"
         },
         "carsByMSRP" : {
             "kind" : "value",
-            "provider" : "local",
+            "provider" : "lucene",
             "nodeType" : "car:Car",
             "columns" : "car:msrp(STRING)"
         },
         "nodesByName" : {
             "kind" : "value",
-            "provider" : "local",
+            "provider" : "lucene",
             "nodeType" : "nt:base",
             "columns" : "jcr:name(NAME)"
         },
         "nodesByLocalName" : {
             "kind" : "value",
-            "provider" : "local",
+            "provider" : "lucene",
             "nodeType" : "nt:base",
             "columns" : "mode:localName(STRING)"
         },
         "nodesByDepth" : {
             "kind" : "value",
-            "provider" : "local",
+            "provider" : "lucene",
             "nodeType" : "nt:base",
             "columns" : "mode:depth(LONG)"
         },
         "nodesByPath" : {
             "kind" : "value",
-            "provider" : "local",
+            "provider" : "lucene",
             "nodeType" : "nt:base",
             "columns" : "jcr:path(PATH)"
+        },
+        "textFromCarMaker" : {
+            "kind" : "text",
+            "provider" : "lucene",
+            "nodeType" : "car:Car",
+            "columns" : "car:maker(STRING)"
+        },
+        "textFromMixTitle" : {
+            "kind" : "text",
+            "provider" : "lucene",
+            "nodeType" : "mix:title",
+            "columns" : "FTSProp(STRING)"
         }
     },
     "reindexing" : {

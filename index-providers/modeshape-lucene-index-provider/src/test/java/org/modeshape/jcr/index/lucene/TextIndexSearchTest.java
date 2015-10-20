@@ -38,7 +38,7 @@ public class TextIndexSearchTest extends AbstractLuceneIndexSearchTest {
     
     @Override
     protected LuceneIndex createIndex( String name ) {
-        return new TextIndex(name + "-text", config, ALLOWED_PROPERTIES, context);
+        return new TextIndex(name + "-text", "default", config, ALLOWED_PROPERTIES, context);
     }
 
     @Test

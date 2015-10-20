@@ -36,7 +36,7 @@ public class MultiColumnIndexSearchTest extends SingleColumnIndexSearchTest {
 
     @Override
     protected LuceneIndex createIndex( String name ) {
-        return new MultiColumnIndex(name + "-multi-valued", config, PropertiesTestUtil.ALLOWED_PROPERTIES, context);
+        return new MultiColumnIndex(name + "-multi-valued", "default", config, PropertiesTestUtil.ALLOWED_PROPERTIES, context);
     }
 
     @Override
@@ -48,13 +48,13 @@ public class MultiColumnIndexSearchTest extends SingleColumnIndexSearchTest {
         
         String weakRef1 = UUID.randomUUID().toString(); 
         String weakRef2 = UUID.randomUUID().toString();
-        addValue(nodesWithRefProp.get(0), WEAK_REF_PROP, weakRef1);
-        addValue(nodesWithRefProp.get(1), WEAK_REF_PROP, weakRef2);
+        addValues(nodesWithRefProp.get(0), WEAK_REF_PROP, weakRef1);
+        addValues(nodesWithRefProp.get(1), WEAK_REF_PROP, weakRef2);
 
         String simpleRef1 = UUID.randomUUID().toString(); 
         String simpleRef2 = UUID.randomUUID().toString();
-        addValue(nodesWithRefProp.get(0), SIMPLE_REF_PROP, simpleRef1);
-        addValue(nodesWithRefProp.get(1), SIMPLE_REF_PROP, simpleRef2);
+        addValues(nodesWithRefProp.get(0), SIMPLE_REF_PROP, simpleRef1);
+        addValues(nodesWithRefProp.get(1), SIMPLE_REF_PROP, simpleRef2);
         
         Constraint constraint = referenceValue(REF_PROP, EQUAL_TO, strongRef1, true, true);
         validateCardinality(constraint, 1);
@@ -80,7 +80,7 @@ public class MultiColumnIndexSearchTest extends SingleColumnIndexSearchTest {
     public void shouldSearchForPropertyExistence() throws Exception {
         List<String> nodes = indexNodes(LONG_PROP, 1l, 3l);
         String node1 = nodes.get(0);
-        addValue(node1, STRING_PROP, "a");
+        addValues(node1, STRING_PROP, "a");
        
         Constraint existsLongProp = propertyExistence(LONG_PROP);
         validateCardinality(existsLongProp, 2);
@@ -97,9 +97,5 @@ public class MultiColumnIndexSearchTest extends SingleColumnIndexSearchTest {
         validateCardinality(existsLongProp, 1);
         validateFilterResults(existsLongProp, 1, false, nodes.get(1));
     }
-
-    private <T> String addValue( String nodeKey , String propertyName, T value) {
-        index.add(nodeKey, propertyName, value);
-        return nodeKey;
-    }
+    
 }

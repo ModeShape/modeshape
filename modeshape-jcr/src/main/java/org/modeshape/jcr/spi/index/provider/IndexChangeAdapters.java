@@ -226,17 +226,20 @@ public class IndexChangeAdapters {
     /**
      * Create an {@link IndexChangeAdapter} implementation that handles node type information.
      *
+     * @param propertyName a symbolic name of the property that will be sent to the {@link ProvidedIndex} when the adapter
+     * notices that there are either primary type of mixin type changes.
      * @param context the execution context; may not be null
      * @param matcher the node type matcher used to determine which nodes should be included in the index; may not be null
      * @param workspaceName the name of the workspace; may not be null
      * @param index the local index that should be used; may not be null
      * @return the new {@link IndexChangeAdapter}; never null
      */
-    public static IndexChangeAdapter forNodeTypes( ExecutionContext context,
+    public static IndexChangeAdapter forNodeTypes( String propertyName, 
+                                                   ExecutionContext context,
                                                    NodeTypePredicate matcher,
                                                    String workspaceName,
                                                    ProvidedIndex<?> index ) {
-        return new NodeTypesChangeAdapter(context, matcher, workspaceName, index);
+        return new NodeTypesChangeAdapter(propertyName, context, matcher, workspaceName, index);
     }
 
     /**
@@ -288,13 +291,14 @@ public class IndexChangeAdapters {
         }
 
         @Override
-        protected void modifyProperties( NodeKey key, Map<Name, AbstractPropertyChange> propChanges ) {
+        protected void modifyProperties( NodeKey key, Name primaryType, Set<Name> mixinTypes,
+                                         Map<Name, AbstractPropertyChange> propChanges ) {
             // only the property adapters should be interested in this
             if (propertyAdapters.isEmpty()) {
                 return;
             }
             for (AbstractPropertyChangeAdapter<?> propertyChangeAdapter : propertyAdapters) {
-                propertyChangeAdapter.modifyProperties(key, propChanges);                
+                propertyChangeAdapter.modifyProperties(key, primaryType, mixinTypes, propChanges);                
             }
         }
 
@@ -477,6 +481,10 @@ public class IndexChangeAdapters {
             }
             //otherwise no SNS are involved so the nodekey and path information doesn't need to change
         }
+        @Override
+        public String toString() {
+            return  getClass().getSimpleName() + "(\"" + index.getName() + "\" : \"" + propertyName + "\")";
+        }
     }
 
     protected static final class NodeDepthChangeAdapter extends PathBasedChangeAdapter<Long> {
@@ -630,6 +638,8 @@ public class IndexChangeAdapters {
 
         @Override
         protected void modifyProperties( NodeKey key,
+                                         Name primaryType, 
+                                         Set<Name> mixinTypes, 
                                          Map<Name, AbstractPropertyChange> propChanges ) {
             AbstractPropertyChange propChange = propChanges.get(propertyName);
             if (propChange instanceof PropertyChanged) {
@@ -652,6 +662,11 @@ public class IndexChangeAdapters {
                                    Name primaryType,
                                    Set<Name> mixinTypes ) {
             index().remove(nodeKey(key));
+        }
+
+        @Override
+        public String toString() {
+            return  getClass().getSimpleName() + "(\"" + index.getName() + "\" : \"" + propertyName() + "\")"; 
         }
     }
 
@@ -761,37 +776,40 @@ public class IndexChangeAdapters {
     }
 
     protected static final class NodeTypesChangeAdapter extends EnumeratedPropertyChangeAdapter {
-        private final String indexName;
-        public NodeTypesChangeAdapter( ExecutionContext context,
+        private final String property;
+        public NodeTypesChangeAdapter( String property, 
+                                       ExecutionContext context,
                                        NodeTypePredicate matcher,
                                        String workspaceName,
                                        ProvidedIndex<?> index ) {
             // note that this doesn't care about the property, for which it will use the name of the index
             super(context, matcher, workspaceName, null, index);
-            this.indexName = index.getName();
-            assert indexName != null;
+            this.property = property;
+            assert this.property != null;
         }
         
         @Override
         protected void modifyProperties( NodeKey key,
+                                         Name primaryType, 
+                                         Set<Name> mixinTypes, 
                                          Map<Name, AbstractPropertyChange> propChanges ) {
             List<Object> newValues = new ArrayList<>();
             List<Object> oldValues = new ArrayList<>();
             
-            AbstractPropertyChange propChange = propChanges.get(JcrLexicon.PRIMARY_TYPE);
-            if (propChange instanceof PropertyChanged) {
-                PropertyChanged change = (PropertyChanged)propChange;
+            AbstractPropertyChange primaryTypeChange = propChanges.get(JcrLexicon.PRIMARY_TYPE);
+            if (primaryTypeChange instanceof PropertyChanged) {
+                PropertyChanged change = (PropertyChanged)primaryTypeChange;
                 oldValues.add(change.getOldProperty().getFirstValue());
                 newValues.add(change.getNewProperty().getFirstValue());
-            } else if (propChange instanceof PropertyAdded) {
-                newValues.add(propChange.getProperty().getFirstValue());
-            } else if (propChange instanceof PropertyRemoved) {
-                oldValues.add(propChange.getProperty().getFirstValue());
+            } else if (primaryTypeChange instanceof PropertyAdded) {
+                newValues.add(primaryTypeChange.getProperty().getFirstValue());
+            } else if (primaryTypeChange instanceof PropertyRemoved) {
+                oldValues.add(primaryTypeChange.getProperty().getFirstValue());
             }
-            
-            propChange = propChanges.get(JcrLexicon.MIXIN_TYPES);
-            if (propChange instanceof PropertyChanged) {
-                PropertyChanged change = (PropertyChanged)propChange;
+
+            AbstractPropertyChange mixinsTypeChange = propChanges.get(JcrLexicon.MIXIN_TYPES);
+            if (mixinsTypeChange instanceof PropertyChanged) {
+                PropertyChanged change = (PropertyChanged)mixinsTypeChange;
                 Property oldProperty = change.getOldProperty();
                 if (!oldProperty.isEmpty()) {
                     oldValues.addAll(Arrays.asList(oldProperty.getValuesAsArray()));
@@ -800,19 +818,32 @@ public class IndexChangeAdapters {
                 if (!newProperty.isEmpty()) {
                     newValues.addAll(Arrays.asList(newProperty.getValuesAsArray()));
                 }
-            } else if (propChange instanceof PropertyAdded) {
-                newValues.addAll(Arrays.asList(propChange.getProperty().getValuesAsArray()));
-            } else if (propChange instanceof PropertyRemoved) {
-                oldValues.addAll(Arrays.asList(propChange.getProperty().getValuesAsArray()));
+            } else if (mixinsTypeChange instanceof PropertyAdded) {
+                newValues.addAll(Arrays.asList(mixinsTypeChange.getProperty().getValuesAsArray()));
+            } else if (mixinsTypeChange instanceof PropertyRemoved) {
+                oldValues.addAll(Arrays.asList(mixinsTypeChange.getProperty().getValuesAsArray()));
             }
 
+            if (primaryTypeChange == null && mixinsTypeChange == null) {
+                // neither the primary nor the mixins have changed, so nothing to do...
+                return;
+            }
+            if (primaryTypeChange == null) {
+                // only the mixins have changed so to have the complete information we need to add the primary type
+                newValues.add(primaryType);
+            } else if (mixinsTypeChange == null && mixinTypes != null) {
+                // only the primary type has changed, to have the complete information we need to add the 
+                newValues.addAll(mixinTypes);
+            }
+            
             String nodeKey = nodeKey(key);
             if (!oldValues.isEmpty()) {
-                index().remove(nodeKey, indexName, valueFactory.create(oldValues.toArray()));
+                // there are values which require removal, so remove all of them because we'll submit a complete set of values 
+                // below
+                index().remove(nodeKey);
             }
-            if (!newValues.isEmpty()) {
-                index().add(nodeKey, indexName, valueFactory.create(newValues.toArray()));
-            }
+            assert !newValues.isEmpty();
+            index().add(nodeKey, property, valueFactory.create(newValues.toArray()));
         }
 
         @Override
@@ -843,7 +874,7 @@ public class IndexChangeAdapters {
             if (!mixinTypes.isEmpty()) {
                 values.addAll(mixinTypes);
             }
-            index().add(nodeKey(key), indexName, valueFactory.create(values.toArray()));
+            index().add(nodeKey(key), property, valueFactory.create(values.toArray()));
         }
     }
     

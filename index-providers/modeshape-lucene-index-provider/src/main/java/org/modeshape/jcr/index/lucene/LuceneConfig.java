@@ -37,6 +37,8 @@ import org.apache.lucene.store.NoLockFactory;
 import org.apache.lucene.store.RAMDirectory;
 import org.apache.lucene.store.SimpleFSDirectory;
 import org.apache.lucene.store.SimpleFSLockFactory;
+import org.modeshape.common.annotation.Immutable;
+import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.Reflection;
 import org.modeshape.common.util.StringUtil;
@@ -48,6 +50,8 @@ import org.modeshape.jcr.Environment;
  * @author Horia Chiorean (hchiorea@redhat.com)
  * @since  4.5
  */
+@Immutable
+@ThreadSafe
 public final class LuceneConfig {
 
     protected static final String LAST_SUCCESSFUL_COMMIT_TIME = "last_commit_time";
@@ -77,10 +81,11 @@ public final class LuceneConfig {
         this.lastSuccessfulCommitTime = new AtomicLong(-1);
     }
     
-    protected IndexWriter newWriter( String indexName ) {
+    protected IndexWriter newWriter( String workspaceName, String indexName ) {
         CheckArg.isNotNull(indexName, "indexName");
+        CheckArg.isNotNull(workspaceName, "workspaceName");
         try {
-            Directory directory = directory(directoryClass, indexName);
+            Directory directory = directory(directoryClass, workspaceName, indexName);
             IndexWriter indexWriter = new IndexWriter(directory, newIndexWriterConfig());
             if (!DirectoryReader.indexExists(directory)) {
                 indexWriter.commit();
@@ -169,12 +174,12 @@ public final class LuceneConfig {
         }
     }
 
-    private Directory directory(String directoryClass, String indexName) throws IOException {
+    private Directory directory( String directoryClass, String workspaceName, String indexName ) throws IOException {
         boolean useLockFactory = lockFactory != null;
         if (StringUtil.isBlank(basePath)) {
             return useLockFactory ?  new RAMDirectory(lockFactory) : new RAMDirectory();
         }
-        Path path = Paths.get(basePath, indexName);
+        Path path = Paths.get(basePath, workspaceName, indexName);
         if (StringUtil.isBlank(directoryClass)) {             
             return useLockFactory ? FSDirectory.open(path, lockFactory) : FSDirectory.open(path); 
         }

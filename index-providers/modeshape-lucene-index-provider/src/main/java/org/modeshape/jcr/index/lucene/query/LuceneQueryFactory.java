@@ -55,6 +55,7 @@ import org.modeshape.jcr.JcrI18n;
 import org.modeshape.jcr.JcrLexicon;
 import org.modeshape.jcr.ModeShapeLexicon;
 import org.modeshape.jcr.api.query.qom.Between;
+import org.modeshape.jcr.api.query.qom.Cast;
 import org.modeshape.jcr.api.query.qom.NodeDepth;
 import org.modeshape.jcr.api.query.qom.NodePath;
 import org.modeshape.jcr.api.query.qom.Operator;
@@ -72,6 +73,7 @@ import org.modeshape.jcr.query.model.Or;
 import org.modeshape.jcr.query.model.ReferenceValue;
 import org.modeshape.jcr.query.model.Relike;
 import org.modeshape.jcr.query.model.SetCriteria;
+import org.modeshape.jcr.query.model.Subquery;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.NameFactory;
 import org.modeshape.jcr.value.Path;
@@ -215,7 +217,7 @@ public class LuceneQueryFactory {
     }
 
     protected Query createQuery( Comparison comparison ) {
-        return createQuery(comparison.getOperand1(), comparison.operator(), comparison.getOperand2(), null);
+        return createQuery(comparison.getOperand1(), comparison.operator(), comparison.getOperand2(), CaseOperations.AS_IS);
     }
 
     protected Query createQuery( Not not ) {
@@ -271,8 +273,8 @@ public class LuceneQueryFactory {
         // Otherwise, just create a boolean query ...
         Operator lowerOp = lowerBoundIncluded ? Operator.GREATER_THAN_OR_EQUAL_TO : Operator.GREATER_THAN;
         Operator upperOp = upperBoundIncluded ? Operator.LESS_THAN_OR_EQUAL_TO : Operator.LESS_THAN;
-        Query lowerQuery = createQuery(operand, lowerOp, lower, null);
-        Query upperQuery = createQuery(operand, upperOp, upper, null);
+        Query lowerQuery = createQuery(operand, lowerOp, lower, CaseOperations.AS_IS);
+        Query upperQuery = createQuery(operand, upperOp, upper, CaseOperations.AS_IS);
         return booleanQuery(lowerQuery, Occur.MUST, upperQuery, Occur.MUST);
     }
 
@@ -346,7 +348,7 @@ public class LuceneQueryFactory {
         if (numRightOperands == 1) {
             StaticOperand rightOperand = setCriteria.rightOperands().iterator().next();
             if (rightOperand instanceof Literal) {
-                return createQuery(left, Operator.EQUAL_TO, setCriteria.rightOperands().iterator().next(), null);
+                return createQuery(left, Operator.EQUAL_TO, setCriteria.rightOperands().iterator().next(), CaseOperations.AS_IS);
             }
         }
         BooleanQuery.Builder builder = new BooleanQuery.Builder();
@@ -355,9 +357,19 @@ public class LuceneQueryFactory {
             if (right instanceof BindVariableName) {
                 // This single value is a variable name, which may evaluate to a single value or multiple values ...
                 BindVariableName var = (BindVariableName)right;
-                Object value = variables.get(var.getBindVariableName());
+                String bindVariableName = var.getBindVariableName();
+                Object value = variables.get(bindVariableName);
                 if (value == null) {
-                    throw new LuceneIndexException(JcrI18n.missingVariableValue.text(var.getBindVariableName()));
+                    if (bindVariableName.startsWith(Subquery.VARIABLE_PREFIX)) {
+                        // when subqueries are involved during the planning phase, they will not be resolved yet and therefore
+                        // a 'null' value present in the variables map. However, since the index was called in the first place,
+                        // we know it must apply to the constraint. Therefore, return all the docs in the index to make sure
+                        // that during planning, this index is taken into account and can be compared with other "competing" indexes.
+                        // Note that the real cardinality wil really be "at most" all documents (possibly less) depending on 
+                        // the actual subquery results. These will be resolved during the actual query-run time.
+                        return new MatchAllDocsQuery();
+                    }
+                    throw new LuceneIndexException(JcrI18n.missingVariableValue.text(bindVariableName));
                 }
                 if (value instanceof Iterable<?>) {
                     for (Object resolvedValue : (Iterable<?>)value) {
@@ -371,9 +383,11 @@ public class LuceneQueryFactory {
                             addQueryForSetConstraint(builder, left, resolvedValue);
                         }
                     }
+                } else {
+                    addQueryForSetConstraint(builder, left, value);
                 }
             } else {
-                Query rightQuery = createQuery(left, Operator.EQUAL_TO, right, null);
+                Query rightQuery = createQuery(left, Operator.EQUAL_TO, right, CaseOperations.AS_IS);
                 builder.add(rightQuery, Occur.SHOULD);
             }
         }
@@ -406,7 +420,7 @@ public class LuceneQueryFactory {
 
     private void addQueryForSetConstraint( BooleanQuery.Builder setQueryBuilder, DynamicOperand left, Object resolvedValue ) {
         StaticOperand elementInRight = resolvedValue instanceof Literal ? (Literal)resolvedValue : new Literal(resolvedValue);
-        Query rightQuery = createQuery(left, Operator.EQUAL_TO, elementInRight, null);
+        Query rightQuery = createQuery(left, Operator.EQUAL_TO, elementInRight, CaseOperations.AS_IS);
         setQueryBuilder.add(rightQuery, Occur.SHOULD);
     }
 
@@ -427,12 +441,10 @@ public class LuceneQueryFactory {
             return createLengthQuery((Length)left, operator, value);
         } else if (left instanceof LowerCase) {
             LowerCase lowercase = (LowerCase)left;
-            if (caseOperation == null) { caseOperation = CaseOperations.LOWERCASE; }
-            return createQuery(lowercase.getOperand(), operator, right, caseOperation);
+            return createQuery(lowercase.getOperand(), operator, right, CaseOperations.LOWERCASE);
         } else if (left instanceof UpperCase) {
             UpperCase uppercase = (UpperCase)left;
-            if (caseOperation == null) { caseOperation = CaseOperations.UPPERCASE; }
-            return createQuery(uppercase.getOperand(), operator, right, caseOperation);
+            return createQuery(uppercase.getOperand(), operator, right, CaseOperations.UPPERCASE);
         } else if (left instanceof NodeDepth) {
             // this only applies to mode:depth
             return longFieldQuery(depthField(), operator, value);
@@ -448,6 +460,9 @@ public class LuceneQueryFactory {
             // this only applies to mode:localName
             String field = stringFactory.create(ModeShapeLexicon.LOCALNAME);
             return stringFieldQuery(field, operator, value, caseOperation);
+        } else if (left instanceof Cast) {
+           Cast cast = (Cast) left;
+           return createQuery(cast.getOperand(), operator, right, caseOperation);
         }
 
         throw new LuceneIndexException("Unexpected DynamicOperand instance: class=" + (left != null ? left.getClass() : "null")
@@ -832,13 +847,17 @@ public class LuceneQueryFactory {
                                                                                   factories, caseOperation));
             case LIKE:
                 String likeExpression = stringFactory.create(value);
+                // the paths are stored in the index via stringFactory.create, which doesn't have the "1" index for SNS...
+                likeExpression = likeExpression.replaceAll("\\[1\\]", "");
                 if (likeExpression.contains("[%]")) {
                     // We can't use '[%]' because we only want to match digits,
                     // so handle this using a regex ...
+                    // !!! LUCENE Regexp is not the same as Java's. See the javadoc RegExp
                     String regex = likeExpression;
-                    regex = regex.replace("[%]", "[\\d+]");
-                    regex = regex.replace("[", "\\[");
-                    regex = regex.replace("*", ".*").replace("?", ".");
+                    regex = regex.replace("[%]", "(\\[[0-9]+\\])?");
+                    regex = regex.replaceAll("\\[\\d+\\]", "\\[[0-9]+\\]");
+                    //regex = regex.replace("]", "\\]");
+                    regex = regex.replace("*", ".*");
                     regex = regex.replace("%", ".*").replace("_", ".");
                     // Now create a regex query ...
                     int flags = caseOperation == CaseOperations.AS_IS ? 0 : Pattern.CASE_INSENSITIVE;
@@ -858,6 +877,28 @@ public class LuceneQueryFactory {
                 throw new IllegalArgumentException("Unknown operator:" + operator);
             }
         }
+    }
+
+    protected String likeExpresionForWildcardPath( String path ) {
+        if (path.equals("/") || path.equals("%")) return path;
+        StringBuilder sb = new StringBuilder();
+        path = path.replaceAll("%+", "%");
+        if (path.startsWith("%/")) {
+            sb.append("%");
+            if (path.length() == 2) return sb.toString();
+            path = path.substring(2);
+        }
+        for (String segment : path.split("/")) {
+            if (segment.length() == 0) continue;
+            sb.append("/");
+            sb.append(segment);
+            if (segment.equals("%") || segment.equals("_")) continue;
+            if (!segment.endsWith("]") && !segment.endsWith("]%") && !segment.endsWith("]_")) {
+                sb.append("[1]");
+            }
+        }
+        if (path.endsWith("/")) sb.append("/");
+        return sb.toString();
     }
 
     protected Query nameFieldQuery( String field, Operator operator, Object value, CaseOperation caseOperation ) {

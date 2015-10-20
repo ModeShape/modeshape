@@ -15,6 +15,7 @@
  */
 package org.modeshape.jcr.index.lucene;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 import static org.modeshape.jcr.api.query.qom.Operator.EQUAL_TO;
 import static org.modeshape.jcr.api.query.qom.Operator.GREATER_THAN;
@@ -34,9 +35,13 @@ import static org.modeshape.jcr.index.lucene.PropertiesTestUtil.PATH_PROP;
 import static org.modeshape.jcr.index.lucene.PropertiesTestUtil.REF_PROP;
 import static org.modeshape.jcr.index.lucene.PropertiesTestUtil.STRING_PROP;
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
+import org.junit.Ignore;
 import org.junit.Test;
+import org.modeshape.jcr.api.query.qom.Operator;
 import org.modeshape.jcr.api.value.DateTime;
 import org.modeshape.jcr.query.model.Constraint;
 import org.modeshape.jcr.value.BinaryValue;
@@ -55,7 +60,7 @@ public class SingleColumnIndexSearchTest extends AbstractLuceneIndexSearchTest {
 
     @Override
     protected LuceneIndex createIndex( String name ) {
-        return new MultiColumnIndex(name + "-multi-valued", config, PropertiesTestUtil.ALLOWED_PROPERTIES, context);
+        return new MultiColumnIndex(name + "-multi-valued", "default", config, PropertiesTestUtil.ALLOWED_PROPERTIES, context);
     }
     
     @Test
@@ -110,6 +115,44 @@ public class SingleColumnIndexSearchTest extends AbstractLuceneIndexSearchTest {
         constraint = propertyValue(STRING_PROP, NOT_EQUAL_TO, "s1");
         validateCardinality(constraint, 1);
         validateFilterResults(constraint, 1, false, nodeKeys.get(1));
+    }
+    
+    @Test
+    public void shouldSearchForMultiValueProperty() throws Exception {
+        // validate that for an indexed multi-valued property the queries still work if *at least one* of the value matches
+        // the constraint
+        String nodeKey = UUID.randomUUID().toString();
+        addValues(nodeKey, STRING_PROP, "a", "ab", "abc");
+
+        Constraint equality = propertyValue(STRING_PROP, EQUAL_TO, "a");
+        validateCardinality(equality, 1);
+        validateFilterResults(equality, 1, false, nodeKey);
+        
+        equality = propertyValue(STRING_PROP, EQUAL_TO, "ab");
+        validateCardinality(equality, 1);
+        validateFilterResults(equality, 1, false, nodeKey);
+
+        equality = propertyValue(STRING_PROP, EQUAL_TO, "abc");
+        validateCardinality(equality, 1);
+        validateFilterResults(equality, 1, false, nodeKey);
+
+        equality = propertyValue(STRING_PROP, EQUAL_TO, "d");
+        validateCardinality(equality, 0);
+        
+        Constraint length = length(STRING_PROP, EQUAL_TO, 1);
+        validateCardinality(length, 1);
+        validateFilterResults(length, 1, false, nodeKey); 
+        
+        length = length(STRING_PROP, EQUAL_TO, 2);
+        validateCardinality(length, 1);
+        validateFilterResults(length, 1, false, nodeKey);
+
+        length = length(STRING_PROP, EQUAL_TO, 3);
+        validateCardinality(length, 1);
+        validateFilterResults(length, 1, false, nodeKey);
+        
+        length = length(STRING_PROP, EQUAL_TO, 4);
+        validateCardinality(length, 0);
     }
 
     @Test
@@ -630,5 +673,31 @@ public class SingleColumnIndexSearchTest extends AbstractLuceneIndexSearchTest {
     @Test(expected = UnsupportedOperationException.class)
     public void shouldSupportFTSConstraint() throws Exception {
         validateCardinality(fullTextSearch(STRING_PROP, "some string"), 1);                        
+    }
+    
+    @Test
+    @Ignore("perf test")
+    public void stringSearchPerfTest() throws Exception {
+        int nodeCount = 500000;
+        List<String> nodeKeys = new ArrayList<>(nodeCount);
+        List<String> evenKeys = new ArrayList<>(nodeCount / 2);
+        for (int i = 0; i < nodeCount; i++) {
+            boolean even = i % 2 == 0;
+            String value = "string_" + (even ? "even" : "odd");
+            List<String> keys = indexNodes(STRING_PROP, value);
+            nodeKeys.addAll(keys);
+            if (even) {
+                evenKeys.addAll(keys);    
+            }
+        }
+        index.commit();
+        assertEquals(nodeCount, index.estimateTotalCount());
+        long start = System.nanoTime();        
+        Constraint constraint = propertyValue(STRING_PROP, Operator.EQUAL_TO, "string_even");
+        validateCardinality(constraint, nodeCount / 2);
+        validateFilterResults(constraint, 1000, false, evenKeys.toArray(new String[evenKeys.size()]));
+        long duration = System.nanoTime() - start;
+        long searchTime = TimeUnit.MILLISECONDS.convert(duration, TimeUnit.NANOSECONDS);
+        System.out.println(Thread.currentThread().getName() + ": (" + index.getName() + ") Total time to search " + nodeKeys.size() + " nodes: " + searchTime/1000d + " seconds");
     }
 }

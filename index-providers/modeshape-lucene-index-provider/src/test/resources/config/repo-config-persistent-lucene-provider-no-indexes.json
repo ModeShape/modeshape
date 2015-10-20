@@ -2,7 +2,7 @@
     "name": "Persistent repo no indexes",
     "storage": {
         "cacheName": "persistentRepository",
-        "cacheConfiguration": "config/infinispan-persistent.xml",
+        "cacheConfiguration": "config/infinispan-persistent.xml", //this is picked up from the modeshape-jcr-tests.jar artifact....
         "binaryStorage": {
             "type": "file",
             "directory": "target/persistent_repository/binaries",
@@ -14,17 +14,25 @@
         "allowCreation": true
     },
     "indexProviders" : {
-        "local" : {
-            "classname" : "org.modeshape.jcr.index.local.LocalIndexProvider",
-            "directory" : "target/persistent_repository/indexes/local"
+        "lucene" : {
+            "classname" : "lucene",
+            "directory" : "target/persistent_repository/indexes/lucene_primary"
         },
         "secondary" : {
-            "classname" : "org.modeshape.jcr.index.local.LocalIndexProvider",
-            "path" : "indexes/secondary",
+            "classname" : "lucene",
+            "path" : "indexes/lucene_secondary",
             "relative-to" : "target/persistent_repository"
-        },
+        }
     },
     "reindexing" : {
         "async" : false //make sure this is sync to avoid waiting in tests after registering indexes
+    }, 
+    "textExtraction": {
+        "extractors": {
+            "tikaExtractor": {
+                "name": "Tika content-based extractor",
+                "classname": "tika"
+            }
+        }
     }
 }

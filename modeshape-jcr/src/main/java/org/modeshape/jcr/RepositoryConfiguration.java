@@ -660,7 +660,7 @@ public class RepositoryConfiguration {
         String localIndexProvider = LocalIndexProvider.class.getName();
         aliases = new HashMap<String, String>();
         aliases.put("local", localIndexProvider);
-        // aliases.put("files", localIndexProvider);
+        aliases.put("lucene", "org.modeshape.jcr.index.lucene.LuceneIndexProvider");
 
         INDEX_PROVIDER_ALIASES = Collections.unmodifiableMap(aliases);
 

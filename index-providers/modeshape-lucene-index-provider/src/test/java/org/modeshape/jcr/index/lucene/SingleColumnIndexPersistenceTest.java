@@ -23,11 +23,11 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.modeshape.jcr.value.PropertyType;
@@ -41,7 +41,7 @@ public class SingleColumnIndexPersistenceTest extends AbstractIndexPersistenceTe
 
     @Override
     protected LuceneIndex createIndex( String name ) {
-        return new SingleColumnIndex(name + "-single-valued", config, PropertiesTestUtil.ALLOWED_PROPERTIES, context);
+        return new SingleColumnIndex(name + "-single-valued", "default", config, PropertiesTestUtil.ALLOWED_PROPERTIES, context);
     }
 
     @Test
@@ -163,48 +163,123 @@ public class SingleColumnIndexPersistenceTest extends AbstractIndexPersistenceTe
 
     @Test
     @Ignore("perf test")
-    public void singleIndexCrudPerformance() {
+    public void singleThreadIndexCrudPerformance() throws Exception {
         int nodeCount = 100000;
         int valuesPerProperty = 2;
         int batchSize = 1000;
-        runPerfTestForIndex(nodeCount, valuesPerProperty, batchSize, this.index);
+        List<String> nodeKeys = insertNodes(nodeCount, valuesPerProperty, batchSize, index);
+        assertEquals(nodeCount, index.estimateTotalCount());
+        
+        updateNodes(valuesPerProperty, batchSize, index, nodeKeys, null);
+        assertEquals(nodeCount, index.estimateTotalCount());
+        
+        removeNodes(batchSize, index, nodeKeys, null);
+        assertEquals(0, index.estimateTotalCount());
     }
 
     @Test
     @Ignore("perf test")
-    public void multiIndexCrudPerformance() throws Exception {
+    public void multiThreadIndexCrudPerformance() throws Exception {
         final int nodeCount = 100000;
         final int valuesPerProperty = 1;
         final int batchSize = 1000;
-        int indexesCount = 20;
-        ExecutorService executorService = Executors.newFixedThreadPool(indexesCount);
-        List<Future<?>> result = new ArrayList<>(indexesCount);
-        for (int i = 0; i < indexesCount; i++) {
-            LuceneIndex index = createIndex("index" + i);
-            IndexThread<Void> perfThread = new IndexThread<>(index, new IndexOperation<Void>() {
+        final int threadCount = 4;
+        final int nodesPerThread = nodeCount / threadCount;
+
+        ExecutorService executorService = Executors.newFixedThreadPool(threadCount);
+        final List<String> nodeKeys = new ArrayList<>();
+        final List<Future<List<String>>> futures = new ArrayList<>();
+        //insert
+        for (int i = 0; i < threadCount; i++) {
+            futures.add(executorService.submit(new Callable<List<String>>() {
                 @Override
-                public Void execute( final LuceneIndex index ) throws Exception {
-                    runPerfTestForIndex(nodeCount, valuesPerProperty, batchSize, index);
+                public List<String> call() throws Exception {
+                    return insertNodes(nodesPerThread, valuesPerProperty, batchSize, index);
+                }
+            }));
+        }
+        for (Future<List<String>> future : futures) {
+            nodeKeys.addAll(future.get());
+        }
+        assertEquals(nodeCount, index.estimateTotalCount());
+        assertEquals(nodeCount, nodeKeys.size());
+
+        final CyclicBarrier barrier = new CyclicBarrier(threadCount + 1);
+        //update
+        for (int i = 0; i < threadCount; i++) {
+            final int startIdx = i * nodesPerThread;
+            final int endIdx = Math.min(nodeKeys.size(), startIdx + nodesPerThread);
+            executorService.submit(new Callable<Void>() {
+                @Override
+                public Void call() throws Exception {
+                    updateNodes(valuesPerProperty, batchSize, index, nodeKeys.subList(startIdx, endIdx), barrier);
                     return null;
                 }
             });
-            result.add(executorService.submit(perfThread));
         }
-
-        try {
-            for (Future<?> future : result) {
-                try {
-                    future.get(3, TimeUnit.MINUTES);
-                } catch (TimeoutException e) {
-                    future.cancel(true);
+        barrier.await();
+        assertEquals(nodeCount, index.estimateTotalCount());
+        
+        //remove
+        barrier.reset();
+        for (int i = 0; i < threadCount; i++) {
+            final int startIdx = i * nodesPerThread;
+            final int endIdx = Math.min(nodeKeys.size(), startIdx + nodesPerThread);
+            executorService.submit(new Callable<Void>() {
+                @Override
+                public Void call() throws Exception {
+                    removeNodes(batchSize, index, nodeKeys.subList(startIdx, endIdx), barrier);
+                    return null;
                 }
+            });
+        }
+        barrier.await();
+        assertEquals(0, index.estimateTotalCount());
+    }
+
+    private void removeNodes( int batchSize, LuceneIndex index, List<String> nodeKeys, CyclicBarrier barrier )
+            throws Exception{
+        long start;
+        start = System.nanoTime();
+        for (int i = 0; i < nodeKeys.size(); i++) {
+            String nodeKey = nodeKeys.get(i);
+            index.remove(nodeKey);
+            if (i > 0 && i % batchSize == 0) {
+                index.commit();
+                System.out.println(Thread.currentThread().getName() + " removed "  + i + " nodes");
             }
-        } finally {
-            executorService.shutdownNow();
+        }
+        index.commit();
+        long deleteTime = TimeUnit.SECONDS.convert(System.nanoTime() - start, TimeUnit.NANOSECONDS);
+        System.out.println(Thread.currentThread().getName() + ": (" + index.getName() + ") Total time to delete " + nodeKeys.size() + " nodes: " + (deleteTime / 60d) + " minutes");
+        if (barrier != null) {
+            barrier.await();
         }
     }
 
-    private void runPerfTestForIndex( int nodeCount, int valuesPerProperty, int batchSize, LuceneIndex index ) {
+    private void updateNodes(int valuesPerProperty, int batchSize, LuceneIndex index, List<String> nodeKeys,
+                              CyclicBarrier barrier) throws Exception {
+        long start;
+        start = System.nanoTime();
+        for (int i = 0; i < nodeKeys.size(); i++) {
+            String nodeKey = nodeKeys.get(i);
+            addMultiplePropertiesToSameNode(index, nodeKey, valuesPerProperty, PropertyType.STRING);
+            if (i > 0 && i % batchSize == 0) {
+                index.commit();
+                System.out.println(Thread.currentThread().getName() + " updated "  + i + " nodes");
+            }
+        }
+        index.commit();
+   
+        long updateTime = TimeUnit.SECONDS.convert(System.nanoTime() - start, TimeUnit.NANOSECONDS);
+        System.out.println(Thread.currentThread().getName() + ": (" + index.getName() + ") Total time to update " + nodeKeys.size() + " nodes: " + (updateTime / 60d) + " minutes");
+        if (barrier != null) {
+            barrier.await();
+        }
+    }
+
+    private List<String> insertNodes( int nodeCount, int valuesPerProperty, int batchSize, LuceneIndex index ) 
+            throws Exception {
         List<String> nodeKeys = new ArrayList<>();
         long start = System.nanoTime();
         // insert
@@ -214,44 +289,13 @@ public class SingleColumnIndexPersistenceTest extends AbstractIndexPersistenceTe
             addMultiplePropertiesToSameNode(index, nodeKey, valuesPerProperty, PropertyType.STRING);
             if (i > 0 && i % batchSize == 0) {
                 index.commit();
-                System.out.println("Inserted " + i + " nodes");
+                System.out.println(Thread.currentThread().getName() + " inserted " + i + " nodes");
             }
         }
         index.commit();
-        assertEquals(nodeCount, index.estimateTotalCount());
         long insertTime = TimeUnit.SECONDS.convert(System.nanoTime() - start, TimeUnit.NANOSECONDS);
-        System.out.println("(" + index.getName() + ") Total time to insert " + nodeCount + " nodes: " + (insertTime / 60d) + " minutes");
-
-
-        // update
-        start = System.nanoTime();
-        for (int i = 0; i < nodeCount; i++) {
-            String nodeKey = nodeKeys.get(i);
-            addMultiplePropertiesToSameNode(index, nodeKey, valuesPerProperty, PropertyType.STRING);
-            if (i > 0 && i % batchSize == 0) {
-                index.commit();
-                System.out.println("Updated "  + i + " nodes");
-            }
-        }
-        index.commit();
-        assertEquals(nodeCount, index.estimateTotalCount());
-        long updateTime = TimeUnit.SECONDS.convert(System.nanoTime() - start, TimeUnit.NANOSECONDS);
-        System.out.println("(" + index.getName() + ") Total time to update " + nodeCount + " nodes: " + (updateTime / 60d) + " minutes");
-
-        // delete
-        start = System.nanoTime();
-        for (int i = 0; i < nodeCount; i++) {
-            String nodeKey = nodeKeys.get(i);
-            index.remove(nodeKey);
-            if (i > 0 && i % batchSize == 0) {
-                index.commit();
-                System.out.println("Removed "  + i + " nodes");
-            }
-        }
-        index.commit();
-        assertEquals(0, index.estimateTotalCount());
-        long deleteTime = TimeUnit.SECONDS.convert(System.nanoTime() - start, TimeUnit.NANOSECONDS);
-        System.out.println("(" + index.getName() + ") Total time to delete " + nodeCount + " nodes: " + (deleteTime / 60d) + " minutes");
+        System.out.println(Thread.currentThread().getName() + ": (" + index.getName() + ") Total time to insert " + nodeCount + " nodes: " + (insertTime / 60d) + " minutes");
+        return nodeKeys;
     }
 
     private void addMultipleNodes( LuceneIndex index, int propertiesCount, PropertyType[] types ) {

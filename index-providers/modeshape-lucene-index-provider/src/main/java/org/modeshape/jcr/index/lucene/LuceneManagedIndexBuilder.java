@@ -114,8 +114,8 @@ public class LuceneManagedIndexBuilder extends ManagedIndexBuilder {
                                                      ChangeSetAdapter.NodeTypePredicate matcher ) {
         validate(defn);
         return defn.size() > 1 ? 
-               new MultiColumnIndex(defn.getName(), luceneConfig, propertyTypesByName(defn), context) :
-               new SingleColumnIndex(defn.getName(), luceneConfig, propertyTypesByName(defn), context);
+               new MultiColumnIndex(defn.getName(), workspaceName, luceneConfig, propertyTypesByName(defn), context) :
+               new SingleColumnIndex(defn.getName(), workspaceName, luceneConfig, propertyTypesByName(defn), context);
     }
     
     @Override
@@ -124,8 +124,8 @@ public class LuceneManagedIndexBuilder extends ManagedIndexBuilder {
                                                       ChangeSetAdapter.NodeTypePredicate matcher ) {
         validate(defn);
         return defn.size() > 1 ?
-               new MultiColumnIndex(defn.getName(), luceneConfig, propertyTypesByName(defn), context) :
-               new SingleColumnIndex(defn.getName(), luceneConfig, propertyTypesByName(defn), context);
+               new MultiColumnIndex(defn.getName(), workspaceName, luceneConfig, propertyTypesByName(defn), context) :
+               new SingleColumnIndex(defn.getName(), workspaceName, luceneConfig, propertyTypesByName(defn), context);
     }
 
     @Override
@@ -134,8 +134,8 @@ public class LuceneManagedIndexBuilder extends ManagedIndexBuilder {
                                                      ChangeSetAdapter.NodeTypePredicate matcher ) {
         validate(defn);
         return defn.size() > 1 ?
-               new MultiColumnIndex(defn.getName(), luceneConfig, propertyTypesByName(defn), context) :
-               new SingleColumnIndex(defn.getName(), luceneConfig, propertyTypesByName(defn), context);
+               new MultiColumnIndex(defn.getName(), workspaceName, luceneConfig, propertyTypesByName(defn), context) :
+               new SingleColumnIndex(defn.getName(), workspaceName, luceneConfig, propertyTypesByName(defn), context);
     }
 
     @Override
@@ -143,7 +143,7 @@ public class LuceneManagedIndexBuilder extends ManagedIndexBuilder {
                                                NodeTypes.Supplier nodeTypesSupplier,
                                                ChangeSetAdapter.NodeTypePredicate matcher ) {
         validate(defn);
-        return new TextIndex(defn.getName(), luceneConfig, propertyTypesByName(defn), context);
+        return new TextIndex(defn.getName(), workspaceName, luceneConfig, propertyTypesByName(defn), context);
     }
 
     @Override
@@ -151,7 +151,7 @@ public class LuceneManagedIndexBuilder extends ManagedIndexBuilder {
                                                    NodeTypes.Supplier nodeTypesSupplier,
                                                    ChangeSetAdapter.NodeTypePredicate matcher ) {
         assert defn.size() == 1; //should've been validated by the super class
-        return new SingleColumnIndex(defn.getName(), luceneConfig, propertyTypesByName(defn), context);
+        return new SingleColumnIndex(defn.getName(), workspaceName, luceneConfig, propertyTypesByName(defn), context);
     }
 
     private void validate( IndexDefinition defn ) {

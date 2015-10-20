@@ -38,6 +38,7 @@ import org.apache.lucene.search.CachingWrapperQuery;
 import org.apache.lucene.search.CollectionTerminatedException;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.LRUQueryCache;
+import org.apache.lucene.search.MatchAllDocsQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.QueryCache;
 import org.apache.lucene.search.QueryCachingPolicy;
@@ -51,6 +52,7 @@ import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.NamedThreadFactory;
 import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.index.lucene.query.LuceneQueryFactory;
+import org.modeshape.jcr.spi.index.IndexConstraints;
 import org.modeshape.jcr.spi.index.ResultWriter;
 import org.modeshape.jcr.spi.index.provider.Filter;
 
@@ -63,7 +65,9 @@ import org.modeshape.jcr.spi.index.provider.Filter;
 @Immutable
 @ThreadSafe
 public class Searcher {
-    
+    // the implicit score that will be used when no explicit scoring is requested
+    protected static final float DEFAULT_SCORE = 1.0f;
+
     private static final Logger LOGGER = Logger.getLogger(Searcher.class);
     
     private final SearcherManager searchManager;
@@ -92,13 +96,12 @@ public class Searcher {
         }
     }
     
-    protected Filter.Results filter( Collection<Constraint> andedConstraints, LuceneQueryFactory queryFactory) {
-        Query query = createQueryFromConstraints(andedConstraints, queryFactory);
+    protected Filter.Results filter( IndexConstraints indexConstraints, LuceneQueryFactory queryFactory) {
+        Query query = createQueryFromConstraints(indexConstraints.getConstraints(), queryFactory);
         return new LuceneResults(query, queryFactory.scoreDocuments());
     }
     
     protected long estimateCardinality( final List<Constraint> andedConstraints, final LuceneQueryFactory queryFactory ) throws IOException {
-        assert !andedConstraints.isEmpty();
         return search(new Searchable<Long>() {
             @Override
             public Long search( IndexSearcher searcher ) throws IOException {
@@ -123,7 +126,10 @@ public class Searcher {
     }
 
     private Query createQueryFromConstraints( Collection<Constraint> andedConstraints, LuceneQueryFactory queryFactory ) {
-        if (andedConstraints.size() == 1) {
+        if (andedConstraints.isEmpty()) {
+            // if there are no anded constraint but this index was called to filter results, simply return everything...
+            return new MatchAllDocsQuery();
+        } else if (andedConstraints.size() == 1) {
             return queryFactory.createQuery(andedConstraints.iterator().next());
         } else {
             BooleanQuery.Builder builder = new BooleanQuery.Builder();
@@ -239,9 +245,7 @@ public class Searcher {
     }
     
     private static class IdsCollector extends SimpleCollector {
-        // the implicit score that will be used when no explicit scoring is requested
-        private static final float IMPLICIT_SCORE = 1.0f;
-        
+
         // a set which contains the ID field which is the only field we want to load
         private static final Set<String> ID_FIELD_SET = Collections.singleton(FieldUtil.ID);
         
@@ -276,7 +280,7 @@ public class Searcher {
                 return;
             }
             String id = document.getBinaryValue(FieldUtil.ID).utf8ToString();
-            Float score = useScore ? scorer.score() : IMPLICIT_SCORE;
+            Float score = useScore ? scorer.score() : DEFAULT_SCORE;
             scoresById.put(new NodeKey(id), score);
         }
         
@@ -319,7 +323,7 @@ public class Searcher {
         @Override
         protected void doSetNextReader( LeafReaderContext context ) throws IOException {
             if (document != null) {
-                // we already found our do, so terminate
+                // we already found our document, so terminate
                 throw new CollectionTerminatedException();
             }
             currentReader = context.reader();

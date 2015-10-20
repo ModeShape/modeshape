@@ -24,6 +24,6 @@ public class TextIndexPersistenceTest extends SingleColumnIndexPersistenceTest {
     
     @Override
     protected LuceneIndex createIndex( String name ) {
-        return new TextIndex(name + "-text", config, PropertiesTestUtil.ALLOWED_PROPERTIES, context);
+        return new TextIndex(name + "-text", "default", config, PropertiesTestUtil.ALLOWED_PROPERTIES, context);
     }
 }

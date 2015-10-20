@@ -36,10 +36,12 @@ import org.modeshape.jcr.value.PropertyType;
 @ThreadSafe
 class SingleColumnIndex extends LuceneIndex {
     
-    protected SingleColumnIndex( String name, LuceneConfig config,
+    protected SingleColumnIndex( String name, 
+                                 String workspaceName, 
+                                 LuceneConfig config,
                                  Map<String, PropertyType> propertyTypesByName,
                                  ExecutionContext context ) {
-        super(name, config, propertyTypesByName, context);
+        super(name, workspaceName, config, propertyTypesByName, context);
     }
 
     @Override

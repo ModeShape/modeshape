@@ -38,7 +38,9 @@
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>
-
+        <!--
+            Allows not only test classes, but also test resources (e.g. ISPN configuration files) to be reused.
+        -->
         <dependency>
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-jcr</artifactId>

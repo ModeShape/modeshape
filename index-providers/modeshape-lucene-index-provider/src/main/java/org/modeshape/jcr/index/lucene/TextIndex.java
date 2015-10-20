@@ -30,9 +30,7 @@ import org.modeshape.jcr.value.PropertyType;
 /**
  * Lucene index which stores strings or binary values that can then be used for FTS. 
  * <p>
- * This type of index is only used for full text searching and will not store any other information. This types of indexes 
- * only work with certain property names, i.e. they cannot be used for storing the full text information of multiple (*) properties
- * of a node.
+ * This type of index is only used for full text searching and will not store any other information.
  * </p> 
  *
  * @author Horia Chiorean (hchiorea@redhat.com)
@@ -42,10 +40,12 @@ import org.modeshape.jcr.value.PropertyType;
 @ThreadSafe
 class TextIndex extends SingleColumnIndex {
     
-    protected TextIndex( String name, LuceneConfig config,
+    protected TextIndex( String name, 
+                         String workspaceName, 
+                         LuceneConfig config,
                          Map<String, PropertyType> propertyTypesByName,
                          ExecutionContext context ) {
-        super(name, config, propertyTypesByName, context);
+        super(name, workspaceName, config, propertyTypesByName, context);
     }
 
     @Override
