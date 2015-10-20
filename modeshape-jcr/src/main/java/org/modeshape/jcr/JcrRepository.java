@@ -1204,8 +1204,13 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 this.indexingExecutor = this.context.getThreadPool("modeshape-reindexing");
                 this.queryParsers = new QueryParsers(new JcrSql2QueryParser(), new XPathQueryParser(),
                                                      new FullTextSearchParser(), new JcrSqlQueryParser(), new JcrQomQueryParser());
-                this.repositoryQueryManager = new RepositoryQueryManager(this, indexingExecutor, config);
-                this.changeBus.register(this.repositoryQueryManager);
+                RepositoryConfiguration.Reindexing reindexingCfg = config.getReindexing();
+                this.repositoryQueryManager = new RepositoryQueryManager(this, indexingExecutor, config, reindexingCfg);
+                if (reindexingCfg.isAsync()) {
+                    this.changeBus.register(this.repositoryQueryManager);
+                } else {
+                    this.changeBus.registerInThread(this.repositoryQueryManager);    
+                }
 
                 // Check that we have parsers for all the required languages ...
                 assert this.queryParsers.getParserFor(Query.XPATH) != null;

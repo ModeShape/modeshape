@@ -24,6 +24,7 @@
             "relative-to" : "target/persistent_repository"
         },
     },
-    "indexes" : {
+    "reindexing" : {
+        "async" : false //make sure this is sync to avoid waiting in tests after registering indexes
     }
 }

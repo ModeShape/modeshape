@@ -40,6 +40,7 @@ import org.modeshape.jcr.JcrI18n;
 import org.modeshape.jcr.JcrLexicon;
 import org.modeshape.jcr.ModeShapeLexicon;
 import org.modeshape.jcr.NodeTypes;
+import org.modeshape.jcr.RepositoryConfiguration;
 import org.modeshape.jcr.api.Logger;
 import org.modeshape.jcr.api.index.IndexColumnDefinition;
 import org.modeshape.jcr.api.index.IndexDefinition;
@@ -458,7 +459,8 @@ public abstract class IndexProvider {
                 }
                 break;
             case TEXT: {
-                if (PropertyType.STRING != type && PropertyType.BINARY != type) {
+                if (PropertyType.STRING != type && PropertyType.BINARY != type && PropertyType.PATH != type &&
+                    PropertyType.NAME != type) {
                     String expectedTypeMsg = PropertyType.STRING + " or " + PropertyType.BINARY;
                     problems.addError(JcrI18n.indexMustHaveOneColumnOfSpecificType, defn.getProviderName(),
                                       defn.getName(), columnDefn.getPropertyName(), type, expectedTypeMsg);                     
@@ -1129,11 +1131,11 @@ public abstract class IndexProvider {
                              Name primaryType,
                              Set<Name> mixinTypes,
                              Properties properties ) {
-                Collection<IndexChangeAdapter> adapters = adaptersByWorkspaceName.get(workspace);
+                Collection<IndexChangeAdapter> adapters = applicableAdapters(workspace);
                 if (adapters != null) {
                     boolean queryable = nodeTypesSupplier.getNodeTypes().isQueryable(primaryType, mixinTypes);
                     // There are adapters for this workspace ...
-                    for (IndexChangeAdapter adapter : adaptersByWorkspaceName.get(workspace)) {
+                    for (IndexChangeAdapter adapter : adapters) {
                         if (adapter != null) {
                             adapter.reindex(workspace, key, path, primaryType, mixinTypes, properties, queryable);
                         }
@@ -1143,15 +1145,29 @@ public abstract class IndexProvider {
 
             @Override
             public void remove( String workspace, NodeKey key ) {
-                Collection<IndexChangeAdapter> adapters = adaptersByWorkspaceName.get(workspace);
+                Collection<IndexChangeAdapter> adapters = applicableAdapters(workspace);
                 if (adapters != null) {
                     // There are adapters for this workspace ...
-                    for (IndexChangeAdapter adapter : adaptersByWorkspaceName.get(workspace)) {
+                    for (IndexChangeAdapter adapter : adapters) {
                         if (adapter != null) {
                             adapter.clearDataFor(key);
                         }
                     }
                 }
+            }
+            
+            private Collection<IndexChangeAdapter> applicableAdapters( String workspace ) {
+                Collection<IndexChangeAdapter> adapters = null;
+                if (RepositoryConfiguration.SYSTEM_WORKSPACE_NAME.equals(workspace)) {
+                    // the system workspace is linked to each WS, so all adapters have to process system data...
+                    adapters = new ArrayList<>();
+                    for (Collection<IndexChangeAdapter> adapterCollection : adaptersByWorkspaceName.values()) {
+                        adapters.addAll(adapterCollection);
+                    }
+                } else {
+                    adapters = adaptersByWorkspaceName.get(workspace);
+                }
+                return adapters;
             }
         };
     }

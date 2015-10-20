@@ -301,6 +301,7 @@
         <eclipse.emf.ecorexmi.version>2.4.1</eclipse.emf.ecorexmi.version>
         <tika.version>1.8</tika.version>
         <image.metadata.extractor>2.6.2</image.metadata.extractor>
+        <version.org.apache.lucene>5.3.1</version.org.apache.lucene>
 
         <!-- Apache chemistry version -->
         <chemistry.version>0.11.0</chemistry.version>
@@ -1599,6 +1600,24 @@
                 <version>${sun.xml.bind.jaxbimpl.version}</version>
                 <scope>runtime</scope>
             </dependency>
+
+            <!-- Lucene Index Provider -->
+            <dependency>
+                <groupId>org.apache.lucene</groupId>
+                <artifactId>lucene-core</artifactId>
+                <version>${version.org.apache.lucene}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.lucene</groupId>
+                <artifactId>lucene-analyzers-common</artifactId>
+                <version>${version.org.apache.lucene}</version>
+            </dependency> 
+            <dependency>
+                <groupId>org.apache.lucene</groupId>
+                <artifactId>lucene-queryparser</artifactId>
+                <version>${version.org.apache.lucene}</version>
+            </dependency> 
+          
             <!--
                Web Modules dependencies
             -->

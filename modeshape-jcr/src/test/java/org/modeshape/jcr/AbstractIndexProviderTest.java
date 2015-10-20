@@ -18,8 +18,10 @@ package org.modeshape.jcr;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.PropertyType;
@@ -44,28 +46,34 @@ import org.modeshape.jcr.spi.index.provider.IndexProvider;
 
 public abstract class AbstractIndexProviderTest extends SingleUseAbstractTest {
 
-    protected static final String LOCAL_PROVIDER_NAME = "local";
-
     private static final String CONFIG_FILE = "config/repo-config-persistent-local-provider-no-indexes.json";
     private static final String STORAGE_DIR = "target/persistent_repository";
+
 
     @Before
     @Override
     public void beforeEach() throws Exception {
         // We're using a Repository configuration that persists content, so clean it up ...
-        FileUtil.delete(STORAGE_DIR);
+        FileUtil.delete(storageDir());
 
         // Now start the repository ...
-        startRepositoryWithConfiguration(resource(CONFIG_FILE));
+        startRepositoryWithConfiguration(repositoryConfiguration());
         printMessage("Started repository...");
+    }
+
+    protected InputStream repositoryConfiguration() {
+        return resource(CONFIG_FILE);
+    }
+
+    protected String storageDir() {
+        return STORAGE_DIR;
     }
 
     @After
     @Override
     public void afterEach() throws Exception {
         super.afterEach();
-        FileUtil.delete(STORAGE_DIR);
-        // Thread.sleep(100L); // wait for the repository to shut down and terminate all listeners
+        FileUtil.delete(storageDir());
     }
 
     @Test
@@ -173,7 +181,7 @@ public abstract class AbstractIndexProviderTest extends SingleUseAbstractTest {
 
     @Override
     protected void startRepository() throws Exception {
-        startRepositoryWithConfiguration(resource(CONFIG_FILE));
+        startRepositoryWithConfiguration(repositoryConfiguration());
     }
 
     protected ValueFactory valueFactory() throws RepositoryException {
@@ -219,6 +227,17 @@ public abstract class AbstractIndexProviderTest extends SingleUseAbstractTest {
 
     }
 
+    protected void registerTextIndex( String indexName,
+                                      String indexedNodeType,
+                                      String desc,
+                                      String workspaceNamePattern,
+                                      String propertyName,
+                                      int propertyType ) throws RepositoryException {
+        registerIndex(indexName, IndexKind.TEXT, providerName(), indexedNodeType, desc, workspaceNamePattern, propertyName,
+                      propertyType);
+
+    }
+
     protected void registerIndex( String indexName,
                                   IndexKind kind,
                                   String providerName,
@@ -247,6 +266,48 @@ public abstract class AbstractIndexProviderTest extends SingleUseAbstractTest {
         IndexColumnDefinition colDefn = indexManager().createIndexColumnDefinitionTemplate().setPropertyName(propertyName)
                                                       .setColumnType(propertyType);
         template.setColumnDefinitions(colDefn);
+
+        // Register the index ...
+        indexManager().registerIndex(template, false);
+    }
+
+    protected void registerValueIndex( String indexName,
+                                       String indexedNodeType,
+                                       String desc,
+                                       String workspaceNamePattern,
+                                       Map<String, Integer> properties ) throws RepositoryException {
+        registerIndex(indexName, IndexKind.VALUE, providerName(), indexedNodeType, desc, workspaceNamePattern, properties);
+    }
+    
+    protected void registerIndex( String indexName,
+                                  IndexKind kind,
+                                  String providerName,
+                                  String indexedNodeType,
+                                  String desc,
+                                  String workspaceNamePattern,
+                                  Map<String, Integer> properties) throws RepositoryException {
+        // Create the index template ...
+        IndexDefinitionTemplate template = indexManager().createIndexDefinitionTemplate();
+        template.setName(indexName);
+        template.setKind(kind);
+        template.setNodeTypeName(indexedNodeType);
+        template.setProviderName(providerName);
+        template.setSynchronous(useSynchronousIndexes());
+        if (workspaceNamePattern != null) {
+            template.setWorkspaceNamePattern(workspaceNamePattern);
+        } else {
+            template.setAllWorkspaces();
+        }
+        if (desc != null) {
+            template.setDescription(desc);
+        }
+
+        List<IndexColumnDefinition> colDefs = new ArrayList<>(properties.size());
+        for (Map.Entry<String, Integer> entry : properties.entrySet())  {
+            colDefs.add(indexManager().createIndexColumnDefinitionTemplate().setPropertyName(entry.getKey())
+                                      .setColumnType(entry.getValue()));            
+        }
+        template.setColumnDefinitions(colDefs);
 
         // Register the index ...
         indexManager().registerIndex(template, false);

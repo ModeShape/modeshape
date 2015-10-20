@@ -47,5 +47,8 @@
             "nodeType" : "nt:base",
             "columns" : "jcr:path(PATH)"
         }
+    },
+    "reindexing" : {
+        "async" : false //make sure this is sync to avoid waiting in tests after registering indexes
     }
 }

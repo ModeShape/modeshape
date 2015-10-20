@@ -3149,30 +3149,31 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
     public void shouldBeAbleToExecuteFullTextSearchQueriesOnPropertiesWhichIncludeStopWords() throws Exception {
         String propertyText = "the quick Brown fox jumps over to the dog in at the gate";
         Node ftsNode = session.getRootNode().addNode("FTSNode").setProperty("FTSProp", propertyText).getParent();
+        ftsNode.addMixin("mix:title");
         try {
             session.save();
 
-            executeQueryWithSingleResult("select [jcr:path] from [nt:unstructured] as n where contains([nt:unstructured].*,'"
+            executeQueryWithSingleResult("select [jcr:path] from [mix:title] as n where contains([mix:title].*,'"
                                          + propertyText + "')");
 
-            executeQueryWithSingleResult("select [jcr:path] from [nt:unstructured] as n where contains(FTSProp,'" + propertyText
+            executeQueryWithSingleResult("select [jcr:path] from [mix:title] as n where contains(FTSProp,'" + propertyText
                                          + "')");
-            executeQueryWithSingleResult("select [jcr:path] from [nt:unstructured] as n where contains(n.*,'" + propertyText
+            executeQueryWithSingleResult("select [jcr:path] from [mix:title] as n where contains(n.*,'" + propertyText
                                          + "')");
 
-            executeQueryWithSingleResult("select [jcr:path] from [nt:unstructured] as n where contains(FTSProp,'"
+            executeQueryWithSingleResult("select [jcr:path] from [mix:title] as n where contains(FTSProp,'"
                                          + propertyText.toUpperCase() + "')");
-            executeQueryWithSingleResult("select [jcr:path] from [nt:unstructured] as n where contains(n.*,'"
+            executeQueryWithSingleResult("select [jcr:path] from [mix:title] as n where contains(n.*,'"
                                          + propertyText.toUpperCase() + "')");
 
-            executeQueryWithSingleResult("select [jcr:path] from [nt:unstructured] as n where contains(FTSProp,'the quick Dog')");
-            executeQueryWithSingleResult("select [jcr:path] from [nt:unstructured] as n where contains(n.*,'the quick Dog')");
+            executeQueryWithSingleResult("select [jcr:path] from [mix:title] as n where contains(FTSProp,'the quick Dog')");
+            executeQueryWithSingleResult("select [jcr:path] from [mix:title] as n where contains(n.*,'the quick Dog')");
 
-            executeQueryWithSingleResult("select [jcr:path] from [nt:unstructured] as n where contains(FTSProp,'the quick jumps over gate')");
-            executeQueryWithSingleResult("select [jcr:path] from [nt:unstructured] as n where contains(n.*,'the quick jumps over gate')");
+            executeQueryWithSingleResult("select [jcr:path] from [mix:title] as n where contains(FTSProp,'the quick jumps over gate')");
+            executeQueryWithSingleResult("select [jcr:path] from [mix:title] as n where contains(n.*,'the quick jumps over gate')");
 
-            executeQueryWithSingleResult("select [jcr:path] from [nt:unstructured] as n where contains(FTSProp,'the gate')");
-            executeQueryWithSingleResult("select [jcr:path] from [nt:unstructured] as n where contains(n.*,'the gate')");
+            executeQueryWithSingleResult("select [jcr:path] from [mix:title] as n where contains(FTSProp,'the gate')");
+            executeQueryWithSingleResult("select [jcr:path] from [mix:title] as n where contains(n.*,'the gate')");
         } finally {
             // Try to remove the node (which messes up the expected results from subsequent tests) ...
             ftsNode.remove();
@@ -3185,28 +3186,29 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
     public void shouldBeAbleToExecuteFullTextSearchQueriesOnPropertiesWhichIncludeUmlauts() throws Exception {
         String propertyText = "Änderung: der schnelle braune Fuchs springt über den Hund";
         Node ftsNode = session.getRootNode().addNode("FTSNode").setProperty("FTSProp", propertyText).getParent();
+        ftsNode.addMixin("mix:title");
         try {
             session.save();
 
-            executeQueryWithSingleResult("select [jcr:path] from [nt:unstructured] as n where contains([nt:unstructured].*,'"
+            executeQueryWithSingleResult("select [jcr:path] from [mix:title] as n where contains([mix:title].*,'"
                                          + propertyText + "')");
 
-            executeQueryWithSingleResult("select [jcr:path] from [nt:unstructured] as n where contains(FTSProp,'" + propertyText
+            executeQueryWithSingleResult("select [jcr:path] from [mix:title] as n where contains(FTSProp,'" + propertyText
                                          + "')");
-            executeQueryWithSingleResult("select [jcr:path] from [nt:unstructured] as n where contains(n.*,'" + propertyText
+            executeQueryWithSingleResult("select [jcr:path] from [mix:title] as n where contains(n.*,'" + propertyText
                                          + "')");
 
-            executeQueryWithSingleResult("select [jcr:path] from [nt:unstructured] as n where contains(FTSProp,'"
+            executeQueryWithSingleResult("select [jcr:path] from [mix:title] as n where contains(FTSProp,'"
                                          + propertyText.toUpperCase() + "')");
-            executeQueryWithSingleResult("select [jcr:path] from [nt:unstructured] as n where contains(n.*,'"
+            executeQueryWithSingleResult("select [jcr:path] from [mix:title] as n where contains(n.*,'"
                                          + propertyText.toUpperCase() + "')");
 
-            executeQueryWithSingleResult("select [jcr:path] from [nt:unstructured] as n where contains(FTSProp,'Änderung')");
-            executeQueryWithSingleResult("select [jcr:path] from [nt:unstructured] as n where contains(FTSProp,'änderung')");
-            executeQueryWithSingleResult("select [jcr:path] from [nt:unstructured] as n where contains(FTSProp,'ÄNDERUNG')");
-            executeQueryWithSingleResult("select [jcr:path] from [nt:unstructured] as n where contains(FTSProp,'über den Hund')");
-            executeQueryWithSingleResult("select [jcr:path] from [nt:unstructured] as n where contains(FTSProp,'Über den Hund')");
-            executeQueryWithSingleResult("select [jcr:path] from [nt:unstructured] as n where contains(FTSProp,'ÜbEr dEn Hund')");
+            executeQueryWithSingleResult("select [jcr:path] from [mix:title] as n where contains(FTSProp,'Änderung')");
+            executeQueryWithSingleResult("select [jcr:path] from [mix:title] as n where contains(FTSProp,'änderung')");
+            executeQueryWithSingleResult("select [jcr:path] from [mix:title] as n where contains(FTSProp,'ÄNDERUNG')");
+            executeQueryWithSingleResult("select [jcr:path] from [mix:title] as n where contains(FTSProp,'über den Hund')");
+            executeQueryWithSingleResult("select [jcr:path] from [mix:title] as n where contains(FTSProp,'Über den Hund')");
+            executeQueryWithSingleResult("select [jcr:path] from [mix:title] as n where contains(FTSProp,'ÜbEr dEn Hund')");
         } finally {
             // Try to remove the node (which messes up the expected results from subsequent tests) ...
             ftsNode.remove();
@@ -3371,7 +3373,7 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
 
             // save and slip a bit to have difference in time of node creation.
             session.save();
-            Thread.sleep(1000);
+            Thread.sleep(100);
 
             // add node f2 with child jcr:content
             Node f2 = src.addNode("f2", "nt:file");

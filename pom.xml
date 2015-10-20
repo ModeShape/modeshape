@@ -30,6 +30,7 @@
         <module>modeshape-unit-test</module>
         <module>sequencers</module>
         <module>extractors</module>
+        <module>index-providers</module>
 
         <!--Connectors-->
         <module>connectors</module>

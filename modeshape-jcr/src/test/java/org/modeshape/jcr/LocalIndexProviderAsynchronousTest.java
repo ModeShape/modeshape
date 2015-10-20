@@ -37,7 +37,7 @@ public class LocalIndexProviderAsynchronousTest extends AbstractIndexProviderTes
     
     @Override
     protected String providerName() {
-        return LOCAL_PROVIDER_NAME;
+        return "local";
     }
 
     // ---------------------------------------------------------------

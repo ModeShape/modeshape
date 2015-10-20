@@ -492,7 +492,7 @@ class RepositoryIndexManager implements IndexManager, NodeTypes.Listener {
             }
             IndexProvider provider = providers.get(providerName);
             if (provider == null) {
-                problems.addError(JcrI18n.indexProviderDoesNotExist, defn, repository.name());
+                problems.addError(JcrI18n.indexProviderDoesNotExist, defn.getName(), repository.name());
             } else {
                 // Perform some default validations that should be applied to all providers... 
                 provider.validateDefaultColumnTypes(context, defn, problems);

@@ -57,7 +57,7 @@ public class LocalIndexProviderTest extends AbstractIndexProviderTest {
     
     @Override
     protected String providerName() {
-        return LOCAL_PROVIDER_NAME;
+        return "local";
     }
 
     // ---------------------------------------------------------------
@@ -97,9 +97,7 @@ public class LocalIndexProviderTest extends AbstractIndexProviderTest {
         other.setProperty("propA", "a value for property A");
         other.setProperty("jcr:title", "The Title");
 
-        waitForIndexes();
         session.save();
-        waitForIndexes();
 
         // Compute a query plan that should use this index ...
         Query query = jcrSql2Query("SELECT * FROM [nt:unstructured]");
@@ -115,8 +113,7 @@ public class LocalIndexProviderTest extends AbstractIndexProviderTest {
         registerValueIndex("sysIndex", "nt:typeWithSysName", null, "*", "sysName", PropertyType.STRING);
 
         // print = true;
-        waitForIndexes();
-
+        
         Node root = session().getRootNode();
         Node newNode1 = root.addNode("nodeWithSysName", "nt:typeWithSysName");
         newNode1.setProperty("sysName", "X");
@@ -124,8 +121,6 @@ public class LocalIndexProviderTest extends AbstractIndexProviderTest {
         Node newNode2 = root.addNode("nodeWithReference", "nt:typeWithReference");
         newNode2.setProperty("referenceId", newNode1.getIdentifier());
         session().save();
-
-        waitForIndexes();
 
         // Compute a query plan that should use this index ...
         Query query = jcrSql2Query("SELECT A.* FROM [nt:typeWithReference] AS A WHERE A.referenceId = $sysName");
@@ -143,7 +138,7 @@ public class LocalIndexProviderTest extends AbstractIndexProviderTest {
         query = jcrSql2Query("SELECT A.* FROM [nt:typeWithReference] AS A WHERE A.referenceId  IN ( "
                              + "SELECT B.[jcr:uuid] FROM [nt:typeWithSysName] AS B WHERE B.sysName = $sysName )");
         query.bindValue("sysName", valueFactory().createValue("X"));
-        validateQuery().rowCount(1L).validate(query, query.execute());
+        validateQuery().rowCount(1L).considerIndexes("refIndex", "sysIndex").validate(query, query.execute());
 
     }
 
@@ -165,16 +160,14 @@ public class LocalIndexProviderTest extends AbstractIndexProviderTest {
         Node newNode2 = root.addNode("nodeWithReference", "nt:typeWithReference");
         newNode2.setProperty("referenceId", newNode1.getIdentifier());
 
-        waitForIndexes();
         session.save();
-        waitForIndexes();
 
         // Compute a query plan that should use this index ...
         Query query = jcrSql2Query("SELECT A.* FROM [nt:typeWithReference] AS A "
                                    + "JOIN [nt:typeWithSysName] AS B ON A.referenceId  = B.[jcr:uuid] " //
                                    + "WHERE B.sysName = $sysName");
         query.bindValue("sysName", valueFactory().createValue("X"));
-        validateQuery().rowCount(1L).validate(query, query.execute());
+        validateQuery().rowCount(1L).considerIndexes("sysIndex", "refIndex", "typesIndex").validate(query, query.execute());
 
     }
 
@@ -245,9 +238,7 @@ public class LocalIndexProviderTest extends AbstractIndexProviderTest {
         other.setProperty("propA", "a value for property A");
         other.setProperty("jcr:title", "The Title");
 
-        waitForIndexes();
         session.save();
-        waitForIndexes();
 
         // Compute a query plan that should use this index ...
         Query query = jcrSql2Query("SELECT * FROM [mix:title]");
@@ -276,10 +267,8 @@ public class LocalIndexProviderTest extends AbstractIndexProviderTest {
         other.setProperty("propA", "a value for property A");
         other.setProperty("jcr:title", "The Title");
 
-        waitForIndexes();
         session.save();
-        waitForIndexes();
-
+        
         // Compute a query plan that should use this index ...
         Query query = jcrSql2Query("SELECT * FROM [mix:title]");
         validateQuery().rowCount(2L).useIndex("mixinTypes").validate(query, query.execute());
@@ -306,9 +295,7 @@ public class LocalIndexProviderTest extends AbstractIndexProviderTest {
         v2Node.addMixin("mix:referenceable");
         v2Node.setProperty("previous_version", v1Node.getIdentifier());
 
-        // waitForIndexes();
         session.save();
-        waitForIndexes();
 
         // print = true;
         String sql1 = "SELECT BASE.* from [nt:formInstVersion] as BASE " //
@@ -369,9 +356,7 @@ public class LocalIndexProviderTest extends AbstractIndexProviderTest {
         other.setProperty("propA", "a value for property A");
         other.setProperty("jcr:title", "The Title");
 
-        waitForIndexes();
         session.save();
-        waitForIndexes();
 
         // Compute a query plan that will NOT use this index, since the selector doesn't match the index's node type.
         // If we would use this index, the index doesn't know about non-mix:title nodes like the 'other' node ...
@@ -409,11 +394,9 @@ public class LocalIndexProviderTest extends AbstractIndexProviderTest {
         Node other = root.addNode("somethingElse");
         other.setProperty("notion:longProperty", 100L);
         other.setProperty("jcr:title", "The Title");
-
-        waitForIndexes();
+        
         session.save();
-        waitForIndexes();
-
+        
         // Issues some queries that should use this index ...
         Query query = jcrSql2Query("SELECT * FROM [notion:typed] WHERE [notion:longProperty] = 1234");
         validateQuery().rowCount(1L).validate(query, query.execute());
@@ -468,9 +451,7 @@ public class LocalIndexProviderTest extends AbstractIndexProviderTest {
         Node other = root.addNode("somethingElse");
         other.setProperty("jcr:lastModified", Calendar.getInstance());
 
-        waitForIndexes();
         session.save();
-        waitForIndexes();
 
         // Issues some queries that should use this index ...
         Query query = jcrSql2Query("SELECT * FROM [mix:lastModified] WHERE [jcr:lastModified] > CAST('2012-10-21T00:00:00.000' AS DATE)");
@@ -502,9 +483,7 @@ public class LocalIndexProviderTest extends AbstractIndexProviderTest {
         Node other = root.addNode("somethingElse");
         other.setProperty("jcr:lastModified", Calendar.getInstance());
 
-        waitForIndexes();
         session.save();
-        waitForIndexes();
 
         // Issues some queries that should use this index ...
         Query query = jcrSql2Query("SELECT * FROM [mix:lastModified] WHERE [jcr:lastModified] > CAST('2012-10-21T00:00:00.000' AS DATE)");
@@ -537,9 +516,7 @@ public class LocalIndexProviderTest extends AbstractIndexProviderTest {
         other.setProperty("propA", "a value for property A");
         other.setProperty("jcr:title", "The Title");
 
-        waitForIndexes();
         session.save();
-        waitForIndexes();
 
         // Issues some queries that should use this index ...
         Query query = jcrSql2Query("SELECT * FROM [nt:base] WHERE [jcr:name] = 'myFirstBook'");
@@ -571,9 +548,7 @@ public class LocalIndexProviderTest extends AbstractIndexProviderTest {
         other.setProperty("propA", "a value for property A");
         other.setProperty("jcr:title", "The Title");
 
-        waitForIndexes();
         session.save();
-        waitForIndexes();
 
         // Issues some queries that should use this index ...
         Query query = jcrSql2Query("SELECT * FROM [nt:unstructured] WHERE [mode:depth] > 0");
@@ -608,9 +583,7 @@ public class LocalIndexProviderTest extends AbstractIndexProviderTest {
         other.setProperty("propA", "a value for property A");
         other.setProperty("jcr:title", "The Title");
 
-        waitForIndexes();
         session.save();
-        waitForIndexes();
 
         // Issues a query that should NOT use this index because direct lookup by path is lower cost ...
         Query query = jcrSql2Query("SELECT * FROM [nt:unstructured] WHERE [jcr:path] = '/myFirstBook'");
@@ -652,9 +625,7 @@ public class LocalIndexProviderTest extends AbstractIndexProviderTest {
         other.setProperty("jcr:title", "The Title");
         other.setProperty("someProperty", "value1");
 
-        waitForIndexes();
         session.save();
-        waitForIndexes();
 
         // Issues some queries that should use this index ...
         Query query = jcrSql2Query("SELECT * FROM [nt:unstructured] WHERE someProperty = 'value1'");
@@ -700,7 +671,6 @@ public class LocalIndexProviderTest extends AbstractIndexProviderTest {
         session.save();
         printMessage("Node updated ...");
 
-        waitForIndexes();
 
         Query query = jcrSql2Query("SELECT A.ref1 FROM [nt:unstructured] AS A WHERE A.ref2 = $ref2");
         query.bindValue("ref2", session().getValueFactory().createValue(uuId1));
@@ -722,9 +692,7 @@ public class LocalIndexProviderTest extends AbstractIndexProviderTest {
         // print = true;
         registerValueIndex("ref1", "nt:unstructured", "", null, "ref1", PropertyType.STRING);
         registerValueIndex("ref2", "nt:unstructured", "", null, "ref2", PropertyType.STRING);
-
-        waitForIndexes();
-
+        
         Node newNode1 = session.getRootNode().addNode("nodeWithSysName", "nt:unstructured");
         // session1.save(); // THIS IS CAUSING the node not being indexed
 
@@ -766,9 +734,7 @@ public class LocalIndexProviderTest extends AbstractIndexProviderTest {
         other.setProperty("jcr:title", "The Title");
         other.setProperty("someProperty", "value1");
 
-        waitForIndexes();
         session.save();
-        waitForIndexes();
 
         // Issues some queries that should use this index ...
         final String queryStr = "SELECT * FROM [nt:unstructured] WHERE someProperty = 'value1'";
@@ -809,9 +775,7 @@ public class LocalIndexProviderTest extends AbstractIndexProviderTest {
         other.setProperty("jcr:title", "The Title");
         other.setProperty("someProperty", "value1");
 
-        waitForIndexes();
         session.save();
-        waitForIndexes();
 
         // Issues some queries that should use this index ...
         String queryStr = "SELECT * FROM [nt:unstructured] WHERE someProperty = 'non-existant'";
@@ -831,9 +795,7 @@ public class LocalIndexProviderTest extends AbstractIndexProviderTest {
         String typeName = "nt:someType2";
         registerNodeType(typeName);
         registerValueIndex("nt_someType2", typeName, null, "*", "sysName", PropertyType.STRING);
-
-        waitForIndexes();
-
+        
         Node newNode = session.getRootNode().addNode("SOMENODE", typeName);
         newNode.setProperty("sysName", "X");
 
@@ -850,8 +812,6 @@ public class LocalIndexProviderTest extends AbstractIndexProviderTest {
         // Save the transient data ...
         session.save();
 
-        waitForIndexes();
-
         // Issue a query that will NOT use the index ...
         queryStr = "select BASE.* FROM [" + typeName + "] as BASE WHERE NAME(BASE) = 'SOMENODE'";
         query = jcrSql2Query(queryStr);
@@ -864,13 +824,9 @@ public class LocalIndexProviderTest extends AbstractIndexProviderTest {
 
         registerValueIndex("nt_unstructured", "nt:unstructured", null, "*", "sysName", PropertyType.STRING);
 
-        waitForIndexes();
-
         Node newNode2 = session.getRootNode().addNode("SOMENODE2", "nt:unstructured");
         newNode2.setProperty("sysName", "X");
         session.save();
-
-        waitForIndexes();
 
         // print = true;
 
@@ -901,9 +857,7 @@ public class LocalIndexProviderTest extends AbstractIndexProviderTest {
         other.setProperty("propA", "a value for property A");
         other.setProperty("jcr:title", "The Title");
 
-        waitForIndexes();
         session.save();
-        waitForIndexes();
 
         for (int i = 0; i != 5; ++i) {
             // Compute a query plan that should use this index ...
@@ -970,8 +924,6 @@ public class LocalIndexProviderTest extends AbstractIndexProviderTest {
         String explicitNodesByPath = "explicitNodesByPath";
         registerValueIndex(explicitNodesByPath, "nt:unstructured", "Nodes by path explicit index", "*", "jcr:path",
                            PropertyType.PATH);
-        // wait a bit to make sure the index definitions have been updated
-        waitForIndexes();
 
         Node root = session().getRootNode();
         Node nodeA = root.addNode("nodeA");
@@ -1005,8 +957,7 @@ public class LocalIndexProviderTest extends AbstractIndexProviderTest {
         registerValueIndex(explicitIndex, "nt:unstructured", "Foo index", "*", "foo", PropertyType.STRING);
 
         // wait a bit to make sure the index definitions have been updated
-        waitForIndexes();
-
+        
         Node root = session().getRootNode();
         Node nodeA = root.addNode("nodeA");
         Node nodeB = nodeA.addNode("nodeB");
@@ -1031,9 +982,6 @@ public class LocalIndexProviderTest extends AbstractIndexProviderTest {
         registerNodeTypes("cnd/authors.cnd");
         registerValueIndex("index1", "my:authored", "Authors index", "*", "author", PropertyType.STRING);
         registerValueIndex("index2", "my:authored", "Coauthors index", "*", "coAuthors", PropertyType.STRING);
-
-        // wait a bit to make sure the index definitions have been updated
-        waitForIndexes();
 
         Node root = session.getRootNode();
 
@@ -1079,8 +1027,6 @@ public class LocalIndexProviderTest extends AbstractIndexProviderTest {
         String typeName = "nt:nonQueryableFolder";
         registerNodeType(typeName, false, false, "nt:folder");
         registerNodeTypeIndex("typesIndex", "nt:folder", null, "*", "jcr:primaryType", PropertyType.STRING);
-        
-        waitForIndexes();
 
         session.getRootNode().addNode("nonQueryableFolder", typeName);
         session.getRootNode().addNode("regularFolder1", "nt:folder");
@@ -1088,7 +1034,6 @@ public class LocalIndexProviderTest extends AbstractIndexProviderTest {
         folder2.addNode("subFolder", "nt:folder");
         session.save();
 
-        waitForIndexes();
         final List<String> expectedResults = new ArrayList<>(Arrays.asList("/regularFolder1", "/regularFolder2/subFolder"));
         Query query = jcrSql2Query("select folder.[jcr:name] FROM [nt:folder] as folder");
         validateQuery()
@@ -1112,13 +1057,10 @@ public class LocalIndexProviderTest extends AbstractIndexProviderTest {
         registerNodeType(mixinName, false, true);
         registerNodeTypeIndex("typesIndex", "nt:folder", null, "*", "jcr:primaryType", PropertyType.STRING);
 
-        waitForIndexes();
-
         Node folder1 = session.getRootNode().addNode("folder1", "nt:folder");
         Node folder2 = session.getRootNode().addNode("folder2", "nt:folder");
         folder2.addMixin(mixinName);
         session.save();
-        waitForIndexes();
         
         // test with the initial node config
         final List<String> expectedResults = new ArrayList<>(Collections.singletonList("/folder1"));
@@ -1171,32 +1113,31 @@ public class LocalIndexProviderTest extends AbstractIndexProviderTest {
     public void shouldExposeManagedIndexStatuses() throws Exception {
         String indexName = "explicitIndex";
         registerValueIndex(indexName, "nt:unstructured", "Foo index", "*", "foo", PropertyType.STRING);
-        waitForIndexes();
-
+        
         assertEquals(IndexManager.IndexStatus.NON_EXISTENT, indexManager().getIndexStatus("unknown", indexName, "default"));
-        assertEquals(IndexManager.IndexStatus.NON_EXISTENT, indexManager().getIndexStatus(LOCAL_PROVIDER_NAME, "invalid_name", "default"));
-        assertEquals(IndexManager.IndexStatus.NON_EXISTENT, indexManager().getIndexStatus(LOCAL_PROVIDER_NAME, indexName, "invalid_ws"));
+        assertEquals(IndexManager.IndexStatus.NON_EXISTENT, indexManager().getIndexStatus(providerName(), "invalid_name", "default"));
+        assertEquals(IndexManager.IndexStatus.NON_EXISTENT, indexManager().getIndexStatus(providerName(), indexName, "invalid_ws"));
 
-        assertEquals(IndexManager.IndexStatus.ENABLED, indexManager().getIndexStatus(LOCAL_PROVIDER_NAME, indexName, "default")); 
+        assertEquals(IndexManager.IndexStatus.ENABLED, indexManager().getIndexStatus(providerName(), indexName, "default")); 
         int nodeCount = 100;
         for (int i = 0; i < nodeCount; i++) {
             Node node = session.getRootNode().addNode("node_" + i);
             node.setProperty("foo", UUID.randomUUID().toString());
         }
         session.save();
-        assertEquals(IndexManager.IndexStatus.ENABLED, indexManager().getIndexStatus(LOCAL_PROVIDER_NAME, indexName, "default"));
+        assertEquals(IndexManager.IndexStatus.ENABLED, indexManager().getIndexStatus(providerName(), indexName, "default"));
         Future<Boolean> reindexingResult = session.getWorkspace().reindexAsync();
         Thread.sleep(10);
         if (!reindexingResult.isDone()) {
-            assertEquals(IndexManager.IndexStatus.REINDEXING, indexManager().getIndexStatus(LOCAL_PROVIDER_NAME, indexName, "default"));
+            assertEquals(IndexManager.IndexStatus.REINDEXING, indexManager().getIndexStatus(providerName(), indexName, "default"));
         }
         assertEquals(true, reindexingResult.get());
-        assertEquals(IndexManager.IndexStatus.ENABLED, indexManager().getIndexStatus(LOCAL_PROVIDER_NAME, indexName, "default"));
+        assertEquals(IndexManager.IndexStatus.ENABLED, indexManager().getIndexStatus(providerName(), indexName, "default"));
         
         indexManager().unregisterIndexes(indexName);
         // removing the actual index is async (event based)
         Thread.sleep(100);
-        assertEquals(IndexManager.IndexStatus.NON_EXISTENT, indexManager().getIndexStatus(LOCAL_PROVIDER_NAME, indexName, "default"));
+        assertEquals(IndexManager.IndexStatus.NON_EXISTENT, indexManager().getIndexStatus(providerName(), indexName, "default"));
     }
     
     @Test
@@ -1204,12 +1145,12 @@ public class LocalIndexProviderTest extends AbstractIndexProviderTest {
     public void shouldReturnIndexesWithACertainStatus() throws Exception {
         registerValueIndex("index1", "nt:unstructured", "Foo index", "*", "foo", PropertyType.STRING);
         registerValueIndex("index2", "nt:unstructured", "Bar index", "*", "bar", PropertyType.STRING);
-        waitForIndexes();
-        assertEquals(Arrays.asList("index1", "index2"), indexManager().getIndexNames(LOCAL_PROVIDER_NAME, "default",
+
+        assertEquals(Arrays.asList("index1", "index2"), indexManager().getIndexNames(providerName(), "default",
                                                                                      IndexManager.IndexStatus.ENABLED));
-        assertTrue(indexManager().getIndexNames(LOCAL_PROVIDER_NAME, "default", IndexManager.IndexStatus.REINDEXING).isEmpty());
+        assertTrue(indexManager().getIndexNames(providerName(), "default", IndexManager.IndexStatus.REINDEXING).isEmpty());
         assertTrue(indexManager().getIndexNames("missing", "default", IndexManager.IndexStatus.ENABLED).isEmpty());
-        assertTrue(indexManager().getIndexNames(LOCAL_PROVIDER_NAME, "missing", IndexManager.IndexStatus.ENABLED).isEmpty());
+        assertTrue(indexManager().getIndexNames(providerName(), "missing", IndexManager.IndexStatus.ENABLED).isEmpty());
     }
 
     @Test
@@ -1228,10 +1169,8 @@ public class LocalIndexProviderTest extends AbstractIndexProviderTest {
         book1.addMixin("mix:custom");
         book1.setProperty("jcr:title", "The Title");
 
-        waitForIndexes();
         session.save();
-        waitForIndexes();
-
+        
         // Compute a query plan that should use this index ...
         Query query = jcrSql2Query("SELECT * FROM [mix:custom] as custom where custom.[jcr:name] = 'myFirstBook'");
         validateQuery().rowCount(1L).useIndex("custom_names").validate(query, query.execute());
@@ -1240,7 +1179,6 @@ public class LocalIndexProviderTest extends AbstractIndexProviderTest {
     @Test
     public void shouldSelectIndexWhenMultipleAndedConstraintsApply() throws Exception {
         registerValueIndex("longValues", "nt:unstructured", "Long values index", "*", "value", PropertyType.LONG);
-        waitForIndexes();
 
         Node root = session().getRootNode();
         int valuesCount = 5;

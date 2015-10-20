@@ -81,6 +81,7 @@ class RepositoryQueryManager implements ChangeSetListener {
     private final RunningState runningState;
     private final ExecutorService indexingExecutorService;
     private final RepositoryConfiguration repoConfig;
+    private final RepositoryConfiguration.Reindexing reindexingCfg;
     private final RepositoryIndexManager indexManager;
     private final Lock engineInitLock = new ReentrantLock();
     @GuardedBy( "engineInitLock" )
@@ -91,10 +92,12 @@ class RepositoryQueryManager implements ChangeSetListener {
 
     RepositoryQueryManager( RunningState runningState,
                             ExecutorService indexingExecutorService,
-                            RepositoryConfiguration config ) {
+                            RepositoryConfiguration config,
+                            RepositoryConfiguration.Reindexing reindexingCfg) {
         this.runningState = runningState;
         this.indexingExecutorService = indexingExecutorService;
         this.repoConfig = config;
+        this.reindexingCfg = reindexingCfg;
         this.indexManager = new RepositoryIndexManager(runningState, config);
     }
 
@@ -111,7 +114,7 @@ class RepositoryQueryManager implements ChangeSetListener {
                 // refresh the index writer
                 this.indexManager.refreshIndexWriter();
                 // It's initialized, so we have to call it ...
-                reindexIfNeeded(true);
+                reindexIfNeeded(reindexingCfg.isAsync(), false);
             }
         }
         // If not yet initialized, the "reindexIfNeeded" method will be called by the JcrRepository.
@@ -263,7 +266,7 @@ class RepositoryQueryManager implements ChangeSetListener {
             // there are no index providers, so nothing to reindex
             return;
         }
-        RepositoryConfiguration.Reindexing reindexingCfg = repoConfig.getReindexing();
+        
         boolean async = reindexingCfg.isAsync();
         RepositoryConfiguration.ReindexingMode mode = reindexingCfg.mode();
         switch (mode) {
@@ -291,7 +294,9 @@ class RepositoryQueryManager implements ChangeSetListener {
                 }
             }
             case IF_MISSING: {
-                reindexIfNeeded(async);
+                // when reindexing after startup, make sure the system area is included as well or indexes will lack this
+                // information
+                reindexIfNeeded(async, true);
                 break;
             }
             default: {
@@ -336,8 +341,9 @@ class RepositoryQueryManager implements ChangeSetListener {
      * Reindex the repository only if there is at least one provider that required scanning and reindexing.
      *
      * @param async whether the reindexing should be performed asynchronously or not
+     * @param includeSystemContent whether the /jcr:system area should be indexed or not
      */
-    protected void reindexIfNeeded( boolean async ) {
+    protected void reindexIfNeeded( boolean async, final boolean includeSystemContent ) {
         final ScanningRequest request = toBeScanned.drain();
         if (!request.isEmpty()) {
             final IndexWriter writer = indexManager.getIndexWriterForProviders(request.providerNames());
@@ -373,7 +379,10 @@ class RepositoryQueryManager implements ChangeSetListener {
                                                      workspaceName);
                                     }
                                     // If we find a node to start at, then scan the content ...
-                                    boolean scanSystemContent = repoCache.getSystemWorkspaceName().equals(workspaceName);
+                                    // in certain cases (e.g. at startup) we have to index the system content (if it applies to
+                                    // any of the indexes)
+                                    boolean scanSystemContent = includeSystemContent ||
+                                                                repoCache.getSystemWorkspaceName().equals(workspaceName);
                                     reindexContent(workspaceName, workspaceCache, node, Integer.MAX_VALUE, scanSystemContent,
                                                    writer);
                                 }

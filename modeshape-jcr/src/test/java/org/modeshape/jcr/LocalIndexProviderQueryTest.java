@@ -29,13 +29,7 @@ public class LocalIndexProviderQueryTest extends JcrQueryManagerTest {
         FileUtil.delete("target/LocalIndexProviderQueryTest");
 
         String configFileName = LocalIndexProviderQueryTest.class.getSimpleName() + ".json";
-        LocalIndexProviderQueryTest.beforeAll(configFileName);
-    }
-
-    protected static void beforeAll( String configFileName ) throws Exception {
         JcrQueryManagerTest.beforeAll(configFileName);
-        //add a bit of delay after calling the previous method since that inserts all the nodes and index processing is async
-        Thread.sleep(200);
     }
 
     @Test
@@ -44,7 +38,5 @@ public class LocalIndexProviderQueryTest extends JcrQueryManagerTest {
         session().save();
         added.remove();
         session().save();
-        Thread.sleep(200L);
     }
-
 }

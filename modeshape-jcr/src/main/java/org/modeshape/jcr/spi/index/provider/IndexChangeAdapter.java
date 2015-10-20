@@ -35,12 +35,12 @@ public abstract class IndexChangeAdapter extends ChangeSetAdapter {
 
     protected final String workspaceName;
     protected final ProvidedIndex<?> index;
-    protected final Logger logger; 
+    protected final Logger logger;
 
     protected IndexChangeAdapter( ExecutionContext context,
-                               String workspaceName,
-                               NodeTypePredicate predicate, 
-                               ProvidedIndex<?> index ) {
+                                  String workspaceName,
+                                  NodeTypePredicate predicate,
+                                  ProvidedIndex<?> index ) {
         super(context, predicate);
         assert index != null;
         this.index = index;
