@@ -150,10 +150,24 @@
                 <include>org.gagravarr:*:jar</include>
                 <include>com.googlecode.mp4parser:*:jar</include>
                 <include>*:jhighlight:jar</include>
+                <include>org.ow2.asm:asm-debug-all:jar</include>
                 <!-- 
                 The following are not currently included by default; see ModeShape's parent POM
                 <include>org.bouncycastle:*:jar</include>
                 -->
+            </includes>
+        </dependencySet>  
+        
+        <!--  Module for Lucene -->
+        <dependencySet>
+            <useProjectArtifact>false</useProjectArtifact>
+            <outputDirectory>${jboss.kit.modules.location}/org/apache/lucene/${version.org.apache.lucene}</outputDirectory>
+            <includes>
+                <include>org.apache.lucene:lucene-core:jar</include>
+                <include>org.apache.lucene:lucene-analyzers-common:jar</include>
+                <include>org.apache.lucene:lucene-queryparser:jar</include>
+                <include>org.apache.lucene:lucene-sandbox:jar</include>
+                <include>org.apache.lucene:lucene-queries:jar</include>
             </includes>
         </dependencySet>
 
@@ -304,6 +318,15 @@
             <useTransitiveDependencies>true</useTransitiveDependencies>
             <includes>
                 <include>org.modeshape:modeshape-extractor-tika:jar</include>
+            </includes>
+        </dependencySet>
+
+        <dependencySet>
+            <useProjectArtifact>false</useProjectArtifact>
+            <outputDirectory>${jboss.kit.modules.location}/org/modeshape/index-provider/lucene/main</outputDirectory>
+            <useTransitiveDependencies>true</useTransitiveDependencies>
+            <includes>
+                <include>org.modeshape:modeshape-lucene-index-provider:jar</include>
             </includes>
         </dependencySet>
 

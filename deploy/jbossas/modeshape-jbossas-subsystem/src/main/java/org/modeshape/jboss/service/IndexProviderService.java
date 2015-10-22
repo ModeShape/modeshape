@@ -17,7 +17,6 @@ package org.modeshape.jboss.service;
 
 import java.util.List;
 import java.util.Properties;
-import javax.jcr.RepositoryException;
 import org.infinispan.schematic.Schematic;
 import org.infinispan.schematic.document.Changes;
 import org.infinispan.schematic.document.EditableDocument;
@@ -28,7 +27,6 @@ import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
 import org.jboss.msc.value.InjectedValue;
 import org.modeshape.common.collection.Problems;
-import org.modeshape.jcr.ConfigurationException;
 import org.modeshape.jcr.JcrI18n;
 import org.modeshape.jcr.JcrRepository;
 import org.modeshape.jcr.ModeShapeEngine;
@@ -107,11 +105,7 @@ public class IndexProviderService implements Service<JcrRepository> {
         // Update the deployed repository's configuration with these changes
         try {
             engine.update(this.repositoryName, changes);
-        } catch (ConfigurationException e) {
-            throw new StartException(e);
-        } catch (NoSuchRepositoryException e) {
-            throw new StartException(e);
-        } catch (RepositoryException e) {
+        } catch (Exception e) {
             throw new StartException(e);
         }
     }

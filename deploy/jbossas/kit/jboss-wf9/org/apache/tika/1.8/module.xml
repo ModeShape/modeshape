@@ -20,7 +20,8 @@
     <resources>
         <resource-root path="tika-core-1.8.jar" />
         <resource-root path="tika-parsers-1.8.jar" />
-        <!--All the following are specific to Tika 1.6. Should the tika version change, those need to change as well-->
+        <!--All the following are specific to Tika Should the tika version change, those need to change as well-->
+        <resource-root path="asm-debug-all-4.1.jar" />
         <resource-root path="apache-mime4j-core-0.7.2.jar" />
         <resource-root path="apache-mime4j-dom-0.7.2.jar" />
         <resource-root path="commons-codec-1.9.jar" />

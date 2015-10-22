@@ -19,9 +19,15 @@
                         relative-to="jboss.server.data.dir"/>
         <index-provider name="local3" classname="local" path="modeshape/artifacts/indexes3/"
                         relative-to="jboss.server.data.dir"/>
-        <index-provider name="local4" classname="local" path="modeshape/artifacts/indexes3/" relative-to="jboss.server.data.dir"
+        <index-provider name="local4" classname="local" path="modeshape/artifacts/indexes4/" relative-to="jboss.server.data.dir"
                         cacheLRUEnable="true" mmapFileEnable="true" commitFileSyncDisable="true" transactionDisable="true"
-                        asyncWrite="true" cacheSize="100"/>
+                        asyncWrite="true" cacheSize="100"/> 
+        <index-provider name="lucene1" classname="lucene" path="modeshape/artifacts/indexes4/" relative-to="jboss.server.data.dir"
+                        module="org.modeshape.index-provider.lucene"/>
+        <index-provider name="lucene2" classname="lucene" path="modeshape/artifacts/indexes5/" relative-to="jboss.server.data.dir"
+                        module="org.modeshape.index-provider.lucene"
+                        lockFactoryClass="org.apache.lucene.store.NoLockFactory" directoryClass="org.apache.lucene.store.RAMDirectory"
+                        analyzerClass="org.apache.lucene.analysis.ro.RomanianAnalyzer" codec="Lucene53"/>
     </index-providers>
     <indexes>
       <index name="primaryTypes" provider-name="local" index-kind="value" node-type="nt:base" columns="jcr:primaryType(NAME)" />
