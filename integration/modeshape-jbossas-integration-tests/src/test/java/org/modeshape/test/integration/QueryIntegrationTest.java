@@ -16,7 +16,9 @@
 package org.modeshape.test.integration;
 
 import java.io.File;
+import java.io.InputStream;
 import javax.annotation.Resource;
+import javax.jcr.Node;
 import javax.jcr.Session;
 import javax.jcr.query.Query;
 import org.jboss.arquillian.container.test.api.Deployment;
@@ -33,6 +35,7 @@ import org.junit.runner.RunWith;
 import org.modeshape.jcr.JcrRepository;
 import org.modeshape.jcr.ValidateQuery;
 import org.modeshape.jcr.ValidateQuery.ValidationBuilder;
+import org.modeshape.jcr.api.JcrTools;
 
 /**
  * Arquillian integration tests that uses the predefined repository that contains some index definitions, to test that query
@@ -46,6 +49,7 @@ public class QueryIntegrationTest {
 
     private Session session;
     private boolean print;
+    private JcrTools tools;
 
     @Deployment
     public static WebArchive createDeployment() {
@@ -53,10 +57,10 @@ public class QueryIntegrationTest {
                                .workOffline()
                                .loadPomFromFile("pom.xml")
                                .resolve("org.modeshape:modeshape-jcr:test-jar:tests:?").withTransitivity().asFile();
-                                                
                                
         return ShrinkWrap.create(WebArchive.class, "query-test.war").addAsLibraries(testDeps)
                          .addAsWebInfResource(EmptyAsset.INSTANCE, ArchivePaths.create("beans.xml"))
+                         .addAsResource(new File("src/test/resources/text-extractor/text-file.txt"))
                          .setManifest(new File("src/main/webapp/META-INF/MANIFEST.MF"));
     }
 
@@ -64,6 +68,7 @@ public class QueryIntegrationTest {
     public void beforeEach() throws Exception {
         session = repository.login("default");
         print = false;
+        tools = new JcrTools();
     }
 
     @After
@@ -83,10 +88,60 @@ public class QueryIntegrationTest {
 
     @Test
     public void shouldQueryForAllUnstructuredNodes() throws Exception {
-        session.getRootNode().addNode("query_test");
+        Node node = session.getRootNode().addNode("query_test");
         session.save();
-        String sql = "select [jcr:path] from [nt:base] where [jcr:name] = 'query_test'";
-        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
-        validateQuery().rowCount(1).useIndex("names").validate(query, query.execute());
+        try {
+            String sql = "select [jcr:path] from [nt:base] where [jcr:name] = 'query_test'";
+            Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+            validateQuery().rowCount(1).useIndex("names").validate(query, query.execute());
+        } finally {
+            node.remove();
+            session.save();
+        }
+    }
+    
+    @Test
+    public void shouldQueryForMixTitle() throws Exception {
+        Node testRoot = session.getRootNode().addNode("root");
+        Node node1 = testRoot.addNode("node1");
+        node1.addMixin("mix:title");
+        node1.setProperty("jcr:title", "title_1");        
+        Node node2 = testRoot.addNode("node2");
+        node2.addMixin("mix:title");
+        node2.setProperty("jcr:title", "title_2");
+        session.save();
+
+        try {
+            String sql = "select [jcr:path] from [mix:title] where [jcr:title] LIKE 'ti%'";
+            Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+            validateQuery().rowCount(2).hasNodesAtPaths("/root/node1", "/root/node2").useIndex("titles").validate(query, query.execute());
+        } finally {
+            testRoot.remove();
+            session.save();
+        }
+    }  
+    
+    @Test
+    public void shouldQueryForTextContent() throws Exception {
+        Node testRoot = session.getRootNode().addNode("root");
+        tools.uploadFile(session, "/root/file1", resourceStream("text-file.txt"));
+        tools.uploadFile(session, "/root/file2", resourceStream("text-file.txt"));
+        session.save();
+
+        try {
+            String sql = "select [jcr:path] from [nt:resource] where contains([jcr:data], 'red jumps')";
+            Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+            validateQuery().rowCount(2)
+                           .hasNodesAtPaths("/root/file1/jcr:content", "/root/file2/jcr:content")
+                           .useIndex("textFromFiles")
+                           .validate(query, query.execute());
+        } finally {
+            testRoot.remove();
+            session.save();
+        }
+    }
+    
+    private InputStream resourceStream(String path) {
+        return QueryIntegrationTest.class.getClassLoader().getResourceAsStream(path);
     }
 }

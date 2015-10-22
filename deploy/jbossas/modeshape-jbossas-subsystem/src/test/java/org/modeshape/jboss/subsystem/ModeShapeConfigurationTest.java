@@ -82,8 +82,8 @@ public class ModeShapeConfigurationTest extends AbstractSubsystemBaseTest {
     }
 
     @Test
-    public void testOutputPersistenceOfConfigurationWithLocalFileIndexStorage() throws Exception {
-        parse(readResource("modeshape-local-file-index-storage.xml"));
+    public void testOutputPersistenceOfConfigurationWithIndexStorage() throws Exception {
+        parse(readResource("modeshape-index-storage.xml"));
     }
 
     @Test

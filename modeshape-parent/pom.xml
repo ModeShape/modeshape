@@ -1177,6 +1177,11 @@
             </dependency>
             <dependency>
                 <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-lucene-index-provider</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.modeshape</groupId>
                 <artifactId>modeshape-extractor-tika</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -1874,10 +1879,6 @@
                         <groupId>org.apache.commons</groupId>
                         <artifactId>commons-csv</artifactId>
                     </exclusion>
-                    <exclusion>
-                        <groupId>org.ow2.asm</groupId>
-                        <artifactId>asm-debug-all</artifactId>
-                    </exclusion> 
                     <exclusion>
                         <groupId>org.xerial</groupId>
                         <artifactId>sqlite-jdbc</artifactId>
