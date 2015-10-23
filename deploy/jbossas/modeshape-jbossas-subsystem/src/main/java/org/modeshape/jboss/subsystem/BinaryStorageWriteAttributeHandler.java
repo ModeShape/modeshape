@@ -27,6 +27,9 @@ import org.jboss.as.controller.OperationStepHandler;
  */
 public class BinaryStorageWriteAttributeHandler extends AbstractRepositoryConfigWriteAttributeHandler {
 
+    static final BinaryStorageWriteAttributeHandler TRANSIENT_BINARY_STORAGE_INSTANCE = new BinaryStorageWriteAttributeHandler(
+            ModelAttributes.TRANSIENT_BINARY_STORAGE_ATTRIBUTES);
+
     static final BinaryStorageWriteAttributeHandler FILE_BINARY_STORAGE_INSTANCE = new BinaryStorageWriteAttributeHandler(
             ModelAttributes.FILE_BINARY_STORAGE_ATTRIBUTES);
     

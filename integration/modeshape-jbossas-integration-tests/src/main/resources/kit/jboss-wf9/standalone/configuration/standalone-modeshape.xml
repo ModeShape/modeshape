@@ -492,6 +492,9 @@
                                       metadata-cache-name="binaryJDBCRepository-binary-metadata-wb"
                                       mime-type-detection="none"/>
             </repository>
+            <repository name="transient" anonymous-roles="admin" cache-name="sample" cache-config="modeshape/infinispan-test-caches.xml">
+                <transient-binary-storage min-string-size="100" mime-type-detection="none"/>
+            </repository>
             <repository name="repo-clustered1" cache-config="modeshape/infinispan-test-clustered-caches.xml" anonymous-roles="admin"/>
             <repository name="repo-clustered2" cache-config="modeshape/infinispan-test-clustered-caches.xml" anonymous-roles="admin"/>
 

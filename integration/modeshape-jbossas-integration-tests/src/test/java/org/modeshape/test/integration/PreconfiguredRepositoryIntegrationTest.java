@@ -18,6 +18,7 @@ package org.modeshape.test.integration;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
@@ -35,9 +36,11 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.modeshape.common.FixFor;
+import org.modeshape.common.util.IoUtil;
 import org.modeshape.jcr.JcrRepository;
 import org.modeshape.jcr.JcrSession;
 import org.modeshape.jcr.api.JcrConstants;
+import org.modeshape.jcr.api.JcrTools;
 import org.modeshape.jcr.api.observation.Event;
 
 /**
@@ -61,6 +64,9 @@ public class PreconfiguredRepositoryIntegrationTest {
 
     @Resource( mappedName = "java:/jcr/optimizationRepository" )
     private JcrRepository optimizationRepository;
+
+    @Resource( mappedName = "java:/jcr/transient" )
+    private JcrRepository transientRepository;
 
     @Deployment
     public static WebArchive createDeployment() {
@@ -168,5 +174,20 @@ public class PreconfiguredRepositoryIntegrationTest {
         assertTrue(optimizationRepository.getConfiguration().getDocumentOptimization().isEnabled());
         Session session = optimizationRepository.login();
         session.logout();
+    }
+    
+    @Test
+    @FixFor( "MODE-2512" )
+    public void shouldEnableTransientBinaryStore() throws Exception {
+        Session session = transientRepository.login();
+        String value = "test string";
+        ByteArrayInputStream bis = new ByteArrayInputStream(value.getBytes());
+        JcrTools tools = new JcrTools();
+        tools.uploadFile(session, "/root/temp_file", bis);
+        session.save();
+        
+        String actualValue = IoUtil.read(session.getNode("/root/temp_file/jcr:content").getProperty("jcr:data").getBinary().getStream());
+        assertEquals(value, actualValue);
+        session.logout();                
     }
 }

@@ -32,6 +32,7 @@ public enum Element {
     CUSTOM_BINARY_STORAGE("custom-binary-storage"),
     DB_BINARY_STORAGE("db-binary-storage"),
     FILE_BINARY_STORAGE("file-binary-storage"),
+    TRANSIENT_BINARY_STORAGE("transient-binary-storage"),
     INDEX_PROVIDER("index-provider"),
     INDEX_PROVIDERS("index-providers"),
     INDEX("index"),

@@ -223,6 +223,10 @@ public class ModeShapeSubsystemXMLReader_2_1 implements XMLStreamConstants, XMLE
                     break;
 
                 // Binary storage ...
+                case TRANSIENT_BINARY_STORAGE:
+                    addBinaryStorageConfiguration(repositories, repositoryName);
+                    binaryStorage = parseTransientBinaryStorage(reader, repositoryName);
+                    break;
                 case FILE_BINARY_STORAGE:
                     addBinaryStorageConfiguration(repositories, repositoryName);
                     binaryStorage = parseFileBinaryStorage(reader, repositoryName, false);
@@ -518,6 +522,42 @@ public class ModeShapeSubsystemXMLReader_2_1 implements XMLStreamConstants, XMLE
             storageType.get(OP_ADDR).add(ModelKeys.STORAGE_TYPE, ModelKeys.FILE_BINARY_STORAGE);
         }
 
+        return storageType;
+    }
+
+    private ModelNode parseTransientBinaryStorage( final XMLExtendedStreamReader reader,
+                                                   final String repositoryName) throws XMLStreamException {
+
+        final ModelNode storageType = new ModelNode();
+        storageType.get(OP).set(ADD);
+        storageType.get(OP_ADDR)
+                   .add(SUBSYSTEM, ModeShapeExtension.SUBSYSTEM_NAME)
+                   .add(ModelKeys.REPOSITORY, repositoryName)
+                   .add(ModelKeys.CONFIGURATION, ModelKeys.BINARY_STORAGE);
+
+        if (reader.getAttributeCount() > 0) {
+            for (int i = 0; i < reader.getAttributeCount(); i++) {
+                String attrName = reader.getAttributeLocalName(i);
+                String attrValue = reader.getAttributeValue(i);
+                Attribute attribute = Attribute.forName(attrName);
+                switch (attribute) {
+                // The rest go on the ModelNode for the type ...
+                    case MIN_VALUE_SIZE:
+                        ModelAttributes.MINIMUM_BINARY_SIZE.parseAndSetParameter(attrValue, storageType, reader);
+                        break;
+                    case MIN_STRING_SIZE:
+                        ModelAttributes.MINIMUM_STRING_SIZE.parseAndSetParameter(attrValue, storageType, reader);
+                        break;
+                    case MIME_TYPE_DETECTION:
+                        ModelAttributes.MIME_TYPE_DETECTION.parseAndSetParameter(attrValue, storageType, reader);
+                        break;
+                    default:
+                        throw ParseUtils.unexpectedAttribute(reader, i);
+                }
+            }
+        }
+        requireNoElements(reader);
+        storageType.get(OP_ADDR).add(ModelKeys.STORAGE_TYPE, ModelKeys.TRANSIENT_BINARY_STORAGE);
         return storageType;
     }
 

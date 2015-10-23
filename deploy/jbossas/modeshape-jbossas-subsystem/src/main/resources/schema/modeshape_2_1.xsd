@@ -119,6 +119,11 @@
             </xs:element>
 
             <xs:choice minOccurs="0" maxOccurs="1">
+                <xs:element name="transient-binary-storage" type="transient-binary-storage">
+                    <xs:annotation>
+                        <xs:documentation>The binary files are stored in a temporary location which is cleared between server restarts</xs:documentation>
+                    </xs:annotation>
+                </xs:element>  
                 <xs:element name="file-binary-storage" type="file-binary-storage">
                     <xs:annotation>
                         <xs:documentation>The binary files are stored on the local file system.</xs:documentation>
@@ -691,6 +696,10 @@
             </xs:annotation>
         </xs:attribute>
         <xs:anyAttribute namespace="##any" processContents="lax"/>
+    </xs:complexType>
+
+    <xs:complexType name="transient-binary-storage">
+        <xs:attributeGroup ref="binary-storage-attributes"/>
     </xs:complexType>
 
     <xs:complexType name="file-binary-storage">

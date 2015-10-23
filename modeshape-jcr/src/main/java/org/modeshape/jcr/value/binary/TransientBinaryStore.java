@@ -18,7 +18,6 @@ package org.modeshape.jcr.value.binary;
 import java.io.File;
 import org.modeshape.common.SystemFailureException;
 import org.modeshape.common.annotation.ThreadSafe;
-import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.FileUtil;
 import org.modeshape.jcr.JcrI18n;
 import org.modeshape.jcr.value.BinaryKey;
@@ -32,14 +31,10 @@ import org.modeshape.jcr.value.BinaryKey;
 public final class TransientBinaryStore extends FileSystemBinaryStore {
 
     private static final String JAVA_IO_TMPDIR = "java.io.tmpdir";
-
-    private static final String JBOSS_SERVER_DATA_DIR = "jboss.server.data.dir";
-
+    private static final String JBOSS_SERVER_TMPDIR = "jboss.server.temp.dir";
     private static final TransientBinaryStore INSTANCE = new TransientBinaryStore();
 
     protected static final File TRANSIENT_STORE_DIRECTORY = INSTANCE.getDirectory();
-
-    private static boolean printedLocation = false;
 
     /**
      * Obtain a shared {@link TransientBinaryStore} instance.
@@ -57,7 +52,10 @@ public final class TransientBinaryStore extends FileSystemBinaryStore {
      * @return the new directory; never null
      */
     private static File newTempDirectory() {
-        String tempDirName = System.getProperty(JAVA_IO_TMPDIR);
+        String tempDirName = System.getProperty(JBOSS_SERVER_TMPDIR);
+        if (tempDirName == null) {
+            tempDirName = System.getProperty(JAVA_IO_TMPDIR);
+        }
         if (tempDirName == null) {
             throw new SystemFailureException(JcrI18n.tempDirectorySystemPropertyMustBeSet.text(JAVA_IO_TMPDIR));
         }
@@ -76,15 +74,10 @@ public final class TransientBinaryStore extends FileSystemBinaryStore {
 
     @Override
     public void start() {
-        if (!printedLocation && System.getProperty(JBOSS_SERVER_DATA_DIR) == null) {
-            // We're not running in JBoss AS (where we always specify the directory where the binaries are stored),
-            // so log where the temporary directory is ...
-            Logger logger = Logger.getLogger(getClass());
-            logger.debug("ModeShape repositories will use the following directory for transient storage of binary values unless repository configurations specify otherwise: {0}",
-                         getDirectory().getAbsolutePath());
-            printedLocation = true;
-        }
-        super.start();
+        logger.debug("ModeShape repositories will use the following directory for transient storage of binary values unless repository configurations specify otherwise: {0}",
+                     getDirectory().getAbsolutePath());
+        // request the folder be deleted on VM exit; this may or may not work, which is why we also try to clear it on initialize
+        getDirectory().deleteOnExit();
     }
 
     /**
@@ -97,8 +90,7 @@ public final class TransientBinaryStore extends FileSystemBinaryStore {
         // make sure the directory doesn't exist
         FileUtil.delete(directory);
         if (!directory.exists()) {
-            Logger.getLogger(getClass()).debug("Creating temporary directory for transient binary store: {0}",
-                                               directory.getAbsolutePath());
+            logger.debug("Creating temporary directory for transient binary store: {0}", directory.getAbsolutePath());
             directory.mkdirs();
         }
         if (!directory.canRead()) {
