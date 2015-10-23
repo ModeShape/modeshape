@@ -84,6 +84,7 @@ public class ModelKeys {
     static final String AUTHENTICATOR_CLASSNAME = "classname";
 
     static final String BINARY_STORAGE = "binary-storage";
+    static final String TRANSIENT_BINARY_STORAGE = "transient-binary-storage";
     static final String FILE_BINARY_STORAGE = "file-binary-storage";
     static final String DB_BINARY_STORAGE = "db-binary-storage";
     static final String COMPOSITE_BINARY_STORAGE = "composite-binary-storage";

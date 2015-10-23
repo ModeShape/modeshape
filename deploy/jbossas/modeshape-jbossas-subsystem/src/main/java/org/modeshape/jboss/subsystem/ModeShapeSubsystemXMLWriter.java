@@ -257,7 +257,13 @@ public class ModeShapeSubsystemXMLWriter implements XMLStreamConstants, XMLEleme
     private void writeBinaryStorageModel( XMLExtendedStreamWriter writer,
                                           String storageType,
                                           ModelNode storage ) throws XMLStreamException {
-        if (ModelKeys.FILE_BINARY_STORAGE.equals(storageType)) {
+        if (ModelKeys.TRANSIENT_BINARY_STORAGE.equals(storageType)) {
+            writer.writeStartElement(Element.TRANSIENT_BINARY_STORAGE.getLocalName());
+            ModelAttributes.MINIMUM_BINARY_SIZE.marshallAsAttribute(storage, false, writer);
+            ModelAttributes.MINIMUM_STRING_SIZE.marshallAsAttribute(storage, false, writer);
+            ModelAttributes.MIME_TYPE_DETECTION.marshallAsAttribute(storage, false, writer);
+            writer.writeEndElement();
+        } else if (ModelKeys.FILE_BINARY_STORAGE.equals(storageType)) {
             // This is the default, but there is no default value for the ModelAttributes.PATH (which is required),
             // which means we always have to write this out. If it is the default binary storage, then there
             // won't even be a 'binary-storage=BINARIES' model node.
