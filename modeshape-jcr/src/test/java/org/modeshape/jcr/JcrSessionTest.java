@@ -736,6 +736,25 @@ public class JcrSessionTest extends SingleUseAbstractTest {
     }
 
     @Test
+    @FixFor( "MODE-2511" )
+    public void shouldAllowReorderNodesWhenSameNameIsDisabled() throws Exception {
+        try {
+            session.getWorkspace().getNodeTypeManager().registerNodeTypes(resourceStream("cnd/magnolia.cnd"), true);
+
+            // add 2 nodes under a parent that doesn't allow SNS and reorder them
+            final Node root = session.getRootNode();
+            final Node parent = root.addNode("parent", "mgnl:content");
+            parent.addNode("name1", "nt:folder");
+            parent.addNode("name2", "nt:folder");
+            parent.orderBefore("name2", "name1");
+            
+            session.save();
+        } finally {
+            session.logout();
+        }
+    }
+
+    @Test
     @FixFor( "MODE-2206" )
     public void shouldMoveOverNodesRenamedInTheSameSession() throws Exception {
         try {

@@ -1028,9 +1028,14 @@ public class WritableSessionCache extends AbstractSessionCache {
                         // c) no SNS are allowed meaning that we don't care about the already existent child references  
                         // and determining the path in a regular fashion *can* very expensive because it requires loading all of the parent's child references
                         MutableChildReferences appended = mutableParent.appended(false);
-                        assert appended != null;
                         Path parentPath = sessionPaths.getPath(mutableParent);
-                        newPath = pathFactory().create(parentPath, appended.getChild(key).getName());
+                        ChildReference ref = appended.getChild(key);
+                        if (ref == null) {
+                            // the child is new, but doesn't appear in the 'appended' list, so it must've been reordered...
+                            ref = mutableParent.changedChildren().inserted(key);
+                        }
+                        assert ref != null;
+                        newPath = pathFactory().create(parentPath, ref.getName());
                         sessionPaths.put(key, newPath);
                     } else {
                         // do a regular lookup of the path, which *will load* the parent's child references
