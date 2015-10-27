@@ -484,8 +484,9 @@ public class FileSystemConnector extends WritableConnector implements Pageable {
     @Override
     public Document getDocumentById( String id ) {
         File file = fileFor(id);
-        if (isExcluded(file) || !file.exists()) return null;
         boolean isRoot = isRoot(id);
+        // make sure the root folder is never excluded....
+        if (!isRoot && (isExcluded(file) || !file.exists())) return null;
         boolean isResource = isContentNode(id);
         DocumentWriter writer = null;
         File parentFile = file.getParentFile();

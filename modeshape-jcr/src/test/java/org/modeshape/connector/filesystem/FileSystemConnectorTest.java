@@ -89,6 +89,7 @@ public class FileSystemConnectorTest extends SingleUseAbstractTest {
     private Projection largeFilesProjection;
     private Projection largeFilesProjectionDefault;
     private Projection monitoringProjection;
+    private Projection filteredProjection;
     private Projection[] projections;
     private JcrTools tools;
 
@@ -108,10 +109,11 @@ public class FileSystemConnectorTest extends SingleUseAbstractTest {
         largeFilesProjection = new LargeFilesProjection("large-files", "target/federation/large-files");
         largeFilesProjectionDefault = new LargeFilesProjection("large-files-default", "target/federation/large-files-default");
         monitoringProjection = new Projection("monitoring", "target/federation/monitoring");
+        filteredProjection = new Projection("json-filter", "target/federation/files-json-filter");
 
         projections = new Projection[] {readOnlyProjection, readOnlyProjectionWithInclusion, readOnlyProjectionWithExclusion,
             storeProjection, jsonProjection, legacyProjection, noneProjection, pagedProjection, largeFilesProjection,
-            largeFilesProjectionDefault, monitoringProjection};
+            largeFilesProjectionDefault, monitoringProjection, filteredProjection };
 
         // Remove and then make the directory for our federation test ...
         for (Projection projection : projections) {
@@ -807,6 +809,17 @@ public class FileSystemConnectorTest extends SingleUseAbstractTest {
         ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
         // import via workspace ...
         jcrSession().getWorkspace().importXML("/testRoot/store", bais, ImportUUIDBehavior.IMPORT_UUID_COLLISION_REPLACE_EXISTING);
+    }
+    
+    @Test
+    @FixFor( "MODE-2514" )
+    public void shouldAllowPreconfiguredProjectionWhichDoesntMatchFileFilter() throws Exception {
+        assertNode("/json_filter");    
+        assertNoNode("/json_filter/dir1");
+        assertNoNode("/json_filter/dir2");
+        assertNode("/json_filter/dir3");    
+        assertNode("/json_filter/dir3/simple.json");
+        assertNoNode("/json_filter/dir3/simple.txt");
     }
 
     protected void assertNoSidecarFile( Projection projection,
