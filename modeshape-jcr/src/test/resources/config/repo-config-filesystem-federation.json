@@ -72,6 +72,14 @@
             "classname" : "filesystem",
             "directoryPath" : "target/federation/monitoring",
             "enableEvents" : true
+        },
+        "json-filter" : {
+            "classname" : "filesystem",
+            "directoryPath" : "target/federation/files-json-filter",
+            "projections" : [ "default:/json_filter => /" ],
+            "enableEvents" : true,
+            "cacheTtlSeconds" : 0,
+            "inclusionPattern" : "dir3|.+[.]json$"
         }
     },
     "sequencing" : {
