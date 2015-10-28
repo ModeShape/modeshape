@@ -80,6 +80,10 @@ public class BinaryStorageService implements Service<BinaryStorage> {
             if (relativePath != null) {
                 binaryConfig.set(FieldName.DIRECTORY, binaryStorageBasePath + relativePath);
             }
+            String trashPath = binaryConfig.getString(FieldName.TRASH_DIRECTORY);
+            if (trashPath != null) {
+                binaryConfig.set(FieldName.TRASH_DIRECTORY, binaryStorageBasePath + trashPath);                
+            }
         }
     }
 

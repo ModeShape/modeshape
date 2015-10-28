@@ -563,6 +563,11 @@ public class ModelAttributes {
                                                                                                                                .setAllowNull(true)
                                                                                                                                .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                                                                                                                                .build();
+    public static final SimpleAttributeDefinition TRASH = new MappedAttributeDefinitionBuilder(ModelKeys.TRASH, ModelType.STRING).setXmlName(Attribute.TRASH.getLocalName())
+                                                                                                                               .setAllowExpression(true)
+                                                                                                                               .setAllowNull(true)
+                                                                                                                               .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+                                                                                                                               .build();
 
     public static final ListAttributeDefinition PATH_EXPRESSIONS = MappedListAttributeDefinition.Builder.of(ModelKeys.PATH_EXPRESSIONS,
                                                                                                             new MappedAttributeDefinitionBuilder(
@@ -892,7 +897,7 @@ public class ModelAttributes {
                                                                                      MIME_TYPE_DETECTION}; 
     
     public static final AttributeDefinition[] FILE_BINARY_STORAGE_ATTRIBUTES = {MINIMUM_BINARY_SIZE, MINIMUM_STRING_SIZE, PATH,
-        RELATIVE_TO, STORE_NAME, MIME_TYPE_DETECTION};
+        TRASH, RELATIVE_TO, STORE_NAME, MIME_TYPE_DETECTION};
 
     public static final AttributeDefinition[] CACHE_BINARY_STORAGE_ATTRIBUTES = {MINIMUM_BINARY_SIZE, MINIMUM_STRING_SIZE,
         CHUNK_SIZE, DATA_CACHE_NAME, METADATA_CACHE_NAME, CACHE_CONFIG, STORE_NAME, MIME_TYPE_DETECTION};

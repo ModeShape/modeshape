@@ -60,6 +60,7 @@ public enum Attribute {
     MODULE("module"),
     NAME("name"),
     PATH("path"),
+    TRASH("trash"),
     PATH_EXPRESSION("path-expression"),
     RELATIVE_TO("relative-to"),
     SECURITY_DOMAIN("security-domain"),

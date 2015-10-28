@@ -419,6 +419,7 @@ public class RepositoryConfiguration {
         public static final String COLUMNS = "columns";
         public static final String TYPE = "type";
         public static final String DIRECTORY = "directory";
+        public static final String TRASH_DIRECTORY = "trash";
         public static final String CLASSLOADER = "classloader";
         public static final String CLASSNAME = "classname";
         public static final String DATA_SOURCE_JNDI_NAME = "dataSourceJndiName";
@@ -1126,9 +1127,11 @@ public class RepositoryConfiguration {
                 store = TransientBinaryStore.get();
             } else if (type.equalsIgnoreCase(FieldValue.BINARY_STORAGE_TYPE_FILE)) {
                 String directory = binaryStorage.getString(FieldName.DIRECTORY);
+                String trash = binaryStorage.getString(FieldName.TRASH_DIRECTORY);
                 assert directory != null;
                 File dir = new File(directory);
-                store = FileSystemBinaryStore.create(dir);
+                File trashDir = trash != null ? new File(trash) : null;
+                store = FileSystemBinaryStore.create(dir, trashDir);
             } else if (type.equalsIgnoreCase(FieldValue.BINARY_STORAGE_TYPE_DATABASE)) {
                 String driverClass = binaryStorage.getString(FieldName.JDBC_DRIVER_CLASS);
                 String connectionURL = binaryStorage.getString(FieldName.CONNECTION_URL);

@@ -176,6 +176,11 @@
                                     "required" : true,
                                     "description" : "The location of the directory the file system under which the BINARY values should be stored. The value can be an absolute or relative path."
                                 },
+                                "trash" : {
+                                    "type" : "string",
+                                    "required" : false,
+                                    "description" : "The location of the directory the file system under which unused BINARY values should be stored before removing them from disk. The value can be an absolute or relative path."
+                                },
                                 "minimumBinarySizeInBytes" : {
                                     "type" : "integer",
                                     "default" : 4096,

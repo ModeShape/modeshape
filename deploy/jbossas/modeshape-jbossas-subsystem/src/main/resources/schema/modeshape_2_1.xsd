@@ -895,6 +895,21 @@
                     If undefined, the path defaults to 'modeshape/{repositoryName}/binaries'.
                 </xs:documentation>
             </xs:annotation>
+        </xs:attribute> 
+        <xs:attribute name="trash" type="xs:string">
+            <xs:annotation>
+                <xs:documentation>This option defines the path on the file system
+                    where unused binary values are to be stored until completely removed from disk.
+                    If specified, the value must be a valid path to a writable directory
+                    on the file system, relative to the location indicated by the "relative-to" attribute.
+                    If the path specifies a non-existant location, the
+                    repository may attempt to create the missing directories.
+                    If the specified location is not a readable and writable
+                    directory (or cannot be created as such), then this will
+                    generate an exception when the repository is created.
+                    If undefined, the path defaults to 'modeshape/{repositoryName}/binaries/trash'.
+                </xs:documentation>
+            </xs:annotation>
         </xs:attribute>
     </xs:attributeGroup>
     <!-- Global simple types -->

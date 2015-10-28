@@ -51,17 +51,26 @@ public class AddFileBinaryStorage extends AbstractAddBinaryStorage {
 
         ModelNode pathNode = ModelAttributes.PATH.resolveModelAttribute(context, model);
         String path = pathNode.isDefined() ? pathNode.asString() : "modeshape/" + repositoryName + "/binaries";
-
+        
+        ModelNode trashNode = ModelAttributes.TRASH.resolveModelAttribute(context, model);
+        String trash = trashNode.isDefined() ? trashNode.asString() : null; 
+        
         String relativeTo = ModelAttributes.RELATIVE_TO.resolveModelAttribute(context, model).asString();
         if (relativeTo.equalsIgnoreCase(ModeShapeExtension.JBOSS_DATA_DIR_VARIABLE)) {
             //the relative-to path should be the default jboss-data-dir.
             binaryStoragePathInDataDirectory = ".";
             binaries.set(FieldName.DIRECTORY, path);
+            if (trash != null) {
+                binaries.set(FieldName.TRASH_DIRECTORY, trash);
+            }
         } else {
             if (!relativeTo.endsWith("/")) {
                 relativeTo = relativeTo + "/";
             }
             binaries.set(FieldName.DIRECTORY, relativeTo + path);
+            if (trash != null) {
+                binaries.set(FieldName.TRASH_DIRECTORY, relativeTo + trash);
+            }
         }
     }
 
