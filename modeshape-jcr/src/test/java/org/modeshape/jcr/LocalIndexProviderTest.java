@@ -1199,4 +1199,30 @@ public class LocalIndexProviderTest extends AbstractIndexProviderTest {
                 .hasNodesAtPaths("/2", "/4", "/1")
                 .validate(query, query.execute());
     }
+
+    @Test
+    @FixFor( "MODE-2515" )
+    public void shouldSupportQueryLimitWithMoreThan100Nodes() throws Exception {
+        registerValueIndex("title", "mix:title", null, "*", "jcr:title", PropertyType.STRING);
+
+        // Add a node that uses this type ...
+        Node root = session().getRootNode();
+        int nodeCount = 102;
+        for (int i = 0; i < nodeCount; i++) {
+            Node book = root.addNode("book_" + (i+1));
+            book.addMixin("mix:title");
+            book.setProperty("jcr:title", "Title");
+        }
+        session.save();
+
+        // Compute a query plan that should use this index ...
+        Query query = jcrSql2Query("SELECT * FROM [mix:title] as book where book.[jcr:title] = 'Title'");
+        int limit = nodeCount - 1;
+        query.setLimit(limit);
+        validateQuery().rowCount(limit).useIndex("title").validate(query, query.execute());
+
+        limit = nodeCount / 2;
+        query.setLimit(limit);
+        validateQuery().rowCount(limit).useIndex("title").validate(query, query.execute());
+    }
 }

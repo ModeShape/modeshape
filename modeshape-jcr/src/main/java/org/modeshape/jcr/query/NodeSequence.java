@@ -647,6 +647,7 @@ public abstract class NodeSequence {
         if (maxRows <= 0) return emptySequence(sequence.width());
         if (sequence.isEmpty()) return sequence;
         return new NodeSequence() {
+            private LimitBatch lastLimitBatch = null;
             protected long rowsRemaining = maxRows;
 
             @Override
@@ -669,6 +670,14 @@ public abstract class NodeSequence {
             @Override
             public Batch nextBatch() {
                 if (rowsRemaining <= 0) return null;
+                if (lastLimitBatch != null) {
+                    long rowsUsed = lastLimitBatch.rowsUsed();
+                    if (rowsUsed < rowsRemaining) {
+                        rowsRemaining -= rowsUsed;
+                    } else {
+                        return null; 
+                    }
+                }
                 final Batch next = sequence.nextBatch();
                 if (next == null) return null;
                 long size = next.rowCount();
@@ -687,8 +696,8 @@ public abstract class NodeSequence {
                 }
                 // The size is not known or larger than rowsRemaining, so we return a batch that exposes only the number we need
                 long limit = rowsRemaining;
-                rowsRemaining = 0L;
-                return new LimitBatch(next, limit, sizeKnown);
+                lastLimitBatch = new LimitBatch(next, limit, sizeKnown);
+                return lastLimitBatch;
             }
 
             @Override
@@ -855,6 +864,10 @@ public abstract class NodeSequence {
         @Override
         public String toString() {
             return "(limit-batch size=" + rowCount + " " + original + " )";
+        }
+        
+        protected long rowsUsed()  {
+            return rowsUsed;
         }
     }
 
