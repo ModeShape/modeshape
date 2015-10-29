@@ -491,6 +491,9 @@ public class ModeShapeSubsystemXMLReader_2_1 implements XMLStreamConstants, XMLE
                     case PATH:
                         ModelAttributes.PATH.parseAndSetParameter(attrValue, storageType, reader);
                         break;
+                    case TRASH:
+                        ModelAttributes.TRASH.parseAndSetParameter(attrValue, storageType, reader);
+                        break;
                     case MIN_VALUE_SIZE:
                         ModelAttributes.MINIMUM_BINARY_SIZE.parseAndSetParameter(attrValue, storageType, reader);
                         break;

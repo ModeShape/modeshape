@@ -113,7 +113,7 @@ public class FileSystemBinaryStoreTest extends AbstractBinaryStoreTest {
         FileUtil.delete(directory);
         directory.mkdirs();
         trash = new File(directory, FileSystemBinaryStore.TRASH_DIRECTORY_NAME);
-        store = new FileSystemBinaryStore(directory);
+        store = new FileSystemBinaryStore(directory, trash);
         store.setMinimumBinarySizeInBytes(MIN_BINARY_SIZE);
         store.setMimeTypeDetector(DEFAULT_DETECTOR);
         print = false;

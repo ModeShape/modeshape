@@ -44,22 +44,34 @@ import org.modeshape.jcr.value.BinaryValue;
 
 /**
  * A {@link BinaryStore} that stores files in a directory on the file system. The store does use file locks to prevent other
- * processes from concurrently writing the files, and it also uses an internal set of locks to prevent mulitple threads from
+ * processes from concurrently writing the files, and it also uses an internal set of locks to prevent multiple threads from
  * simultaneously writing to the persisted files.
  */
 @ThreadSafe
 public class FileSystemBinaryStore extends AbstractBinaryStore {
 
+    protected static final String TRASH_DIRECTORY_NAME = "trash";
+
     private static final String EXTRACTED_TEXT_SUFFIX = "-extracted-text";
     private static final String MIME_TYPE_SUFFIX = "-mime-type";
-
+    private static final String TEMP_FILE_PREFIX = "ms-fs-binstore";
+    private static final String TEMP_FILE_SUFFIX = "hashing";
+    
     private static final ConcurrentHashMap<String, FileSystemBinaryStore> INSTANCES = new ConcurrentHashMap<String, FileSystemBinaryStore>();
 
-    public static FileSystemBinaryStore create( File directory ) {
+    /**
+     * Creates a new FS binary store instance
+     *
+     * @param directory a {@link File} instance where the binary data will be stored; may not be {@code null}
+     * @param trash a {@link File} instance where unused binary data is transferred to, until completely being removed from disk;
+     * may be {@code null} in which case a default location will be used.
+     * @return a {@link FileSystemBinaryStore} instance
+     */
+    public static FileSystemBinaryStore create( File directory, File trash ) {
         String key = directory.getAbsolutePath();
         FileSystemBinaryStore store = INSTANCES.get(key);
         if (store == null) {
-            store = new FileSystemBinaryStore(directory);
+            store = trash != null ? new FileSystemBinaryStore(directory, trash) : new FileSystemBinaryStore(directory);
             FileSystemBinaryStore existing = INSTANCES.putIfAbsent(key, store);
             if (existing != null) {
                 store = existing;
@@ -68,18 +80,18 @@ public class FileSystemBinaryStore extends AbstractBinaryStore {
         return store;
     }
 
-    private static final String TEMP_FILE_PREFIX = "ms-fs-binstore";
-    private static final String TEMP_FILE_SUFFIX = "hashing";
-    protected static final String TRASH_DIRECTORY_NAME = "trash";
-
     private final File directory;
     private final File trash;
     private final NamedLocks locks = new NamedLocks();
     private volatile boolean initialized = false;
 
     protected FileSystemBinaryStore( File directory ) {
+        this(directory, new File(directory, TRASH_DIRECTORY_NAME));
+    }
+
+    protected FileSystemBinaryStore( File directory, File trash ) {
         this.directory = directory;
-        this.trash = new File(this.directory, TRASH_DIRECTORY_NAME);
+        this.trash = trash;
     }
 
     public File getDirectory() {

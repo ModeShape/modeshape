@@ -20,7 +20,8 @@
         "cacheConfiguration" : "infinispan_configuration.xml",
         "binaryStorage" : {
             "type" : "file",
-            "directory" : "Thorough/binaries",
+            "directory" : "Thorough/binaries",    
+            "trash" : "Thorough/trash",
             "minimumBinarySizeInBytes" : 4096,
             "minimumStringSize" : 8096,
             "mimeTypeDetection" : "none"

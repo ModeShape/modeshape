@@ -60,6 +60,7 @@ public class ModelKeys {
     static final String MODULE = "module";
     static final String NAME = "name";
     static final String PATH = "path";
+    static final String TRASH = "trash";
     static final String PATH_EXPRESSION = "path-expression";
     static final String PATH_EXPRESSIONS = "path-expressions";
     static final String PROPERTY = "property";
