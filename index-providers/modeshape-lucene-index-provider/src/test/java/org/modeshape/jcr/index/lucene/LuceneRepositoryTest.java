@@ -86,11 +86,11 @@ public class LuceneRepositoryTest {
         JcrRepository repository2 = null;
         try {
             // Start the first process completely ...
-            repository1 = TestingUtil.startRepositoryWithConfig("config/clustered-repo-with-incremental-indexes-config-1.json");
+            repository1 = TestingUtil.startRepositoryWithConfig("config/cluster/clustered-repo-with-incremental-indexes-config-1.json");
             Thread.sleep(300);
 
             // Start the second process completely ...
-            repository2 = TestingUtil.startRepositoryWithConfig("config/clustered-repo-with-incremental-indexes-config-2.json");
+            repository2 = TestingUtil.startRepositoryWithConfig("config/cluster/clustered-repo-with-incremental-indexes-config-2.json");
             Thread.sleep(300);
 
             // make 1 change which should be propagated in the cluster
@@ -111,7 +111,8 @@ public class LuceneRepositoryTest {
 
             // start the 2nd repo back up - at the end of this the journals should be up-to-date and ISPN should've done the state
             // transfer
-            repository2 = TestingUtil.startRepositoryWithConfig("config/clustered-repo-with-incremental-indexes-config-2.json");
+            repository2 = TestingUtil.startRepositoryWithConfig(
+                    "config/cluster/clustered-repo-with-incremental-indexes-config-2.json");
             Thread.sleep(300);
 
             // run a query to check that the index are not yet up-to-date
@@ -135,7 +136,8 @@ public class LuceneRepositoryTest {
 
             // start the 1st repo back up - at the end of this the journals should be up-to-date and ISPN should've done the state
             // transfer
-            repository1 = TestingUtil.startRepositoryWithConfig("config/clustered-repo-with-incremental-indexes-config-1.json");
+            repository1 = TestingUtil.startRepositoryWithConfig(
+                    "config/cluster/clustered-repo-with-incremental-indexes-config-1.json");
             Thread.sleep(300);
 
             session1 = repository1.login();
@@ -155,7 +157,8 @@ public class LuceneRepositoryTest {
             // bring the 2nd repo back up
             // start the 2nd repo back up - at the end of this the journals should be up-to-date and ISPN should've done the state
             // transfer
-            repository2 = TestingUtil.startRepositoryWithConfig("config/clustered-repo-with-incremental-indexes-config-2.json");
+            repository2 = TestingUtil.startRepositoryWithConfig(
+                    "config/cluster/clustered-repo-with-incremental-indexes-config-2.json");
             Thread.sleep(300);
 
             // run a query to check that the indexes are synced

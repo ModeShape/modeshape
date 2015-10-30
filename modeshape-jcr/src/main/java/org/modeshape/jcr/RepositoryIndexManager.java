@@ -307,6 +307,9 @@ class RepositoryIndexManager implements IndexManager, NodeTypes.Listener {
         // Set the logger instance
         Reflection.setValue(provider, "logger", ExtensionLogger.getLogger(provider.getClass()));
 
+        // Set the name of the system workspace
+        Reflection.setValue(provider, "systemWorkspaceName", systemWorkspaceName);
+
         if (initialized.get()) {
             // This manager is already initialized, so we have to initialize the new provider ...
             doInitialize(provider);

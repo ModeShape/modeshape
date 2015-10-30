@@ -33,7 +33,8 @@ public class InfinispanTestUtil {
         GlobalConfigurationBuilder globalConfigurationBuilder = new GlobalConfigurationBuilder();
         globalConfigurationBuilder.globalJmxStatistics().disable().allowDuplicateDomains(true);
         if (networked) {
-            globalConfigurationBuilder.transport().defaultTransport().addProperty("configurationFile", "config/jgroups-test-config.xml");
+            globalConfigurationBuilder.transport().defaultTransport().addProperty("configurationFile",
+                                                                                  "config/cluster/jgroups-test-config.xml");
         } else {
             globalConfigurationBuilder.transport().transport(null);
         }

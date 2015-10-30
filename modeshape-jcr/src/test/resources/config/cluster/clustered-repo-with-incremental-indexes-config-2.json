@@ -1,5 +1,5 @@
 {
-    "name" : "Clustered Repository with Journaling",
+    "name" : "Clustered Repository with Incremental Indexes 2",
     "workspaces" : {
         "predefined" : ["otherWorkspace"],
         "default" : "default",
@@ -7,7 +7,7 @@
     },
     "storage" : {
         "cacheName" : "persistentRepository",
-        "cacheConfiguration" : "config/infinispan-clustered-persistent-2.xml"
+        "cacheConfiguration" : "config/cluster/infinispan-clustered-persistent-2.xml"
     },
     "journaling" : {
         "location" : "target/clustered/journal2"
@@ -25,5 +25,9 @@
             "nodeType" : "mix:title",
             "columns" : "jcr:title(STRING)"
         }
+    },
+    "reindexing" : {
+        "async" : false,
+        "mode" : "incremental"
     }
 }

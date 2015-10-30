@@ -64,17 +64,21 @@ public abstract class IndexChangeAdapter extends ChangeSetAdapter {
      * @param mixinTypes the mixin types for the node; may not be null but may be empty
      * @param properties the properties of the node; may not be null but may be empty
      * @param queryable true if the node is queryable, false otherwise
+     * @return {@code true} if the reindexing operation took place, or {@code false} if no reindexing was performed because
+     * the {@link #predicate} failed.
      */
-    protected final void reindex( String workspaceName,
-                                  NodeKey key,
-                                  Path path,
-                                  Name primaryType,
-                                  Set<Name> mixinTypes,
-                                  Properties properties,
-                                  boolean queryable ) {
+    protected final boolean reindex( String workspaceName,
+                                     NodeKey key,
+                                     Path path,
+                                     Name primaryType,
+                                     Set<Name> mixinTypes,
+                                     Properties properties,
+                                     boolean queryable ) {
         if (predicate.matchesType(primaryType, mixinTypes)) {
             reindexNode(workspaceName, key, path, primaryType, mixinTypes, properties, queryable);
+            return true;
         }
+        return false;
     }
     
     protected static String nodeKey( NodeKey key ) {

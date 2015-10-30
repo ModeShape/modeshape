@@ -44,27 +44,36 @@ public interface IndexWriter {
 
     /**
      * Add to the index the information about a node.
-     * 
+     *
      * @param workspace the workspace in which the node information should be available; may not be null
      * @param key the unique key for the node; may not be null
      * @param path the path of the node; may not be null
      * @param primaryType the primary type of the node; may not be null
      * @param mixinTypes the mixin types for the node; may not be null but may be empty
      * @param properties the properties of the node; may not be null but may be empty
+     * @return {@code true} if the operation was successful and data was written to at least one index, {@code false} otherwise
      */
-    void add( String workspace,
-              NodeKey key,
-              Path path,
-              Name primaryType,
-              Set<Name> mixinTypes,
-              Properties properties );
+    boolean add( String workspace,
+                 NodeKey key,
+                 Path path,
+                 Name primaryType,
+                 Set<Name> mixinTypes,
+                 Properties properties );
 
     /**
-     * Removes information from the indexes about a node. 
+     * Removes information from the indexes about a node.
      *
      * @param workspace the workspace to which the node belongs; may not be null
      * @param key a {@link NodeKey} instance, never {@code null}
+     * @return {@code true} if the operation was successful and data was written to at least one index, {@code false} otherwise
      */
-    void remove( String workspace, NodeKey key );
+    boolean remove( String workspace, NodeKey key );
+
+    /**
+     * Commits changes made to the indexes for a particular workspace.
+     * 
+     * @param workspace the workspace to which the node belongs; may not be null
+     */
+    void commit(String workspace);
 
 }

@@ -7,7 +7,7 @@
     },
     "storage" : {
         "cacheName" : "persistentRepository",
-        "cacheConfiguration" : "config/infinispan-clustered-persistent-1.xml"
+        "cacheConfiguration" : "config/cluster/infinispan-clustered-persistent-1.xml"
     },
     "journaling" : {
         "location" : "target/clustered/journal1"

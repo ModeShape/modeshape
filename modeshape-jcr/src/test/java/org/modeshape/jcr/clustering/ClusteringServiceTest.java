@@ -149,7 +149,7 @@ public class ClusteringServiceTest {
     }
 
     private ClusteringService startStandalone( String clusterName ) {
-        ClusteringService service = ClusteringService.startStandalone(clusterName, "config/jgroups-test-config.xml");
+        ClusteringService service = ClusteringService.startStandalone(clusterName, "config/cluster/jgroups-test-config.xml");
         testClusteringServices.push(service);
         return service;
     }
