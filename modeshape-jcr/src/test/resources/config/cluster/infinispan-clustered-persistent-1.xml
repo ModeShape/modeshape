@@ -3,7 +3,7 @@
             xsi:schemaLocation="urn:infinispan:config:7.2 http://www.infinispan.org/schemas/infinispan-config-7.2.xsd"
             xmlns="urn:infinispan:config:7.2">
     <jgroups>
-        <stack-file name="tcp" path="config/jgroups-test-config.xml"/>
+        <stack-file name="tcp" path="config/cluster/jgroups-test-config.xml"/>
     </jgroups>
     <cache-container default-cache="persistentRepository" statistics="false">
         <jmx duplicate-domains="true"/>
@@ -27,7 +27,7 @@
                             shared="false"
                             preload="false"
                             purge="true"
-                            path="target/clustered/repository_2/store"/>
+                            path="target/clustered/repository_1/store"/>
             </persistence>
         </replicated-cache>
         <!-- 
@@ -46,9 +46,9 @@
                             shared="false"
                             preload="false"
                             purge="true"
-                            path="target/clustered/repository_2/binary"/>
+                            path="target/clustered/repository_1/binary"/>
             </persistence>
-        </replicated-cache>
+        </replicated-cache>  
         <!-- 
             Binary metadata 
         -->
@@ -65,7 +65,7 @@
                             shared="false"
                             preload="false"
                             purge="true"
-                            path="target/clustered/repository_2/binary"/>
+                            path="target/clustered/repository_1/binary"/>
             </persistence>
         </replicated-cache>
     </cache-container>

@@ -40,7 +40,6 @@ import org.modeshape.jcr.JcrI18n;
 import org.modeshape.jcr.JcrLexicon;
 import org.modeshape.jcr.ModeShapeLexicon;
 import org.modeshape.jcr.NodeTypes;
-import org.modeshape.jcr.RepositoryConfiguration;
 import org.modeshape.jcr.api.Logger;
 import org.modeshape.jcr.api.index.IndexColumnDefinition;
 import org.modeshape.jcr.api.index.IndexDefinition;
@@ -159,6 +158,11 @@ public abstract class IndexProvider {
     private String repositoryName;
 
     /**
+     * The name of the system workspace, set via reflection
+     */
+    private String systemWorkspaceName;
+
+    /**
      * A flag that tracks whether {@link #initialize()} has been called.
      */
     private boolean initialized = false;
@@ -200,18 +204,23 @@ public abstract class IndexProvider {
         }
 
         @Override
-        public void add( String workspace,
-                         NodeKey key,
-                         Path path,
-                         Name primaryType,
-                         Set<Name> mixinTypes,
-                         Properties properties ) {
-            delegateWriter.add(workspace, key, path, primaryType, mixinTypes, properties);
+        public boolean add( String workspace,
+                            NodeKey key,
+                            Path path,
+                            Name primaryType,
+                            Set<Name> mixinTypes,
+                            Properties properties ) {
+            return delegateWriter.add(workspace, key, path, primaryType, mixinTypes, properties);
         }
 
         @Override
-        public void remove( String workspace, NodeKey key ) {
-            delegateWriter.remove(workspace, key);
+        public boolean remove( String workspace, NodeKey key ) {
+            return delegateWriter.remove(workspace, key);
+        }
+
+        @Override
+        public void commit( String workspace ) {
+            delegateWriter.commit(workspace);
         }
     };
 
@@ -1125,40 +1134,55 @@ public abstract class IndexProvider {
             }
 
             @Override
-            public void add( String workspace,
-                             NodeKey key,
-                             Path path,
-                             Name primaryType,
-                             Set<Name> mixinTypes,
-                             Properties properties ) {
+            public boolean add( String workspace,
+                                NodeKey key,
+                                Path path,
+                                Name primaryType,
+                                Set<Name> mixinTypes,
+                                Properties properties ) {
                 Collection<IndexChangeAdapter> adapters = applicableAdapters(workspace);
+                boolean indexesUpdated = false;
                 if (adapters != null) {
                     boolean queryable = nodeTypesSupplier.getNodeTypes().isQueryable(primaryType, mixinTypes);
                     // There are adapters for this workspace ...
                     for (IndexChangeAdapter adapter : adapters) {
                         if (adapter != null) {
-                            adapter.reindex(workspace, key, path, primaryType, mixinTypes, properties, queryable);
+                            indexesUpdated |= adapter.reindex(workspace, key, path, primaryType, mixinTypes, properties, queryable);
                         }
                     }
                 }
+                return indexesUpdated;
             }
 
             @Override
-            public void remove( String workspace, NodeKey key ) {
+            public boolean remove( String workspace, NodeKey key ) {
                 Collection<IndexChangeAdapter> adapters = applicableAdapters(workspace);
+                boolean indexesUpdated = false;
                 if (adapters != null) {
                     // There are adapters for this workspace ...
                     for (IndexChangeAdapter adapter : adapters) {
                         if (adapter != null) {
                             adapter.clearDataFor(key);
+                            indexesUpdated = true;
                         }
                     }
                 }
+                return indexesUpdated;
             }
-            
+
+            @Override
+            public void commit( String workspace ) {
+                Collection<IndexChangeAdapter> adapters = applicableAdapters(workspace);
+                if (adapters != null) {
+                    for (IndexChangeAdapter adapter : adapters) {
+                        adapter.index().commit();
+                    }
+                }
+            }
+
             private Collection<IndexChangeAdapter> applicableAdapters( String workspace ) {
                 Collection<IndexChangeAdapter> adapters = null;
-                if (RepositoryConfiguration.SYSTEM_WORKSPACE_NAME.equals(workspace)) {
+                if (systemWorkspaceName.equals(workspace)) {
                     // the system workspace is linked to each WS, so all adapters have to process system data...
                     adapters = new ArrayList<>();
                     for (Collection<IndexChangeAdapter> adapterCollection : adaptersByWorkspaceName.values()) {

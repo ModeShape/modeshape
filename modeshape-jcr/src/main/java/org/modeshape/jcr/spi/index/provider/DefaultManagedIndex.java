@@ -117,4 +117,5 @@ public final class DefaultManagedIndex implements ManagedIndex {
     public boolean requiresReindexing() {
         return index.requiresReindexing();
     }
+
 }

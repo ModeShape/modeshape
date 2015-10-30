@@ -292,7 +292,8 @@ public class ClusteredChangeBusTest extends AbstractChangeBusTest {
     }
 
     private ClusteredChangeBus startNewBus() throws Exception {
-        ClusteringService clusteringService = ClusteringService.startStandalone("test-bus-process", "config/jgroups-test-config.xml");
+        ClusteringService clusteringService = ClusteringService.startStandalone("test-bus-process",
+                                                                                "config/cluster/jgroups-test-config.xml");
         clusteringServices.add(clusteringService);
         ChangeBus internalBus = new RepositoryChangeBus("repo", Executors.newCachedThreadPool());
         ClusteredChangeBus bus = new ClusteredChangeBus(internalBus, clusteringService);

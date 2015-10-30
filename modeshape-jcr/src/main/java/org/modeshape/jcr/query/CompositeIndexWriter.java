@@ -67,21 +67,32 @@ public class CompositeIndexWriter implements IndexWriter {
     }
 
     @Override
-    public void add( String workspace,
-                     NodeKey key,
-                     Path path,
-                     Name primaryType,
-                     Set<Name> mixinTypes,
-                     Properties properties ) {
+    public boolean add( String workspace,
+                        NodeKey key,
+                        Path path,
+                        Name primaryType,
+                        Set<Name> mixinTypes,
+                        Properties properties ) {
+        boolean indexesUpdated = false;
         for (IndexWriter writer : writers) {
-            writer.add(workspace, key, path, primaryType, mixinTypes, properties);
+            indexesUpdated |= writer.add(workspace, key, path, primaryType, mixinTypes, properties);
         }
+        return indexesUpdated;
     }
 
     @Override
-    public void remove( String workspace, NodeKey key ) {
+    public boolean remove( String workspace, NodeKey key ) {
+        boolean indexesUpdated = false;
         for (IndexWriter writer : writers) {
-            writer.remove(workspace, key);
-        } 
+            indexesUpdated |= writer.remove(workspace, key);
+        }
+        return indexesUpdated;
+    }
+
+    @Override
+    public void commit( String workspace ) {
+        for (IndexWriter writer : writers) {
+            writer.commit(workspace);
+        }
     }
 }

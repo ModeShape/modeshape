@@ -144,7 +144,8 @@ public class ClusteredJournalTest extends LocalJournalTest {
 
     private ClusteredJournal startNewJournal( String fileLocation,
                                               String clusterName ) throws Exception {
-        ClusteringService clusteringService = ClusteringService.startStandalone(clusterName, "config/jgroups-test-config.xml");
+        ClusteringService clusteringService = ClusteringService.startStandalone(clusterName,
+                                                                                "config/cluster/jgroups-test-config.xml");
         clusteringServices.add(clusteringService);
 
         FileUtil.delete(fileLocation);

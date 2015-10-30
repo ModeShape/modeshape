@@ -44,16 +44,21 @@ public final class NoOpQueryIndexWriter implements IndexWriter {
     }
 
     @Override
-    public void add( String workspace,
-                     NodeKey key,
-                     Path path,
-                     Name primaryType,
-                     Set<Name> mixinTypes,
-                     Properties properties ) {
+    public boolean add( String workspace,
+                        NodeKey key,
+                        Path path,
+                        Name primaryType,
+                        Set<Name> mixinTypes,
+                        Properties properties ) {
+        return false;
     }
 
     @Override
-    public void remove( String workspace, NodeKey key ) {
-        
+    public boolean remove( String workspace, NodeKey key ) {
+        return false;
+    }
+
+    @Override
+    public void commit( String workspace ) {
     }
 }

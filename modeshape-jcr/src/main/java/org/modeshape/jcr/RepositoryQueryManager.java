@@ -383,8 +383,10 @@ class RepositoryQueryManager implements ChangeSetListener {
                                     // any of the indexes)
                                     boolean scanSystemContent = includeSystemContent ||
                                                                 repoCache.getSystemWorkspaceName().equals(workspaceName);
-                                    reindexContent(workspaceName, workspaceCache, node, Integer.MAX_VALUE, scanSystemContent,
-                                                   writer);
+                                    if (reindexContent(workspaceName, workspaceCache, node, Integer.MAX_VALUE, scanSystemContent, 
+                                                       writer)) {
+                                        commitChanges(workspaceName);
+                                    }
                                 }
                             }
                         }
@@ -447,11 +449,14 @@ class RepositoryQueryManager implements ChangeSetListener {
         logger.debug(JcrI18n.reindexAll.text(runningState.name()));
 
         if (includeSystemContent) {
-            NodeCache systemWorkspaceCache = repoCache.getWorkspaceCache(repoCache.getSystemWorkspaceName());
+            String systemWorkspaceName = repoCache.getSystemWorkspaceName();
+            NodeCache systemWorkspaceCache = repoCache.getWorkspaceCache(systemWorkspaceName);
             CachedNode rootNode = systemWorkspaceCache.getNode(repoCache.getSystemKey());
             // Index the system content ...
             logger.debug("Starting reindex of system content in '{0}' repository.", runningState.name());
-            reindexSystemContent(rootNode, Integer.MAX_VALUE, indexes);
+            if (reindexSystemContent(rootNode, Integer.MAX_VALUE, indexes)) {
+                commitChanges(systemWorkspaceName);
+            }
             logger.debug("Completed reindex of system content in '{0}' repository.", runningState.name());
         }
 
@@ -460,7 +465,9 @@ class RepositoryQueryManager implements ChangeSetListener {
             NodeCache workspaceCache = repoCache.getWorkspaceCache(workspaceName);
             CachedNode rootNode = workspaceCache.getNode(workspaceCache.getRootKey());
             logger.debug("Starting reindex of workspace '{0}' content in '{1}' repository.", runningState.name(), workspaceName);
-            reindexContent(workspaceName, workspaceCache, rootNode, Integer.MAX_VALUE, false, indexes);
+            if (reindexContent(workspaceName, workspaceCache, rootNode, Integer.MAX_VALUE, false, indexes)) {
+                commitChanges(workspaceName);
+            }
             logger.debug("Completed reindex of workspace '{0}' content in '{1}' repository.", runningState.name(), workspaceName);
         }
     }
@@ -505,12 +512,18 @@ class RepositoryQueryManager implements ChangeSetListener {
         }
 
         // If the node is in the system workspace ...
-        String systemWorkspaceKey = runningState.repositoryCache().getSystemWorkspaceKey();
+        RepositoryCache repoCache = runningState.repositoryCache();
+        String systemWorkspaceName = repoCache.getSystemWorkspaceName();
+        String systemWorkspaceKey = repoCache.getSystemWorkspaceKey();
         if (node.getKey().getWorkspaceKey().equals(systemWorkspaceKey)) {
-            reindexSystemContent(node, depth, getIndexWriter());
+            if (reindexSystemContent(node, depth, getIndexWriter())) {
+                commitChanges(systemWorkspaceName);   
+            }
         } else {
             // It's just a regular node in the workspace ...
-            reindexContent(workspaceName, cache, node, depth, path.isRoot(), getIndexWriter());
+            if (reindexContent(workspaceName, cache, node, depth, path.isRoot(), getIndexWriter())) {
+                commitChanges(workspaceName);
+            }
         }
     }
     
@@ -535,7 +548,8 @@ class RepositoryQueryManager implements ChangeSetListener {
         }
         String workspaceName = cache.getWorkspaceName();
         String workspaceKey = NodeKey.keyForWorkspaceName(workspaceName);
-      
+        boolean commitRequired = false;
+        
         // take each of node keys that have been changed since the given timestamp and reindex each one if they belong to this WS
         while (changedNodes.hasNext()) {
             NodeKey nodeKey = changedNodes.next();
@@ -546,12 +560,16 @@ class RepositoryQueryManager implements ChangeSetListener {
             CachedNode node = cache.getNode(nodeKey);
             if (node != null) {
                 // the node still exists in the repository so reindex based on the latest available data...
-                reindexContent(workspaceName, cache, node, 1, true, writer);
+                commitRequired |= reindexContent(workspaceName, cache, node, 1, true, writer);
             } else {
                 // the node has been removed from the repository so clear the information from the indexes...
-                writer.remove(workspaceName, nodeKey);
+                commitRequired |= writer.remove(workspaceName, nodeKey);                 
             }
         }   
+        
+        if (commitRequired) {
+            commitChanges(workspaceName);
+        }
     }
 
     protected Future<Boolean> reindexSinceAsync( final JcrWorkspace workspace,
@@ -578,18 +596,20 @@ class RepositoryQueryManager implements ChangeSetListener {
         });    
     }
 
-    protected void reindexContent( final String workspaceName,
-                                   NodeCache cache,
-                                   CachedNode node,
-                                   int depth,
-                                   boolean reindexSystemContent,
-                                   final IndexWriter indexes ) {
+    protected boolean reindexContent( final String workspaceName,
+                                      NodeCache cache,
+                                      CachedNode node,
+                                      int depth,
+                                      boolean reindexSystemContent,
+                                      final IndexWriter indexes ) {
         assert indexes != null;
-        if (indexes.canBeSkipped()) return;
+       
+        if (indexes.canBeSkipped()) return false;
         if (node.isExcludedFromSearch(cache)) {
-            return;
+            return false;
         }
-
+        // track if at least one index was updated as a result of this reindexing....
+        boolean indexesUpdated = false;
         try {
             // change the status of the indexes to reindexing
             updateIndexesStatus(workspaceName, IndexManager.IndexStatus.ENABLED, IndexManager.IndexStatus.REINDEXING);
@@ -604,10 +624,11 @@ class RepositoryQueryManager implements ChangeSetListener {
                 indexLogger.debug("Reindexing node '{0}' in workspace '{1}' of repository '{2}': {3}", path, workspaceName,
                                   runningState.name(), node);
             }
-            indexes.add(workspaceName, node.getKey(), nodePath, node.getPrimaryType(cache), node.getMixinTypes(cache),
-                        node.getPropertiesByName(cache));
+            indexesUpdated |= indexes.add(workspaceName, node.getKey(), nodePath, node.getPrimaryType(cache),
+                                          node.getMixinTypes(cache),
+                                          node.getPropertiesByName(cache));
 
-            if (depth == 1) return;
+            if (depth == 1) return indexesUpdated;
 
             // Create a queue for processing the subgraph
             final Queue<NodeKey> queue = new LinkedList<NodeKey>();
@@ -622,7 +643,7 @@ class RepositoryQueryManager implements ChangeSetListener {
                     if (childKey.equals(systemKey)) {
                         // This is the "/jcr:system" node ...
                         node = cache.getNode(childKey);
-                        reindexSystemContent(node, depth - 1, indexes);
+                        indexesUpdated |= reindexSystemContent(node, depth - 1, indexes);
                     } else {
                         queue.add(childKey);
                     }
@@ -656,8 +677,9 @@ class RepositoryQueryManager implements ChangeSetListener {
                     indexLogger.debug("Reindexing node '{0}' in workspace '{1}' of repository '{2}': {3}", path, workspaceName,
                                       runningState.name(), node);
                 }
-                indexes.add(workspaceName, node.getKey(), nodePath, node.getPrimaryType(cache), node.getMixinTypes(cache),
-                            node.getPropertiesByName(cache));
+                indexesUpdated |= indexes.add(workspaceName, node.getKey(), nodePath, node.getPrimaryType(cache),
+                                              node.getMixinTypes(cache),
+                                              node.getPropertiesByName(cache));
     
                 // Check the depth ...
                 if (nodePath.size() <= depth) {
@@ -667,6 +689,7 @@ class RepositoryQueryManager implements ChangeSetListener {
                     }
                 }
             }
+            return indexesUpdated;
         } finally {
             // set the index status back to enabled
             updateIndexesStatus(workspaceName, IndexManager.IndexStatus.REINDEXING, IndexManager.IndexStatus.ENABLED);
@@ -683,14 +706,20 @@ class RepositoryQueryManager implements ChangeSetListener {
             });
         }
     }
+    
+    protected void commitChanges( String workspaceName ) {
+        for (IndexProvider indexProvider : indexManager.getProviders()) {
+            indexProvider.getIndexWriter().commit(workspaceName);
+        }   
+    }
 
-    protected void reindexSystemContent( CachedNode nodeInSystemBranch,
-                                         int depth,
-                                         IndexWriter indexes ) {
+    protected boolean reindexSystemContent( CachedNode nodeInSystemBranch,
+                                            int depth,
+                                            IndexWriter indexes ) {
         RepositoryCache repoCache = runningState.repositoryCache();
         String workspaceName = repoCache.getSystemWorkspaceName();
         NodeCache systemWorkspaceCache = repoCache.getWorkspaceCache(workspaceName);
-        reindexContent(workspaceName, systemWorkspaceCache, nodeInSystemBranch, depth, true, indexes);
+        return reindexContent(workspaceName, systemWorkspaceCache, nodeInSystemBranch, depth, true, indexes);
     }
 
     protected void reindexSystemContent() {
@@ -698,7 +727,9 @@ class RepositoryQueryManager implements ChangeSetListener {
         String workspaceName = repoCache.getSystemWorkspaceName();
         NodeCache systemWorkspaceCache = repoCache.getWorkspaceCache(workspaceName);
         CachedNode systemNode = systemWorkspaceCache.getNode(repoCache.getSystemKey());
-        reindexContent(workspaceName, systemWorkspaceCache, systemNode, Integer.MAX_VALUE, true, getIndexWriter());
+        if (reindexContent(workspaceName, systemWorkspaceCache, systemNode, Integer.MAX_VALUE, true, getIndexWriter())) {
+            commitChanges(workspaceName);
+        }
     }
 
     /**

@@ -1,5 +1,5 @@
 {
-    "name" : "Clustered Repository with Incremental Indexes 2",
+    "name" : "Clustered Repository with Incremental Indexes 1",
     "workspaces" : {
         "predefined" : ["otherWorkspace"],
         "default" : "default",
@@ -7,21 +7,21 @@
     },
     "storage" : {
         "cacheName" : "persistentRepository",
-        "cacheConfiguration" : "config/infinispan-clustered-persistent-2.xml" //this is picked up from the modeshape-jcr-tests.jar artifact....
+        "cacheConfiguration" : "config/cluster/infinispan-clustered-persistent-1.xml"
     },
     "journaling" : {
-        "location" : "target/clustered/journal2"
+        "location" : "target/clustered/journal1"
     },
     "indexProviders" : {
-        "lucene" : {
-            "classname" : "lucene",
-            "directory" : "target/clustered/repo2_indexes"
+        "local" : {
+            "classname" : "org.modeshape.jcr.index.local.LocalIndexProvider",
+            "directory" : "target/clustered/repo1_indexes"
         }
     },
     "indexes" : {
         "titleIndex" : {
             "kind" : "value",
-            "provider" : "lucene",
+            "provider" : "local",
             "nodeType" : "mix:title",
             "columns" : "jcr:title(STRING)"
         }
