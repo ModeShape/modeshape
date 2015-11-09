@@ -119,21 +119,6 @@ public class UnmodifiableProperties extends Properties {
         return this.delegate.propertyNames();
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @deprecated This method does not throw an IOException if an I/O error occurs while saving the property list. The preferred
-     *             way to save a properties list is via the <code>store(OutputStream out, 
-     * String comments)</code> method or the <code>storeToXML(OutputStream os, String comment)</code> method.
-     * @see java.util.Properties#save(java.io.OutputStream, java.lang.String)
-     */
-    @Deprecated
-    @Override
-    public void save( OutputStream out,
-                      String comments ) {
-        this.delegate.save(out, comments);
-    }
-
     @Override
     public int size() {
         return this.delegate.size();

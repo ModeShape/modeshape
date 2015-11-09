@@ -17,6 +17,7 @@ package org.modeshape.jcr.api;
 
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import javax.jcr.RepositoryException;
@@ -67,7 +68,7 @@ public interface RepositoriesContainer {
      *
      * @see RepositoryFactory#URL
      */
-    public static final String URL = RepositoryFactory.URL;
+    String URL = RepositoryFactory.URL;
 
     /**
      * The name of the key for the ModeShape JCR repository name in the parameter map. This can be used as an alternative to
@@ -75,7 +76,7 @@ public interface RepositoriesContainer {
      *
      * @see RepositoryFactory#REPOSITORY_NAME
      */
-    public static final String REPOSITORY_NAME = RepositoryFactory.REPOSITORY_NAME;
+    String REPOSITORY_NAME = RepositoryFactory.REPOSITORY_NAME;
 
     /**
      * Shutdown this engine to stop all repositories created by calls to {@link #getRepository(String, java.util.Map)}, terminate any ongoing
@@ -97,7 +98,7 @@ public interface RepositoriesContainer {
      *         {@link java.util.concurrent.ExecutionException}. The value returned from the future will always be true if the engine shutdown (or was
      *         not running), or false if the engine is still running.
      */
-    public Future<Boolean> shutdown();
+    Future<Boolean> shutdown();
 
     /**
      * Shutdown this engine to stop all repositories created by calls to {@link #getRepository(String, java.util.Map)}, terminate any ongoing
@@ -112,19 +113,36 @@ public interface RepositoriesContainer {
      * cease invocations of {@link #getRepository(String, java.util.Map)} prior to invoking this method.
      * </p>
      * <p>
-     * This method returns immediately, even before the repositories have been shut down. However, the caller can simply call the
-     * {@link Future#get() get()} method on the returned {@link Future} to block until all repositories have shut down. Note that
-     * the {@link Future#get(long, java.util.concurrent.TimeUnit)} method can be called to block for a maximum amount of time.
+     * This method waits until all the repositories have been successfully shut-down, or the given timeout has elapsed.
      * </p>
-     *
      * @param timeout the maximum time per engine to allow for shutdown
      * @param unit the time unit of the timeout argument
      * @return <tt>true</tt> if all engines completely shut down and <tt>false</tt> if the timeout elapsed before it was shut down
      *         completely
      * @throws InterruptedException if interrupted while waiting
      */
-    public boolean shutdown( long timeout,
-                             TimeUnit unit ) throws InterruptedException;
+    boolean shutdown(long timeout,
+                     TimeUnit unit) throws InterruptedException;
+
+    /**
+     * Asynchronously shutdown the deployed {@link javax.jcr.Repository} instance with the given the name, and return a future that will
+     * return whether the Repository instance is shutdown. If the Repository is not running, the resulting future will return
+     * immediately.
+     * <p>
+     * Note that the caller does not have to wait for the shutdown to completed. However, to do so the caller merely calls
+     * {@link Future#get() get()} or {@link Future#get(long, TimeUnit) get(long,TimeUnit)} on the future to return a boolean flag
+     * specifying whether the Repository instance is shutdown (not running). Note that any exceptions thrown during the shutdown
+     * will be wrapped in an {@link ExecutionException} thrown by the Future's <code>get</code> methods.
+     * </p>
+     *
+     * @param repositoryName the name of the deployed repository
+     * @return a future wrapping the asynchronous shutdown process; never null, and {@link Future#get()} will return whether the
+     * @throws IllegalArgumentException if the repository name is null, blank or invalid
+     * @throws RepositoryException if there is no repository with the specified name or if any other unexpected error occurs.
+     * 
+     * @since 5.0
+     */
+    Future<Boolean> shutdownRepository( String repositoryName ) throws RepositoryException;
 
     /**
      * Returns the names of all the available repositories, using an optional map of parameters which may be used to initialize
@@ -136,7 +154,7 @@ public interface RepositoriesContainer {
      *
      * @see RepositoryFactory#getRepository(java.util.Map)
      */
-    public Set<String> getRepositoryNames( Map<?, ?> parameters ) throws RepositoryException;
+     Set<String> getRepositoryNames( Map<?, ?> parameters ) throws RepositoryException;
 
     /**
      * Return the JCR Repository with the supplied name and an optional map of parameters which can be used to initialize the
@@ -151,6 +169,6 @@ public interface RepositoriesContainer {
      *
      * @see RepositoryFactory#getRepository(java.util.Map)
      */
-    public javax.jcr.Repository getRepository( String repositoryName,
-                                               Map<?, ?> parameters ) throws javax.jcr.RepositoryException;
+    Repository getRepository(String repositoryName,
+                             Map<?, ?> parameters) throws javax.jcr.RepositoryException;
 }

@@ -25,7 +25,6 @@ import java.sql.DriverManager;
 import java.sql.DriverPropertyInfo;
 import java.sql.SQLException;
 import java.util.Properties;
-import javax.jcr.Repository;
 import javax.naming.Context;
 import org.junit.After;
 import org.junit.Before;
@@ -33,6 +32,7 @@ import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.modeshape.jcr.api.Repositories;
+import org.modeshape.jcr.api.Repository;
 import org.modeshape.jdbc.delegate.ConnectionInfo;
 
 /**
@@ -67,15 +67,7 @@ public class JcrDriverTest {
         when(jndi.lookup(jndiNameForRepositories)).thenReturn(repositories);
         when(repositories.getRepository(validRepositoryName)).thenReturn(repository);
 
-        JcrDriver.JcrContextFactory contextFactory = new JcrDriver.JcrContextFactory() {
-            @SuppressWarnings( "synthetic-access" )
-            @Override
-            public Context createContext( Properties properties ) {
-                return jndi;
-            }
-        };
-
-        driver = new JcrDriver(contextFactory);
+        driver = new JcrDriver(properties -> jndi);
     }
 
     @After

@@ -16,13 +16,9 @@
 package org.modeshape.jcr.api;
 
 import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 
 /**
- * An extension to the standard {@link javax.jcr.RepositoryFactory} interface, with ModeShape-specific constants and additional
- * {@link #shutdown()} methods.
+ * ModeShape's {@link javax.jcr.RepositoryFactory}.
  * <p>
  * ModeShape's RepositoryFactory implementation looks for two parameters:
  * <ul>
@@ -83,10 +79,13 @@ import java.util.concurrent.TimeUnit;
  *     if (repository != null) break;
  * }
  * </pre>
- * 
+ * </p>
+ * <p>
+ * ModeShape also provides and alternative service: {@link RepositoriesContainer} which offers more control over the set of managed
+ * repositories.
  * </p>
  */
-public interface RepositoryFactory extends javax.jcr.RepositoryFactory, Repositories {
+public interface RepositoryFactory extends javax.jcr.RepositoryFactory {
 
     /**
      * The name of the key for the ModeShape JCR URL in the parameter map.
@@ -109,7 +108,7 @@ public interface RepositoryFactory extends javax.jcr.RepositoryFactory, Reposito
      * 
      * </p>
      */
-    public static final String URL = "org.modeshape.jcr.URL";
+    String URL = "org.modeshape.jcr.URL";
 
     /**
      * The name of the key for the ModeShape JCR repository name in the parameter map. This can be used as an alternative to
@@ -134,75 +133,5 @@ public interface RepositoryFactory extends javax.jcr.RepositoryFactory, Reposito
      * 
      * </p>
      */
-    public static final String REPOSITORY_NAME = "org.modeshape.jcr.RepositoryName";
-
-    /**
-     * Shutdown this engine to stop all repositories created by calls to {@link #getRepository(Map)}, terminate any ongoing
-     * background operations (such as sequencing), and reclaim any resources that were acquired by the repositories. This method
-     * may be called multiple times, but only the first time has an effect.
-     * <p>
-     * Invoking this method does not preclude creating new {@link Repository} instances with future calls to
-     * {@link #getRepository(Map)}. Any caller using this method as part of an application shutdown process should take care to
-     * cease invocations of {@link #getRepository(Map)} prior to invoking this method.
-     * </p>
-     * <p>
-     * This method returns immediately, even before the repositories have been shut down. However, the caller can simply call the
-     * {@link Future#get() get()} method on the returned {@link Future} to block until all repositories have shut down. Note that
-     * the {@link Future#get(long, TimeUnit)} method can be called to block for a maximum amount of time.
-     * </p>
-     *
-     * @return a future that allows the caller to block until the engine is shutdown; any error during shutdown will be thrown
-     *         when {@link Future#get() getting} the repository from the future, where the exception is wrapped in a
-     *         {@link java.util.concurrent.ExecutionException}. The value returned from the future will always be true if the engine shutdown (or was
-     *         not running), or false if the engine is still running.
-     *
-     * @deprecated since 3.4, this method should not be used. Code using it should change to use {@link org.modeshape.jcr.api.RepositoriesContainer} instead
-     */
-    @Deprecated
-    public Future<Boolean> shutdown();
-
-    /**
-     * Shutdown this engine to stop all repositories created by calls to {@link #getRepository(Map)}, terminate any ongoing
-     * background operations (such as sequencing), and reclaim any resources that were acquired by the repositories. This method
-     * may be called multiple times, but only the first time has an effect.
-     * <p>
-     * This method is equivalent to calling "<code>shutdown().get(timeout,unit)</code>" on this method.
-     * </p>
-     * <p>
-     * Invoking this method does not preclude creating new {@link Repository} instances with future calls to
-     * {@link #getRepository(Map)}. Any caller using this method as part of an application shutdown process should take care to
-     * cease invocations of {@link #getRepository(Map)} prior to invoking this method.
-     * </p>
-     * <p>
-     * This method returns immediately, even before the repositories have been shut down. However, the caller can simply call the
-     * {@link Future#get() get()} method on the returned {@link Future} to block until all repositories have shut down. Note that
-     * the {@link Future#get(long, TimeUnit)} method can be called to block for a maximum amount of time.
-     * </p>
-     *
-     * @param timeout the maximum time per engine to allow for shutdown
-     * @param unit the time unit of the timeout argument
-     * @return <tt>true</tt> if all engines completely shut down and <tt>false</tt> if the timeout elapsed before it was shut down
-     *         completely
-     * @throws InterruptedException if interrupted while waiting
-     *
-     * @deprecated since 3.4, this method should not be used. Code using it should change to use {@link org.modeshape.jcr.api.RepositoriesContainer} instead
-     */
-    @Deprecated
-    public boolean shutdown( long timeout,
-                             TimeUnit unit ) throws InterruptedException;
-
-
-    /**
-     * @deprecated since 3.4, this method should not be used. Code using it should change to use {@link org.modeshape.jcr.api.RepositoriesContainer} instead
-     */
-    @Override
-    @Deprecated
-    Set<String> getRepositoryNames();
-
-    /**
-     * @deprecated since 3.4, this method should not be used. Code using it should change to use {@link org.modeshape.jcr.api.RepositoriesContainer} instead
-     */
-    @Override
-    @Deprecated
-    javax.jcr.Repository getRepository( String repositoryName ) throws javax.jcr.RepositoryException;
+    String REPOSITORY_NAME = "org.modeshape.jcr.RepositoryName";
 }

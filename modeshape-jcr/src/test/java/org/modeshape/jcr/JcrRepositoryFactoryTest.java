@@ -36,13 +36,12 @@ import org.modeshape.jcr.api.RepositoryFactory;
 /**
  * Unit test for {@link JcrRepositoryFactory}
  */
-@SuppressWarnings( "deprecation" )
 public class JcrRepositoryFactoryTest {
 
     private String url;
     private Map<String, String> params;
     private Repository repository;
-    private RepositoryFactory repositoryFactory;
+    private JcrRepositoryFactory repositoryFactory;
 
     @Before
     public void beforeEach() throws Exception {
@@ -51,7 +50,7 @@ public class JcrRepositoryFactoryTest {
         if (!repositoryFactoryIterator.hasNext()) {
             fail("No RepositoryFactory implementation located");
         }
-        repositoryFactory = (RepositoryFactory)repositoryFactoryIterator.next();
+        repositoryFactory = (JcrRepositoryFactory) repositoryFactoryIterator.next();
     }
 
     @After

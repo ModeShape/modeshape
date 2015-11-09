@@ -132,6 +132,11 @@ public final class JcrRepositoriesContainer implements RepositoriesContainer {
         }
     }
 
+    @Override
+    public Future<Boolean> shutdownRepository(String repositoryName) throws RepositoryException {
+        return ENGINE.shutdownRepository(repositoryName);
+    }
+
     protected ModeShapeEngine engine() {
         // Make sure the engine is started ...
         switch (ENGINE.getState()) {

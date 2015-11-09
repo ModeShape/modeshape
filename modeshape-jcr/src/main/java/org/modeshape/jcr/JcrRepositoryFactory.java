@@ -16,11 +16,8 @@
 package org.modeshape.jcr;
 
 import java.net.URL;
-import java.util.Collections;
 import java.util.Map;
 import java.util.ServiceLoader;
-import java.util.Set;
-import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
@@ -123,33 +120,8 @@ public class JcrRepositoryFactory implements RepositoryFactory {
         return CONTAINER.getRepository(null, parameters);
     }
 
-    @Override
-    @Deprecated
-    public Future<Boolean> shutdown() {
-        return CONTAINER.shutdown();
-    }
-
-    @Override
-    @Deprecated
-    public boolean shutdown( long timeout,
+    protected boolean shutdown( long timeout,
                              TimeUnit unit ) throws InterruptedException {
         return CONTAINER.shutdown(timeout, unit);
-    }
-
-    @Override
-    @Deprecated
-    public Repository getRepository( String repositoryName ) throws RepositoryException {
-        return CONTAINER.getRepository(repositoryName, null);
-    }
-
-    @Override
-    @Deprecated
-    public Set<String> getRepositoryNames() {
-        try {
-            return CONTAINER.getRepositoryNames(null);
-        } catch (RepositoryException e) {
-            LOG.debug(e, "Cannot retrieve the names of all the repositories");
-            return Collections.emptySet();
-        }
     }
 }
