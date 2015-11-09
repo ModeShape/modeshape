@@ -243,7 +243,8 @@ public class MixinValueEditor extends BaseEditor implements ValueEditor<String> 
         res[values.length] = value;
         return res;
     }
-    
+
+    @SuppressWarnings("unchecked")
     private String[] diff(String[] a, String[] b) {
         ArrayList<String> list = new ArrayList();
         for (int i = 0; i < a.length; i++) {

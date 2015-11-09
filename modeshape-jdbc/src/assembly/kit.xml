@@ -25,7 +25,6 @@
                 <include>org.apache.httpcomponents:httpcore</include>
                 <include>org.modeshape:modeshape-common</include>
                 <include>org.codehaus.jettison:jettison</include>
-                <include>joda-time:joda-time</include>
                 <include>commons-codec:commons-codec</include>
                 <include>commons-logging:commons-logging</include>
 

@@ -399,12 +399,14 @@ public class JcrResultSet implements ResultSet {
     }
 
     @Override
+    @SuppressWarnings("deprecation")
     public BigDecimal getBigDecimal( int columnIndex,
                                      int scale ) throws SQLException {
         return getBigDecimal(columnIndex).setScale(scale);
     }
 
     @Override
+    @SuppressWarnings("deprecation")
     public BigDecimal getBigDecimal( String columnLabel,
                                      int scale ) throws SQLException {
         return getBigDecimal(columnLabel).setScale(scale);
@@ -823,11 +825,13 @@ public class JcrResultSet implements ResultSet {
     }
 
     @Override
+    @SuppressWarnings("deprecation")
     public InputStream getUnicodeStream( int columnIndex ) throws SQLException {
         throw new SQLFeatureNotSupportedException();
     }
 
     @Override
+    @SuppressWarnings("deprecation")
     public InputStream getUnicodeStream( String columnLabel ) throws SQLException {
         throw new SQLFeatureNotSupportedException();
     }

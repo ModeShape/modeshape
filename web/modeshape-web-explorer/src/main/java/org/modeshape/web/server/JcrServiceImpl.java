@@ -971,7 +971,7 @@ public class JcrServiceImpl extends RemoteServiceServlet implements JcrService {
 
     @Override
     public Collection<Stats> getValueStats(String repository, String param, String tu) throws RemoteException {
-        ArrayList<Stats> stats = new ArrayList();
+        ArrayList<Stats> stats = new ArrayList<>();
 
         try {
             Window w = TimeUnit.find(tu).window();
@@ -996,6 +996,7 @@ public class JcrServiceImpl extends RemoteServiceServlet implements JcrService {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public Collection<Stats> getDurationStats(String repository, String param, String tu) throws RemoteException {
         ArrayList<Stats> stats = new ArrayList();
 

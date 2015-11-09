@@ -36,7 +36,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.concurrent.Callable;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -529,7 +528,7 @@ public class JcrRepositoryTest {
         assertThat(repository.getDescriptor(Repository.REP_VENDOR_DESC), is("JBoss, a division of Red Hat"));
         assertThat(repository.getDescriptor(Repository.REP_VENDOR_URL_DESC), is("http://www.modeshape.org"));
         assertThat(repository.getDescriptor(Repository.REP_VERSION_DESC), is(notNullValue()));
-        assertThat(repository.getDescriptor(Repository.REP_VERSION_DESC).startsWith("4."), is(true));
+        assertThat(repository.getDescriptor(Repository.REP_VERSION_DESC).startsWith("5."), is(true));
         assertThat(repository.getDescriptor(Repository.SPEC_NAME_DESC), is(JcrI18n.SPEC_NAME_DESC.text()));
         assertThat(repository.getDescriptor(Repository.SPEC_VERSION_DESC), is("2.0"));
     }
@@ -748,33 +747,27 @@ public class JcrRepositoryTest {
         // run threads which concurrently terminate the sessions and cleaup the locks
         int nThreads = 2;
         ExecutorService executors = Executors.newFixedThreadPool(nThreads);
-        List<Future> results = new ArrayList<Future>(nThreads);        
+        List<Future<Void>> results = new ArrayList<>(nThreads);        
         final CyclicBarrier barrier = new CyclicBarrier(nThreads);
         try {
-            results.add(executors.submit(new Callable() {
-                @Override
-                public Object call() throws Exception {
-                    //remove the 1st locking session internally, as if it had terminated unexpectedly
-                    repository.runningState().removeSession(locker1);
-                    //make sure the open lock also expires
-                    Thread.sleep(1001);
-                    barrier.await();
-                    repository.runningState().cleanUpLocks();
-                    return null;
-                }
+            results.add(executors.submit(() -> {
+                //remove the 1st locking session internally, as if it had terminated unexpectedly
+                repository.runningState().removeSession(locker1);
+                //make sure the open lock also expires
+                Thread.sleep(1001);
+                barrier.await();
+                repository.runningState().cleanUpLocks();
+                return null;
             }));
 
-            results.add(executors.submit(new Callable() {
-                @Override
-                public Object call() throws Exception {
-                    //remove the 2nd locking session internally, as if it had terminated unexpectedly
-                    repository.runningState().removeSession(locker2);
-                    //make sure the open lock also expires
-                    Thread.sleep(1001);
-                    barrier.await();
-                    repository.runningState().cleanUpLocks();
-                    return null;
-                }
+            results.add(executors.submit(() -> {
+                //remove the 2nd locking session internally, as if it had terminated unexpectedly
+                repository.runningState().removeSession(locker2);
+                //make sure the open lock also expires
+                Thread.sleep(1001);
+                barrier.await();
+                repository.runningState().cleanUpLocks();
+                return null;
             }));
             
             for (Future<?> result : results) {

@@ -15,7 +15,7 @@
  */
 package org.infinispan.schematic.internal;
 
-import org.infinispan.lifecycle.Lifecycle;
+import org.infinispan.commons.api.Lifecycle;
 import org.infinispan.schematic.DocumentLibrary;
 import org.infinispan.schematic.SchemaLibrary;
 import org.infinispan.schematic.document.Document;

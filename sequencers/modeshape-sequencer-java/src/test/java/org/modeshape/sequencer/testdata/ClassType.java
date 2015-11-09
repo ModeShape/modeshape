@@ -53,7 +53,8 @@ public abstract class ClassType<T extends HashMap<String, ?>> extends ArrayList<
      * @return the identifier (never <code>null</code>)
      */
     abstract String getId();
-
+   
+    @SafeVarargs
     public final void set(@SuppressWarnings( "unchecked" ) T... t) throws Exception {
         if (this.t == t) {
             throw new Exception("Blah blah blah");

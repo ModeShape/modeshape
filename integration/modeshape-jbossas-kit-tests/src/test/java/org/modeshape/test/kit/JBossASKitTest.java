@@ -70,7 +70,7 @@ public class JBossASKitTest {
         File[] testDeps = Maven.configureResolver()
                                .workOffline() 
                                .loadPomFromFile("pom.xml")
-                               .resolve("org.apache.httpcomponents:httpclient")                 
+                               .resolve("org.apache.httpcomponents:httpclient", "org.apache.httpcomponents:httpcore")
                                .withTransitivity()
                                .asFile();
         return ShrinkWrap.create(WebArchive.class, "as7-kit-test.war")

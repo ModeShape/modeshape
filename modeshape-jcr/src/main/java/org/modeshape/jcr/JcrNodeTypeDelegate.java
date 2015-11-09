@@ -52,6 +52,7 @@ public final class JcrNodeTypeDelegate implements NodeType {
     }
 
     @Override
+    @SuppressWarnings("deprecation")
     public boolean canRemoveItem( String itemName ) {
         return delegate.canRemoveItem(itemName);
     }

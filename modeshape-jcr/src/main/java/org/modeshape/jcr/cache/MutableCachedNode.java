@@ -386,15 +386,6 @@ public interface MutableCachedNode extends CachedNode {
                            Connectors connectors );
 
     /**
-     * Returns a set with the keys of the children which have been removed for this node.
-     * 
-     * @return a <code>Set&lt;{@link NodeKey}></code>, never null
-     * @deprecated use {@link org.modeshape.jcr.cache.MutableCachedNode.NodeChanges#removedChildren()}
-     */
-    @Deprecated
-    public Set<NodeKey> removedChildren();
-
-    /**
      * Returns a set with all the referencing nodes (nodes which are referring this node) which have changed.
      * 
      * @return the set of {@link NodeKey} instances, never null.

@@ -75,14 +75,13 @@ public class Contents extends VLayout {
     private final ExportDialog exportDialog = new ExportDialog(this);
     private final ImportDialog importDialog = new ImportDialog(this);
     
+    @SuppressWarnings("unchecked")
     private final HashMap<String, Session> sessions = new HashMap();
 
     /**
      * Creates contents instance.
      * 
      * @param console
-     * @param jcrService
-     * @param viewPort 
      */
     public Contents(final Console console) {
         this.console = console;
@@ -240,7 +239,6 @@ public class Contents extends VLayout {
      * Displays specified node.
      *
      * @param node the node being displayed.
-     * @param page the page number
      */
     private void displayNode(JcrNode node) {
         this.node = node;

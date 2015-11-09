@@ -99,6 +99,7 @@ import org.modeshape.jcr.value.basic.NodeKeyReference;
  * The abstract base class for all {@link Node} implementations.
  */
 @ThreadSafe
+@SuppressWarnings("deprecation")
 abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
 
     enum Type {

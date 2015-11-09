@@ -1127,10 +1127,7 @@ public class LocalIndexProviderTest extends AbstractIndexProviderTest {
         session.save();
         assertEquals(IndexManager.IndexStatus.ENABLED, indexManager().getIndexStatus(providerName(), indexName, "default"));
         Future<Boolean> reindexingResult = session.getWorkspace().reindexAsync();
-        Thread.sleep(10);
-        if (!reindexingResult.isDone()) {
-            assertEquals(IndexManager.IndexStatus.REINDEXING, indexManager().getIndexStatus(providerName(), indexName, "default"));
-        }
+       
         assertEquals(true, reindexingResult.get());
         assertEquals(IndexManager.IndexStatus.ENABLED, indexManager().getIndexStatus(providerName(), indexName, "default"));
         

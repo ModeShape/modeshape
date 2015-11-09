@@ -255,28 +255,6 @@ public class LocalEnvironment implements Environment {
     }
 
     /**
-     * Create the default configuration.
-     * 
-     * @return the default cache configuration.
-     * @deprecated see {@link #createDefaultConfigurationBuilder()}
-     */
-    @Deprecated
-    protected Configuration createDefaultConfiguration() {
-        return createDefaultConfigurationBuilder().build();
-    }
-
-    /**
-     * Create the global configuration.
-     * 
-     * @return the global configuration.
-     * @deprecated see {@link #createGlobalConfigurationBuilder()}
-     */
-    @Deprecated
-    protected GlobalConfiguration createGlobalConfiguration() {
-        return createGlobalConfigurationBuilder().build();
-    }
-
-    /**
      * Create a cache container using the supplied configurations.
      * 
      * @param globalConfiguration the global configuration
@@ -362,9 +340,7 @@ public class LocalEnvironment implements Environment {
         if (cacheContainerName == null) cacheContainerName = DEFAULT_CONFIGURATION_NAME;
         CacheContainer container = containers.get(cacheContainerName);
         if (container == null) {
-            Configuration config = createDefaultConfiguration();
-            GlobalConfiguration global = createGlobalConfiguration();
-            CacheContainer newContainer = createContainer(global, config);
+            CacheContainer newContainer = createContainer(createGlobalConfigurationBuilder(), createDefaultConfigurationBuilder());
             container = containers.putIfAbsent(cacheContainerName, newContainer);
             if (container == null) container = newContainer;
         }

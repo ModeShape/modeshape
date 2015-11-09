@@ -1918,9 +1918,9 @@ public class OracleDdlParser extends StandardDdlParser
     /**
      * Utility method to additionally check if MODIFY definition without datatype
      * 
-     * @param tokens
-     * @param columnMixinType
-     * @return
+     * @param tokens a {@link DdlTokenStream} instance; may not be null
+     * @param columnMixinType a {@link String}; may not be null
+     * @return {@code true} if the given stream si at the start of the column defintion, {@code false} otherwise.
      * @throws ParsingException
      */
     protected boolean isColumnDefinitionStart( DdlTokenStream tokens,

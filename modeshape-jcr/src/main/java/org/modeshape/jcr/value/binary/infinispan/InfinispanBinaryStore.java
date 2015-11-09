@@ -572,7 +572,9 @@ public final class InfinispanBinaryStore extends AbstractBinaryStore {
 
         try {
             for (String key : metadataCache.keySet()) {
-                if (!isMetadataKey(key)) { continue; }
+                if (!isMetadataKey(key)) {
+                    continue;
+                }
                 Metadata metadata = metadataCache.get(key);
                 if (!metadata.isUnused()) {
                     allBinaryUsedKeys.add(binaryKeyFromCacheKey(key));
@@ -622,10 +624,7 @@ public final class InfinispanBinaryStore extends AbstractBinaryStore {
         private final NamedLocks namedLocks;
         private final boolean infinispanLocks;
         private final Cache<String, Metadata> metadataCache;
-        private final Lock DUMMY_LOCK = new Lock() {
-            @Override
-            public void unlock() {
-            }
+        private final Lock DUMMY_LOCK = () -> {
         };
 
         public LockFactory( Cache<String, Metadata> metadataCache ) {

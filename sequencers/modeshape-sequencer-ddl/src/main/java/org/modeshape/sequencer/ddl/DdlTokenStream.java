@@ -315,7 +315,7 @@ public class DdlTokenStream extends TokenStream {
         /**
          * {@inheritDoc}
          * 
-         * @see org.modeshape.common.text.TokenStream.Tokenizer#tokenize(CharacterStream, Tokens)
+         * @see org.modeshape.common.text.TokenStream.Tokenizer#tokenize(TokenStream.CharacterStream, TokenStream.Tokens)
          */
         @Override
         public void tokenize( CharacterStream input,

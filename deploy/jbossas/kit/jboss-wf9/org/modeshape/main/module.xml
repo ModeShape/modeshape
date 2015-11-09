@@ -21,7 +21,7 @@
         <resource-root path="modeshape-jcr-${project.version}.jar"/>
         <resource-root path="modeshape-jbossas-subsystem-${project.version}.jar"/>
         <resource-root path="modeshape-schematic-${project.version}.jar"/>
-        <resource-root path="mapdb-${mapdb.version}.jar"/>
+        <resource-root path="mapdb-${version.org.mapdb}.jar"/>
         <resource-root path="res"/>
         <resource-root path="deployments"/>
     </resources>
@@ -40,8 +40,7 @@
 
         <module name="org.jgroups" slot="${jgroups.module.slot}"/>
 
-        <module name="org.joda.time" export="true"/>
-        <module name="org.apache.tika" slot="${tika.version}" services="import"/>
+        <module name="org.apache.tika" slot="${version.org.apache.tika}" services="import"/>
 
         <!-- For naming ... -->
         <module name="javax.api" export="true"/>

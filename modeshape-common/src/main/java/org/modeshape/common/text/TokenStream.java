@@ -217,7 +217,7 @@ import org.modeshape.common.xml.XmlCharacters;
  * <p>
  * Each parser will likely have its own {@link Tokenizer} implementation that contains the parser-specific logic about how to
  * break the content into token objects. Generally, the easiest way to do this is to simply iterate through the character sequence
- * passed into the {@link Tokenizer#tokenize(CharacterStream, Tokens) tokenize(...)} method, and use a switch statement to decide
+ * passed into the {@link Tokenizer#tokenize(TokenStream.CharacterStream, TokenStream.Tokens) tokenize(...)} method, and use a switch statement to decide
  * what to do. 
  * </p>
  * <p>

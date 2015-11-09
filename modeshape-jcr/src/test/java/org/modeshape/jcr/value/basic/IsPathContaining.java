@@ -64,7 +64,8 @@ public class IsPathContaining extends TypeSafeMatcher<Iterable<Segment>> {
     }
 
     @Factory
-    public static Matcher<Iterable<Segment>> hasSegments( @SuppressWarnings( "unchecked" ) Matcher<Path.Segment>... elementMatchers ) {
+    @SafeVarargs
+    public static Matcher<Iterable<Segment>> hasSegments( Matcher<Path.Segment>... elementMatchers ) {
         Collection<Matcher<? super Iterable<Path.Segment>>> all = new ArrayList<>(elementMatchers.length);
 
         for (Matcher<Path.Segment> elementMatcher : elementMatchers) {

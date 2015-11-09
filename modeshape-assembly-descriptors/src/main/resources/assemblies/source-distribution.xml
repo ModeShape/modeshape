@@ -9,7 +9,7 @@
                Gather into the distribution the various text files for inclusion
              -->
             <directory>src/main/resources</directory>
-            <outputDirectory>/</outputDirectory>
+            <outputDirectory>./</outputDirectory>
             <includes>
                 <include>README*</include>
                 <include>LICENSE*</include>
@@ -24,7 +24,7 @@
                Gather into the distribution the source for all projects
              -->
             <directory>../</directory>
-            <outputDirectory>/</outputDirectory>
+            <outputDirectory>./</outputDirectory>
             <useDefaultExcludes>true</useDefaultExcludes>
             <excludes>
                 <exclude>**/.idea/**</exclude>

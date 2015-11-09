@@ -15,13 +15,11 @@
  */
 package org.modeshape.jcr;
 
-import org.infinispan.configuration.cache.Configuration;
 import org.infinispan.configuration.cache.ConfigurationBuilder;
 import org.infinispan.configuration.global.GlobalConfigurationBuilder;
 import org.infinispan.manager.CacheContainer;
 import org.infinispan.manager.DefaultCacheManager;
 import org.infinispan.schematic.TestUtil;
-import org.infinispan.transaction.TransactionMode;
 import org.infinispan.transaction.lookup.DummyTransactionManagerLookup;
 import org.infinispan.transaction.lookup.TransactionManagerLookup;
 
@@ -49,17 +47,6 @@ public class TestingEnvironment extends LocalEnvironment {
     @Override
     protected void shutdown( CacheContainer container ) {
         TestUtil.killCacheContainers(container);
-    }
-
-    @Override
-    protected Configuration createDefaultConfiguration() {
-        ConfigurationBuilder configurationBuilder = new ConfigurationBuilder();
-        configurationBuilder.transaction().transactionMode(TransactionMode.TRANSACTIONAL);
-        configurationBuilder.transaction().transactionManagerLookup(transactionManagerLookupInstance());
-        if (customLoaderTest != null) {
-            customLoaderTest.applyLoaderConfiguration(configurationBuilder);
-        }
-        return configurationBuilder.build();
     }
 
     @Override

@@ -22,12 +22,12 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import com.puppycrawl.tools.checkstyle.Utils;
 import com.puppycrawl.tools.checkstyle.api.DetailAST;
 import com.puppycrawl.tools.checkstyle.api.FileContents;
 import com.puppycrawl.tools.checkstyle.api.FullIdent;
 import com.puppycrawl.tools.checkstyle.api.TextBlock;
 import com.puppycrawl.tools.checkstyle.api.TokenTypes;
-import com.puppycrawl.tools.checkstyle.api.Utils;
 import com.puppycrawl.tools.checkstyle.checks.imports.UnusedImportsCheck;
 import com.puppycrawl.tools.checkstyle.checks.javadoc.InvalidJavadocTag;
 import com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocTag;
@@ -56,7 +56,7 @@ public class UnusedImports extends UnusedImportsCheck {
      * (.*?)(?:\s+|#|\$)(.*)
      * </pre>
      */
-    private static final Pattern LINK_VALUE_IN_TEXT_PATTERN = Utils.getPattern("(.*?)(?:\\s+|#|\\$)(.*)");
+    private static final Pattern LINK_VALUE_IN_TEXT_PATTERN = Utils.createPattern("(.*?)(?:\\s+|#|\\$)(.*)");
     /**
      * A regular expression for finding the class name (group 1) and the method parameters (group 2) within a JavaDoc "@link"
      * reference.
@@ -65,7 +65,8 @@ public class UnusedImports extends UnusedImportsCheck {
      * ([\w.]+)(?:\#?\w+)?(?:\(([^\)]+)\))?.*
      * </pre>
      */
-    private static final Pattern PARTS_OF_CLASS_OR_REFERENCE_PATTERN = Utils.getPattern("([\\w.]+)(?:\\#?\\w+)?(?:\\(([^\\)]+)\\))?.*");
+    private static final Pattern PARTS_OF_CLASS_OR_REFERENCE_PATTERN = Utils.createPattern(
+            "([\\w.]+)(?:\\#?\\w+)?(?:\\(([^\\)]+)\\))?.*");
     /**
      * A regular expression for finding the first classname referenced in a "@link" reference.
      * 
@@ -73,7 +74,7 @@ public class UnusedImports extends UnusedImportsCheck {
      * \{\@link\s+([^}]*)
      * </pre>
      */
-    private static final Pattern LINK_VALUE_PATTERN = Utils.getPattern("\\{\\@link\\s+([^}]*)");
+    private static final Pattern LINK_VALUE_PATTERN = Utils.createPattern("\\{\\@link\\s+([^}]*)");
 
     private boolean collect = false;
     private boolean processJavaDoc = false;

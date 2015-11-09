@@ -36,7 +36,8 @@ public class RepositoryList {
     public RepositoryList(ModeShapeEngine engine) {
         this.engine = engine;
     }
-    
+
+    @SuppressWarnings("unchecked")
     public Collection<RepositoryName> getRepositories(Credentials creds) throws RemoteException {
         ArrayList<RepositoryName> list = new ArrayList();
             for (String name : engine.getRepositoryNames()) { 

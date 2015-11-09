@@ -15,7 +15,7 @@
             </excludes>
         </dependencySet>
         <dependencySet>
-            <outputDirectory>/</outputDirectory>
+            <outputDirectory>./</outputDirectory>
             <unpack>false</unpack>
             <includes>
                 <include>${project.groupId}:${project.artifactId}:*</include>
@@ -25,14 +25,14 @@
     <fileSets>
         <fileSet>
             <directory>${project.build.directory}</directory>
-            <outputDirectory>/tests</outputDirectory>
+            <outputDirectory>./tests</outputDirectory>
             <includes>
                 <include>${project.artifactId}-${project.version}-tests.jar</include>
             </includes>
         </fileSet>
         <fileSet>
             <directory>${project.build.directory}</directory>
-            <outputDirectory>/sources</outputDirectory>
+            <outputDirectory>./sources</outputDirectory>
             <includes>
                 <include>${project.artifactId}-${project.version}-sources.jar</include>
                 <include>${project.artifactId}-${project.version}-test-sources.jar</include>
@@ -43,7 +43,7 @@
         -->
         <fileSet>
             <directory>src/main/resources</directory>
-            <outputDirectory>/</outputDirectory>
+            <outputDirectory>./</outputDirectory>
             <includes>
                 <include>README*</include>
                 <include>LICENSE*</include>
@@ -55,7 +55,7 @@
         </fileSet>
         <fileSet>
             <directory>src/main/assembly</directory>
-            <outputDirectory>/</outputDirectory>
+            <outputDirectory>./</outputDirectory>
             <includes>
                 <include>README*</include>
                 <include>LICENSE*</include>

@@ -20,9 +20,9 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import com.google.common.collect.Lists;
+import com.puppycrawl.tools.checkstyle.Utils;
 import com.puppycrawl.tools.checkstyle.api.JavadocTagInfo;
 import com.puppycrawl.tools.checkstyle.api.TextBlock;
-import com.puppycrawl.tools.checkstyle.api.Utils;
 import com.puppycrawl.tools.checkstyle.checks.javadoc.InvalidJavadocTag;
 import com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocTag;
 import com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocTags;
@@ -48,7 +48,7 @@ public final class JavaDocUtil {
         final String[] text = aCmt.getText();
         final List<JavadocTag> tags = Lists.newArrayList();
         final List<InvalidJavadocTag> invalidTags = Lists.newArrayList();
-        Pattern blockTagPattern = Utils.getPattern("/\\*{2,}\\s*@(\\p{Alpha}+)\\s");
+        Pattern blockTagPattern = Utils.createPattern("/\\*{2,}\\s*@(\\p{Alpha}+)\\s");
         for (int i = 0; i < text.length; i++) {
             final String s = text[i];
             final Matcher blockTagMatcher = blockTagPattern.matcher(s);
@@ -72,7 +72,7 @@ public final class JavaDocUtil {
             // No block tag, so look for inline validTags
             else if (aTagType.equals(JavadocTagType.ALL) || aTagType.equals(JavadocTagType.INLINE)) {
                 // Match JavaDoc text after comment characters
-                final Pattern commentPattern = Utils.getPattern("^\\s*(?:/\\*{2,}|\\*+)\\s*(.*)");
+                final Pattern commentPattern = Utils.createPattern("^\\s*(?:/\\*{2,}|\\*+)\\s*(.*)");
                 final Matcher commentMatcher = commentPattern.matcher(s);
                 final String commentContents;
                 final int commentOffset; // offset including comment characters
@@ -83,7 +83,7 @@ public final class JavaDocUtil {
                     commentContents = commentMatcher.group(1);
                     commentOffset = commentMatcher.start(1) - 1;
                 }
-                final Pattern tagPattern = Utils.getPattern(".*?\\{@(\\p{Alpha}+)\\s+([^\\}]*)"); // The last '}' may
+                final Pattern tagPattern = Utils.createPattern(".*?\\{@(\\p{Alpha}+)\\s+([^\\}]*)"); // The last '}' may
                                                                                                   // appear on the next
                                                                                                   // line ...
                 final Matcher tagMatcher = tagPattern.matcher(commentContents);
@@ -105,7 +105,7 @@ public final class JavaDocUtil {
                     // else Error: Unexpected match count for inline JavaDoc tag
                 }
             }
-            blockTagPattern = Utils.getPattern("^\\s*\\**\\s*@(\\p{Alpha}+)\\s");
+            blockTagPattern = Utils.createPattern("^\\s*\\**\\s*@(\\p{Alpha}+)\\s");
         }
         return new JavadocTags(tags, invalidTags);
     }

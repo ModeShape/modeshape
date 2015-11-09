@@ -159,6 +159,7 @@ final class JcrVersionHistoryNode extends JcrSystemNode implements VersionHistor
     }
 
     @Override
+    @SuppressWarnings("deprecation")
     public String getVersionableUUID() throws RepositoryException {
         return getProperty(JcrLexicon.VERSIONABLE_UUID).getString();
     }

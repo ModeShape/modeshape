@@ -84,7 +84,7 @@ import org.modeshape.jcr.value.ValueFactories;
 
 /**
  * The factory that creates a Lucene {@link Query} object from a Query Object Model {@link Constraint} object.
- * 
+ *
  * @since 4.5
  */
 @ThreadSafe
@@ -117,14 +117,14 @@ public class LuceneQueryFactory {
      * indexes.
      *
      * @param factories a {@link ValueFactories} instance; may not be null
-     * @param variables a {@link Map(String, Object)} instance which contains the query variables for a particular query; may be {@code null}
-     * @param propertyTypesByName a {@link Map(String, PropertyType)} representing the columns and their types for the index definition
+     * @param variables a {@link Map} instance which contains the query variables for a particular query; may be {@code null}
+     * @param propertyTypesByName a {@link Map} representing the columns and their types for the index definition
      * for which the query should be created; may not be null.
      * @return a {@link LuceneQueryFactory} instance, never {@code null}
      */
-    public static LuceneQueryFactory forMultiColumnIndex(ValueFactories factories,
-                                                         Map<String, Object> variables,
-                                                         Map<String, PropertyType> propertyTypesByName) {
+    public static LuceneQueryFactory forMultiColumnIndex( ValueFactories factories,
+                                                          Map<String, Object> variables,
+                                                          Map<String, PropertyType> propertyTypesByName ) {
         return new LuceneQueryFactory(factories, variables, propertyTypesByName);
     }
 
@@ -133,8 +133,8 @@ public class LuceneQueryFactory {
      * indexes.
      *
      * @param factories a {@link ValueFactories} instance; may not be null
-     * @param variables a {@link Map(String, Object)} instance which contains the query variables for a particular query; may be {@code null}
-     * @param propertyTypesByName a {@link Map(String, PropertyType)} representing the columns and their types for the index definition
+     * @param variables a {@link Map} instance which contains the query variables for a particular query; may be {@code null}
+     * @param propertyTypesByName a {@link Map} representing the columns and their types for the index definition
      * for which the query should be created; may not be null.
      * @return a {@link LuceneQueryFactory} instance, never {@code null}
      */
@@ -149,8 +149,8 @@ public class LuceneQueryFactory {
      * indexes.
      *
      * @param factories a {@link ValueFactories} instance; may not be null
-     * @param variables a {@link Map(String, Object)} instance which contains the query variables for a particular query; may be {@code null}
-     * @param propertyTypesByName a {@link Map(String, PropertyType)} representing the columns and their types for the index definition
+     * @param variables a {@link Map} instance which contains the query variables for a particular query; may be {@code null}
+     * @param propertyTypesByName a {@link Map} representing the columns and their types for the index definition
      * for which the query should be created; may not be null.
      * @param config a {@link LuceneConfig} instance required to get various information for FTS (e.g. configured analyzer); may
      * not be null
@@ -171,31 +171,31 @@ public class LuceneQueryFactory {
      */
     public Query createQuery( Constraint constraint ) {
         if (constraint instanceof And) {
-            return createQuery((And)constraint);
+            return createQuery((And) constraint);
         }
         if (constraint instanceof Or) {
-            return createQuery((Or)constraint);
+            return createQuery((Or) constraint);
         }
         if (constraint instanceof Not) {
-            return createQuery((Not)constraint);
+            return createQuery((Not) constraint);
         }
         if (constraint instanceof SetCriteria) {
-            return createQuery((SetCriteria)constraint);
+            return createQuery((SetCriteria) constraint);
         }
         if (constraint instanceof PropertyExistence) {
-            return createQuery((PropertyExistence)constraint);
+            return createQuery((PropertyExistence) constraint);
         }
         if (constraint instanceof Between) {
-            return createQuery((Between)constraint);
+            return createQuery((Between) constraint);
         }
         if (constraint instanceof Relike) {
-            return createQuery((Relike)constraint);
+            return createQuery((Relike) constraint);
         }
         if (constraint instanceof Comparison) {
-            return createQuery((Comparison)constraint);
+            return createQuery((Comparison) constraint);
         }
         if (constraint instanceof FullTextSearch) {
-            return createQuery((FullTextSearch)constraint);
+            return createQuery((FullTextSearch) constraint);
         }
         // Should not get here ...
         throw new LuceneIndexException(
@@ -205,7 +205,7 @@ public class LuceneQueryFactory {
 
     /**
      * Checks if for the query produced by this factory scores are expected or not for matching documents.
-     * 
+     *
      * @return {@code true} if scores are expected to matching documents, {@code false} otherwise
      */
     public boolean scoreDocuments() {
@@ -213,7 +213,7 @@ public class LuceneQueryFactory {
     }
 
     protected Query createQuery( FullTextSearch constraint ) {
-        throw new UnsupportedOperationException("Only text indexes support FTS constraints...");     
+        throw new UnsupportedOperationException("Only text indexes support FTS constraints...");
     }
 
     protected Query createQuery( Comparison comparison ) {
@@ -236,7 +236,7 @@ public class LuceneQueryFactory {
 
     protected Query createQuery( Between between ) {
         DynamicOperand operand = between.getOperand();
-        
+
         StaticOperand lower = between.getLowerBound();
         StaticOperand upper = between.getUpperBound();
 
@@ -263,7 +263,7 @@ public class LuceneQueryFactory {
                     case DOUBLE:
                     case DECIMAL:
                         return createRangeQuery(field, lowerValue, upperValue, lowerBoundIncluded, upperBoundIncluded);
-                                                
+
                     default:
                         // continue on and handle as boolean query ...
                 }
@@ -289,7 +289,7 @@ public class LuceneQueryFactory {
         } else {
             type = lowerType;
         }
-      
+
         switch (type) {
             case DATE:
                 long lowerDate = factories.getLongFactory().create(lowerValue);
@@ -348,7 +348,8 @@ public class LuceneQueryFactory {
         if (numRightOperands == 1) {
             StaticOperand rightOperand = setCriteria.rightOperands().iterator().next();
             if (rightOperand instanceof Literal) {
-                return createQuery(left, Operator.EQUAL_TO, setCriteria.rightOperands().iterator().next(), CaseOperations.AS_IS);
+                return createQuery(left, Operator.EQUAL_TO, setCriteria.rightOperands().iterator().next(),
+                                   CaseOperations.AS_IS);
             }
         }
         BooleanQuery.Builder builder = new BooleanQuery.Builder();
@@ -356,7 +357,7 @@ public class LuceneQueryFactory {
         for (StaticOperand right : setCriteria.rightOperands()) {
             if (right instanceof BindVariableName) {
                 // This single value is a variable name, which may evaluate to a single value or multiple values ...
-                BindVariableName var = (BindVariableName)right;
+                BindVariableName var = (BindVariableName) right;
                 String bindVariableName = var.getBindVariableName();
                 Object value = variables.get(bindVariableName);
                 if (value == null) {
@@ -372,11 +373,13 @@ public class LuceneQueryFactory {
                     throw new LuceneIndexException(JcrI18n.missingVariableValue.text(bindVariableName));
                 }
                 if (value instanceof Iterable<?>) {
-                    for (Object resolvedValue : (Iterable<?>)value) {
-                        if (resolvedValue == null) { continue; }
+                    for (Object resolvedValue : (Iterable<?>) value) {
+                        if (resolvedValue == null) {
+                            continue;
+                        }
                         if (resolvedValue instanceof Object[]) {
                             // The row has multiple values (e.g., a multi-valued property) ...
-                            for (Object val : (Object[])resolvedValue) {
+                            for (Object val : (Object[]) resolvedValue) {
                                 addQueryForSetConstraint(builder, left, val);
                             }
                         } else {
@@ -405,10 +408,12 @@ public class LuceneQueryFactory {
         return booleanQuery(leftQuery, Occur.SHOULD, rightQuery, Occur.SHOULD);
     }
 
-    protected Query createQuery( And and )  {
+    protected Query createQuery( And and ) {
         Query leftQuery = createQuery(and.left());
         Query rightQuery = createQuery(and.right());
-        if (leftQuery == null || rightQuery == null) { return null; }
+        if (leftQuery == null || rightQuery == null) {
+            return null;
+        }
         return booleanQuery(leftQuery, Occur.MUST, rightQuery, Occur.MUST);
     }
 
@@ -419,7 +424,7 @@ public class LuceneQueryFactory {
     }
 
     private void addQueryForSetConstraint( BooleanQuery.Builder setQueryBuilder, DynamicOperand left, Object resolvedValue ) {
-        StaticOperand elementInRight = resolvedValue instanceof Literal ? (Literal)resolvedValue : new Literal(resolvedValue);
+        StaticOperand elementInRight = resolvedValue instanceof Literal ? (Literal) resolvedValue : new Literal(resolvedValue);
         Query rightQuery = createQuery(left, Operator.EQUAL_TO, elementInRight, CaseOperations.AS_IS);
         setQueryBuilder.add(rightQuery, Occur.SHOULD);
     }
@@ -433,17 +438,17 @@ public class LuceneQueryFactory {
         assert value != null;
 
         // Address the dynamic operand ...
-       if (left instanceof PropertyValue) {
-            return createPropertyValueQuery((PropertyValue)left, operator, value, caseOperation);
+        if (left instanceof PropertyValue) {
+            return createPropertyValueQuery((PropertyValue) left, operator, value, caseOperation);
         } else if (left instanceof ReferenceValue) {
-            return createReferenceValueQuery((ReferenceValue)left, operator, value);
+            return createReferenceValueQuery((ReferenceValue) left, operator, value);
         } else if (left instanceof Length) {
-            return createLengthQuery((Length)left, operator, value);
+            return createLengthQuery((Length) left, operator, value);
         } else if (left instanceof LowerCase) {
-            LowerCase lowercase = (LowerCase)left;
+            LowerCase lowercase = (LowerCase) left;
             return createQuery(lowercase.getOperand(), operator, right, CaseOperations.LOWERCASE);
         } else if (left instanceof UpperCase) {
-            UpperCase uppercase = (UpperCase)left;
+            UpperCase uppercase = (UpperCase) left;
             return createQuery(uppercase.getOperand(), operator, right, CaseOperations.UPPERCASE);
         } else if (left instanceof NodeDepth) {
             // this only applies to mode:depth
@@ -461,10 +466,9 @@ public class LuceneQueryFactory {
             String field = stringFactory.create(ModeShapeLexicon.LOCALNAME);
             return stringFieldQuery(field, operator, value, caseOperation);
         } else if (left instanceof Cast) {
-           Cast cast = (Cast) left;
-           return createQuery(cast.getOperand(), operator, right, caseOperation);
+            Cast cast = (Cast) left;
+            return createQuery(cast.getOperand(), operator, right, caseOperation);
         }
-
         throw new LuceneIndexException("Unexpected DynamicOperand instance: class=" + (left != null ? left.getClass() : "null")
                                        + " and instance=" + left);
     }
@@ -472,20 +476,22 @@ public class LuceneQueryFactory {
     private String depthField() {
         return stringFactory.create(ModeShapeLexicon.DEPTH);
     }
-    
+
     protected Object getSingleValueFromStaticOperand( StaticOperand operand ) {
         Object value = null;
         if (operand instanceof Literal) {
-            Literal literal = (Literal)operand;
+            Literal literal = (Literal) operand;
             value = literal.value();
         } else if (operand instanceof BindVariableName) {
-            BindVariableName variable = (BindVariableName)operand;
+            BindVariableName variable = (BindVariableName) operand;
             String variableName = variable.getBindVariableName();
             value = variables.get(variableName);
             if (value instanceof Iterable<?>) {
                 // We can only return one value ...
-                Iterator<?> iter = ((Iterable<?>)value).iterator();
-                if (iter.hasNext()) { return iter.next(); }
+                Iterator<?> iter = ((Iterable<?>) value).iterator();
+                if (iter.hasNext()) {
+                    return iter.next();
+                }
                 value = null;
             }
             if (value == null) {
@@ -496,7 +502,7 @@ public class LuceneQueryFactory {
         }
         return value;
     }
-    
+
     protected BooleanQuery not( Query notted ) {
         BooleanQuery.Builder builder = new BooleanQuery.Builder();
         builder.setDisableCoord(true);
@@ -587,18 +593,17 @@ public class LuceneQueryFactory {
             // Decimal values are stored in a special lexicographically sortable form, so we have to
             // convert the value to this ...
             BigDecimal decimalValue = factories.getDecimalFactory().create(value);
-            decimalString = FieldUtil.decimalToString(decimalValue);                                       
+            decimalString = FieldUtil.decimalToString(decimalValue);
         } else {
             // search for LIKE as a regular string expression
             decimalString = stringFactory.create(value);
         }
-        
         return stringFieldQuery(field, operator, decimalString, caseOperation);
     }
 
     protected Query booleanFieldQuery( String field, Operator operator, Object value ) {
         Boolean booleanValue = factories.getBooleanFactory().create(value);
-        
+
         if (booleanValue) {
             switch (operator) {
                 case EQUAL_TO:
@@ -655,27 +660,40 @@ public class LuceneQueryFactory {
         long longValue = factories.getLongFactory().create(value);
         switch (operator) {
             case EQUAL_TO:
-                if (longValue < longMinimum || longValue > longMaximum) { return new MatchNoDocsQuery(); }
+                if (longValue < longMinimum || longValue > longMaximum) {
+                    return new MatchNoDocsQuery();
+                }
                 return NumericRangeQuery.newLongRange(field, longValue, longValue, true, true);
             case NOT_EQUAL_TO:
-                if (longValue < longMinimum || longValue > longMaximum) { return new MatchAllDocsQuery(); }
+                if (longValue < longMinimum || longValue > longMaximum) {
+                    return new MatchAllDocsQuery();
+                }
                 Query lowerRange = NumericRangeQuery.newLongRange(field, longMinimum, longValue, true, false);
                 Query upperRange = NumericRangeQuery.newLongRange(field, longValue, longMaximum, false, true);
                 return booleanQuery(lowerRange, Occur.SHOULD, upperRange, Occur.SHOULD);
             case GREATER_THAN:
-                if (longValue > longMaximum) { return new MatchNoDocsQuery(); }
+                if (longValue > longMaximum) {
+                    return new MatchNoDocsQuery();
+                }
                 return NumericRangeQuery.newLongRange(field, longValue, longMaximum, false, true);
             case GREATER_THAN_OR_EQUAL_TO:
-                if (longValue > longMaximum) { return new MatchNoDocsQuery(); }
+                if (longValue > longMaximum) {
+                    return new MatchNoDocsQuery();
+                }
                 return NumericRangeQuery.newLongRange(field, longValue, longMaximum, true, true);
             case LESS_THAN:
-                if (longValue < longMinimum) { return new MatchNoDocsQuery(); }
+                if (longValue < longMinimum) {
+                    return new MatchNoDocsQuery();
+                }
                 return NumericRangeQuery.newLongRange(field, longMinimum, longValue, true, false);
             case LESS_THAN_OR_EQUAL_TO:
-                if (longValue < longMinimum) { return new MatchNoDocsQuery(); }
+                if (longValue < longMinimum) {
+                    return new MatchNoDocsQuery();
+                }
                 return NumericRangeQuery.newLongRange(field, longMinimum, longValue, true, true);
             case LIKE:
-                throw new LuceneIndexException(LuceneIndexProviderI18n.invalidOperatorForPropertyType.text(operator, PropertyType.LONG));
+                throw new LuceneIndexException(LuceneIndexProviderI18n.invalidOperatorForPropertyType.text(operator,
+                                                                                                           PropertyType.LONG));
             default:
                 throw new IllegalArgumentException("Unknown operator:" + operator);
         }
@@ -687,26 +705,38 @@ public class LuceneQueryFactory {
         Double doubleMaximum = Double.MAX_VALUE;
         switch (operator) {
             case EQUAL_TO:
-                if (doubleValue < doubleMinimum || doubleValue > doubleMaximum) { return new MatchNoDocsQuery(); }
+                if (doubleValue < doubleMinimum || doubleValue > doubleMaximum) {
+                    return new MatchNoDocsQuery();
+                }
                 return NumericRangeQuery.newDoubleRange(field, doubleValue, doubleValue, true, true);
             case NOT_EQUAL_TO:
-                if (doubleValue < doubleMinimum || doubleValue > doubleMaximum) { return new MatchAllDocsQuery(); }
+                if (doubleValue < doubleMinimum || doubleValue > doubleMaximum) {
+                    return new MatchAllDocsQuery();
+                }
                 Query lowerRange = NumericRangeQuery.newDoubleRange(field, doubleMinimum, doubleValue, true,
                                                                     false);
                 Query upperRange = NumericRangeQuery.newDoubleRange(field, doubleValue, doubleMaximum, false,
                                                                     true);
                 return booleanQuery(lowerRange, Occur.SHOULD, upperRange, Occur.SHOULD);
             case GREATER_THAN:
-                if (doubleValue > doubleMaximum) { return new MatchNoDocsQuery(); }
+                if (doubleValue > doubleMaximum) {
+                    return new MatchNoDocsQuery();
+                }
                 return NumericRangeQuery.newDoubleRange(field, doubleValue, doubleMaximum, false, true);
             case GREATER_THAN_OR_EQUAL_TO:
-                if (doubleValue > doubleMaximum) { return new MatchNoDocsQuery(); }
+                if (doubleValue > doubleMaximum) {
+                    return new MatchNoDocsQuery();
+                }
                 return NumericRangeQuery.newDoubleRange(field, doubleValue, doubleMaximum, true, true);
             case LESS_THAN:
-                if (doubleValue < doubleMinimum) { return new MatchNoDocsQuery(); }
+                if (doubleValue < doubleMinimum) {
+                    return new MatchNoDocsQuery();
+                }
                 return NumericRangeQuery.newDoubleRange(field, doubleMinimum, doubleValue, true, false);
             case LESS_THAN_OR_EQUAL_TO:
-                if (doubleValue < doubleMinimum) { return new MatchNoDocsQuery(); }
+                if (doubleValue < doubleMinimum) {
+                    return new MatchNoDocsQuery();
+                }
                 return NumericRangeQuery.newDoubleRange(field, doubleMinimum, doubleValue, true, true);
             case LIKE:
                 // should never happen (the double conversion should've failed)
@@ -722,24 +752,36 @@ public class LuceneQueryFactory {
         long millis = factories.getDateFactory().create(value).getMilliseconds();
         switch (operator) {
             case EQUAL_TO:
-                if (millis < longMinimum || millis > longMaximum) { return new MatchNoDocsQuery(); }
+                if (millis < longMinimum || millis > longMaximum) {
+                    return new MatchNoDocsQuery();
+                }
                 return NumericRangeQuery.newLongRange(field, millis, millis, true, true);
             case NOT_EQUAL_TO:
-                if (millis < longMinimum || millis > longMaximum) { return new MatchAllDocsQuery(); }
+                if (millis < longMinimum || millis > longMaximum) {
+                    return new MatchAllDocsQuery();
+                }
                 Query lowerRange = NumericRangeQuery.newLongRange(field, longMinimum, millis, true, false);
                 Query upperRange = NumericRangeQuery.newLongRange(field, millis, longMaximum, false, true);
                 return booleanQuery(lowerRange, Occur.SHOULD, upperRange, Occur.SHOULD);
             case GREATER_THAN:
-                if (millis > longMaximum) { return new MatchNoDocsQuery(); }
+                if (millis > longMaximum) {
+                    return new MatchNoDocsQuery();
+                }
                 return NumericRangeQuery.newLongRange(field, millis, longMaximum, false, true);
             case GREATER_THAN_OR_EQUAL_TO:
-                if (millis > longMaximum) { return new MatchNoDocsQuery(); }
+                if (millis > longMaximum) {
+                    return new MatchNoDocsQuery();
+                }
                 return NumericRangeQuery.newLongRange(field, millis, longMaximum, true, true);
             case LESS_THAN:
-                if (millis < longMinimum) { return new MatchNoDocsQuery(); }
+                if (millis < longMinimum) {
+                    return new MatchNoDocsQuery();
+                }
                 return NumericRangeQuery.newLongRange(field, longMinimum, millis, true, false);
             case LESS_THAN_OR_EQUAL_TO:
-                if (millis < longMinimum) { return new MatchNoDocsQuery(); }
+                if (millis < longMinimum) {
+                    return new MatchNoDocsQuery();
+                }
                 return NumericRangeQuery.newLongRange(field, longMinimum, millis, true, true);
             case LIKE:
                 // should never happen (the millis conversion should've failed)
@@ -752,7 +794,7 @@ public class LuceneQueryFactory {
     protected Query createReferenceValueQuery( ReferenceValue referenceValue, Operator operator, Object value ) {
         String field = referenceValue.getPropertyName();
         if (field != null) {
-            return stringFieldQuery(field, operator, value, CaseOperations.AS_IS);    
+            return stringFieldQuery(field, operator, value, CaseOperations.AS_IS);
         }
 
         // we are being asked to query for all the references fields that apply to this index, so we need to collect them first
@@ -798,7 +840,7 @@ public class LuceneQueryFactory {
         }
         return result;
     }
-    
+
     protected Query createLengthQuery( Length propertyLength, Operator operator, Object value ) {
         assert propertyLength != null;
         assert value != null;
@@ -824,7 +866,8 @@ public class LuceneQueryFactory {
                 return NumericRangeQuery.newLongRange(field, 0L, length, true, true);
             case LIKE:
                 // This is not allowed ...
-                throw new LuceneIndexException(LuceneIndexProviderI18n.invalidOperatorForOperand.text(operator, propertyLength));
+                throw new LuceneIndexException(LuceneIndexProviderI18n.invalidOperatorForOperand.text(operator,
+                                                                                                      propertyLength));
             default: {
                 throw new IllegalArgumentException("Unknown operator:" + operator);
             }
@@ -834,14 +877,15 @@ public class LuceneQueryFactory {
     protected Query pathFieldQuery( String field, Operator operator, Object value, CaseOperation caseOperation ) {
         Path path = null;
         if (operator != Operator.LIKE) {
-            path = !(value instanceof Path) ? pathFactory.create(value) : (Path)value;
+            path = !(value instanceof Path) ? pathFactory.create(value) : (Path) value;
         }
         if (caseOperation == null) {
             caseOperation = CaseOperations.AS_IS;
         }
         switch (operator) {
             case EQUAL_TO:
-                return CompareStringQuery.createQueryForNodesWithFieldEqualTo(stringFactory.create(path), field, factories, caseOperation);
+                return CompareStringQuery.createQueryForNodesWithFieldEqualTo(stringFactory.create(path), field, factories,
+                                                                              caseOperation);
             case NOT_EQUAL_TO:
                 return not(CompareStringQuery.createQueryForNodesWithFieldEqualTo(stringFactory.create(path), field,
                                                                                   factories, caseOperation));
@@ -879,32 +923,10 @@ public class LuceneQueryFactory {
         }
     }
 
-    protected String likeExpresionForWildcardPath( String path ) {
-        if (path.equals("/") || path.equals("%")) return path;
-        StringBuilder sb = new StringBuilder();
-        path = path.replaceAll("%+", "%");
-        if (path.startsWith("%/")) {
-            sb.append("%");
-            if (path.length() == 2) return sb.toString();
-            path = path.substring(2);
-        }
-        for (String segment : path.split("/")) {
-            if (segment.length() == 0) continue;
-            sb.append("/");
-            sb.append(segment);
-            if (segment.equals("%") || segment.equals("_")) continue;
-            if (!segment.endsWith("]") && !segment.endsWith("]%") && !segment.endsWith("]_")) {
-                sb.append("[1]");
-            }
-        }
-        if (path.endsWith("/")) sb.append("/");
-        return sb.toString();
-    }
-
     protected Query nameFieldQuery( String field, Operator operator, Object value, CaseOperation caseOperation ) {
         Name name = null;
         if (operator != Operator.LIKE) {
-            name = !(value instanceof Name) ? factories.getNameFactory().create(value) : (Name)value;
+            name = !(value instanceof Name) ? factories.getNameFactory().create(value) : (Name) value;
         }
         if (caseOperation == null) {
             caseOperation = CaseOperations.AS_IS;
@@ -939,10 +961,10 @@ public class LuceneQueryFactory {
         builder.add(rightQuery, rightOccur);
         return builder.build();
     }
-    
+
     protected static class SingleColumnQueryFactory extends LuceneQueryFactory {
         private SingleColumnQueryFactory( ValueFactories factories, Map<String, Object> variables,
-                                         Map<String, PropertyType> propertyTypesByName ) {
+                                          Map<String, PropertyType> propertyTypesByName ) {
             super(factories, variables, propertyTypesByName);
         }
 
@@ -965,16 +987,16 @@ public class LuceneQueryFactory {
             return propertyTypesByName.keySet().iterator().next();
         }
     }
-    
+
     protected static class TextQueryFactory extends SingleColumnQueryFactory {
         private static final PhraseQuery EMPTY_PHRASE_QUERY = new PhraseQuery.Builder().build();
 
         private final Analyzer analyzer;
-        
+
         private TextQueryFactory( ValueFactories factories,
                                   Map<String, Object> variables,
                                   Map<String, PropertyType> propertyTypesByName,
-                                  LuceneConfig config) {
+                                  LuceneConfig config ) {
             super(factories, variables, propertyTypesByName);
             this.analyzer = config.getAnalyzer();
         }
@@ -1001,20 +1023,20 @@ public class LuceneQueryFactory {
                 throw new LuceneIndexException(e);
             }
         }
-        
+
         protected Query createQuery( String fieldName, FullTextSearch.Term term ) {
             assert fieldName != null;
             if (term instanceof FullTextSearch.Conjunction) {
-                return createConjunctionQuery(fieldName, (FullTextSearch.Conjunction)term);
+                return createConjunctionQuery(fieldName, (FullTextSearch.Conjunction) term);
             }
             if (term instanceof FullTextSearch.Disjunction) {
-                return createDisjunctionQuery(fieldName, (FullTextSearch.Disjunction)term);
+                return createDisjunctionQuery(fieldName, (FullTextSearch.Disjunction) term);
             }
             if (term instanceof FullTextSearch.SimpleTerm) {
-                return createSimpleTermQuery(fieldName, (FullTextSearch.SimpleTerm)term);
+                return createSimpleTermQuery(fieldName, (FullTextSearch.SimpleTerm) term);
             }
             if (term instanceof FullTextSearch.NegationTerm) {
-                return createNegationTermQuery(fieldName, (FullTextSearch.NegationTerm)term);
+                return createNegationTermQuery(fieldName, (FullTextSearch.NegationTerm) term);
             }
             throw new IllegalArgumentException("Unknown term instance:" + term);
         }
@@ -1028,8 +1050,8 @@ public class LuceneQueryFactory {
                 // need to add at least a positive match
                 builder.add(new MatchAllDocsQuery(), Occur.FILTER);
                 return builder.build();
-            }  else {
-                return new MatchAllDocsQuery(); 
+            } else {
+                return new MatchAllDocsQuery();
             }
         }
 
@@ -1086,7 +1108,7 @@ public class LuceneQueryFactory {
             boolean atLeastOnePositiveClause = false;
             for (FullTextSearch.Term nested : conjunction) {
                 if (nested instanceof FullTextSearch.NegationTerm) {
-                    Query subQuery = createQuery(fieldName, ((FullTextSearch.NegationTerm)nested).getNegatedTerm());
+                    Query subQuery = createQuery(fieldName, ((FullTextSearch.NegationTerm) nested).getNegatedTerm());
                     if (!EMPTY_PHRASE_QUERY.equals(subQuery)) {
                         builder.add(subQuery, Occur.MUST_NOT);
                     }
@@ -1108,7 +1130,7 @@ public class LuceneQueryFactory {
         private Query createWildcardQuery( final String fieldName, FullTextSearch.SimpleTerm simple ) throws ParseException {
             // Use the standard parser, but instead of wildcard queries (which don't work with leading
             // wildcards) we should use our like queries (which often use RegexQuery where applicable) ...
-            
+
             //as an alternative, for leading wildcards one could call parser.setAllowLeadingWildcard(true);
             //and use the default Lucene query parser
             QueryParser parser = new QueryParser(fieldName, analyzer) {

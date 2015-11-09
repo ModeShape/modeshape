@@ -26,6 +26,7 @@ import org.modeshape.jcr.JcrQueryManagerTest;
 /**
  * Extension of {@link JcrQueryManagerTest} which runs queries against Lucene indexes.
  */
+@SuppressWarnings("deprecation")
 public class LuceneIndexProviderQueryTest extends JcrQueryManagerTest {
 
     @BeforeClass

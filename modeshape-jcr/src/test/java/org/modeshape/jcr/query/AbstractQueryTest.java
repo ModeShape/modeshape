@@ -113,10 +113,11 @@ public abstract class AbstractQueryTest {
         assertThat("Property value doesn't match", node.getProperty(name), is(value));
     }
 
-    protected <T> void assertPropertyIsList( PlanNode node,
-                                             Property name,
-                                             Class<T> valueType,
-                                             @SuppressWarnings( "unchecked" ) T... values ) {
+    @SafeVarargs
+    protected final <T> void assertPropertyIsList( PlanNode node,
+                                                   Property name,
+                                                   Class<T> valueType,
+                                                   T... values ) {
         assertThat("Property value doesn't match", node.getPropertyAsList(name, valueType), is(Arrays.asList(values)));
     }
 

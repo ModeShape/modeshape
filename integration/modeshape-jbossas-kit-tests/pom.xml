@@ -5,7 +5,7 @@
     <parent>
         <groupId>org.modeshape</groupId>
         <artifactId>modeshape-parent</artifactId>
-        <version>4.5-SNAPSHOT</version>
+        <version>5.0-SNAPSHOT</version>
         <relativePath>../../modeshape-parent/pom.xml</relativePath>
     </parent>
     <!-- The groupId and version values are inherited from parent  -->
@@ -74,6 +74,12 @@
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpclient</artifactId>
+            <scope>test</scope>
+        </dependency>     
+        
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpcore</artifactId>
             <scope>test</scope>
         </dependency>
 

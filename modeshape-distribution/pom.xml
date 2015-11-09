@@ -6,7 +6,7 @@
     <parent>
         <groupId>org.modeshape</groupId>
         <artifactId>modeshape-parent</artifactId>
-        <version>4.5-SNAPSHOT</version>
+        <version>5.0-SNAPSHOT</version>
         <relativePath>../modeshape-parent/pom.xml</relativePath>
     </parent>
 
@@ -169,23 +169,54 @@
                    <artifactId>modeshape-sequencers-demo</artifactId>
                    <version>${project.version}</version>
                </dependency>
-                <!-- 
-                Hack: Need to include these 'provided' dependencies and force 'compile' scope, because of a JavaDoc plugin issue;
-                see http://jira.codehaus.org/browse/MJAVADOC-340 and other workarounds below
-                -->
-                <dependency>
-                  <groupId>org.mongodb</groupId>
-                  <artifactId>mongo-java-driver</artifactId>
-                  <version>${mongo.driver.version}</version>
-                  <scope>compile</scope>
-                </dependency>
-                <dependency>
-                    <groupId>org.wildfly.core</groupId>
-                    <artifactId>wildfly-controller</artifactId>
-                    <version>${version.org.wildfly.core}</version>
-                    <scope>compile</scope>
-                </dependency>
-            </dependencies>
+               <!-- 
+                  Provided dependencies in Maven ARE NOT transitive. Therefore, for the javadoc plugin to fully resolve the 
+                  classpath when generating the JavaDoc, we need to overwrite the non-test 'provided' dependencies to 'compile'
+               -->
+               <dependency>
+                   <groupId>org.wildfly.core</groupId>
+                   <artifactId>wildfly-controller</artifactId>
+                   <scope>compile</scope>
+               </dependency>
+               <dependency>
+                   <groupId>org.wildfly</groupId>
+                   <artifactId>wildfly-naming</artifactId>
+                   <scope>compile</scope>
+               </dependency>
+               <dependency>
+                   <groupId>org.wildfly</groupId>
+                   <artifactId>wildfly-security</artifactId>
+                   <scope>compile</scope>
+               </dependency>
+               <dependency>
+                   <groupId>org.picketbox</groupId>
+                   <artifactId>picketbox-bare</artifactId>
+                   <scope>compile</scope>
+               </dependency>
+               <dependency>
+                   <groupId>com.datastax.cassandra</groupId>
+                   <artifactId>cassandra-driver-core</artifactId>
+                   <scope>compile</scope>
+               </dependency>
+               <dependency>
+                   <groupId>org.mongodb</groupId>
+                   <artifactId>mongo-java-driver</artifactId>
+                   <scope>compile</scope>
+               </dependency>
+               <!--
+                  The logging deps are required by modeshape-common  
+               -->
+               <dependency>
+                   <groupId>org.slf4j</groupId>
+                   <artifactId>slf4j-api</artifactId>
+                   <scope>compile</scope>
+               </dependency>
+               <dependency>
+                   <groupId>log4j</groupId>
+                   <artifactId>log4j</artifactId>
+                   <scope>compile</scope>
+               </dependency>
+           </dependencies>
             <build>
                 <plugins>
                     <plugin>
@@ -196,8 +227,7 @@
                         that some 'provided' dependencies need to be hacked (see above).
                         -->
                         <artifactId>maven-javadoc-plugin</artifactId>
-                        <version>${version.javadoc.plugin}</version>
-                                
+                        <version>${version.javadoc.plugin}</version>                         
                         <configuration>
                             <includeDependencySources>true</includeDependencySources>
                             <failOnError>true</failOnError>
@@ -215,12 +245,12 @@
                             </dependencySourceExcludes>
 
                             <links>
-                              <link>http://docs.oracle.com/javase/7/docs/api/</link>
+                              <link>http://docs.oracle.com/javase/8/docs/api/</link>
                               <link>http://docs.oracle.com/javaee/7/api/</link>
                               <link>http://www.slf4j.org/apidocs/</link>
                               <link>http://www.day.com/maven/javax.jcr/javadocs/jcr-2.0/</link>
-                              <link>http://api.mongodb.org/java/${mongo.driver.version}/</link>
-                              <link>https://docs.jboss.org/infinispan/6.0/apidocs/</link>
+                              <link>http://api.mongodb.org/java/${version.org.mongodb.mongo-java-driver}/</link>
+                              <link>https://docs.jboss.org/infinispan/7.0/apidocs/</link>
                             </links>
                             <groups>
                               <group>

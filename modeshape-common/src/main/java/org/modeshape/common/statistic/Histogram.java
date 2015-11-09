@@ -58,8 +58,8 @@ public class Histogram<T extends Number> {
         Collections.sort(this.values, this.math.getComparator());
     }
 
-    public Histogram( MathOperations<T> operations,
-                      @SuppressWarnings( "unchecked" ) T... values ) {
+    @SafeVarargs
+    public Histogram( MathOperations<T> operations, T... values ) {
         this(operations, Arrays.asList(values));
     }
 

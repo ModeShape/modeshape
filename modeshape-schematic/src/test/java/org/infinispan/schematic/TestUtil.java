@@ -31,8 +31,12 @@ import org.infinispan.manager.EmbeddedCacheManager;
 public class TestUtil {
 
     public static boolean delete( File fileOrDirectory ) {
-        if (fileOrDirectory == null) { return false; }
-        if (!fileOrDirectory.exists()) { return false; }
+        if (fileOrDirectory == null) {
+            return false;
+        }
+        if (!fileOrDirectory.exists()) {
+            return false;
+        }
 
         // The file/directory exists, so if a directory delete all of the contents ...
         if (fileOrDirectory.isDirectory()) {
@@ -143,7 +147,9 @@ public class TestUtil {
         }
         for (CacheContainer cm : containers) {
             try {
-                if (cm != null) { cm.stop(); }
+                if (cm != null) {
+                    cm.stop();
+                }
             } catch (Throwable e) {
                 e.printStackTrace(System.err);
             }

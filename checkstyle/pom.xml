@@ -4,7 +4,7 @@
 
    <groupId>org.modeshape</groupId>
    <artifactId>modeshape-checkstyle</artifactId>
-   <version>4.5-SNAPSHOT</version>
+   <version>5.0-SNAPSHOT</version>
    <name>ModeShape Checkstyle Rules</name>
    <description>Contains the definitions for the ModeShape commons code style and conventions</description>
 
@@ -12,6 +12,8 @@
     <properties>
         <!-- Instruct the build to use only UTF-8 encoding for source code -->
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <maven.compiler.source>1.8</maven.compiler.source>
+        <maven.compiler.target>1.8</maven.compiler.target>
     </properties>
    <!--
    This module is referenced by ModeShape's parent POM, so it needs to be build before the parent
@@ -24,8 +26,6 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
-                    <source>1.7</source>
-                    <target>1.7</target>
                     <showDeprecation>false</showDeprecation>
                     <showWarnings>false</showWarnings>
                 </configuration>
@@ -33,7 +33,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-checkstyle-plugin</artifactId>
-                <version>2.12.1</version>
+                <version>2.15</version>
             </plugin>
             <!-- 
             This is not deployed into a Maven repository. It is merely installed into the local Maven repository
@@ -53,7 +53,7 @@
         <dependency>
             <groupId>com.puppycrawl.tools</groupId>
             <artifactId>checkstyle</artifactId>
-            <version>5.6</version>
+            <version>6.7</version>
             <exclusions>
                 <exclusion>
                     <groupId>com.sun</groupId>
