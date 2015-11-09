@@ -102,26 +102,20 @@ public class Searcher {
     }
     
     protected long estimateCardinality( final List<Constraint> andedConstraints, final LuceneQueryFactory queryFactory ) throws IOException {
-        return search(new Searchable<Long>() {
-            @Override
-            public Long search( IndexSearcher searcher ) throws IOException {
-                Query query = createQueryFromConstraints(andedConstraints, queryFactory);
-                TotalHitCountCollector results = new TotalHitCountCollector();
-                searcher.search(query, results);
-                return (long)results.getTotalHits();
-            }
+        return search(searcher -> {
+            Query query = createQueryFromConstraints(andedConstraints, queryFactory);
+            TotalHitCountCollector results = new TotalHitCountCollector();
+            searcher.search(query, results);
+            return (long)results.getTotalHits();
         }, false, true);
     }
     
     protected Document loadDocumentById(final String id) throws IOException {
         // this is a potentially costly operation
-        return search(new Searchable<Document>() {
-            @Override
-            public Document search( IndexSearcher searcher ) throws IOException {
-                DocumentByIdCollector collector = new DocumentByIdCollector();
-                searcher.search(FieldUtil.idQuery(id), collector);
-                return collector.document();
-            }
+        return search(searcher -> {
+            DocumentByIdCollector collector = new DocumentByIdCollector();
+            searcher.search(FieldUtil.idQuery(id), collector);
+            return collector.document();
         }, false, true);
     }
 
@@ -198,19 +192,16 @@ public class Searcher {
         @Override
         public boolean getNextBatch( final ResultWriter writer, final int batchSize ) {
             if (runQuery) {
-                search(new Searchable<Void>() {
-                    @Override
-                    public Void search( IndexSearcher searcher ) throws IOException {
-                        IdsCollector collector = new IdsCollector(scoreDocuments);
-                        searcher.search(query, collector);
-                        for (Map.Entry<NodeKey, Float> entry : collector.getScoresById().entrySet()) {
-                            ids.add(entry.getKey());
-                            scores.add(entry.getValue());
-                        }
-                        size = ids.size();
-                        runQuery = false;
-                        return null;
+                search(searcher -> {
+                    IdsCollector collector = new IdsCollector(scoreDocuments);
+                    searcher.search(query, collector);
+                    for (Map.Entry<NodeKey, Float> entry : collector.getScoresById().entrySet()) {
+                        ids.add(entry.getKey());
+                        scores.add(entry.getValue());
                     }
+                    size = ids.size();
+                    runQuery = false;
+                    return null;
                 }, scoreDocuments, true);
             }
 
@@ -295,6 +286,7 @@ public class Searcher {
         }
     }
     
+    @FunctionalInterface
     protected interface Searchable<T> {
         T search(IndexSearcher searcher) throws IOException;
     }
