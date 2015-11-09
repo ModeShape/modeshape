@@ -36,7 +36,7 @@ import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.cache.change.Change;
 import org.modeshape.jcr.cache.change.ChangeSet;
 import org.modeshape.jcr.value.BinaryKey;
-import org.modeshape.jcr.value.basic.JodaDateTime;
+import org.modeshape.jcr.value.basic.ModeShapeDateTime;
 
 /**
  * Unit test for {@link LocalJournal}
@@ -47,9 +47,9 @@ public class LocalJournalTest {
 
     protected LocalJournal journal;
 
-    private org.joda.time.DateTime timestamp1;
-    private org.joda.time.DateTime timestamp2;
-    private org.joda.time.DateTime timestamp3;
+    private DateTime timestamp1;
+    private DateTime timestamp2;
+    private DateTime timestamp3;
 
     @Before
     public void before() throws Exception {
@@ -77,7 +77,7 @@ public class LocalJournalTest {
 
         ChangeSet process1Changes4 = TestChangeSet.create("j1", 1);
         journal().notify(process1Changes4);
-        timestamp1 = new org.joda.time.DateTime(process1Changes4.getTimestamp().getMilliseconds());
+        timestamp1 = new ModeShapeDateTime(process1Changes4.getTimestamp().getMilliseconds());
 
         // p2 has 2 changesets
         ChangeSet process2Changes1 = TestChangeSet.create("j2", 1);
@@ -85,7 +85,7 @@ public class LocalJournalTest {
 
         ChangeSet process2Changes2 = TestChangeSet.create("j2", 1);
         journal().notify(process2Changes2);
-        timestamp2 = new org.joda.time.DateTime(process2Changes2.getTimestamp().getMilliseconds());
+        timestamp2 = new ModeShapeDateTime(process2Changes2.getTimestamp().getMilliseconds());
 
         // p3 has 2 changesets and 1 empty one
         ChangeSet process3Changes1 = TestChangeSet.create("j3", 2);
@@ -93,7 +93,7 @@ public class LocalJournalTest {
 
         ChangeSet process3Changes2 = TestChangeSet.create("j3", 2);
         journal().notify(process3Changes2);
-        timestamp3 = new org.joda.time.DateTime(process3Changes2.getTimestamp().getMilliseconds());
+        timestamp3 = new ModeShapeDateTime(process3Changes2.getTimestamp().getMilliseconds());
 
         ChangeSet process3Changes3 = TestChangeSet.create("j3", 0);
         journal().notify(process3Changes3);
@@ -123,34 +123,34 @@ public class LocalJournalTest {
         JournalRecord lastRecord = journal().lastRecord();
         assertNotNull(lastRecord);
         assertEquals("j3", lastRecord.getJournalId());
-        assertEquals(timestamp3.getMillis(), lastRecord.getChangeTimeMillis());
+        assertEquals(timestamp3.getMilliseconds(), lastRecord.getChangeTimeMillis());
     }
 
     @Test
     public void shouldSearchRecordsBasedOnTimestamp() throws Exception {
-        // find records older than -1
-        assertEquals(8, journal().recordsNewerThan(new org.joda.time.DateTime(-1), true, false).size());
+        // find records older than 1 day
+        assertEquals(8, journal().recordsNewerThan(timestamp1.toLocalDateTime().minusDays(1), true, false).size());
         // find records older than ts1, inclusive
-        assertEquals(5, journal().recordsNewerThan(timestamp1, true, false).size());
+        assertEquals(5, journal().recordsNewerThan(timestamp1.toLocalDateTime(), true, false).size());
         // find records older than ts1, exclusive
-        assertEquals(4, journal().recordsNewerThan(timestamp1, false, false).size());
+        assertEquals(4, journal().recordsNewerThan(timestamp1.toLocalDateTime(), false, false).size());
         // find records older than ts2, exclusive
-        assertEquals(2, journal().recordsNewerThan(timestamp2, false, false).size());
+        assertEquals(2, journal().recordsNewerThan(timestamp2.toLocalDateTime(), false, false).size());
         // find records older than ts3, exclusive
-        assertEquals(0, journal().recordsNewerThan(timestamp3, false, false).size());
+        assertEquals(0, journal().recordsNewerThan(timestamp3.toLocalDateTime(), false, false).size());
         // find records older than ts3, inclusive
-        assertEquals(1, journal().recordsNewerThan(timestamp3, true, false).size());
+        assertEquals(1, journal().recordsNewerThan(timestamp3.toLocalDateTime(), true, false).size());
         // find records older than max, exclusive
-        assertEquals(0, journal().recordsNewerThan(new org.joda.time.DateTime(Long.MAX_VALUE), true, false).size());
+        assertEquals(0, journal().recordsNewerThan(timestamp3.toLocalDateTime().plusDays(1), true, false).size());
     }
 
     @Test
     @FixFor( "MODE-1903" )
     public void shouldReturnNodeChangesBasedOnTimestamp() throws Exception {
         assertEquals(14, countChangedNodesSince(-1));
-        assertEquals(7, countChangedNodesSince(timestamp1.getMillis()));
-        assertEquals(5, countChangedNodesSince(timestamp2.getMillis()));
-        assertEquals(2, countChangedNodesSince(timestamp3.getMillis()));
+        assertEquals(7, countChangedNodesSince(timestamp1.getMilliseconds()));
+        assertEquals(5, countChangedNodesSince(timestamp2.getMilliseconds()));
+        assertEquals(2, countChangedNodesSince(timestamp3.getMilliseconds()));
         assertEquals(0, countChangedNodesSince(Long.MAX_VALUE));
     }
     
@@ -220,7 +220,7 @@ public class LocalJournalTest {
         private static final long serialVersionUID = 1L;
         private final String uuid = UUID.randomUUID().toString();
         private List<Change> changes;
-        private DateTime timestamp;
+        private org.modeshape.jcr.api.value.DateTime timestamp;
         private String journalId;
         private Set<NodeKey> nodeChanges;
 
@@ -228,7 +228,7 @@ public class LocalJournalTest {
                                String journalId,
                                Set<NodeKey> changedNodes) {
             this.changes = changes;
-            this.timestamp = new JodaDateTime();
+            this.timestamp = new ModeShapeDateTime();
             this.journalId = journalId;
             this.nodeChanges = changedNodes;
         }

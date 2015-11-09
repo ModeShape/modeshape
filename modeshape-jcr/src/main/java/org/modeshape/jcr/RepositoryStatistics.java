@@ -15,6 +15,7 @@
  */
 package org.modeshape.jcr;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
@@ -864,7 +865,7 @@ public class RepositoryStatistics implements RepositoryMonitor, ChangeSetListene
 
         @Override
         public DateTime getStartTime() {
-            return endTime.minus(getTotalDuration(TimeUnit.SECONDS), TimeUnit.SECONDS);
+            return endTime.minus(Duration.ofSeconds(getTotalDuration(TimeUnit.SECONDS)));
         }
 
         @Override
@@ -915,7 +916,7 @@ public class RepositoryStatistics implements RepositoryMonitor, ChangeSetListene
                 sb.append("\n  ");
                 sb.append(stat);
                 sb.append("  at  ");
-                sb.append(startTime.plus(i * width, TimeUnit.SECONDS));
+                sb.append(startTime.plus(Duration.ofSeconds(i * width)));
             }
             return sb.toString();
         }

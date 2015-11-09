@@ -21,6 +21,9 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigDecimal;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeParseException;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.HashMap;
@@ -34,9 +37,8 @@ import javax.jcr.ValueFormatException;
 import javax.jcr.version.OnParentVersionAction;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
-import org.joda.time.DateTime;
-import org.joda.time.DateTimeZone;
 import org.modeshape.common.annotation.Immutable;
+import org.modeshape.common.util.DateTimeUtil;
 import org.modeshape.common.util.HashCode;
 import org.modeshape.jdbc.JdbcI18n;
 
@@ -91,11 +93,6 @@ public class PropertyDefinition extends ItemDefinition implements javax.jcr.node
         this.queryOps = valuesFrom(json, "jcr:availableQueryOperators");
         this.defaultValues = valuesFrom(json, "jcr:defaultValues");
         this.valueConstraints = valuesFrom(json, "jcr:valueConstraints");
-    }
-
-    protected static Calendar parseDate( String dateString ) throws IllegalArgumentException {
-        DateTime result = new DateTime(dateString);
-        return result.toCalendar(null);
     }
 
     protected Id id() {
@@ -243,9 +240,18 @@ public class PropertyDefinition extends ItemDefinition implements javax.jcr.node
 
         @Override
         public Calendar getDate() throws ValueFormatException {
+            return valueToCalendar(null);
+        }
+
+        private Calendar valueToCalendar(String zoneId) throws ValueFormatException {
             try {
-                return parseDate(value);
-            } catch (IllegalArgumentException e) {
+                ZonedDateTime zonedDateTime = zoneId == null ?
+                                              DateTimeUtil.jodaParse(value) :
+                                              DateTimeUtil.jodaParse(value).withZoneSameInstant(ZoneId.of(zoneId));
+                Calendar calendar = Calendar.getInstance();
+                calendar.setTimeInMillis(zonedDateTime.toInstant().toEpochMilli());
+                return calendar;
+            } catch (DateTimeParseException e) {
                 String from = PropertyType.nameFromValue(getType());
                 String to = PropertyType.nameFromValue(PropertyType.LONG);
                 throw new ValueFormatException(JdbcI18n.unableToConvertValue.text(value, from, to), e);
@@ -253,18 +259,7 @@ public class PropertyDefinition extends ItemDefinition implements javax.jcr.node
         }
 
         public Calendar getDateInUtc() throws ValueFormatException {
-            try {
-                DateTime result = new DateTime(value);
-                DateTimeZone utc = DateTimeZone.forID("UTC");
-                if (!result.getZone().equals(utc)) {
-                    result = result.withZone(utc);
-                }
-                return result.toCalendar(null);
-            } catch (IllegalArgumentException e) {
-                String from = PropertyType.nameFromValue(getType());
-                String to = PropertyType.nameFromValue(PropertyType.LONG);
-                throw new ValueFormatException(JdbcI18n.unableToConvertValue.text(value, from, to), e);
-            }
+            return valueToCalendar("UTC");
         }
 
         @Override

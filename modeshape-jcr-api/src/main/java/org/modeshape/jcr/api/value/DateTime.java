@@ -16,17 +16,22 @@
 package org.modeshape.jcr.api.value;
 
 import java.io.Serializable;
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.util.Locale;
-import java.util.concurrent.TimeUnit;
 
 /**
- * An immutable date-time class that represents an instance in time. This class is designed to hide the horrible implementations
- * of the JDK date and calendar classes, which are being overhauled (and replaced) under <a
- * href="http://jcp.org/en/jsr/detail?id=310">JSR-310</a>, which will be based upon <a
- * href="http://joda-time.sourceforge.net/">Joda-Time</a>. This class serves as a stable migration path toward the new JSR 310
- * classes.
+ * An immutable date-time class that represents an instance in time specific to a certain timezone. 
+ * This class is based on the new JDK 8 date-time implementation and if not explicitly provided, will use "UTC" as the default
+ * timezone.
+ * <p>
+ * If any date-time capabilities are required past what the current interface offers, clients are encouraged to use 
+ * the {@link #toZonedDateTime()} and {@link #toLocalDateTime()} and use the standard JDK java.time API.
+ * </p>
  * 
- * @since 3.0
+ * @since 5.0
+ * @author Horia Chiorean (hchiorea@redhat.com)
  */
 public interface DateTime extends Comparable<DateTime>, Serializable {
 
@@ -47,7 +52,7 @@ public interface DateTime extends Comparable<DateTime>, Serializable {
      * <li>two digit minute, from 00 to 59;</li>
      * <li>two digit second, from 00 to 59;</li>
      * <li>three decimal places for milliseconds, if required;</li>
-     * <li>time zone offset of the form <code>�HH:mm</code> (or '0' if UTC)</li>
+     * <li>time zone offset of the form <code>HH:mm</code> (or '0' if UTC)</li>
      * </ul>
      * 
      * @return the string representation; never null
@@ -79,6 +84,20 @@ public interface DateTime extends Comparable<DateTime>, Serializable {
     java.util.Date toDate();
 
     /**
+     * Get this instance represented as a standard JDK {@link ZonedDateTime} instance, which preserves the TZ information.
+     *
+     * @return this instance in time as a JDK Date; never null
+     */    
+    ZonedDateTime toZonedDateTime();
+
+    /**
+     * Get this instance represented as a standard JDK {@link LocalDateTime} instance, which does not have any TZ information.
+     *
+     * @return this instance in time as a JDK Date; never null
+     */
+    LocalDateTime toLocalDateTime();
+
+    /**
      * Get this instance represented as a standard JDK {@link java.util.Calendar} instance, in the {@link Locale#getDefault()
      * default locale}.
      * 
@@ -87,119 +106,13 @@ public interface DateTime extends Comparable<DateTime>, Serializable {
     java.util.Calendar toCalendar();
 
     /**
-     * Get this instance represented as a standard JDK {@link java.util.Calendar} instance, in the specified {@link Locale locale}
-     * .
+     * Get this instance represented as a standard JDK {@link java.util.Calendar} instance, in the specified {@link Locale locale}.
      * 
      * @param locale the locale in which the Calendar instance is desired; may be null if the {@link Locale#getDefault() default
      *        locale} is to be used.
      * @return this instance in time as a JDK Calendar; never null
      */
     java.util.Calendar toCalendar( Locale locale );
-
-    /**
-     * Get this instance represented as a standard JDK {@link java.util.GregorianCalendar} instance.
-     * 
-     * @return this instance in time as a JDK GregorianCalendar; never null
-     */
-    java.util.GregorianCalendar toGregorianCalendar();
-
-    /**
-     * Get the era of this instance in time.
-     * 
-     * @return the era
-     */
-    int getEra();
-
-    /**
-     * Get the era of this instance in time.
-     * 
-     * @return the era
-     */
-    int getYear();
-
-    /**
-     * Get the era of this instance in time.
-     * 
-     * @return the era
-     */
-    int getWeekyear();
-
-    /**
-     * Get the era of this instance in time.
-     * 
-     * @return the era
-     */
-    int getCenturyOfEra();
-
-    /**
-     * Get the year of the era of this instance in time.
-     * 
-     * @return the year of the era
-     */
-    int getYearOfEra();
-
-    /**
-     * Get the year of this century of this instance in time.
-     * 
-     * @return the year of the century
-     */
-    int getYearOfCentury();
-
-    /**
-     * Get the month of the year of this instance in time.
-     * 
-     * @return the month number
-     */
-    int getMonthOfYear();
-
-    /**
-     * Get the week of the weekyear of this instance in time.
-     * 
-     * @return the week of the weekyear
-     */
-    int getWeekOfWeekyear();
-
-    /**
-     * Get the day of the year of this instance in time.
-     * 
-     * @return the day of the year
-     */
-    int getDayOfYear();
-
-    /**
-     * Get the day of the month value of this instance in time.
-     * 
-     * @return the day of the month
-     */
-    int getDayOfMonth();
-
-    /**
-     * Get the day of the week value of this instance in time.
-     * 
-     * @return the day of the week
-     */
-    int getDayOfWeek();
-
-    /**
-     * Get the hour of the day of this instance in time.
-     * 
-     * @return the hour of the day
-     */
-    int getHourOfDay();
-
-    /**
-     * Get the minute of this instance in time.
-     * 
-     * @return the minute of the hour
-     */
-    int getMinuteOfHour();
-
-    /**
-     * Get the seconds of the minute value of this instance in time.
-     * 
-     * @return the seconds of the minute
-     */
-    int getSecondOfMinute();
 
     /**
      * Get the milliseconds of the second value of this instance in time.
@@ -274,151 +187,21 @@ public interface DateTime extends Comparable<DateTime>, Serializable {
     boolean isSameAs( DateTime other );
 
     /**
-     * Subtract the specified about of time in the supplied units.
+     * Subtract the specified amount.
      * 
-     * @param timeAmount the amount of time to subtract
-     * @param unit the units of the amount of time; may not be null
+     * @param duration the amount of time; may not be null
      * @return the instance in time the specified number of time before this instant
      */
-    DateTime minus( long timeAmount,
-                    TimeUnit unit );
+    DateTime minus( Duration duration );
 
     /**
-     * Subtract the specified number of days from this time instant.
+     * Add the specified amount of time.
      * 
-     * @param days the number of days to subtract
-     * @return the instance in time the specified number of days before this instant
-     */
-    DateTime minusDays( int days );
-
-    /**
-     * Subtract the specified number of hours from this time instant.
-     * 
-     * @param hours the number of hours to subtract
-     * @return the instance in time the specified number of hours before this instant
-     */
-    DateTime minusHours( int hours );
-
-    /**
-     * Subtract the specified number of milliseconds from this time instant.
-     * 
-     * @param milliseconds the number of milliseconds to subtract
-     * @return the instance in time the specified number of milliseconds before this instant
-     */
-    DateTime minusMillis( int milliseconds );
-
-    /**
-     * Subtract the specified number of minutes from this time instant.
-     * 
-     * @param minutes the number of minutes to subtract
-     * @return the instance in time the specified number of minutes before this instant
-     */
-    DateTime minusMinutes( int minutes );
-
-    /**
-     * Subtract the specified number of months from this time instant.
-     * 
-     * @param months the number of months to subtract
-     * @return the instance in time the specified number of months before this instant
-     */
-    DateTime minusMonths( int months );
-
-    /**
-     * Subtract the specified number of seconds from this time instant.
-     * 
-     * @param seconds the number of seconds to subtract
-     * @return the instance in time the specified number of seconds before this instant
-     */
-    DateTime minusSeconds( int seconds );
-
-    /**
-     * Subtract the specified number of weeks from this time instant.
-     * 
-     * @param weeks the number of weeks to subtract
-     * @return the instance in time the specified number of weeks before this instant
-     */
-    DateTime minusWeeks( int weeks );
-
-    /**
-     * Subtract the specified number of years from this time instant.
-     * 
-     * @param years the number of years to subtract
-     * @return the instance in time the specified number of years before this instant
-     */
-    DateTime minusYears( int years );
-
-    /**
-     * Add the specified about of time in the supplied units.
-     * 
-     * @param timeAmount the amount of time to add
-     * @param unit the units of the amount of time; may not be null
+     * @param duration the amount of time; may not be null
      * @return the instance in time the specified number of time after this instant
      */
-    DateTime plus( long timeAmount,
-                   TimeUnit unit );
+    DateTime plus( Duration duration );
 
-    /**
-     * Add the specified number of days from this time instant.
-     * 
-     * @param days the number of days to add
-     * @return the instance in time the specified number of days after this instant
-     */
-    DateTime plusDays( int days );
-
-    /**
-     * Add the specified number of hours from this time instant.
-     * 
-     * @param hours the number of hours to add
-     * @return the instance in time the specified number of hours after this instant
-     */
-    DateTime plusHours( int hours );
-
-    /**
-     * Add the specified number of milliseconds from this time instant.
-     * 
-     * @param milliseconds the number of milliseconds to add
-     * @return the instance in time the specified number of milliseconds after this instant
-     */
-    DateTime plusMillis( int milliseconds );
-
-    /**
-     * Add the specified number of minutes from this time instant.
-     * 
-     * @param minutes the number of minutes to add
-     * @return the instance in time the specified number of minutes after this instant
-     */
-    DateTime plusMinutes( int minutes );
-
-    /**
-     * Add the specified number of months from this time instant.
-     * 
-     * @param months the number of months to add
-     * @return the instance in time the specified number of months after this instant
-     */
-    DateTime plusMonths( int months );
-
-    /**
-     * Add the specified number of seconds from this time instant.
-     * 
-     * @param seconds the number of seconds to add
-     * @return the instance in time the specified number of seconds after this instant
-     */
-    DateTime plusSeconds( int seconds );
-
-    /**
-     * Add the specified number of weeks from this time instant.
-     * 
-     * @param weeks the number of weeks to add
-     * @return the instance in time the specified number of weeks after this instant
-     */
-    DateTime plusWeeks( int weeks );
-
-    /**
-     * Add the specified number of years from this time instant.
-     * 
-     * @param years the number of years to add
-     * @return the instance in time the specified number of years after this instant
-     */
-    DateTime plusYears( int years );
-
+    @Override
+    int compareTo( DateTime other );
 }

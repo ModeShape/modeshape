@@ -24,6 +24,8 @@ import static org.modeshape.jcr.api.observation.Event.Sequencing.SEQUENCED_NODE_
 import static org.modeshape.jcr.api.observation.Event.Sequencing.SEQUENCER_NAME;
 import static org.modeshape.jcr.api.observation.Event.Sequencing.SEQUENCING_FAILURE_CAUSE;
 import static org.modeshape.jcr.api.observation.Event.Sequencing.USER_ID;
+import java.time.Instant;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -51,6 +53,7 @@ import org.modeshape.common.annotation.NotThreadSafe;
 import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.CheckArg;
+import org.modeshape.common.util.DateTimeUtil;
 import org.modeshape.common.util.StringUtil;
 import org.modeshape.jcr.api.observation.PropertyEvent;
 import org.modeshape.jcr.api.value.DateTime;
@@ -1167,7 +1170,7 @@ final class JcrObservationManager implements ObservationManager {
         private long position = -1;
         private Iterator<Event> eventsIterator = null;
         private Iterator<JournalRecord> recordsIterator = null;
-        private org.joda.time.DateTime laterThanDate = null;
+        private ZonedDateTime laterThanDateUTC = null;
 
         protected JcrEventJournal() {
             this.changeSetConverter = new ChangeSetConverter();
@@ -1183,7 +1186,7 @@ final class JcrObservationManager implements ObservationManager {
 
         @Override
         public void skipTo( long date ) {
-            laterThanDate = new org.joda.time.DateTime(date);
+            laterThanDateUTC = ZonedDateTime.ofInstant(Instant.ofEpochMilli(date), DateTimeUtil.UTC);
             // reset the position and the internal iterator
             position = -1;
             eventsIterator = null;
@@ -1240,9 +1243,9 @@ final class JcrObservationManager implements ObservationManager {
             if (position == -1) {
                 // we haven't advanced in this iterator yet, so always get the latest journal entries
                 ChangeJournal journal = session.repository().journal();
-                recordsIterator = laterThanDate != null ? journal.recordsNewerThan(new org.joda.time.DateTime(laterThanDate),
-                                                                                   true, false).iterator() : journal.allRecords(false)
-                                                                                                                    .iterator();
+                recordsIterator = laterThanDateUTC != null ? 
+                                  journal.recordsNewerThan(laterThanDateUTC.toLocalDateTime(), true, false).iterator() : 
+                                  journal.allRecords(false).iterator();
             }
             while (recordsIterator.hasNext()) {
                 // navigate to the next "valid" record

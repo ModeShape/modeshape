@@ -42,14 +42,13 @@ import java.util.concurrent.TimeUnit;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.modeshape.jcr.api.query.qom.Operator;
-import org.modeshape.jcr.api.value.DateTime;
 import org.modeshape.jcr.query.model.Constraint;
 import org.modeshape.jcr.value.BinaryValue;
 import org.modeshape.jcr.value.NameFactory;
 import org.modeshape.jcr.value.PathFactory;
 import org.modeshape.jcr.value.StringFactory;
 import org.modeshape.jcr.value.ValueFormatException;
-import org.modeshape.jcr.value.basic.JodaDateTime;
+import org.modeshape.jcr.value.basic.ModeShapeDateTime;
 
 /**
  * Tests the search behavior of the {@link SingleColumnIndex}
@@ -387,9 +386,9 @@ public class SingleColumnIndexSearchTest extends AbstractLuceneIndexSearchTest {
     @Test
     public void shouldSearchForDatePropertyValueInComparisonConstraint() throws Exception {
         List<String> nodesWithDateProp = indexNodes(DATE_PROP,
-                                                    new JodaDateTime("2015-10-13"),
-                                                    new JodaDateTime("2015-10-15"),
-                                                    new JodaDateTime("2015-10-17"));
+                                                    new ModeShapeDateTime("2015-10-13"),
+                                                    new ModeShapeDateTime("2015-10-15"),
+                                                    new ModeShapeDateTime("2015-10-17"));
 
         // =
         Constraint constraint = propertyValue(DATE_PROP, EQUAL_TO, "2015-10-17");
@@ -538,7 +537,7 @@ public class SingleColumnIndexSearchTest extends AbstractLuceneIndexSearchTest {
         String doubleStr = stringFactory.create(doubleValue);
         String doubleNode = indexNodes(DOUBLE_PROP, doubleValue).get(0);
 
-        DateTime dateValue = valueFactories.getDateFactory().create("2015-10-10");
+        org.modeshape.jcr.api.value.DateTime dateValue = valueFactories.getDateFactory().create("2015-10-10");
         String dateStr = stringFactory.create(dateValue);
         String dateNode = indexNodes(DATE_PROP, dateValue).get(0);
 

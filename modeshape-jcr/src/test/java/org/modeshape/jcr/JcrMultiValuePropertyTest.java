@@ -19,6 +19,7 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
 import java.io.InputStream;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
 import java.util.TreeSet;
@@ -161,7 +162,7 @@ public class JcrMultiValuePropertyTest extends MultiUseAbstractTest {
         dateFactory = session.dateFactory();
 
         binaryValue = new byte[][] {"This is a binary value1".getBytes(), "This is a binary value2".getBytes()};
-        dateValue = new DateTime[] {dateFactory.create(), dateFactory.create().plusDays(1)};
+        dateValue = new DateTime[] {dateFactory.create(), dateFactory.create().plus(Duration.ofDays(1))};
         doubleValue = new double[] {3.14159d, 1.0d};
         longValue = new long[] {100L, 101L};
         booleanValue = new boolean[] {true, false};

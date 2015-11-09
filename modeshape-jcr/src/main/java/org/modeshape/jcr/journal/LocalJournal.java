@@ -17,6 +17,8 @@
 package org.modeshape.jcr.journal;
 
 import java.io.File;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
@@ -26,7 +28,6 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import javax.jcr.RepositoryException;
 import org.infinispan.schematic.document.ThreadSafe;
-import org.joda.time.DateTime;
 import org.mapdb.Atomic;
 import org.mapdb.BTreeKeySerializer;
 import org.mapdb.BTreeMap;
@@ -228,7 +229,7 @@ public class LocalJournal implements ChangeJournal {
     }
 
     @Override
-    public Records recordsNewerThan( DateTime changeSetTime,
+    public Records recordsNewerThan( LocalDateTime changeSetTime,
                                      boolean inclusive,
                                      boolean descendingOrder ) {
         if (stopped) {
@@ -238,7 +239,7 @@ public class LocalJournal implements ChangeJournal {
         long changeSetMillisUTC = -1;
         long searchBound = -1;
         if (changeSetTime != null) {
-            changeSetMillisUTC = changeSetTime.getMillis();
+            changeSetMillisUTC = changeSetTime.toInstant(ZoneOffset.UTC).toEpochMilli();
             //adjust the millis using a delta so that we are sure we catch everything in a cluster which may have differences in
             //clock time
             searchBound = TIME_BASED_KEYS.getCounterStartingAt(changeSetMillisUTC - searchTimeDelta);

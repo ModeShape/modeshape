@@ -145,13 +145,13 @@ public final class StringValueFactory extends AbstractValueFactory<String> imple
     @Override
     public String create( Calendar value ) {
         if (value == null) return null;
-        return new JodaDateTime(value).getString();
+        return new ModeShapeDateTime(value).getString();
     }
 
     @Override
     public String create( Date value ) {
         if (value == null) return null;
-        return new JodaDateTime(value).getString();
+        return new ModeShapeDateTime(value).getString();
     }
 
     @Override

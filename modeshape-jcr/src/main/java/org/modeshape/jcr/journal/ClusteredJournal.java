@@ -17,15 +17,16 @@
 package org.modeshape.jcr.journal;
 
 import java.io.Serializable;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import org.infinispan.schematic.document.ThreadSafe;
-import org.joda.time.DateTime;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.CheckArg;
+import org.modeshape.common.util.DateTimeUtil;
 import org.modeshape.jcr.JcrI18n;
 import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.cache.change.ChangeSet;
@@ -148,7 +149,7 @@ public class ClusteredJournal extends MessageConsumer<ClusteredJournal.DeltaMess
     }
 
     @Override
-    public Records recordsNewerThan( DateTime changeSetTime,
+    public Records recordsNewerThan( LocalDateTime changeSetTime,
                                      boolean inclusive,
                                      boolean descendingOrder ) {
         return localJournal.recordsNewerThan(changeSetTime, inclusive, descendingOrder);
@@ -206,7 +207,9 @@ public class ClusteredJournal extends MessageConsumer<ClusteredJournal.DeltaMess
         }
 
         Long requestorLastChangeSetTime = request.getRequestorLastChangeSetTime();
-        DateTime lastChangeSetTime = requestorLastChangeSetTime != null ? new DateTime(requestorLastChangeSetTime) : null;
+        LocalDateTime lastChangeSetTime = requestorLastChangeSetTime != null ? 
+                                          DateTimeUtil.localDateTimeUTC(requestorLastChangeSetTime) :
+                                          null;
         Records delta = recordsNewerThan(lastChangeSetTime, false, false);
         List<JournalRecord> deltaList = new ArrayList<>(delta.size());
         for (JournalRecord record : delta) {
