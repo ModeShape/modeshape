@@ -129,6 +129,7 @@ public class JcrValueFactory implements org.modeshape.jcr.api.ValueFactory {
     }
 
     @Override
+    @SuppressWarnings("deprecation")
     public JcrValue createValue( InputStream value ) {
         if (value == null) return null;
         BinaryValue binary = valueFactories.getBinaryFactory().create(value);

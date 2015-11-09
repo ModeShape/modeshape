@@ -19,6 +19,10 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.security.AccessControlContext;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -96,7 +100,6 @@ import org.modeshape.jcr.api.RestoreOptions;
 import org.modeshape.jcr.api.Workspace;
 import org.modeshape.jcr.api.monitor.ValueMetric;
 import org.modeshape.jcr.api.query.Query;
-import org.modeshape.jcr.api.value.DateTime;
 import org.modeshape.jcr.bus.ChangeBus;
 import org.modeshape.jcr.bus.ClusteredChangeBus;
 import org.modeshape.jcr.bus.RepositoryChangeBus;
@@ -132,7 +135,6 @@ import org.modeshape.jcr.spi.index.IndexManager;
 import org.modeshape.jcr.txn.NoClientTransactions;
 import org.modeshape.jcr.txn.SynchronizedTransactions;
 import org.modeshape.jcr.txn.Transactions;
-import org.modeshape.jcr.value.DateTimeFactory;
 import org.modeshape.jcr.value.NamespaceRegistry;
 import org.modeshape.jcr.value.ValueFactories;
 import org.modeshape.jcr.value.binary.BinaryStore;
@@ -1984,13 +1986,10 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         if (matcher.matches()) {
             int hours = Integer.decode(matcher.group(1));
             int mins = Integer.decode(matcher.group(2));
-            DateTimeFactory factory = runningState().context().getValueFactories().getDateFactory();
-            DateTime now = factory.create();
-            DateTime initialTime = factory.create(now.getYear(), now.getMonthOfYear(), now.getDayOfMonth(), hours, mins, 0, 0);
-            long delay = initialTime.getMilliseconds() - System.currentTimeMillis();
+            LocalDateTime dateTime = LocalDateTime.of(LocalDate.now(), LocalTime.of(hours, mins));
+            long delay = dateTime.toInstant(ZoneOffset.UTC).toEpochMilli() - System.currentTimeMillis();
             if (delay <= 0L) {
-                initialTime = initialTime.plusDays(1);
-                delay = initialTime.getMilliseconds() - System.currentTimeMillis();
+                delay = dateTime.plusDays(1).toInstant(ZoneOffset.UTC).toEpochMilli() - System.currentTimeMillis();
             }
             if (delay < 10000L) delay += 10000L; // at least 10 second delay to let repository finish starting ...
             assert delay >= 0;

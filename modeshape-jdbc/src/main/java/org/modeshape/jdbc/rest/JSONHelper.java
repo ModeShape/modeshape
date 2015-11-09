@@ -45,7 +45,9 @@ public final class JSONHelper {
                 // There are multiple values ...
                 JSONArray array = (JSONArray)prop;
                 int length = array.length();
-                if (length == 0) { return Collections.emptyList(); }
+                if (length == 0) {
+                    return Collections.emptyList();
+                }
                 List<String> result = new ArrayList<>(length);
                 for (int i = 0; i < length; i++) {
                     String value = array.getString(i);

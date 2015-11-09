@@ -231,7 +231,9 @@ public class SchematicDbTest extends AbstractSchematicDbTest {
     }
 
     protected void print( Object obj ) {
-        if (print) { System.out.println(obj); }
+        if (print) {
+            System.out.println(obj);
+        }
     }
 
 }

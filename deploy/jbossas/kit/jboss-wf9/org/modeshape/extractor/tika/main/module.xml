@@ -21,7 +21,7 @@
     </resources>
 
     <dependencies>
-        <module name="org.apache.tika" slot="${tika.version}" services="import"/>
+        <module name="org.apache.tika" slot="${version.org.apache.tika}" services="import"/>
         <module name="org.modeshape.jcr.api"/>
         <module name="org.modeshape.common"/>
     </dependencies>

@@ -556,6 +556,7 @@ class JcrWorkspace implements org.modeshape.jcr.api.Workspace {
     }
 
     @Override
+    @SuppressWarnings("deprecation")
     public void restore( Version[] versions,
                          boolean removeExisting )
         throws ItemExistsException, UnsupportedRepositoryOperationException, VersionException, LockException,

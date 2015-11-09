@@ -21,6 +21,7 @@ import java.util.Map;
 import javax.jcr.Node;
 import javax.jcr.PropertyType;
 import org.junit.Test;
+import org.modeshape.common.FixFor;
 import org.modeshape.jcr.LocalIndexProviderTest;
 import org.modeshape.jcr.api.JcrTools;
 import org.modeshape.jcr.api.index.IndexDefinition;
@@ -52,6 +53,7 @@ public class LuceneIndexProviderTest extends LocalIndexProviderTest {
     }
     
     @Test
+    @FixFor( "MODE-2520" )
     public void shouldUseMultiColumnIndex() throws Exception {
         registerNodeType("nt:testType");
         Map<String, Integer> properties = new HashMap<>();

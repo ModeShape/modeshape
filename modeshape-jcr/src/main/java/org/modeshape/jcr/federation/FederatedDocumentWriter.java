@@ -307,10 +307,5 @@ public class FederatedDocumentWriter implements DocumentWriter {
         return translator;
     }
 
-  
-    @Override
-    @Deprecated
-    public DocumentWriter writeAdditionalDocument( String id ) {
-        throw new UnsupportedOperationException("Deprecated and should not be used.");
-    }
+
 }

@@ -299,8 +299,8 @@ public class SqlQueryParserTest {
         assertThat(operand.getPropertyName(), is("id"));
         assertThat(between.getLowerBound(), is(instanceOf(Literal.class)));
         assertThat(between.getLowerBound(), is(instanceOf(Literal.class)));
-        assertThat((Literal)between.getLowerBound(), is(literal("lower")));
-        assertThat((Literal)between.getUpperBound(), is(literal("upper")));
+        assertThat(between.getLowerBound(), is(literal("lower")));
+        assertThat(between.getUpperBound(), is(literal("upper")));
     }
 
     @Test
@@ -319,8 +319,8 @@ public class SqlQueryParserTest {
         assertThat(operand.getPropertyName(), is("id"));
         assertThat(between.getLowerBound(), is(instanceOf(Literal.class)));
         assertThat(between.getLowerBound(), is(instanceOf(Literal.class)));
-        assertThat((Literal)between.getLowerBound(), is(literal("lower")));
-        assertThat((Literal)between.getUpperBound(), is(literal("upper")));
+        assertThat(between.getLowerBound(), is(literal("lower")));
+        assertThat(between.getUpperBound(), is(literal("upper")));
     }
 
     @Test
@@ -339,8 +339,8 @@ public class SqlQueryParserTest {
         assertThat(operand.getPropertyName(), is("id"));
         assertThat(between.getLowerBound(), is(instanceOf(Literal.class)));
         assertThat(between.getLowerBound(), is(instanceOf(Literal.class)));
-        assertThat((Literal)between.getLowerBound(), is(literal("lower")));
-        assertThat((Literal)between.getUpperBound(), is(literal("upper")));
+        assertThat(between.getLowerBound(), is(literal("lower")));
+        assertThat(between.getUpperBound(), is(literal("upper")));
     }
 
     @Test
@@ -359,8 +359,8 @@ public class SqlQueryParserTest {
         assertThat(operand.getPropertyName(), is("id"));
         assertThat(between.getLowerBound(), is(instanceOf(Literal.class)));
         assertThat(between.getLowerBound(), is(instanceOf(Literal.class)));
-        assertThat((Literal)between.getLowerBound(), is(literal("lower")));
-        assertThat((Literal)between.getUpperBound(), is(literal("upper")));
+        assertThat(between.getLowerBound(), is(literal("lower")));
+        assertThat(between.getUpperBound(), is(literal("upper")));
     }
 
     @Test
@@ -379,8 +379,8 @@ public class SqlQueryParserTest {
         assertThat(operand.getPropertyName(), is("id"));
         assertThat(between.getLowerBound(), is(instanceOf(Literal.class)));
         assertThat(between.getLowerBound(), is(instanceOf(Literal.class)));
-        assertThat((Literal)between.getLowerBound(), is(literal("lower")));
-        assertThat((Literal)between.getUpperBound(), is(literal("upper")));
+        assertThat(between.getLowerBound(), is(literal("lower")));
+        assertThat(between.getUpperBound(), is(literal("upper")));
     }
 
     // ----------------------------------------------------------------------------------------------------------------
@@ -1033,7 +1033,7 @@ public class SqlQueryParserTest {
         StaticOperand operand = parser.parseStaticOperand(tokens("CAST(123 AS DOUBLE)"), typeSystem);
         assertThat(operand, is(instanceOf(Literal.class)));
         Literal literal = (Literal)operand;
-        assertThat((Double)literal.value(), is(typeSystem.getDoubleFactory().create("123")));
+        assertThat(literal.value(), is(typeSystem.getDoubleFactory().create("123")));
     }
 
     @FixFor( "MODE-869" )
@@ -1064,12 +1064,12 @@ public class SqlQueryParserTest {
 
     @Test
     public void shouldParseLiteralFromStringWithCastBooleanLiteralToString() {
-        assertThat((String)parser.parseLiteral(tokens("CAST(true AS STRING)"), typeSystem).value(), is(Boolean.TRUE.toString()));
-        assertThat((String)parser.parseLiteral(tokens("CAST(false AS STRING)"), typeSystem).value(), is(Boolean.FALSE.toString()));
-        assertThat((String)parser.parseLiteral(tokens("CAST(TRUE AS STRING)"), typeSystem).value(), is(Boolean.TRUE.toString()));
-        assertThat((String)parser.parseLiteral(tokens("CAST(FALSE AS STRING)"), typeSystem).value(), is(Boolean.FALSE.toString()));
-        assertThat((String)parser.parseLiteral(tokens("CAST('true' AS stRinG)"), typeSystem).value(), is(Boolean.TRUE.toString()));
-        assertThat((String)parser.parseLiteral(tokens("CAST(\"false\" AS string)"), typeSystem).value(),
+        assertThat(parser.parseLiteral(tokens("CAST(true AS STRING)"), typeSystem).value(), is(Boolean.TRUE.toString()));
+        assertThat(parser.parseLiteral(tokens("CAST(false AS STRING)"), typeSystem).value(), is(Boolean.FALSE.toString()));
+        assertThat(parser.parseLiteral(tokens("CAST(TRUE AS STRING)"), typeSystem).value(), is(Boolean.TRUE.toString()));
+        assertThat(parser.parseLiteral(tokens("CAST(FALSE AS STRING)"), typeSystem).value(), is(Boolean.FALSE.toString()));
+        assertThat(parser.parseLiteral(tokens("CAST('true' AS stRinG)"), typeSystem).value(), is(Boolean.TRUE.toString()));
+        assertThat(parser.parseLiteral(tokens("CAST(\"false\" AS string)"), typeSystem).value(),
                    is(Boolean.FALSE.toString()));
     }
 
@@ -1077,12 +1077,12 @@ public class SqlQueryParserTest {
     public void shouldParseLiteralFromStringWithCastBooleanLiteralToBinary() {
         Binary binaryTrue = (Binary)typeSystem.getTypeFactory(PropertyType.BINARY.getName()).create(true);
         Binary binaryFalse = (Binary)typeSystem.getTypeFactory(PropertyType.BINARY.getName()).create(false);
-        assertThat((Binary)parser.parseLiteral(tokens("CAST(true AS BINARY)"), typeSystem).value(), is(binaryTrue));
-        assertThat((Binary)parser.parseLiteral(tokens("CAST(false AS BINARY)"), typeSystem).value(), is(binaryFalse));
-        assertThat((Binary)parser.parseLiteral(tokens("CAST(TRUE AS BINARY)"), typeSystem).value(), is(binaryTrue));
-        assertThat((Binary)parser.parseLiteral(tokens("CAST(FALSE AS BINARY)"), typeSystem).value(), is(binaryFalse));
-        assertThat((Binary)parser.parseLiteral(tokens("CAST('true' AS biNarY)"), typeSystem).value(), is(binaryTrue));
-        assertThat((Binary)parser.parseLiteral(tokens("CAST(\"false\" AS binary)"), typeSystem).value(), is(binaryFalse));
+        assertThat(parser.parseLiteral(tokens("CAST(true AS BINARY)"), typeSystem).value(), is(binaryTrue));
+        assertThat(parser.parseLiteral(tokens("CAST(false AS BINARY)"), typeSystem).value(), is(binaryFalse));
+        assertThat(parser.parseLiteral(tokens("CAST(TRUE AS BINARY)"), typeSystem).value(), is(binaryTrue));
+        assertThat(parser.parseLiteral(tokens("CAST(FALSE AS BINARY)"), typeSystem).value(), is(binaryFalse));
+        assertThat(parser.parseLiteral(tokens("CAST('true' AS biNarY)"), typeSystem).value(), is(binaryTrue));
+        assertThat(parser.parseLiteral(tokens("CAST(\"false\" AS binary)"), typeSystem).value(), is(binaryFalse));
     }
 
     @Test( expected = ParsingException.class )
@@ -1102,52 +1102,52 @@ public class SqlQueryParserTest {
 
     @Test
     public void shouldParseLiteralFromStringWithCastLongLiteralToString() {
-        assertThat((String)parser.parseLiteral(tokens("CAST(123 AS STRING)"), typeSystem).value(), is("123"));
-        assertThat((String)parser.parseLiteral(tokens("CAST(+123 AS STRING)"), typeSystem).value(), is("123"));
-        assertThat((String)parser.parseLiteral(tokens("CAST(-123 AS STRING)"), typeSystem).value(), is("-123"));
-        assertThat((String)parser.parseLiteral(tokens("CAST(0 AS STRING)"), typeSystem).value(), is("0"));
+        assertThat(parser.parseLiteral(tokens("CAST(123 AS STRING)"), typeSystem).value(), is("123"));
+        assertThat(parser.parseLiteral(tokens("CAST(+123 AS STRING)"), typeSystem).value(), is("123"));
+        assertThat(parser.parseLiteral(tokens("CAST(-123 AS STRING)"), typeSystem).value(), is("-123"));
+        assertThat(parser.parseLiteral(tokens("CAST(0 AS STRING)"), typeSystem).value(), is("0"));
     }
 
     @Test
     public void shouldParseLiteralFromStringWithCastLongLiteralToLong() {
-        assertThat((Long)parser.parseLiteral(tokens("CAST(123 AS LONG)"), typeSystem).value(), is(123L));
-        assertThat((Long)parser.parseLiteral(tokens("CAST(+123 AS LONG)"), typeSystem).value(), is(123L));
-        assertThat((Long)parser.parseLiteral(tokens("CAST(-123 AS LONG)"), typeSystem).value(), is(-123L));
-        assertThat((Long)parser.parseLiteral(tokens("CAST(0 AS LONG)"), typeSystem).value(), is(0L));
+        assertThat(parser.parseLiteral(tokens("CAST(123 AS LONG)"), typeSystem).value(), is(123L));
+        assertThat(parser.parseLiteral(tokens("CAST(+123 AS LONG)"), typeSystem).value(), is(123L));
+        assertThat(parser.parseLiteral(tokens("CAST(-123 AS LONG)"), typeSystem).value(), is(-123L));
+        assertThat(parser.parseLiteral(tokens("CAST(0 AS LONG)"), typeSystem).value(), is(0L));
     }
 
     @Test
     public void shouldParseLiteralFromStringWithCastDoubleLiteralToString() {
-        assertThat((String)parser.parseLiteral(tokens("CAST(1.23 AS STRING)"), typeSystem).value(), is("1.23"));
-        assertThat((String)parser.parseLiteral(tokens("CAST(+1.23 AS STRING)"), typeSystem).value(), is("1.23"));
-        assertThat((String)parser.parseLiteral(tokens("CAST(-1.23 AS STRING)"), typeSystem).value(), is("-1.23"));
-        assertThat((String)parser.parseLiteral(tokens("CAST(1.23e10 AS STRING)"), typeSystem).value(), is("1.23E10"));
-        assertThat((String)parser.parseLiteral(tokens("CAST(1.23e+10 AS STRING)"), typeSystem).value(), is("1.23E10"));
-        assertThat((String)parser.parseLiteral(tokens("CAST(1.23e-10 AS STRING)"), typeSystem).value(), is("1.23E-10"));
+        assertThat(parser.parseLiteral(tokens("CAST(1.23 AS STRING)"), typeSystem).value(), is("1.23"));
+        assertThat(parser.parseLiteral(tokens("CAST(+1.23 AS STRING)"), typeSystem).value(), is("1.23"));
+        assertThat(parser.parseLiteral(tokens("CAST(-1.23 AS STRING)"), typeSystem).value(), is("-1.23"));
+        assertThat(parser.parseLiteral(tokens("CAST(1.23e10 AS STRING)"), typeSystem).value(), is("1.23E10"));
+        assertThat(parser.parseLiteral(tokens("CAST(1.23e+10 AS STRING)"), typeSystem).value(), is("1.23E10"));
+        assertThat(parser.parseLiteral(tokens("CAST(1.23e-10 AS STRING)"), typeSystem).value(), is("1.23E-10"));
     }
 
     @Test
     public void shouldParseLiteralFromStringWithCastDateLiteralToString() {
-        assertThat((String)parser.parseLiteral(tokens("CAST(2009-03-22T03:22:45.345Z AS STRING)"), typeSystem).value(),
+        assertThat(parser.parseLiteral(tokens("CAST(2009-03-22T03:22:45.345Z AS STRING)"), typeSystem).value(),
                    is("2009-03-22T03:22:45.345Z"));
-        assertThat((String)parser.parseLiteral(tokens("CAST(2009-03-22T03:22:45.345UTC AS STRING)"), typeSystem).value(),
+        assertThat(parser.parseLiteral(tokens("CAST(2009-03-22T03:22:45.345UTC AS STRING)"), typeSystem).value(),
                    is("2009-03-22T03:22:45.345Z"));
-        assertThat((String)parser.parseLiteral(tokens("CAST(2009-03-22T03:22:45.3-01:00 AS STRING)"), typeSystem).value(),
-                   is("2009-03-22T04:22:45.300Z"));
-        assertThat((String)parser.parseLiteral(tokens("CAST(2009-03-22T03:22:45.345+01:00 AS STRING)"), typeSystem).value(),
+        assertThat(parser.parseLiteral(tokens("CAST(2009-03-22T03:22:45.3-01:00 AS STRING)"), typeSystem).value(),
+                   is("2009-03-22T04:22:45.003Z"));
+        assertThat(parser.parseLiteral(tokens("CAST(2009-03-22T03:22:45.345+01:00 AS STRING)"), typeSystem).value(),
                    is("2009-03-22T02:22:45.345Z"));
     }
 
     @Test
     public void shouldParseLiteralFromStringWithCastStringLiteralToName() {
-        assertThat((Name)parser.parseLiteral(tokens("CAST([mode:name] AS NAME)"), typeSystem).value(), is(name("mode:name")));
-        assertThat((Name)parser.parseLiteral(tokens("CAST('mode:name' AS NAME)"), typeSystem).value(), is(name("mode:name")));
-        assertThat((Name)parser.parseLiteral(tokens("CAST(\"mode:name\" AS NAME)"), typeSystem).value(), is(name("mode:name")));
+        assertThat(parser.parseLiteral(tokens("CAST([mode:name] AS NAME)"), typeSystem).value(), is(name("mode:name")));
+        assertThat(parser.parseLiteral(tokens("CAST('mode:name' AS NAME)"), typeSystem).value(), is(name("mode:name")));
+        assertThat(parser.parseLiteral(tokens("CAST(\"mode:name\" AS NAME)"), typeSystem).value(), is(name("mode:name")));
     }
 
     @Test
     public void shouldParseLiteralFromStringWithCastStringLiteralToPath() {
-        assertThat((Path)parser.parseLiteral(tokens("CAST([/mode:name/a/b] AS PATH)"), typeSystem).value(),
+        assertThat(parser.parseLiteral(tokens("CAST([/mode:name/a/b] AS PATH)"), typeSystem).value(),
                    is(path("/mode:name/a/b")));
     }
 
@@ -1172,7 +1172,7 @@ public class SqlQueryParserTest {
         assertThat(parser.parseLiteral(tokens("2009-03-22T03:22:45.345UTC"), typeSystem).value(),
                    is((Object)"2009-03-22T03:22:45.345Z"));
         assertThat(parser.parseLiteral(tokens("2009-03-22T03:22:45.3-01:00"), typeSystem).value(),
-                   is((Object)"2009-03-22T04:22:45.300Z"));
+                   is((Object)"2009-03-22T04:22:45.003Z"));
         assertThat(parser.parseLiteral(tokens("2009-03-22T03:22:45.345+01:00"), typeSystem).value(),
                    is((Object)"2009-03-22T02:22:45.345Z"));
     }
@@ -1247,7 +1247,7 @@ public class SqlQueryParserTest {
         assertThat(parser.parseLiteralValue(tokens("2009-03-22T03:22:45.345UTC"), typeSystem),
                    is((Object)"2009-03-22T03:22:45.345Z"));
         assertThat(parser.parseLiteralValue(tokens("2009-03-22T03:22:45.3-01:00"), typeSystem),
-                   is((Object)"2009-03-22T04:22:45.300Z"));
+                   is((Object)"2009-03-22T04:22:45.003Z"));
         assertThat(parser.parseLiteralValue(tokens("2009-03-22T03:22:45.345+01:00"), typeSystem),
                    is((Object)"2009-03-22T02:22:45.345Z"));
 
@@ -1256,7 +1256,7 @@ public class SqlQueryParserTest {
         assertThat(parser.parseLiteralValue(tokens("-2009-03-22T03:22:45.345UTC"), typeSystem),
                    is((Object)"-2009-03-22T03:22:45.345Z"));
         assertThat(parser.parseLiteralValue(tokens("-2009-03-22T03:22:45.3-01:00"), typeSystem),
-                   is((Object)"-2009-03-22T04:22:45.300Z"));
+                   is((Object)"-2009-03-22T04:22:45.003Z"));
         assertThat(parser.parseLiteralValue(tokens("-2009-03-22T03:22:45.345+01:00"), typeSystem),
                    is((Object)"-2009-03-22T02:22:45.345Z"));
 
@@ -1265,7 +1265,7 @@ public class SqlQueryParserTest {
         assertThat(parser.parseLiteralValue(tokens("+2009-03-22T03:22:45.345UTC"), typeSystem),
                    is((Object)"2009-03-22T03:22:45.345Z"));
         assertThat(parser.parseLiteralValue(tokens("+2009-03-22T03:22:45.3-01:00"), typeSystem),
-                   is((Object)"2009-03-22T04:22:45.300Z"));
+                   is((Object)"2009-03-22T04:22:45.003Z"));
         assertThat(parser.parseLiteralValue(tokens("+2009-03-22T03:22:45.345+01:00"), typeSystem),
                    is((Object)"2009-03-22T02:22:45.345Z"));
     }

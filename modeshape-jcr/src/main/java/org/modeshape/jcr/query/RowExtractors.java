@@ -87,7 +87,7 @@ public class RowExtractors {
      * Obtain a new {@link ExtractFromRow} instance that will extract the full text for a node.
      * <p>
      * Note that if the node is null at the specified index in the row, the extractor's
-     * {@link ExtractFromRow#getValueInRow(RowAccessor)} will return null.
+     * {@link ExtractFromRow#getValueInRow(NodeSequence.RowAccessor)} will return null.
      * </p>
      * 
      * @param indexInRow the index of the selector in the row; presumed to be valid
@@ -136,7 +136,7 @@ public class RowExtractors {
      * Obtain a new {@link ExtractFromRow} instance that will extract the full text for a single property of a node.
      * <p>
      * Note that if the named property does not exist on a node or the node is null at the specified index in the row, the
-     * extractor's {@link ExtractFromRow#getValueInRow(RowAccessor)} will return null.
+     * extractor's {@link ExtractFromRow#getValueInRow(NodeSequence.RowAccessor)} will return null.
      * </p>
      * 
      * @param indexInRow the index of the selector in the row; presumed to be valid

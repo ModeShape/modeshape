@@ -52,8 +52,12 @@ final class BucketId implements Comparable<BucketId> {
 
     @Override
     public boolean equals( Object o ) {
-        if (this == o) { return true; }
-        if (o == null || getClass() != o.getClass()) { return false; }
+        if (this == o) { 
+            return true; 
+        }
+        if (o == null || getClass() != o.getClass()) { 
+            return false; 
+        }
         BucketId bucketId = (BucketId)o;
         return Objects.equals(id, bucketId.id);
     }

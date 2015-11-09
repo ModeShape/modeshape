@@ -24,7 +24,6 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -166,12 +165,7 @@ public class ModeShapeEngine implements Repositories {
         final ExecutorService executor = Executors.newSingleThreadExecutor();
         try {
             // Submit a runnable to shutdown the repositories ...
-            return executor.submit(new Callable<Boolean>() {
-                @Override
-                public Boolean call() throws Exception {
-                    return doShutdown();
-                }
-            });
+            return executor.submit(this::doShutdown);
         } finally {
             // Now shutdown the executor and return the future ...
             executor.shutdown();
@@ -215,9 +209,7 @@ public class ModeShapeEngine implements Repositories {
 
                         // We've successfully shut down, so remove it from the map ...
                         repositories.remove(repoName);
-                    } catch (ExecutionException e) {
-                        Logger.getLogger(getClass()).error(e, JcrI18n.failedToShutdownDeployedRepository, repoName);
-                    } catch (InterruptedException e) {
+                    } catch (ExecutionException | InterruptedException e) {
                         Logger.getLogger(getClass()).error(e, JcrI18n.failedToShutdownDeployedRepository, repoName);
                     }
                 }
@@ -354,18 +346,15 @@ public class ModeShapeEngine implements Repositories {
         }
 
         // Create an initializer that will start the repository ...
-        return repositoryStarterService.submit(new Callable<JcrRepository>() {
-            @Override
-            public JcrRepository call() throws Exception {
-                // Instantiate (and start) the repository ...
-                try {
-                    repository.start();
-                    return repository;
-                } catch (Exception e) {
-                    // Something went wrong, so undeploy the repository ...
-                    undeploy(repositoryName);
-                    throw e;
-                }
+        return repositoryStarterService.submit(() -> {
+            // Instantiate (and start) the repository ...
+            try {
+                repository.start();
+                return repository;
+            } catch (Exception e) {
+                // Something went wrong, so undeploy the repository ...
+                undeploy(repositoryName);
+                throw e;
             }
         });
     }

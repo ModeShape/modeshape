@@ -149,8 +149,8 @@ public abstract class AbstractMultimapTest {
         assertEntries(multimap, java.util.Collections.singletonList(entry));
     }
 
-    protected <K, V> void assertEntries( Multimap<K, V> multimap,
-                                         @SuppressWarnings( "unchecked" ) Map.Entry<K, V>... entries ) {
+    @SafeVarargs
+    protected final <K, V> void assertEntries( Multimap<K, V> multimap, Map.Entry<K, V>... entries ) {
         assertEntries(multimap, Arrays.asList(entries));
     }
 
@@ -167,8 +167,8 @@ public abstract class AbstractMultimapTest {
         assertKeys(multimap, java.util.Collections.singletonList(key));
     }
 
-    protected <K, V> void assertKeys( Multimap<K, V> multimap,
-                                      @SuppressWarnings( "unchecked" ) K... keys ) {
+    @SafeVarargs
+    protected final <K, V> void assertKeys( Multimap<K, V> multimap, K... keys ) {
         assertKeys(multimap, Arrays.asList(keys));
     }
 
@@ -192,9 +192,8 @@ public abstract class AbstractMultimapTest {
         assertValues(multimap, key, expectedValues);
     }
 
-    protected <K, V> void assertValues( Multimap<K, V> multimap,
-                                        K key,
-                                        @SuppressWarnings( "unchecked" ) V... values ) {
+    @SafeVarargs
+    protected final <K, V> void assertValues( Multimap<K, V> multimap, K key, V... values ) {
         Collection<V> expectedValues = null;
         if (valuesAllowDuplicates()) {
             expectedValues = Arrays.asList(values);

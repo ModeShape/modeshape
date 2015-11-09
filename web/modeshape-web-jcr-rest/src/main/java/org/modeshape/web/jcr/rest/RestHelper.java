@@ -16,29 +16,17 @@
 
 package org.modeshape.web.jcr.rest;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
-import javax.jcr.PropertyType;
-import javax.jcr.RepositoryException;
 import javax.jcr.Value;
 import javax.jcr.ValueFormatException;
 import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.core.MediaType;
-import org.codehaus.jettison.json.JSONArray;
-import org.codehaus.jettison.json.JSONException;
-import org.codehaus.jettison.json.JSONObject;
 import org.modeshape.common.text.UrlEncoder;
-import org.modeshape.common.util.Base64;
-import org.modeshape.common.util.StringUtil;
-import org.modeshape.jcr.api.Logger;
 import org.modeshape.jcr.api.ValueFactory;
-import org.modeshape.web.jcr.WebLogger;
 
 /**
  * Utility class for the rest services and supporting classes.
@@ -69,52 +57,8 @@ public final class RestHelper {
     // almost ISO8601, because in JDK 6 Z/z do not support timezones of the format hh:mm
     private static final List<SimpleDateFormat> ISO8601_DATE_PARSERS = Arrays.asList(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss"),
                                                                                      new SimpleDateFormat("yyyy-MM-dd"));
-
-    private static final Logger LOGGER = WebLogger.getLogger(RestHelper.class);
-
+    
     private RestHelper() {
-    }
-
-    /**
-     * @param object the object to be converted to a response string
-     * @param request the servlet request
-     * @return the response string
-     * @throws JSONException if the JSON representation cannot be generated
-     * @deprecated since 3.0, dedicated writers are used for the output
-     */
-    @Deprecated
-    public static String responseString( Object object,
-                                         HttpServletRequest request ) throws JSONException {
-        String acceptHeader = request.getHeader("Accept");
-        if (StringUtil.isBlank(acceptHeader)) {
-            return responseAsText(object);
-        }
-        acceptHeader = acceptHeader.toLowerCase();
-        if (acceptHeader.contains(MediaType.APPLICATION_JSON.toLowerCase())) {
-            return responseAsApplicationJSON(object);
-        } else if (acceptHeader.contains(MediaType.TEXT_HTML.toLowerCase())) {
-            return responseAsHTML(object);
-        }
-        return responseAsText(object);
-    }
-
-    private static String responseAsText( Object object ) throws JSONException {
-        if (object instanceof JSONObject) {
-            return ((JSONObject)object).toString(2);
-        } else if (object instanceof JSONArray) {
-            return ((JSONArray)object).toString(1);
-        }
-        return object.toString();
-    }
-
-    private static String responseAsApplicationJSON( Object object ) {
-        return object.toString();
-    }
-
-    private static String responseAsHTML( Object object ) throws JSONException {
-        String indentedString = responseAsText(object);
-        indentedString = indentedString.replaceAll("\n", "<br/>").replaceAll("\\\\", "").replaceAll("\\s", "&nbsp;");
-        return "<code>" + indentedString + "</code>";
     }
 
     /**
@@ -171,42 +115,6 @@ public final class RestHelper {
             }
         }
         return urlBuilder.toString();
-    }
-
-    /**
-     * Return the JSON-compatible string representation of the given property value. If the value is a
-     * {@link javax.jcr.PropertyType#BINARY binary} value, then this method returns the Base-64 encoding of that value. Otherwise,
-     * it just returns the string representation of the value.
-     * 
-     * @param value the property value; may not be null
-     * @return the string representation of the value
-     * @deprecated since 3.0 binary values are handled via URLs
-     */
-    @Deprecated
-    public static String jsonEncodedStringFor( Value value ) {
-        try {
-            if (value.getType() != PropertyType.BINARY) {
-                return value.getString();
-            }
-
-            // Encode the binary value in Base64 ...
-            InputStream stream = value.getBinary().getStream();
-            try {
-                return Base64.encode(stream);
-            } finally {
-                if (stream != null) {
-                    try {
-                        stream.close();
-                    } catch (IOException e) {
-                        // Error accessing the value, so throw this ...
-                        LOGGER.error(e.getMessage(), e);
-                    }
-                }
-            }
-        } catch (RepositoryException e) {
-            LOGGER.error(e.getMessage(), e);
-            return null;
-        }
     }
 
     /**

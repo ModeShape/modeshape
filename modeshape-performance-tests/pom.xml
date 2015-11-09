@@ -6,7 +6,7 @@
     <parent>
         <groupId>org.modeshape</groupId>
         <artifactId>modeshape-parent</artifactId>
-        <version>4.5-SNAPSHOT</version>
+        <version>5.0-SNAPSHOT</version>
         <relativePath>../modeshape-parent</relativePath>
     </parent>
 
@@ -74,17 +74,13 @@
             <artifactId>c3p0</artifactId>
             <scope>test</scope>
         </dependency>
-        <dependency>
-            <groupId>joda-time</groupId>
-            <artifactId>joda-time</artifactId>
-        </dependency>
         <!--
         These following are defined as 'provided' in the parent POM, since ModeShape
         has code that is optional if these APIs are available.
         -->
         <dependency>
-            <groupId>javax.servlet</groupId>
-            <artifactId>javax.servlet-api</artifactId>
+            <groupId>org.jboss.spec.javax.servlet</groupId>
+            <artifactId>jboss-servlet-api_3.1_spec</artifactId>
         </dependency>
 
         <dependency>

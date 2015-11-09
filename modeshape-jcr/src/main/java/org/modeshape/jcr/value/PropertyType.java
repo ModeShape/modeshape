@@ -40,7 +40,7 @@ import org.modeshape.jcr.value.basic.BasicName;
 import org.modeshape.jcr.value.basic.BasicPath;
 import org.modeshape.jcr.value.basic.ChildPath;
 import org.modeshape.jcr.value.basic.IdentifierPath;
-import org.modeshape.jcr.value.basic.JodaDateTime;
+import org.modeshape.jcr.value.basic.ModeShapeDateTime;
 import org.modeshape.jcr.value.basic.NodeKeyReference;
 import org.modeshape.jcr.value.basic.RootPath;
 import org.modeshape.jcr.value.basic.StringReference;
@@ -112,10 +112,10 @@ public enum PropertyType {
         public Object canonicalizeValue( Object value ) {
             if (value instanceof DateTime) return value;
             if (value instanceof Calendar) {
-                return new JodaDateTime((Calendar)value);
+                return new ModeShapeDateTime((Calendar)value);
             }
             if (value instanceof Date) {
-                return new JodaDateTime((Date)value);
+                return new ModeShapeDateTime((Date)value);
             }
             return value;
         }

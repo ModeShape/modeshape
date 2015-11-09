@@ -158,6 +158,7 @@ final class JcrSingleValueProperty extends AbstractJcrProperty {
     }
 
     @Override
+    @SuppressWarnings("deprecation")
     public InputStream getStream() throws RepositoryException {
         checkSession();
         try {
@@ -297,6 +298,7 @@ final class JcrSingleValueProperty extends AbstractJcrProperty {
     }
 
     @Override
+    @SuppressWarnings("deprecation")
     public void setValue( InputStream value )
         throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
         if (value == null) {

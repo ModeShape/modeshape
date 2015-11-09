@@ -64,7 +64,7 @@ public abstract class EnvironmentAuthenticationProvider implements Authenticatio
     }
 
     /**
-     * Initializes this provider instance, after the {@link org.modeshape.jcr.Environment) and the security domain have been set
+     * Initializes this provider instance, after the {@link org.modeshape.jcr.Environment)} and the security domain have been set
      */
     public abstract void initialize();
 }

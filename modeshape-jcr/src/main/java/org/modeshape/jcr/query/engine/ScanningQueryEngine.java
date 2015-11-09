@@ -2654,7 +2654,7 @@ public class ScanningQueryEngine implements org.modeshape.jcr.query.QueryEngine 
 
         /**
          * Instantiate the RowFilter that will be used. This method may be called more than once only if
-         * {@link #isCurrentRowValid(Batch)} is called from multiple threads.
+         * {@link #isCurrentRowValid(NodeSequence.Batch)} is called from multiple threads.
          * 
          * @return the row filter; may not be null
          */

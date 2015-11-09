@@ -15,6 +15,7 @@
  */
 package org.modeshape.jcr;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -319,7 +320,7 @@ class RepositoryLockManager implements ChangeSetListener {
         if (timeoutHint > 0 && timeoutHint < Long.MAX_VALUE) {
             expirationTimeInMillis = TimeUnit.MILLISECONDS.convert(timeoutHint, TimeUnit.SECONDS);
         }
-        DateTime expirationDate = dateFactory.create().plus(expirationTimeInMillis, TimeUnit.MILLISECONDS);
+        DateTime expirationDate = dateFactory.create().plus(Duration.ofMillis(expirationTimeInMillis));
 
         // Create a new lock ...
         SessionCache systemSession = repository.createSystemSession(context, false);
@@ -652,9 +653,13 @@ class RepositoryLockManager implements ChangeSetListener {
             return lockToken;
         }
 
-        public String getLockingSessionId() { return lockingSessionId; }
+        public String getLockingSessionId() { 
+            return lockingSessionId; 
+        }
 
-        public DateTime getExpiryTime() { return expiryTime; }
+        public DateTime getExpiryTime() { 
+            return expiryTime; 
+        }
 
         @SuppressWarnings( "synthetic-access" )
         public Lock lockFor( final JcrSession session ) throws RepositoryException {

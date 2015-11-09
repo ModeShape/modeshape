@@ -4,7 +4,7 @@
 
     <groupId>org.modeshape.bom</groupId>
     <artifactId>modeshape-bom-embedded</artifactId>
-    <version>4.5-SNAPSHOT</version>
+    <version>5.0-SNAPSHOT</version>
 
     <name>ModeShape BOM for embedded usage</name>
 
@@ -49,37 +49,36 @@
     </developers>
 
     <properties>
-        <jcr.version>2.0</jcr.version>
-        <infinispan.version>7.2.4.Final</infinispan.version>
-        <jgroups.version>3.6.2.Final</jgroups.version>
-        <c3p0.version>0.9.5</c3p0.version>  <!-- same as the one used by Infinispan's JDBC cache store -->
-        <picketbox.version>4.0.21.Final</picketbox.version>
-        <atomikos.version>3.8.0</atomikos.version>
-        <jbossjta.version>5.1.0.Final</jbossjta.version>
-        <mongo.driver.version>2.7.3</mongo.driver.version>
-        <embedmongo.version>1.28</embedmongo.version>
-        <cassandra-cql-driver>2.0.0-rc2</cassandra-cql-driver>
-        <tika.version>1.8</tika.version>
-        <eclipse.equinox.common.version>3.3.0-v20070426</eclipse.equinox.common.version>
-        <eclipse.jdt.core.version>3.3.0-v_771</eclipse.jdt.core.version>
-        <eclipse.core.resources.version>3.3.0-v20070604</eclipse.core.resources.version>
-        <eclipse.core.expressions.version>3.3.0-v20070606-0010</eclipse.core.expressions.version>
-        <eclipse.core.runtime.version>3.3.100-v20070530</eclipse.core.runtime.version>
-        <eclipse.osgi.version>3.3.0-v20070530</eclipse.osgi.version>
-        <eclipse.core.jobs.version>3.3.0-v20070423</eclipse.core.jobs.version>
-        <eclipse.equinox.registry.version>3.3.0-v20070522</eclipse.equinox.registry.version>
-        <eclipse.equinox.preferences.version>3.2.100-v20070522</eclipse.equinox.preferences.version>
-        <eclipse.core.contenttype.version>3.2.100-v20070319</eclipse.core.contenttype.version>
-        <eclipse.xsd.version>2.2.3</eclipse.xsd.version>
-        <eclipse.emf.common.version>2.4.0</eclipse.emf.common.version>
-        <eclipse.emf.ecore.version>2.4.2</eclipse.emf.ecore.version>
-        <eclipse.emf.ecorechange.version>2.2.3</eclipse.emf.ecorechange.version>
-        <eclipse.emf.ecorexmi.version>2.4.1</eclipse.emf.ecorexmi.version>
-        <javaassist.version>3.11.0.GA</javaassist.version>
-        <jaudiotagger.version>2.0.3</jaudiotagger.version>
-        <poi.version>3.11-beta2</poi.version>
-        <jcommander.version>1.5</jcommander.version>
-        <wsdl4j.version>1.6.2</wsdl4j.version>
+        <version.javax.jcr>2.0</version.javax.jcr>
+        <version.org.infinispan>7.2.4.Final</version.org.infinispan>
+        <version.org.jgroups>3.6.2.Final</version.org.jgroups>
+        <version.com.mchange.c3p0>0.9.5</version.com.mchange.c3p0>  <!-- same as the one used by Infinispan's JDBC cache store -->
+        <version.org.picketbox>4.0.21.Final</version.org.picketbox>
+        <version.com.atomikos>3.8.0</version.com.atomikos>
+        <version.org.jboss.jbossts.jta>5.1.0.Final</version.org.jboss.jbossts.jta>
+        <version.org.mongodb.mongo-java-driver>2.7.3</version.org.mongodb.mongo-java-driver>
+        <version.com.datastax.cassandra>2.0.0-rc2</version.com.datastax.cassandra>
+        <version.org.apache.tika>1.8</version.org.apache.tika>
+        <version.org.eclipse.equinox.common>3.3.0-v20070426</version.org.eclipse.equinox.common>
+        <version.org.eclipse.jdt.core>3.3.0-v_771</version.org.eclipse.jdt.core>
+        <version.org.eclipse.core.resources>3.3.0-v20070604</version.org.eclipse.core.resources>
+        <version.org.eclipse.core.expressions>3.3.0-v20070606-0010</version.org.eclipse.core.expressions>
+        <version.org.eclipse.core.runtime>3.3.100-v20070530</version.org.eclipse.core.runtime>
+        <version.org.eclipse.osgi>3.3.0-v20070530</version.org.eclipse.osgi>
+        <version.org.eclipse.core.jobs>3.3.0-v20070423</version.org.eclipse.core.jobs>
+        <version.org.eclipse.equinox.registry>3.3.0-v20070522</version.org.eclipse.equinox.registry>
+        <version.org.eclipse.equinox.preferences>3.2.100-v20070522</version.org.eclipse.equinox.preferences>
+        <version.org.eclipse.core.contenttype>3.2.100-v20070319</version.org.eclipse.core.contenttype>
+        <version.org.eclipse.xsd>2.2.3</version.org.eclipse.xsd>
+        <version.org.eclipse.emf.common>2.4.0</version.org.eclipse.emf.common>
+        <version.org.eclipse.emf.ecore>2.4.2</version.org.eclipse.emf.ecore>
+        <version.org.eclipse.emf.ecore-change>2.2.3</version.org.eclipse.emf.ecore-change>
+        <version.org.eclipse.emf.ecore-xmi>2.4.1</version.org.eclipse.emf.ecore-xmi>
+        <version.org.javassist>3.18.1-GA</version.org.javassist>
+        <version.org.jaudiotagger>2.0.3</version.org.jaudiotagger>
+        <version.org.apache.poi>3.11-beta2</version.org.apache.poi>
+        <version.com.beust.jcommander>1.5</version.com.beust.jcommander>
+        <version.wsdl4j>1.6.2</version.wsdl4j>
         <version.org.apache.lucene>5.3.1</version.org.apache.lucene>
         <!-- ***************** -->
         <!-- Repository Deployment URLs -->
@@ -311,7 +310,7 @@
             <dependency>
                 <groupId>javax.jcr</groupId>
                 <artifactId>jcr</artifactId>
-                <version>${jcr.version}</version>
+                <version>${version.javax.jcr}</version>
             </dependency>
 
             <!--
@@ -320,7 +319,7 @@
             <dependency>
                 <groupId>org.infinispan</groupId>
                 <artifactId>infinispan-core</artifactId>
-                <version>${infinispan.version}</version>
+                <version>${version.org.infinispan}</version>
                 <exclusions>
                     <exclusion>
                         <groupId>org.codehaus.woodstox</groupId>
@@ -335,7 +334,7 @@
             <dependency>
                 <groupId>org.infinispan</groupId>
                 <artifactId>infinispan-commons</artifactId>
-                <version>${infinispan.version}</version>
+                <version>${version.org.infinispan}</version>
             </dependency>
             <!--
                 JGroups is used for the changes bus, but it's optional. Most of the times though, this will be in the classpath
@@ -344,7 +343,7 @@
             <dependency>
                 <groupId>org.jgroups</groupId>
                 <artifactId>jgroups</artifactId>
-                <version>${jgroups.version}</version>
+                <version>${version.org.jgroups}</version>
             </dependency>
 
             <!--
@@ -353,28 +352,28 @@
             <dependency>
                 <groupId>org.infinispan</groupId>
                 <artifactId>infinispan-cachestore-leveldb</artifactId>
-                <version>${infinispan.version}</version>
+                <version>${version.org.infinispan}</version>
             </dependency>
             <dependency>
                 <groupId>org.infinispan</groupId>
                 <artifactId>infinispan-cachestore-remote</artifactId>
-                <version>${infinispan.version}</version>
+                <version>${version.org.infinispan}</version>
             </dependency>
             <dependency>
                 <groupId>org.infinispan</groupId>
                 <artifactId>infinispan-cachestore-jpa</artifactId>
-                <version>${infinispan.version}</version>
+                <version>${version.org.infinispan}</version>
             </dependency>
             <dependency>
                 <groupId>org.infinispan</groupId>
                 <artifactId>infinispan-cachestore-jdbc</artifactId>
-                <version>${infinispan.version}</version>
+                <version>${version.org.infinispan}</version>
             </dependency>
             <!--Required by infinispan-cachestore-jdbc -->
             <dependency>
                 <groupId>com.mchange</groupId>
                 <artifactId>c3p0</artifactId>
-                <version>${c3p0.version}</version>
+                <version>${version.com.mchange.c3p0}</version>
             </dependency>
 
             <!--
@@ -384,12 +383,12 @@
             <dependency>
                 <groupId>org.apache.tika</groupId>
                 <artifactId>tika-core</artifactId>
-                <version>${tika.version}</version>
+                <version>${version.org.apache.tika}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.tika</groupId>
                 <artifactId>tika-parsers</artifactId>
-                <version>${tika.version}</version>
+                <version>${version.org.apache.tika}</version>
             </dependency>
             <!--
                 JAAS implementations
@@ -397,7 +396,7 @@
             <dependency>
                 <groupId>org.picketbox</groupId>
                 <artifactId>picketbox-bare</artifactId>
-                <version>${picketbox.version}</version>
+                <version>${version.org.picketbox}</version>
                 <exclusions>
                     <exclusion>
                         <groupId>apache-xalan</groupId>
@@ -427,17 +426,17 @@
             <dependency>
                 <groupId>com.atomikos</groupId>
                 <artifactId>transactions</artifactId>
-                <version>${atomikos.version}</version>
+                <version>${version.com.atomikos}</version>
             </dependency>
             <dependency>
                 <groupId>com.atomikos</groupId>
                 <artifactId>transactions-jta</artifactId>
-                <version>${atomikos.version}</version>
+                <version>${version.com.atomikos}</version>
             </dependency>
             <dependency>
                 <groupId>org.jboss.narayana.jta</groupId>
                 <artifactId>narayana-jta</artifactId>
-                <version>${jbossjta.version}</version>
+                <version>${version.org.jboss.jbossts.jta}</version>
                 <scope>test</scope>
                 <exclusions>
                     <exclusion>
@@ -606,7 +605,7 @@
             <dependency>
                 <groupId>org.mongodb</groupId>
                 <artifactId>mongo-java-driver</artifactId>
-                <version>${mongo.driver.version}</version>
+                <version>${version.org.mongodb.mongo-java-driver}</version>
                 <scope>provided</scope>
             </dependency>
 
@@ -614,7 +613,7 @@
             <dependency>
                 <groupId>com.datastax.cassandra</groupId>
                 <artifactId>cassandra-driver-core</artifactId>
-                <version>${cassandra-cql-driver}</version>
+                <version>${version.com.datastax.cassandra}</version>
                 <scope>provided</scope>
             </dependency>
             
@@ -661,74 +660,74 @@
             <dependency>
                 <groupId>org.eclipse.equinox</groupId>
                 <artifactId>common</artifactId>
-                <version>${eclipse.equinox.common.version}</version>
+                <version>${version.org.eclipse.equinox.common}</version>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.jdt</groupId>
                 <artifactId>core</artifactId>
-                <version>${eclipse.jdt.core.version}</version>
+                <version>${version.org.eclipse.jdt.core}</version>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.core</groupId>
                 <artifactId>resources</artifactId>
-                <version>${eclipse.core.resources.version}</version>
+                <version>${version.org.eclipse.core.resources}</version>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.core</groupId>
                 <artifactId>expressions</artifactId>
-                <version>${eclipse.core.expressions.version}</version>
+                <version>${version.org.eclipse.core.expressions}</version>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.core</groupId>
                 <artifactId>runtime</artifactId>
-                <version>${eclipse.core.runtime.version}</version>
+                <version>${version.org.eclipse.core.runtime}</version>
             </dependency>
             <dependency>
                 <groupId>org.eclipse</groupId>
                 <artifactId>osgi</artifactId>
-                <version>${eclipse.osgi.version}</version>
+                <version>${version.org.eclipse.osgi}</version>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.core</groupId>
                 <artifactId>jobs</artifactId>
-                <version>${eclipse.core.jobs.version}</version>
+                <version>${version.org.eclipse.core.jobs}</version>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.equinox</groupId>
                 <artifactId>registry</artifactId>
-                <version>${eclipse.equinox.registry.version}</version>
+                <version>${version.org.eclipse.equinox.registry}</version>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.equinox</groupId>
                 <artifactId>preferences</artifactId>
-                <version>${eclipse.equinox.preferences.version}</version>
+                <version>${version.org.eclipse.equinox.preferences}</version>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.core</groupId>
                 <artifactId>contenttype</artifactId>
-                <version>${eclipse.core.contenttype.version}</version>
+                <version>${version.org.eclipse.core.contenttype}</version>
             </dependency>
             <dependency>
-                <groupId>javassist</groupId>
+                <groupId>org.javassist</groupId>
                 <artifactId>javassist</artifactId>
-                <version>${javaassist.version}</version>
+                <version>${version.org.javassist}</version>
             </dependency>
             <!--Mp3 sequencer-->
             <dependency>
                 <groupId>org</groupId>
                 <artifactId>jaudiotagger</artifactId>
-                <version>${jaudiotagger.version}</version>
+                <version>${version.org.jaudiotagger}</version>
             </dependency>
             <!--MsOffice sequencer -->
             <dependency>
                 <groupId>org.apache.poi</groupId>
                 <artifactId>poi</artifactId>
-                <version>${poi.version}</version>
+                <version>${version.org.apache.poi}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.poi</groupId>
                 <artifactId>poi-scratchpad</artifactId>
-                <version>${poi.version}</version>
+                <version>${version.org.apache.poi}</version>
             </dependency>
             <!--
                 The following 2 POI dependencies are not used directly, but defined so that we use the same "beta" version
@@ -737,50 +736,50 @@
             <dependency>
                 <groupId>org.apache.poi</groupId>
                 <artifactId>poi-ooxml</artifactId>
-                <version>${poi.version}</version>
+                <version>${version.org.apache.poi}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.poi</groupId>
                 <artifactId>poi-ooxml-schemas</artifactId>
-                <version>${poi.version}</version>
+                <version>${version.org.apache.poi}</version>
             </dependency>
             <!--Teiid sequencer-->
             <dependency>
                 <groupId>com.beust</groupId>
                 <artifactId>jcommander</artifactId>
-                <version>${jcommander.version}</version>
+                <version>${version.com.beust.jcommander}</version>
             </dependency>
             <!--WSDL sequencer-->
             <dependency>
                 <groupId>wsdl4j</groupId>
                 <artifactId>wsdl4j</artifactId>
-                <version>${wsdl4j.version}</version>
+                <version>${version.wsdl4j}</version>
             </dependency>
             <!--XSD sequencer-->
             <dependency>
                 <groupId>org.eclipse.xsd</groupId>
                 <artifactId>xsd</artifactId>
-                <version>${eclipse.xsd.version}</version>
+                <version>${version.org.eclipse.xsd}</version>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.emf</groupId>
                 <artifactId>common</artifactId>
-                <version>${eclipse.emf.common.version}</version>
+                <version>${version.org.eclipse.emf.common}</version>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.emf</groupId>
                 <artifactId>ecore</artifactId>
-                <version>${eclipse.emf.ecore.version}</version>
+                <version>${version.org.eclipse.emf.ecore}</version>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.emf</groupId>
                 <artifactId>ecore-change</artifactId>
-                <version>${eclipse.emf.ecorechange.version}</version>
+                <version>${version.org.eclipse.emf.ecore-change}</version>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.emf</groupId>
                 <artifactId>ecore-xmi</artifactId>
-                <version>${eclipse.emf.ecorexmi.version}</version>
+                <version>${version.org.eclipse.emf.ecore-xmi}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

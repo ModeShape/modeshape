@@ -55,13 +55,6 @@ import org.modeshape.common.util.StringUtil;
  * the file system or the classpath, then a {@link LocalEnvironment} instance can be used as-is with no other configuration or
  * setup.
  * </p>
- * <p>
- * If applications wish to programmatically configure the Infinispan caches or cache containers, then those configurations can be
- * registered with a LocalEnvironment instance. Specifically, the {@link #addCacheContainer(String, CacheContainer)} and
- * {@link #addCacheContainerIfAbsent(String, CacheContainer)} methods register a programmatically created instance of a
- * {@link CacheContainer}. Alternatively, the {@link #defineCache(String, String, Configuration)} method can be used to register a
- * named cache with a programmatically created {@link Configuration Infinispan cache configuration}.
- * </p>
  */
 public class LocalEnvironment implements Environment {
 
@@ -254,77 +247,8 @@ public class LocalEnvironment implements Environment {
         return new DefaultCacheManager(globalConfiguration, configuration);
     }
 
-    /**
-     * Create the default configuration.
-     * 
-     * @return the default cache configuration.
-     * @deprecated see {@link #createDefaultConfigurationBuilder()}
-     */
-    @Deprecated
-    protected Configuration createDefaultConfiguration() {
-        return createDefaultConfigurationBuilder().build();
-    }
-
-    /**
-     * Create the global configuration.
-     * 
-     * @return the global configuration.
-     * @deprecated see {@link #createGlobalConfigurationBuilder()}
-     */
-    @Deprecated
-    protected GlobalConfiguration createGlobalConfiguration() {
-        return createGlobalConfigurationBuilder().build();
-    }
-
-    /**
-     * Create a cache container using the supplied configurations.
-     * 
-     * @param globalConfiguration the global configuration
-     * @param configuration the default cache configuration
-     * @return the cache container
-     * @deprecated use {@link #createContainer(GlobalConfigurationBuilder, ConfigurationBuilder)} instead
-     */
-    @Deprecated
-    protected CacheContainer createContainer( GlobalConfiguration globalConfiguration,
-                                              Configuration configuration ) {
-        logger.debug("Starting cache manager with global configuration \n{0}\nand default configuration:\n{1}",
-                     globalConfiguration,
-                     configuration);
-        return new DefaultCacheManager(globalConfiguration, configuration);
-    }
-
     protected Context jndiContext() throws NamingException {
         return new InitialContext();
-    }
-
-    /**
-     * Add the supplied {@link CacheContainer} under the supplied name if and only if there is not already a cache container
-     * registered at that name.
-     * 
-     * @param name the cache container name; may be null if the {@link #DEFAULT_CONFIGURATION_NAME default configuration name}
-     *        should be used
-     * @param cacheContainer the cache container; may not be null
-     */
-    public void addCacheContainerIfAbsent( String name,
-                                           CacheContainer cacheContainer ) {
-        CheckArg.isNotNull(cacheContainer, "cacheContainer");
-        containers.putIfAbsent(name, cacheContainer);
-    }
-
-    /**
-     * Add the supplied {@link CacheContainer} under the supplied name if and only if there is not already a cache container
-     * registered at that name.
-     * 
-     * @param name the cache container name; may be null if the {@link #DEFAULT_CONFIGURATION_NAME default configuration name}
-     *        should be used
-     * @param cacheContainer the cache container; may not be null
-     * @return the cache container that was previously registered in this environment by the supplied name, or null if there was
-     *         no such previously-registered cache container
-     */
-    public CacheContainer addCacheContainer( String name,
-                                             CacheContainer cacheContainer ) {
-        CheckArg.isNotNull(cacheContainer, "cacheContainer");
-        return containers.put(name, cacheContainer);
     }
 
     /**
@@ -362,9 +286,7 @@ public class LocalEnvironment implements Environment {
         if (cacheContainerName == null) cacheContainerName = DEFAULT_CONFIGURATION_NAME;
         CacheContainer container = containers.get(cacheContainerName);
         if (container == null) {
-            Configuration config = createDefaultConfiguration();
-            GlobalConfiguration global = createGlobalConfiguration();
-            CacheContainer newContainer = createContainer(global, config);
+            CacheContainer newContainer = createContainer(createGlobalConfigurationBuilder(), createDefaultConfigurationBuilder());
             container = containers.putIfAbsent(cacheContainerName, newContainer);
             if (container == null) container = newContainer;
         }

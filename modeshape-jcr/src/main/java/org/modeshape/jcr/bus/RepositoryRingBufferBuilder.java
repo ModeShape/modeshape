@@ -38,7 +38,7 @@ public final class RepositoryRingBufferBuilder<T,C> extends RingBufferBuilder<T,
      * {@link RingBuffer.ConsumerAdapter} to adapt to custom consumer implementations. The ring buffer will allow entries to be added from
      * multiple threads.
      *
-     * @param executor the executor that should be used to create threads to run {@link Consumer}s; may not be null
+     * @param executor the executor that should be used to create threads to run {@link Consumer consumers}; may not be null
      * @param adapter the adapter to the desired consumer interface; may not be null
      * @param statistics a {@link RepositoryStatistics} instance; may be null.
      * @return the builder for ring buffers; never null

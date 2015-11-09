@@ -338,6 +338,7 @@ class JcrNodeType implements NodeType, Namespaced {
      * @see javax.jcr.nodetype.NodeType#canRemoveItem(java.lang.String)
      */
     @Override
+    @SuppressWarnings("deprecation")
     public boolean canRemoveItem( String itemName ) {
         CheckArg.isNotNull(itemName, "itemName");
         Name childName = context.getValueFactories().getNameFactory().create(itemName);

@@ -29,7 +29,7 @@ import org.apache.chemistry.opencmis.jcr.PathManager;
 import org.apache.chemistry.opencmis.jcr.impl.DefaultFolderTypeHandler;
 import org.apache.chemistry.opencmis.jcr.impl.DefaultUnversionedDocumentTypeHandler;
 import org.apache.chemistry.opencmis.jcr.type.JcrTypeHandlerManager;
-import org.apache.chemistry.opencmis.server.support.CmisServiceWrapper;
+import org.apache.chemistry.opencmis.server.support.wrapper.ConformanceCmisServiceWrapper;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.web.jcr.NoSuchRepositoryException;
 import org.modeshape.web.jcr.RepositoryManager;
@@ -87,13 +87,13 @@ public class JcrServiceFactory extends AbstractServiceFactory {
     @Override
     public CmisService getService( CallContext context ) {
         JcrService jcrService = createJcrService(loadRepositories(), context);
-        CmisServiceWrapper<JcrService> serviceWrapper = new CmisServiceWrapper<JcrService>(jcrService,
-                                                                                           DEFAULT_MAX_ITEMS_TYPES,
-                                                                                           DEFAULT_DEPTH_TYPES,
-                                                                                           DEFAULT_MAX_ITEMS_OBJECTS,
-                                                                                           DEFAULT_DEPTH_OBJECTS);
+        ConformanceCmisServiceWrapper serviceWrapper = new ConformanceCmisServiceWrapper(jcrService,
+                                                                                         DEFAULT_MAX_ITEMS_TYPES,
+                                                                                         DEFAULT_DEPTH_TYPES,
+                                                                                         DEFAULT_MAX_ITEMS_OBJECTS,
+                                                                                         DEFAULT_DEPTH_OBJECTS);
 
-        serviceWrapper.getWrappedService().setCallContext(context);
+        serviceWrapper.setCallContext(context);
         return serviceWrapper;
     }
 

@@ -54,8 +54,8 @@ import org.modeshape.jcr.value.basic.BasicPropertyFactory;
 import org.modeshape.jcr.value.basic.BooleanValueFactory;
 import org.modeshape.jcr.value.basic.DecimalValueFactory;
 import org.modeshape.jcr.value.basic.DoubleValueFactory;
-import org.modeshape.jcr.value.basic.JodaDateTimeValueFactory;
 import org.modeshape.jcr.value.basic.LongValueFactory;
+import org.modeshape.jcr.value.basic.ModeShapeDateTimeValueFactory;
 import org.modeshape.jcr.value.basic.NameValueFactory;
 import org.modeshape.jcr.value.basic.ObjectValueFactory;
 import org.modeshape.jcr.value.basic.PathValueFactory;
@@ -233,7 +233,7 @@ public final class ExecutionContext implements ThreadPoolFactory, Cloneable, Nam
             booleanFactory = booleanFactory.with(valueFactories);
         }
         if (dateFactory == null) {
-            dateFactory = new JodaDateTimeValueFactory(decoder, valueFactories);
+            dateFactory = new ModeShapeDateTimeValueFactory(decoder, valueFactories);
         } else {
             dateFactory = dateFactory.with(valueFactories);
         }

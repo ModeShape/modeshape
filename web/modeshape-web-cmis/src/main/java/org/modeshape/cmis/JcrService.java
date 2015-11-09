@@ -50,6 +50,7 @@ import org.apache.chemistry.opencmis.commons.impl.server.AbstractCmisService;
 import org.apache.chemistry.opencmis.commons.server.CallContext;
 import org.apache.chemistry.opencmis.commons.spi.Holder;
 import org.apache.chemistry.opencmis.jcr.JcrRepository;
+import org.apache.chemistry.opencmis.server.support.wrapper.CallContextAwareCmisService;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.jcr.api.ServletCredentials;
 import org.modeshape.web.jcr.WebLogger;
@@ -59,7 +60,7 @@ import org.modeshape.web.jcr.WebLogger;
  *
  * @author kulikov
  */
-public class JcrService extends AbstractCmisService {
+public class JcrService extends AbstractCmisService implements CallContextAwareCmisService {
 
     private final static org.modeshape.jcr.api.Logger LOGGER = WebLogger.getLogger(JcrService.class);
     private final Map<String, JcrRepository> jcrRepositories;
@@ -79,8 +80,14 @@ public class JcrService extends AbstractCmisService {
         super.close();
     }
 
+    @Override
     public void setCallContext(CallContext context) {
         this.context = context;
+    }
+
+    @Override
+    public CallContext getCallContext() {
+        return this.context;
     }
 
     //------------------------------------------< repository service >---

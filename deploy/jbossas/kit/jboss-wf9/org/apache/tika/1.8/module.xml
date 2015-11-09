@@ -32,10 +32,10 @@
         <resource-root path="jhighlight-1.0.2.jar" />
         <resource-root path="juniversalchardet-1.0.3.jar" />
         <resource-root path="pdfbox-1.8.9.jar" />
-        <resource-root path="poi-${poi.version}.jar" />
+        <resource-root path="poi-${version.org.apache.poi}.jar" />
         <resource-root path="poi-ooxml-3.12-beta1.jar" />
         <resource-root path="poi-ooxml-schemas-3.12-beta1.jar" />
-        <resource-root path="poi-scratchpad-${poi.version}.jar" />
+        <resource-root path="poi-scratchpad-${version.org.apache.poi}.jar" />
         <resource-root path="xmlbeans-2.6.0.jar" />
         <resource-root path="tagsoup-1.2.1.jar" />
         <resource-root path="vorbis-java-core-0.6.jar" />

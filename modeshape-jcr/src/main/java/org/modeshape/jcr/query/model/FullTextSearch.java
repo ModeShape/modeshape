@@ -207,6 +207,7 @@ public class FullTextSearch implements Constraint, javax.jcr.query.qom.FullTextS
                 }
 
                 @Override
+                @SuppressWarnings("deprecation")
                 public InputStream getStream() throws RepositoryException {
                     throw new ValueFormatException();
                 }

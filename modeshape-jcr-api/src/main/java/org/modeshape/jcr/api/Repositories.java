@@ -38,5 +38,5 @@ public interface Repositories {
      * @throws javax.jcr.RepositoryException if no repository exists with the given name or there is an error communicating with
      *         the repository
      */
-    javax.jcr.Repository getRepository( String repositoryName ) throws javax.jcr.RepositoryException;
+    Repository getRepository( String repositoryName ) throws javax.jcr.RepositoryException;
 }

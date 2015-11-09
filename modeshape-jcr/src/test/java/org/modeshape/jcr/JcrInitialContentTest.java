@@ -44,7 +44,7 @@ import org.modeshape.jcr.api.JcrConstants;
 import org.modeshape.jcr.api.Property;
 import org.modeshape.jcr.api.PropertyType;
 import org.modeshape.jcr.value.Name;
-import org.modeshape.jcr.value.basic.JodaDateTime;
+import org.modeshape.jcr.value.basic.ModeShapeDateTime;
 
 /**
  * Unit test for the initial content import feature.
@@ -247,7 +247,7 @@ public class JcrInitialContentTest extends SingleUseAbstractTest {
         assertEquals(javax.jcr.PropertyType.DECIMAL, decimalProp.getType());
 
         Property dateProp = node1.getProperty("date_prop");
-        assertEquals(new JodaDateTime("1994-11-05T13:15:30Z").toCalendar(), dateProp.getDate());
+        assertEquals(new ModeShapeDateTime("1994-11-05T13:15:30Z").toCalendar(), dateProp.getDate());
         assertEquals(javax.jcr.PropertyType.DATE, dateProp.getType());
 
         Property doubleProp = node1.getProperty("double_prop");

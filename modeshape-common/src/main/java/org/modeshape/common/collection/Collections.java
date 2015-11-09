@@ -26,16 +26,13 @@ import java.util.Set;
  */
 public class Collections {
 
-    public static <T> Iterator<T> emptyIterator() {
-        return new EmptyIterator<T>();
-    }
-
-    public static <T> Set<T> unmodifiableSet( @SuppressWarnings( "unchecked" ) T... values ) {
+    @SafeVarargs
+    public static <T> Set<T> unmodifiableSet(T... values ) {
         return unmodifiableSet(Arrays.asList(values));
     }
 
     public static <T> Set<T> unmodifiableSet( Collection<T> values ) {
-        return java.util.Collections.unmodifiableSet(new HashSet<T>(values));
+        return java.util.Collections.unmodifiableSet(new HashSet<>(values));
     }
 
     public static <T> Set<T> unmodifiableSet( Set<T> values ) {
@@ -57,12 +54,7 @@ public class Collections {
                                           final Iterable<T> b ) {
         assert (a != null);
         assert (b != null);
-        return new Iterable<T>() {
-            @Override
-            public Iterator<T> iterator() {
-                return Collections.concat(a.iterator(), b.iterator());
-            }
-        };
+        return () -> Collections.concat(a.iterator(), b.iterator());
 
     }
 

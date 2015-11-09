@@ -17,7 +17,7 @@ package org.infinispan.schematic;
 
 import java.util.Collection;
 import org.infinispan.Cache;
-import org.infinispan.lifecycle.Lifecycle;
+import org.infinispan.commons.api.Lifecycle;
 import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.document.EditableDocument;
 

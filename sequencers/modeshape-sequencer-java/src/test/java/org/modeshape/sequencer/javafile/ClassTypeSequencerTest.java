@@ -340,7 +340,7 @@ public final class ClassTypeSequencerTest extends AbstractSequencerTest {
                     assertThat(methodNode.getProperty(ClassFileSequencerLexicon.STRICT_FP).getBoolean(), is(false));
                     assertThat(methodNode.getProperty(ClassFileSequencerLexicon.NATIVE).getBoolean(), is(false));
                     assertThat(methodNode.getProperty(ClassFileSequencerLexicon.SYNCHRONIZED).getBoolean(), is(false));
-                    assertThat(methodNode.hasNode(ClassFileSequencerLexicon.ANNOTATIONS), is(false));
+                    assertThat(methodNode.hasNode(ClassFileSequencerLexicon.ANNOTATIONS), is(true));
                     assertThat(methodNode.hasNode(ClassFileSequencerLexicon.TYPE_PARAMETERS), is(false));
                     assertThat(methodNode.hasNode(ClassFileSequencerLexicon.JAVADOC), is(false));
                     assertThat(methodNode.hasNode(ClassFileSequencerLexicon.BODY), is(true));

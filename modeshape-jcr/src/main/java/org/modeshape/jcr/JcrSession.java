@@ -1804,6 +1804,7 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
     }
 
     @Override
+    @SuppressWarnings("deprecation")
     public void addLockToken( String lockToken ) {
         CheckArg.isNotNull(lockToken, "lockToken");
         try {
@@ -1814,12 +1815,14 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
     }
 
     @Override
+    @SuppressWarnings("deprecation")
     public String[] getLockTokens() {
         if (!isLive()) return new String[] {};
         return lockManager().getLockTokens();
     }
 
     @Override
+    @SuppressWarnings("deprecation")
     public void removeLockToken( String lockToken ) {
         CheckArg.isNotNull(lockToken, "lockToken");
         // A LockException is thrown if the lock associated with the specified lock token is session-scoped.
@@ -2433,7 +2436,9 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
                 final SessionCache session = cache();
                 for (NodeKey appendedOrRenamedKey : appendedOrRenamedChildrenByName.get(childName)) {
                     CachedNode appendedOrRenamedChild = session.getNode(appendedOrRenamedKey);
-                    if (appendedOrRenamedChild == null) { continue; }
+                    if (appendedOrRenamedChild == null) { 
+                        continue; 
+                    }
                     Name childPrimaryType = appendedOrRenamedChild.getPrimaryType(session);
                     childDefns = nodeTypeCapabilities.findChildNodeDefinitions(primaryType, mixinTypes);
                     childNodeDefinition = childDefns.findBestDefinitionForChild(childName, childPrimaryType, true,

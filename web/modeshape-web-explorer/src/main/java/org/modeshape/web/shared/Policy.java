@@ -99,7 +99,8 @@ public class Policy implements Serializable {
             PERMISSIONS[i].setStatus(true);
         }
     }
-    
+
+    @SuppressWarnings("unchecked")
     public Collection<JcrPermission> permissions() {
         ArrayList<JcrPermission> list = new ArrayList();
         for (int i = 0; i < PERMISSIONS.length; i++) {

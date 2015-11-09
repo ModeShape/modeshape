@@ -16,12 +16,19 @@
 package org.modeshape.jcr.index.lucene;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.HashSet;
-import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.apache.lucene.document.Document;
-import org.apache.lucene.index.IndexableField;
+import org.apache.lucene.document.DoubleField;
+import org.apache.lucene.document.Field;
+import org.apache.lucene.document.IntField;
+import org.apache.lucene.document.LongField;
+import org.apache.lucene.document.StringField;
+import org.apache.lucene.index.Term;
+import org.apache.lucene.util.BytesRef;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.util.CheckArg;
@@ -69,13 +76,13 @@ class MultiColumnIndex extends LuceneIndex {
                 // we're updating an existing document
                 logger.debug("Updating the property '{0}' of document '{1}' in the Lucene index '{2}' with the values '{3}'", values,
                              propertyName, nodeKey, name, values);
-
-                Document document = searcher.loadDocumentById(nodeKey);
-                // remove the old values for the property from the document
-                removeProperty(propertyName, document);
-                // add the new values 
-                addProperty(nodeKey, document, propertyName, values);
-                writer.updateDocument(FieldUtil.idTerm(nodeKey), document);
+                Document oldDocument = searcher.loadDocumentById(nodeKey);
+                Document newDocument = clone(oldDocument, propertyName);
+                                            
+                //add the fields for the new property
+                List<Field> fields = valuesToFields(propertyName, values);
+                fields.stream().forEach(newDocument::add);
+                writer.updateDocument(FieldUtil.idTerm(nodeKey), newDocument);
             } else {
                 // we're creating the document for the first time...
                 logger.debug("Adding the document '{0}' in the Lucene Index '{1}' with the property '{2}' and values '{3}",
@@ -89,6 +96,45 @@ class MultiColumnIndex extends LuceneIndex {
         } catch (IOException e) {
             throw new LuceneIndexException(e);
         }
+    }
+
+    private Document clone(Document oldDocument, String... excludeProps) {
+        List<String> excluded = Arrays.asList(excludeProps);
+
+        Document newDocument = new Document();
+        oldDocument.getFields()
+                   .stream()
+                   .filter((field) -> (!excluded.contains(field.name())))
+                   .map((field) -> (clone((Field) field)))
+                   .forEach(newDocument::add);
+        return newDocument;
+    }
+    
+    private Field clone(Field existing) {
+        String name = existing.name();
+
+        if (name.startsWith(FieldUtil.LENGTH_PREFIX)) {
+            // these are always stored as longs
+            return new LongField(name, Long.valueOf(existing.stringValue()), Field.Store.YES);
+        }
+        Number numberValue = existing.numericValue();
+        if (numberValue instanceof Integer) {
+            return new IntField(name, numberValue.intValue(), Field.Store.YES);
+        } else if (numberValue instanceof Long) {
+            return new LongField(name, numberValue.longValue(), Field.Store.YES);
+        } else if (numberValue instanceof Double) {
+            return new DoubleField(name, numberValue.doubleValue(), Field.Store.YES);
+        }
+        String stringValue = existing.stringValue();
+        if (stringValue != null) {
+            return new StringField(name, stringValue, Field.Store.YES);
+        }
+        BytesRef bytesRef = existing.binaryValue();
+        if (bytesRef != null) {
+            // we don't really store any binary fields
+            return new StringField(name, bytesRef, Field.Store.YES);
+        }
+        throw new LuceneIndexException("Cannot clone existing field: " + existing);
     }
    
     @Override
@@ -108,16 +154,20 @@ class MultiColumnIndex extends LuceneIndex {
         }
         try {
             Document document = searcher.loadDocumentById(nodeKey);
-            removeProperty(propertyName, document);
-            if (document.getFields().isEmpty()) {
+            boolean hasProperty = document.getField(propertyName) != null;
+            if (!hasProperty) {
+                return;
+            }
+            Term idTerm = FieldUtil.idTerm(nodeKey);
+            if (document.getFields().size() == 1) {
                 // there are no more fields, so remove the entire document....
-                writer.deleteDocuments(FieldUtil.idTerm(nodeKey));
+                writer.deleteDocuments(idTerm);
                 // mark the node key as removed
                 cache.remove(nodeKey);
             } else {
-                // update the document after adding back the ID (which was removed during removeProperty)
-                document.add(FieldUtil.idField(nodeKey));
-                writer.updateDocument(FieldUtil.idTerm(nodeKey), document);
+                // create a clone without the property
+                Document newDocument = clone(document, propertyName);
+                writer.updateDocument(idTerm, newDocument);
             }
         } catch (IOException e) {
             throw new LuceneIndexException(e);
@@ -139,21 +189,6 @@ class MultiColumnIndex extends LuceneIndex {
 
     private boolean documentExists( String nodeKey ) {
         return cache.hasNode(nodeKey) || writer.getCommitData().containsKey(nodeKey);
-    }
-    
-    private void removeProperty( String propertyName, Document document ) {
-        Iterator<IndexableField> fieldIterator = document.iterator();
-        while (fieldIterator.hasNext()) {
-            IndexableField field = fieldIterator.next();
-            String name = field.name();
-            if (name.equals(propertyName)) {
-                // there can be multiple properties with the same name (multivalued) so we need to call remove for each one
-                fieldIterator.remove();
-            } else if (FieldUtil.ID.equals(name)) {
-                // for some inexplicable reason (Lucene bug ??) this has to be removed and readded with each update 
-                fieldIterator.remove();
-            }
-        }
     }
 
     /**

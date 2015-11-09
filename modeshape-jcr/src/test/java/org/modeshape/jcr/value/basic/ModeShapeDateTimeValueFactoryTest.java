@@ -21,6 +21,7 @@ import static org.mockito.Mockito.mock;
 import java.io.ByteArrayInputStream;
 import java.math.BigDecimal;
 import java.net.URI;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Iterator;
@@ -34,27 +35,23 @@ import org.modeshape.jcr.value.Reference;
 import org.modeshape.jcr.value.ValueFormatException;
 
 /**
+ * Unit test for {@link ModeShapeDateTimeValueFactory}
+ * 
  * @author Randall Hauch
  * @author John Verhaeg
  */
-public class JodaDateTimeValueFactoryTest extends BaseValueFactoryTest {
+public class ModeShapeDateTimeValueFactoryTest extends BaseValueFactoryTest {
 
-    public static final DateTime TODAY;
-    public static final DateTime LAST_YEAR;
-
-    static {
-        org.joda.time.DateTime now = new org.joda.time.DateTime();
-        TODAY = new JodaDateTime(now);
-        LAST_YEAR = new JodaDateTime(now.minusYears(1));
-    }
-
-    private JodaDateTimeValueFactory factory;
+    private static final DateTime TODAY = new ModeShapeDateTime();
+    private static final DateTime LAST_YEAR = TODAY.minus(Duration.ofDays(365));
+    
+    private ModeShapeDateTimeValueFactory factory;
 
     @Before
     @Override
     public void beforeEach() {
         super.beforeEach();
-        factory = new JodaDateTimeValueFactory(Path.URL_DECODER, valueFactories);
+        factory = new ModeShapeDateTimeValueFactory(Path.URL_DECODER, valueFactories);
     }
 
     @Test( expected = ValueFormatException.class )
@@ -81,40 +78,40 @@ public class JodaDateTimeValueFactoryTest extends BaseValueFactoryTest {
 
     @Test
     public void shouldNotCreateDateFromIntegerValue() {
-        assertThat(factory.create(10000), is((DateTime)new JodaDateTime(10000)));
+        assertThat(factory.create(10000), is(new ModeShapeDateTime(10000)));
     }
 
     @Test
     public void shouldNotCreateDateFromLongValue() {
-        assertThat(factory.create(10000l), is((DateTime)new JodaDateTime(10000l)));
+        assertThat(factory.create(10000l), is((new ModeShapeDateTime(10000l))));
     }
 
     @Test
     public void shouldNotCreateDateFromFloatValue() {
-        assertThat(factory.create(10000.12345f), is((DateTime)new JodaDateTime(10000)));
+        assertThat(factory.create(10000.12345f), is(new ModeShapeDateTime(10000)));
     }
 
     @Test
     public void shouldNotCreateDateFromDoubleValue() {
-        assertThat(factory.create(10000.12345d), is((DateTime)new JodaDateTime(10000)));
+        assertThat(factory.create(10000.12345d), is((new ModeShapeDateTime(10000))));
     }
 
     @Test
     public void shouldCreateDateFromBigDecimal() {
-        assertThat(factory.create(new BigDecimal(10000)), is((DateTime)new JodaDateTime(10000)));
+        assertThat(factory.create(new BigDecimal(10000)), is((new ModeShapeDateTime(10000))));
     }
 
     @Test
     public void shouldCreateDateFromDate() {
         Calendar value = Calendar.getInstance();
-        assertThat(factory.create(value.getTime()), is((DateTime)new JodaDateTime(value.getTime())));
+        assertThat(factory.create(value.getTime()), is(new ModeShapeDateTime(value.getTime())));
     }
 
     @Test
     public void shouldCreateDateFromCalendar() {
         Calendar value = Calendar.getInstance();
         value.setTimeInMillis(10000);
-        assertThat(factory.create(value), is((DateTime)new JodaDateTime(value)));
+        assertThat(factory.create(value), is(new ModeShapeDateTime(value)));
     }
 
     @Test( expected = ValueFormatException.class )
@@ -168,9 +165,9 @@ public class JodaDateTimeValueFactoryTest extends BaseValueFactoryTest {
 
     @Test
     public void shouldCreateIteratorOverValuesWhenSuppliedIteratorOfUnknownObjects() {
-        List<String> values = new ArrayList<String>();
+        List<String> values = new ArrayList<>();
         for (int i = 0; i != 10; ++i) {
-            values.add(new JodaDateTime(10000 + i).toString());
+            values.add(new ModeShapeDateTime(10000 + i).toString());
         }
         Iterator<DateTime> iter = factory.create(values.iterator());
         Iterator<String> valueIter = values.iterator();

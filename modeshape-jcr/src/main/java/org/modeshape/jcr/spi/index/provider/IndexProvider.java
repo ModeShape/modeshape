@@ -553,7 +553,7 @@ public abstract class IndexProvider {
     }
 
     /**
-     * Get this provider's {@link AtomicIndex} instances for the given workspace.
+     * Get this provider's {@link ManagedIndex} instances for the given workspace.
      *
      * @param workspaceName the name of the workspace; may not be null
      * @return the iterator over the provided indexes; never null but possibly empty

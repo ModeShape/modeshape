@@ -18,12 +18,13 @@ package org.modeshape.jcr.value.basic;
 import java.io.InputStream;
 import java.math.BigDecimal;
 import java.net.URI;
+import java.time.ZonedDateTime;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.UUID;
-import org.joda.time.DateTimeZone;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.text.TextDecoder;
+import org.modeshape.common.util.DateTimeUtil;
 import org.modeshape.jcr.GraphI18n;
 import org.modeshape.jcr.api.value.DateTime;
 import org.modeshape.jcr.cache.NodeKey;
@@ -42,7 +43,7 @@ import org.modeshape.jcr.value.ValueFormatException;
  * The standard {@link ValueFactory} for {@link PropertyType#DATE} values.
  */
 @Immutable
-public class JodaDateTimeValueFactory extends AbstractValueFactory<DateTime> implements DateTimeFactory {
+public class ModeShapeDateTimeValueFactory extends AbstractValueFactory<DateTime> implements DateTimeFactory {
 
     /**
      * Create a new instance.
@@ -51,31 +52,31 @@ public class JodaDateTimeValueFactory extends AbstractValueFactory<DateTime> imp
      * @param factories the set of value factories, used to obtain the {@link ValueFactories#getStringFactory() string value
      *        factory}; may not be null
      */
-    public JodaDateTimeValueFactory( TextDecoder decoder,
-                                     ValueFactories factories ) {
+    public ModeShapeDateTimeValueFactory( TextDecoder decoder,
+                                          ValueFactories factories ) {
         super(PropertyType.DATE, decoder, factories);
     }
 
     @Override
     public DateTimeFactory with( ValueFactories valueFactories ) {
-        return super.valueFactories == valueFactories ? this : new JodaDateTimeValueFactory(super.getDecoder(), valueFactories);
+        return super.valueFactories == valueFactories ? this : new ModeShapeDateTimeValueFactory(super.getDecoder(), valueFactories);
     }
 
     @Override
     public DateTime create( String value ) {
         if (value == null) return null;
         try {
-            return new JodaDateTime(value.trim());
-        } catch (IllegalArgumentException err) {
+            return new ModeShapeDateTime(value.trim());
+        } catch (java.time.format.DateTimeParseException err) {
             // See if this string represents a LONG value ...
             try {
                 Long longValue = Long.parseLong(value);
-                return new JodaDateTime(longValue);
+                return new ModeShapeDateTime(longValue);
             } catch (NumberFormatException e) {
                 // Guess it wasn't a long value ...
                 throw new ValueFormatException(value, getPropertyType(),
                                                GraphI18n.errorConvertingType.text(String.class.getSimpleName(),
-                                                                                  DateTime.class.getSimpleName(),
+                                                                                  org.modeshape.jcr.api.value.DateTime.class.getSimpleName(),
                                                                                   value), err);
             }
         }
@@ -95,7 +96,7 @@ public class JodaDateTimeValueFactory extends AbstractValueFactory<DateTime> imp
 
     @Override
     public DateTime create( long value ) {
-        return new JodaDateTime(value);
+        return new ModeShapeDateTime(value);
     }
 
     @Override
@@ -124,13 +125,13 @@ public class JodaDateTimeValueFactory extends AbstractValueFactory<DateTime> imp
     @Override
     public DateTime create( Calendar value ) {
         if (value == null) return null;
-        return new JodaDateTime(value);
+        return new ModeShapeDateTime(value);
     }
 
     @Override
     public DateTime create( Date value ) {
         if (value == null) return null;
-        return new JodaDateTime(value);
+        return new ModeShapeDateTime(value);
     }
 
     @Override
@@ -210,12 +211,12 @@ public class JodaDateTimeValueFactory extends AbstractValueFactory<DateTime> imp
 
     @Override
     public DateTime create() {
-        return new JodaDateTime();
+        return new ModeShapeDateTime();
     }
 
     @Override
     public DateTime createUtc() {
-        return new JodaDateTime(DateTimeZone.UTC);
+        return new ModeShapeDateTime(ZonedDateTime.now(DateTimeUtil.UTC));
     }
 
     @Override
@@ -226,33 +227,8 @@ public class JodaDateTimeValueFactory extends AbstractValueFactory<DateTime> imp
                             int minuteOfHour,
                             int secondOfMinute,
                             int millisecondsOfSecond ) {
-        return new JodaDateTime(year, monthOfYear, dayOfMonth, hourOfDay, minuteOfHour, secondOfMinute, millisecondsOfSecond);
-    }
-
-    @Override
-    public DateTime create( int year,
-                            int monthOfYear,
-                            int dayOfMonth,
-                            int hourOfDay,
-                            int minuteOfHour,
-                            int secondOfMinute,
-                            int millisecondsOfSecond,
-                            int timeZoneOffsetHours ) {
-        return new JodaDateTime(year, monthOfYear, dayOfMonth, hourOfDay, minuteOfHour, secondOfMinute, millisecondsOfSecond,
-                                timeZoneOffsetHours);
-    }
-
-    @Override
-    public DateTime create( int year,
-                            int monthOfYear,
-                            int dayOfMonth,
-                            int hourOfDay,
-                            int minuteOfHour,
-                            int secondOfMinute,
-                            int millisecondsOfSecond,
-                            String timeZoneId ) {
-        return new JodaDateTime(year, monthOfYear, dayOfMonth, hourOfDay, minuteOfHour, secondOfMinute, millisecondsOfSecond,
-                                timeZoneId);
+        return new ModeShapeDateTime(year, monthOfYear, dayOfMonth, hourOfDay, minuteOfHour, secondOfMinute,
+                                     millisecondsOfSecond);
     }
 
     @Override
@@ -261,11 +237,11 @@ public class JodaDateTimeValueFactory extends AbstractValueFactory<DateTime> imp
         assert original != null;
         if (offsetInMillis == 0l) return original;
         long newMillis = original.getMilliseconds() + offsetInMillis;
-        return new JodaDateTime(newMillis, original.getTimeZoneId());
+        return new ModeShapeDateTime(newMillis, original.getTimeZoneId());
     }
 
     @Override
     public DateTime[] createEmptyArray( int length ) {
-        return new DateTime[length];
+        return new org.modeshape.jcr.api.value.DateTime[length];
     }
 }

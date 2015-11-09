@@ -42,11 +42,12 @@ class ImmutableView extends ImmutableTable implements View {
         this.definition = definition;
     }
 
+    @SafeVarargs
     protected ImmutableView( SelectorName name,
                              Iterable<Column> columns,
                              boolean extraColumns,
                              QueryCommand definition,
-                             @SuppressWarnings( "unchecked" ) Iterable<Column>... keyColumns ) {
+                             Iterable<Column>... keyColumns ) {
         super(name, columns, extraColumns, keyColumns);
         this.definition = definition;
     }

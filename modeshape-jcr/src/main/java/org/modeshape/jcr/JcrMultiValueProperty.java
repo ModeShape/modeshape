@@ -104,6 +104,7 @@ final class JcrMultiValueProperty extends AbstractJcrProperty {
     }
 
     @Override
+    @SuppressWarnings("deprecation")
     public InputStream getStream() throws ValueFormatException {
         throw new ValueFormatException(JcrI18n.invalidMethodForMultiValuedProperty.text());
     }
@@ -238,6 +239,7 @@ final class JcrMultiValueProperty extends AbstractJcrProperty {
     }
 
     @Override
+    @SuppressWarnings("deprecation")
     public final void setValue( InputStream value ) throws ValueFormatException {
         throw new ValueFormatException(JcrI18n.invalidMethodForMultiValuedProperty.text());
     }

@@ -1418,11 +1418,6 @@ public class SessionNode implements MutableCachedNode {
     }
 
     @Override
-    public Set<NodeKey> removedChildren() {
-        return changedChildren().getRemovals();
-    }
-
-    @Override
     public Set<NodeKey> getChangedReferrerNodes() {
         Set<NodeKey> result = new HashSet<NodeKey>();
         ReferrerChanges referrerChanges = getReferrerChanges();

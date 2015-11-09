@@ -195,7 +195,7 @@ public class CompareNameQuery extends CompareQuery<Name> {
      * @param field the name of the document field containing the local name value; may not be null
      * @param constraintValue the constraint path; may not be null
      * @param nameFactory the value factory used during scoring; may not be null
-     * @param evaluator the {@link Evaluator} implementation that returns whether the node path satisfies the
+     * @param evaluator the {@link CompareQuery.Evaluator} implementation that returns whether the node path satisfies the
      * constraint; may not be null
      * @param caseOperation the operation that should be performed on the indexed values before the constraint value is being
      */

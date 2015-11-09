@@ -79,7 +79,7 @@ public class JavaMetadata extends AbstractJavaMetadata {
     }
 
     /**
-     * Gets a list of {@linkImportMetadata} from the unit.
+     * Gets a list of {@link ImportMetadata} from the unit.
      * 
      * @return all imports of this unit if there is one.
      */

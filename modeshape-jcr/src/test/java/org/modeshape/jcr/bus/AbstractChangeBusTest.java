@@ -34,13 +34,12 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
-import org.modeshape.jcr.api.value.DateTime;
 import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.cache.change.Change;
 import org.modeshape.jcr.cache.change.ChangeSet;
 import org.modeshape.jcr.cache.change.ChangeSetListener;
 import org.modeshape.jcr.value.BinaryKey;
-import org.modeshape.jcr.value.basic.JodaDateTime;
+import org.modeshape.jcr.value.basic.ModeShapeDateTime;
 
 /**
  * Base class for different {@link org.modeshape.jcr.bus.ChangeBus} implementations.
@@ -293,8 +292,8 @@ public abstract class AbstractChangeBusTest {
         }
 
         @Override
-        public DateTime getTimestamp() {
-            return new JodaDateTime(time);
+        public org.modeshape.jcr.api.value.DateTime getTimestamp() {
+            return new ModeShapeDateTime(time);
         }
 
         public long time() {

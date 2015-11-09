@@ -243,18 +243,4 @@ public interface DocumentWriter extends PageWriter {
                             long blockSize,
                             long totalChildCount );
 
-    /**
-     * Some connectors may want to pre-generate additional documents when {@link Connector#getDocumentById(String)} is called. In
-     * such a case, the connector can use this method to obtain a writer for an additional document and use it in much the same
-     * was as {@link Connector#newDocument(String)}. The resulting additional document will be included automatically when the
-     * Connector returns the {@link #document() top-level document}.
-     * 
-     * @param id the identifier of the additional document; may not be null
-     * @return the writer for the additional document; never null
-     * 
-     * @deprecated Do Not Use 
-     */
-    @Deprecated
-    DocumentWriter writeAdditionalDocument( String id );
-
 }

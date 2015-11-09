@@ -163,6 +163,7 @@ final class JcrValue implements javax.jcr.Value {
     }
 
     @Override
+    @SuppressWarnings("deprecation")
     public InputStream getStream() throws ValueFormatException {
         if (value == null) return null;
         try {

@@ -4,7 +4,7 @@
 
     <groupId>org.modeshape.bom</groupId>
     <artifactId>modeshape-bom-jbossas</artifactId>
-    <version>4.5-SNAPSHOT</version>
+    <version>5.0-SNAPSHOT</version>
 
     <name>ModeShape BOM for use within a JBoss App Server</name>
 
@@ -55,7 +55,7 @@
         <jboss.releases.repo.url>https://repository.jboss.org/nexus/service/local/staging/deploy/maven2/</jboss.releases.repo.url>
         <jboss.snapshots.repo.url>https://repository.jboss.org/nexus/content/repositories/snapshots/</jboss.snapshots.repo.url>
 
-        <jcr.version>2.0</jcr.version>
+        <version.javax.jcr>2.0</version.javax.jcr>
         <version.org.wildfly>9.0.0.Final</version.org.wildfly>
         <version.org.jboss.spec.jboss-javaee-7.0>1.0.3.Final</version.org.jboss.spec.jboss-javaee-7.0>
     </properties>
@@ -80,7 +80,7 @@
             <dependency>
                 <groupId>javax.jcr</groupId>
                 <artifactId>jcr</artifactId>
-                <version>${jcr.version}</version>
+                <version>${version.javax.jcr}</version>
                 <scope>provided</scope>
             </dependency>
             <!--

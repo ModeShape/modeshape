@@ -26,18 +26,19 @@ import java.net.URL;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpResponse;
-import org.apache.http.NameValuePair;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
+import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpEntityEnclosingRequestBase;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpRequestBase;
+import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.entity.BufferedHttpEntity;
 import org.apache.http.entity.InputStreamEntity;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.params.HttpParams;
+import org.apache.http.impl.client.BasicCredentialsProvider;
+import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.util.EntityUtils;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
@@ -54,7 +55,8 @@ import org.modeshape.common.util.StringUtil;
 public final class JSONRestClient {
 
     private static final UrlEncoder URL_ENCODER = new UrlEncoder().setSlashEncoded(false);
-    protected final DefaultHttpClient httpClient;
+    protected final HttpClient httpClient;
+    private final HttpClientContext httpContext;
     private final HttpHost host;
     private final String url;
     private final String baseUrl;
@@ -74,10 +76,13 @@ public final class JSONRestClient {
             } else {
                 this.baseUrl = this.host.toURI();
             }
-            this.httpClient = new DefaultHttpClient();
+            this.httpClient = HttpClientBuilder.create().build();
+            this.httpContext = HttpClientContext.create();
             if (!StringUtil.isBlank(username)) {
-                this.httpClient.getCredentialsProvider().setCredentials(new AuthScope(host),
-                                                                        new UsernamePasswordCredentials(username, password));
+                BasicCredentialsProvider credentialsProvider = new BasicCredentialsProvider();
+                credentialsProvider.setCredentials(new AuthScope(host()),
+                                                   new UsernamePasswordCredentials(username, password));
+                httpContext.setCredentialsProvider(credentialsProvider);
             }
         } catch (MalformedURLException e) {
             throw new IllegalArgumentException("Invalid URL string: " + url, e);
@@ -145,10 +150,6 @@ public final class JSONRestClient {
             if (contentType != null) {
                 result.setHeader("Content-Type", contentType);
             }
-            HttpParams params = result.getParams();
-            for (NameValuePair nameValuePair : uriBuilder.getQueryParams()) {
-                params.setParameter(nameValuePair.getName(), nameValuePair.getValue());
-            }
             if (inputStream != null) {
                 assert result instanceof HttpEntityEnclosingRequestBase;
                 InputStreamEntity inputStreamEntity = new InputStreamEntity(inputStream, inputStream.available());
@@ -200,7 +201,7 @@ public final class JSONRestClient {
 
         protected Response( HttpRequestBase request ) {
             try {
-                response = httpClient.execute(host(), request);
+                response = httpClient.execute(host(), request, httpContext);
                 HttpEntity entity = response.getEntity();
                 if (entity != null) {
                     ByteArrayOutputStream baous = new ByteArrayOutputStream();

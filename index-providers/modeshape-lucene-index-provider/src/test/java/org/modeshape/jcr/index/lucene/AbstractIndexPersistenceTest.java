@@ -26,7 +26,7 @@ import org.modeshape.common.util.FileUtil;
 import org.modeshape.jcr.ExecutionContext;
 import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.value.PropertyType;
-import org.modeshape.jcr.value.basic.JodaDateTime;
+import org.modeshape.jcr.value.basic.ModeShapeDateTime;
 
 /**
  * Base class for testing the CRUD operations on Lucene indexes.
@@ -93,7 +93,7 @@ public abstract class AbstractIndexPersistenceTest {
                 return new IndexedProperty(type, PropertiesTestUtil.BOOLEAN_PROP, value);
             }
             case DATE: {
-                return new IndexedProperty(type, PropertiesTestUtil.DATE_PROP, new JodaDateTime(System.currentTimeMillis()));
+                return new IndexedProperty(type, PropertiesTestUtil.DATE_PROP, new ModeShapeDateTime());
             }
             case DECIMAL: {
                 return new IndexedProperty(type, PropertiesTestUtil.DECIMAL_PROP, BigDecimal.valueOf(RANDOM.nextDouble()));

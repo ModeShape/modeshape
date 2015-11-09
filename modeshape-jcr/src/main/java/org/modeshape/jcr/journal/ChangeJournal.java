@@ -16,9 +16,9 @@
 
 package org.modeshape.jcr.journal;
 
+import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.Iterator;
-import org.joda.time.DateTime;
 import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.cache.change.ChangeSetListener;
 
@@ -64,14 +64,14 @@ public interface ChangeJournal extends ChangeSetListener {
     /**
      * Returns all records that have changesets which are newer than a given timestamp.
      * 
-     * @param changeSetTime the {@link org.joda.time.DateTime} of the changes representing the lower bound; may be null indicating
+     * @param changeSetTime the {@link LocalDateTime} of the changes representing the lower bound; may be null indicating
      *        that *all the records* should be returned.
      * @param inclusive flag indicating whether the timestamp should be used inclusively or exclusively
      * @param descendingOrder flag indicating if the records should be returned in ascending order (oldest to newest) or
      *        descending order (newest to oldest)
      * @return a {@link Records} instance; never {@code null}
      */
-    public Records recordsNewerThan( DateTime changeSetTime,
+    public Records recordsNewerThan( LocalDateTime changeSetTime,
                                      boolean inclusive,
                                      boolean descendingOrder);
 

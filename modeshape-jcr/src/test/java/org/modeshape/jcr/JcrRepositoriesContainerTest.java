@@ -122,6 +122,19 @@ public class JcrRepositoriesContainerTest extends JcrRepositoryFactoryTest {
         Assert.assertTrue(repositoryNames.contains("CND Sequencer Test Repository"));
     }
 
+    @Test
+    public void shouldShutdownRepository() throws Exception {
+        String url = "file:src/test/resources/config/simple-repo-config.json";
+        Map<String, String> params = new HashMap<>();
+        params.put(RepositoryFactory.URL, url);
+        String repoName = "Another Test Repository";
+        Repository repository = repositoryFor(repoName, params);
+
+        assertNotNull(repository);
+        assertTrue(repositoriesContainer.shutdownRepository(repoName).get());
+    }
+
+
     @Override
     protected Repository repositoryFor( Map<String, String> parameters ) throws RepositoryException {
         return repositoriesContainer.getRepository(null, parameters);
