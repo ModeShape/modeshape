@@ -52,7 +52,7 @@ import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 
 /**
- * Unit test for the ModeShape AS7 subsystem.
+ * Unit test for the ModeShape AS subsystem.
  */
 @SuppressWarnings( "nls" )
 public class ModeShapeConfigurationTest extends AbstractSubsystemBaseTest {
@@ -299,7 +299,7 @@ public class ModeShapeConfigurationTest extends AbstractSubsystemBaseTest {
 
     @Override
     protected String getSubsystemXsdPath() throws Exception {
-        return "schema/modeshape_2_1.xsd";
+        return "schema/modeshape_3_0.xsd";
     }
 
     @Override
@@ -308,7 +308,7 @@ public class ModeShapeConfigurationTest extends AbstractSubsystemBaseTest {
     }
 
     private void validate( String marshalled ) throws SAXException, IOException {
-        URL xsdURL = Thread.currentThread().getContextClassLoader().getResource("schema/modeshape_2_1.xsd");
+        URL xsdURL = Thread.currentThread().getContextClassLoader().getResource("schema/modeshape_3_0.xsd");
         // System.out.println(marshalled);
 
         SchemaFactory factory = SchemaFactory.newInstance("http://www.w3.org/2001/XMLSchema");

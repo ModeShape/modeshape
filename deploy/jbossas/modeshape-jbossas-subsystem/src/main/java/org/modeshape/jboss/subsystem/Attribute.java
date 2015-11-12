@@ -32,6 +32,7 @@ public enum Attribute {
     ANONYMOUS_ROLES("anonymous-roles"),
     ANONYMOUS_USERNAME("anonymous-username"),
     CACHE_CONFIG("cache-config"),
+    CACHE_SIZE("cache-size"),
     CONFIG_RELATIVE_TO("config-relative-to"),
     CACHE_NAME("cache-name"),
     CLASSNAME("classname"),

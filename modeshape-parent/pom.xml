@@ -158,6 +158,7 @@
         <version.com.atomikos>3.8.0</version.com.atomikos>
         <version.org.picketbox>4.0.21.Final</version.org.picketbox>
         
+        <version.com.googlecode.concurrentlinkedhashmap>1.4.2</version.com.googlecode.concurrentlinkedhashmap>
         <version.org.infinispan>7.2.4.Final</version.org.infinispan>
         <infinispan.module.slot>ispn-7.2</infinispan.module.slot>
         <!--Make sure the jgroups version is the same as the one used by ISPN -->
@@ -1195,6 +1196,11 @@
                 <scope>provided</scope>
             </dependency>
 
+            <dependency>
+                <groupId>com.googlecode.concurrentlinkedhashmap</groupId>
+                <artifactId>concurrentlinkedhashmap-lru</artifactId>
+                <version>${version.com.googlecode.concurrentlinkedhashmap}</version>
+            </dependency>
             <!--
                 Infinispan
             -->

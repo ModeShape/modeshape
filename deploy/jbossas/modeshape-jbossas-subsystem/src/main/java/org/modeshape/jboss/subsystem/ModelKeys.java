@@ -24,7 +24,7 @@ public class ModelKeys {
     static final String WEBAPP = "webapp";
 
     static final String ALLOW_WORKSPACE_CREATION = "allow-workspace-creation";
-    static final String WORKSPACES_CACHE_CONTAINER = "workspaces-cache-container";
+    static final String WORKSPACES_CACHE_SIZE = "cache-size";
     static final String ANONYMOUS_ROLE = "anonymous-role";
     static final String ANONYMOUS_ROLES = "anonymous-roles";
     static final String ANONYMOUS_USERNAME = "anonymous-username";

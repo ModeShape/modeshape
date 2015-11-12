@@ -31,7 +31,7 @@ import org.jboss.dmr.ModelNode;
 import org.jboss.staxmapper.XMLElementReader;
 import org.jboss.staxmapper.XMLExtendedStreamReader;
 
-public class ModeShapeSubsystemXMLReader_2_1 implements XMLStreamConstants, XMLElementReader<List<ModelNode>> {
+public class ModeShapeSubsystemXMLReader_3_0 implements XMLStreamConstants, XMLElementReader<List<ModelNode>> {
 
     @Override
     public void readElement( final XMLExtendedStreamReader reader,
@@ -56,7 +56,7 @@ public class ModeShapeSubsystemXMLReader_2_1 implements XMLStreamConstants, XMLE
             if (reader.isStartElement()) {
                 // elements
                 switch (Namespace.forUri(reader.getNamespaceURI())) {
-                    case MODESHAPE_2_1:
+                    case MODESHAPE_3_0:
                         Element element = Element.forName(reader.getLocalName());
                         switch (element) {
                             case REPOSITORY:
@@ -342,8 +342,8 @@ public class ModeShapeSubsystemXMLReader_2_1 implements XMLStreamConstants, XMLE
                     case DEFAULT_WORKSPACE:
                         ModelAttributes.DEFAULT_WORKSPACE.parseAndSetParameter(attrValue, repository, reader);
                         break;
-                    case CACHE_CONFIG: {
-                        ModelAttributes.WORKSPACES_CACHE_CONTAINER.parseAndSetParameter(attrValue, repository, reader);
+                    case CACHE_SIZE: {
+                        ModelAttributes.WORKSPACES_CACHE_SIZE.parseAndSetParameter(attrValue, repository, reader);
                         break;
                     }
                     default:

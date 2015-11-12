@@ -336,13 +336,9 @@ public class RepositoryConfiguration {
         public static final String DEFAULT = "default";
 
         /**
-         * The name for the field containing the name of the file defining the Infinispan configuration for the repository's
-         * workspace caches. If a file could not be found (on the thread context classloader, on the application's classpath, or
-         * on the system classpath), then the name is used to look in JNDI for an Infinispan CacheContainer instance. If no such
-         * container is found, then a value of "org/modeshape/jcr/deafult-workspace-cache-config.xml" is used, which is the
-         * default configuration provided by ModeShape.
+         * The name for the field containing the size of the workspace cache
          */
-        public static final String WORKSPACE_CACHE_CONFIGURATION = "cacheConfiguration";
+        public static final String WORKSPACE_CACHE_SIZE = "cacheSize";
 
         /**
          * The name for the field whose value is a document containing binary storage information.
@@ -482,6 +478,12 @@ public class RepositoryConfiguration {
     }
 
     public static class Default {
+
+        /**
+         * The default number of items the workspace cache can hold in memory
+         */
+        public static final int WORKSPACE_CACHE_SIZE = 10000;
+        
         /**
          * The default value of the {@link FieldName#MINIMUM_BINARY_SIZE_IN_BYTES} field is '{@value} ' (4 kilobytes).
          */
@@ -517,11 +519,6 @@ public class RepositoryConfiguration {
          */
         public static final Set<String> ANONYMOUS_ROLES = Collections.unmodifiableSet(new HashSet<String>(
                                                                                                           Arrays.asList(new String[] {ModeShapeRoles.ADMIN})));
-
-        /**
-         * The default value of the {@link FieldName#WORKSPACE_CACHE_CONFIGURATION} field is '{@value} '.
-         */
-        public static final String WORKSPACE_CACHE_CONFIGURATION = "org/modeshape/jcr/default-workspace-cache-config.xml";
 
         /**
          * The default value of the {@link FieldName#USE_ANONYMOUS_ON_FAILED_LOGINS} field is '{@value} '.
@@ -911,22 +908,17 @@ public class RepositoryConfiguration {
         }
         return null;
     }
-
-    public String getWorkspaceCacheConfiguration() {
+    
+    public int getWorkspaceCacheSize() {
         Document storage = doc.getDocument(FieldName.WORKSPACES);
         if (storage != null) {
-            return storage.getString(FieldName.WORKSPACE_CACHE_CONFIGURATION, Default.WORKSPACE_CACHE_CONFIGURATION);
+            return storage.getInteger(FieldName.WORKSPACE_CACHE_SIZE, Default.WORKSPACE_CACHE_SIZE);
         }
-        return Default.WORKSPACE_CACHE_CONFIGURATION;
+        return Default.WORKSPACE_CACHE_SIZE;
     }
 
     CacheContainer getContentCacheContainer() throws IOException, NamingException {
         return getCacheContainer(null);
-    }
-
-    CacheContainer getWorkspaceContentCacheContainer() throws IOException, NamingException {
-        String config = getWorkspaceCacheConfiguration();
-        return getCacheContainer(config);
     }
 
     protected CacheContainer getCacheContainer( String config ) throws IOException, NamingException {

@@ -127,6 +127,7 @@
                 <include>org.modeshape:modeshape-jbossas-subsystem:jar</include>
                 <include>org.modeshape:modeshape-schematic:jar</include>
                 <include>org.mapdb:mapdb:jar</include>
+                <include>com.googlecode.concurrentlinkedhashmap:concurrentlinkedhashmap-lru:jar</include>
             </includes>
             <unpack>false</unpack>
         </dependencySet>

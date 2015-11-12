@@ -1,8 +1,0 @@
-{
-    "name" : "test_repo",
-    "workspaces" : {
-        "default" : "default",
-        "allowCreation" : true,
-        "cacheConfiguration" : "config/infinispan-tx-ws-cache.xml"
-    }
-}

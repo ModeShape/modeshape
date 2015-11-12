@@ -13,7 +13,8 @@
             "ws1" : "file1.xml",
             "ws2" : "file2.xml",
             "*" : "default.xml"
-        }
+        },
+        "cacheSize" : 100
     },
     "storage" : {
         "cacheName" : "Thorough",

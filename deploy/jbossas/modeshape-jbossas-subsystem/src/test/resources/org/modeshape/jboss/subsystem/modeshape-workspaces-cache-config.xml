@@ -1,4 +1,4 @@
-<subsystem xmlns="urn:jboss:domain:modeshape:2.1">
+<subsystem xmlns="urn:jboss:domain:modeshape:3.0">
   <repository name="sample"
               cache-name="sample" 
               cache-config="modeshape.xml"
@@ -8,6 +8,6 @@
               anonymous-roles="readonly readwrite admin connect" 
               anonymous-username="&lt;anonymous&gt;" 
               use-anonymous-upon-failed-authentication="false">
-      <workspaces default-workspace="default" allow-workspace-creation="true" cache-config="test.xml"/>
+      <workspaces default-workspace="default" allow-workspace-creation="true" cache-size="10"/>
   </repository>
 </subsystem>

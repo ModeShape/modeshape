@@ -25,12 +25,14 @@ enum Namespace {
     // must be first
     UNKNOWN(0, 0, null),
 
-    MODESHAPE_2_1(2, 1, new ModeShapeSubsystemXMLReader_2_1());
+    MODESHAPE_3_0(ModeShapeExtension.MANAGEMENT_API_MAJOR_VERSION, 
+                  ModeShapeExtension.MANAGEMENT_API_MINOR_VERSION, 
+                  new ModeShapeSubsystemXMLReader_3_0());
 
     /**
      * The current namespace version.
      */
-    public static final Namespace CURRENT = MODESHAPE_2_1;
+    public static final Namespace CURRENT = MODESHAPE_3_0;
 
     private static final String BASE_URN = "urn:jboss:domain:modeshape:";
 
