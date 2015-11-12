@@ -6,7 +6,6 @@
         "default" : "load",
         "predefined" : ["load"],
         "allowCreation" : true,
-        "cacheConfiguration" : "load/concurrent-load-workspace-cache.xml"
     },
     "storage" : {
         "cacheName" : "DATAREPOSITORY",

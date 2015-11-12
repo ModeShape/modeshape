@@ -1,4 +1,4 @@
-<subsystem xmlns="urn:jboss:domain:modeshape:2.1">
+<subsystem xmlns="urn:jboss:domain:modeshape:3.0">
     <repository  name="sample" cache-config="/modeshape/cache-config.xml" config-relative-to="jboss.server.some.dir" event-bus-size="2048">
         <node-types>
             <node-type>custom.cnd</node-type>

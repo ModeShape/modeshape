@@ -1,4 +1,4 @@
-<subsystem xmlns="urn:jboss:domain:modeshape:2.1">
+<subsystem xmlns="urn:jboss:domain:modeshape:3.0">
   <webapp name="app1"/>
   <webapp name="app2" exploded="true" />
   <webapp name="app3" exploded="false"/>

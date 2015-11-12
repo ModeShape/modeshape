@@ -138,9 +138,9 @@ public class ModeShapeSubsystemXMLWriter implements XMLStreamConstants, XMLEleme
             started = startIfNeeded(writer, Element.WORKSPACES, started);
             ModelAttributes.ALLOW_WORKSPACE_CREATION.marshallAsAttribute(repository, writer);
         }
-        if (ModelAttributes.WORKSPACES_CACHE_CONTAINER.isMarshallable(repository, false)) {
+        if (ModelAttributes.WORKSPACES_CACHE_SIZE.isMarshallable(repository, false)) {
             started = startIfNeeded(writer, Element.WORKSPACES, started);
-            ModelAttributes.WORKSPACES_CACHE_CONTAINER.marshallAsAttribute(repository, writer);
+            ModelAttributes.WORKSPACES_CACHE_SIZE.marshallAsAttribute(repository, writer);
         }
         if (has(repository, ModelKeys.PREDEFINED_WORKSPACE_NAMES)) {
             started = startIfNeeded(writer, Element.WORKSPACES, started);

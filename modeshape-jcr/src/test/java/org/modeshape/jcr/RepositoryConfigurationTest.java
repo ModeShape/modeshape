@@ -18,7 +18,6 @@ package org.modeshape.jcr;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsNull.nullValue;
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 import java.util.EnumSet;
@@ -342,23 +341,6 @@ public class RepositoryConfigurationTest {
     @Test
     public void shouldAllowValidButSimpleRepositoryConfigurationWithSingleQuotes() {
         assertValid("{ 'name' : 'sample', 'jndiName' : 'modeshape_repo1'}");
-    }
-
-    @Test
-    public void shouldAllowWorkspaceCacheContainerToBeConfigured() throws Exception {
-        String cacheContainer = "my-container";
-
-        RepositoryConfiguration config = RepositoryConfiguration.read("{ \"name\" : \"foo\", \"workspaces\" : {\"cacheConfiguration\":\""
-                                                                      + cacheContainer + "\"} }");
-        print(config.validate());
-        assertThat(config.validate().hasProblems(), is(false));
-        assertEquals(cacheContainer, config.getWorkspaceCacheConfiguration());
-
-        config = RepositoryConfiguration.read("{ 'name' : 'foo', 'workspaces' : { 'cacheConfiguration' : '" + cacheContainer
-                                              + "' } }");
-        print(config.validate());
-        assertThat(config.validate().hasProblems(), is(false));
-        assertEquals(cacheContainer, config.getWorkspaceCacheConfiguration());
     }
 
     @Test

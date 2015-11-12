@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
-           targetNamespace="urn:jboss:domain:modeshape:2.1"
-           xmlns="urn:jboss:domain:modeshape:2.1"
+           targetNamespace="urn:jboss:domain:modeshape:3.0"
+           xmlns="urn:jboss:domain:modeshape:3.0"
            elementFormDefault="qualified"
            attributeFormDefault="unqualified"
-           version="2.1">
+           version="3.0">
 
     <!-- The subsystem root element -->
     <xs:element name="subsystem" type="subsystem">
@@ -383,11 +383,10 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
-        <xs:attribute name="cache-config" type="xs:string" use="optional">
+        <xs:attribute name="cache-size" type="xs:integer" use="optional">
             <xs:annotation>
                 <xs:documentation>
-                    The relative path (to the repository's config-relative-to folder) where an optional Infinispan configuration
-                    file is located for the workspace cache. If not defined a default configuration file is used.
+                   The maximum size of the workspace cache configuration. Must a positive integer. Defaults to 10k
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>

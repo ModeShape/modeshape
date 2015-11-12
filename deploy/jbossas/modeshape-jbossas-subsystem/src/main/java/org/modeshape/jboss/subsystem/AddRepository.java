@@ -164,7 +164,7 @@ public class AddRepository extends AbstractAddStepHandler {
         parseCustomNodeTypes(model, configDoc);
 
         // Workspace information is on the repository model node (unlike the XML) ...
-        EditableDocument workspacesDoc = parseWorkspaces(context, model, configDoc);
+        parseWorkspaces(context, model, configDoc);
         
         // security
         parseSecurity(context, model, configDoc);
@@ -232,12 +232,6 @@ public class AddRepository extends AbstractAddStepHandler {
         // Add the dependency to the Security Manager
         repositoryServiceBuilder.addDependency(SecurityManagementService.SERVICE_NAME, ISecurityManagement.class,
                                                repositoryService.getSecurityManagementServiceInjector());
-
-        // Add dependency, if necessary, to the workspaces cache container
-        String workspacesInfinispanConfig = attribute(context, model, ModelAttributes.WORKSPACES_CACHE_CONTAINER, null);
-        if (workspacesInfinispanConfig != null && !workspacesInfinispanConfig.toLowerCase().equalsIgnoreCase(infinispanConfig)) {
-            workspacesDoc.set(FieldName.WORKSPACE_CACHE_CONFIGURATION, workspacesInfinispanConfig);
-        }
 
         repositoryServiceBuilder.addDependency(Services.JBOSS_SERVICE_MODULE_LOADER,
                                                ModuleLoader.class,
@@ -402,6 +396,9 @@ public class AddRepository extends AbstractAddStepHandler {
         String defaultWorkspaceName = attribute(context, model, ModelAttributes.DEFAULT_WORKSPACE).asString();
         workspacesDoc.set(FieldName.ALLOW_CREATION, allowWorkspaceCreation);
         workspacesDoc.set(FieldName.DEFAULT, defaultWorkspaceName);
+        if (model.hasDefined(ModelKeys.WORKSPACES_CACHE_SIZE)) {
+            workspacesDoc.set(FieldName.WORKSPACE_CACHE_SIZE, model.get(ModelKeys.WORKSPACES_CACHE_SIZE).asInt());
+        }
         if (model.hasDefined(ModelKeys.PREDEFINED_WORKSPACE_NAMES)) {
             for (ModelNode name : model.get(ModelKeys.PREDEFINED_WORKSPACE_NAMES).asList()) {
                 workspacesDoc.getOrCreateArray(FieldName.PREDEFINED).add(name.asString());

@@ -1,4 +1,4 @@
-<subsystem xmlns="urn:jboss:domain:modeshape:2.1">
+<subsystem xmlns="urn:jboss:domain:modeshape:3.0">
     <repository name="sample"
                 document-optimization-child-count-target="10"
                 document-optimization-child-count-tolerance="10"

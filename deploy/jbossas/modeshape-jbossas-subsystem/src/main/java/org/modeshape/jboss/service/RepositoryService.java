@@ -107,25 +107,18 @@ public class RepositoryService implements Service<JcrRepository>, Environment {
         }
         InputStream is = null;
         String resourceFile = name;
-        if (RepositoryConfiguration.Default.WORKSPACE_CACHE_CONFIGURATION.equalsIgnoreCase(name)) {
-            // this is the default ws cache config which is pre-packaged by us so we'll just use the CL
-            is = RepositoryService.class.getClassLoader().getResourceAsStream(RepositoryConfiguration.Default.WORKSPACE_CACHE_CONFIGURATION);
-            if (is == null) {
-                throw new IllegalStateException("Cannot locate the default ModeShape workspace cache config in the classpath.");
-            }
-        } else {
-            String cacheConfig = name;
-            if (name.startsWith("/")) {
-                cacheConfig = name.substring(1);
-            }
-            String cacheConfigPath = this.cacheConfigRelativeTo + cacheConfig;
-            File file = new File(cacheConfigPath);
-            try {
-                is = new FileInputStream(file);
-                resourceFile = cacheConfigPath;
-            } catch (FileNotFoundException e) {
-                throw new RuntimeException("Cannot locate and read the Infinispan configuration file: " + cacheConfigPath);
-            }
+
+        String cacheConfig = name;
+        if (name.startsWith("/")) {
+            cacheConfig = name.substring(1);
+        }
+        String cacheConfigPath = this.cacheConfigRelativeTo + cacheConfig;
+        File file = new File(cacheConfigPath);
+        try {
+            is = new FileInputStream(file);
+            resourceFile = cacheConfigPath;
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException("Cannot locate and read the Infinispan configuration file: " + cacheConfigPath);
         }
         try {
             DefaultCacheManager defaultCacheManager = new DefaultCacheManager(is);

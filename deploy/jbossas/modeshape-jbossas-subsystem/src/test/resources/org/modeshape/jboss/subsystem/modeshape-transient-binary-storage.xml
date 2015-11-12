@@ -13,7 +13,7 @@
   ~ See the License for the specific language governing permissions and
   ~ limitations under the License.
   -->
-<subsystem xmlns="urn:jboss:domain:modeshape:2.1">
+<subsystem xmlns="urn:jboss:domain:modeshape:3.0">
   <repository name="sample"
               cache-name="sample">
     <transient-binary-storage mime-type-detection="content" min-string-size="10" min-value-size="4096"/>  

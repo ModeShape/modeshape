@@ -22,6 +22,7 @@ import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleListAttributeDefinition;
 import org.jboss.as.controller.access.management.SensitiveTargetAccessConstraintDefinition;
 import org.jboss.as.controller.client.helpers.MeasurementUnit;
+import org.jboss.as.controller.operations.validation.IntRangeValidator;
 import org.jboss.as.controller.operations.validation.ModelTypeValidator;
 import org.jboss.as.controller.operations.validation.ParameterValidator;
 import org.jboss.as.controller.registry.AttributeAccess;
@@ -84,16 +85,13 @@ public class ModelAttributes {
                                                                                                                                                                            FieldName.ALLOW_CREATION)
                                                                                                                                     .build();
 
-    public static final SimpleAttributeDefinition WORKSPACES_CACHE_CONTAINER = new MappedAttributeDefinitionBuilder(
-                                                                                                                    ModelKeys.WORKSPACES_CACHE_CONTAINER,
-                                                                                                                    ModelType.STRING).setXmlName(
-            Attribute.CACHE_CONFIG.getLocalName())
-                                                                                                                                     .setAllowExpression(
-                                                                                                                                             true)
-                                                                                                                                     .setAllowNull(
-                                                                                                                                             true)
-                                                                                                                                     .setFlags(
-                                                                                                                                             AttributeAccess.Flag.RESTART_NONE)
+    public static final SimpleAttributeDefinition WORKSPACES_CACHE_SIZE = new MappedAttributeDefinitionBuilder(
+                                                                                                                    ModelKeys.WORKSPACES_CACHE_SIZE,
+                                                                                                                    ModelType.INT).setXmlName(Attribute.CACHE_SIZE.getLocalName())
+                                                                                                                                     .setAllowExpression(false)
+                                                                                                                                     .setAllowNull(true)
+                                                                                                                                     .setFlags(AttributeAccess.Flag.RESTART_NONE)
+                                                                                                                                     .setValidator(new IntRangeValidator(1))           
                                                                                                                                      .build();
 
     public static final ListAttributeDefinition ANONYMOUS_ROLES = MappedListAttributeDefinition.Builder.of(ModelKeys.ANONYMOUS_ROLES,
@@ -885,7 +883,7 @@ public class ModelAttributes {
 
     public static final AttributeDefinition[] REPOSITORY_ATTRIBUTES = {CACHE_NAME, CACHE_CONFIG, CONFIG_RELATIVE_TO, JNDI_NAME, ENABLE_MONITORING,
         SECURITY_DOMAIN, ANONYMOUS_ROLES, ANONYMOUS_USERNAME, USE_ANONYMOUS_IF_AUTH_FAILED, NODE_TYPES, DEFAULT_WORKSPACE,
-        PREDEFINED_WORKSPACE_NAMES, ALLOW_WORKSPACE_CREATION, WORKSPACES_CACHE_CONTAINER, DEFAULT_INITIAL_CONTENT,
+        PREDEFINED_WORKSPACE_NAMES, ALLOW_WORKSPACE_CREATION, WORKSPACES_CACHE_SIZE, DEFAULT_INITIAL_CONTENT,
         WORKSPACES_INITIAL_CONTENT, GARBAGE_COLLECTION_THREAD_POOL,
         GARBAGE_COLLECTION_INITIAL_TIME, GARBAGE_COLLECTION_INTERVAL, DOCUMENT_OPTIMIZATION_THREAD_POOL,
         DOCUMENT_OPTIMIZATION_INITIAL_TIME, DOCUMENT_OPTIMIZATION_INTERVAL, DOCUMENT_OPTIMIZATION_CHILD_COUNT_TARGET,
