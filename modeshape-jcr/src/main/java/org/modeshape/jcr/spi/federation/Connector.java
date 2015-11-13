@@ -60,6 +60,8 @@ import org.modeshape.jcr.value.binary.UrlBinaryValue;
  */
 public abstract class Connector {
 
+    protected static final String DEFAULT_ROOT_ID = "/";
+    
     /**
      * The logger instance, set via reflection
      *
@@ -95,14 +97,13 @@ public abstract class Connector {
     private MimeTypeDetector mimeTypeDetector;
 
     /**
-     * The default maximum number of seconds that a document returned by this connector should be stored in the workspace cache.
-     * This can be overwritten, on a per-document-basis.
+     * A flag which indicates whether documents returned by this connector should be cached by the repository or not.
      * <p>
-     * The field is assigned via reflection based upon the configuration of the external source represented by this connector
-     * before ModeShape calls {@link #initialize(NamespaceRegistry, NodeTypeManager)}.
+     * Documents are cached by default, just like regular nodes, in the {@code WorkspaceCache}. However, if this causes stale
+     * data for a connector, this can implement its own caching logic and disable repository caching altogether.
      * </p>
      */
-    private Integer cacheTtlSeconds;
+    private boolean cacheable = true;
 
     /**
      * A flag which indicates whether content exposed by this connector should be indexed or not by the repository. This acts as a
@@ -241,16 +242,14 @@ public abstract class Connector {
     public MimeTypeDetector getMimeTypeDetector() {
         return mimeTypeDetector;
     }
-
+    
     /**
-     * Returns the default value, for this connector, of the maximum number of seconds an external document should be stored in
-     * the workspace cache.
-     *
-     * @return an {@link Integer} value. If {@code null}, it means that no special value is configured and the default workspace
-     *         cache configuration will be used. If negative, it means an entry will be cached forever.
+     * Returns whether documents exposed by this connector should be cached by the repository or not.
+     * 
+     * @return {@code true} if documents should be cached, {@code false} otherwise.
      */
-    public Integer getCacheTtlSeconds() {
-        return cacheTtlSeconds;
+    public boolean isCacheable() {
+        return cacheable;
     }
 
     /**
@@ -323,6 +322,17 @@ public abstract class Connector {
      */
     protected Environment getEnvironment() {
         return environment;
+    }
+
+    /**
+     * Returns the connector-specific ID for the root document. Connectors are free to ignore this method unless they 
+     * require their content to be browsable in a workspace (see https://issues.jboss.org/browse/MODE-1712)
+     * 
+     * @return a {@code String} representing the ID of the root document.
+     * @see #getDocumentById(String) 
+     */
+    public String getRootDocumentId() {
+        return DEFAULT_ROOT_ID;        
     }
 
     /**

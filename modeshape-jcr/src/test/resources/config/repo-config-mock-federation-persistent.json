@@ -13,7 +13,7 @@
         "mock-source" : {
             "classname" : "org.modeshape.connector.mock.MockConnector",
             "persistentDataAcrossRestarts" : true,
-            "cacheTtlSeconds" : 1
+            "cacheable" : false
         }
     },
 }

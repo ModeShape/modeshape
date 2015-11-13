@@ -119,7 +119,7 @@ public class ModelKeys {
     static final String PROJECTIONS = "projections";
     static final String PROJECTION = "projection";
     static final String CONNECTOR_CLASSNAME = "classname";
-    static final String CACHE_TTL_SECONDS = "cacheTtlSeconds";
+    static final String CACHEABLE = "cacheable";
     static final String QUERYABLE = "queryable";
     static final String READONLY = "readonly";
     static final String EXPOSE_AS_WORKSPACE = "exposeAsWorkspace";

@@ -114,8 +114,8 @@ public class AddSource extends AbstractAddStepHandler {
                 for (Property property : node.asPropertyList()) {
                     props.put(property.getName(), propertyValue(property));
                 }
-            } else if (key.equalsIgnoreCase(ModelKeys.CACHE_TTL_SECONDS)) {
-                props.put(key, node.asInt());
+            } else if (key.equalsIgnoreCase(ModelKeys.CACHEABLE)) {
+                props.put(key, node.asBoolean());
             } else if (key.equalsIgnoreCase(ModelKeys.QUERYABLE) || key.equalsIgnoreCase(ModelKeys.READONLY)) {
                 props.put(key, node.asBoolean());
             } else {

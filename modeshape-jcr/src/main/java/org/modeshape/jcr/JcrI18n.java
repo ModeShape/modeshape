@@ -121,6 +121,7 @@ public final class JcrI18n {
     public static I18n couldNotStoreProperty;
     public static I18n couldNotGetMimeType;
     public static I18n connectorIsReadOnly;
+    public static I18n connectorNotFound;
 
     public static I18n indexProviderAlreadyExists;
     public static I18n indexProviderDoesNotExist;

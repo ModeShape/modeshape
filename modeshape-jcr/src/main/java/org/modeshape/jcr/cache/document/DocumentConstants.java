@@ -27,7 +27,6 @@ public interface DocumentConstants {
     public static final String LENGTH = "len";
     public static final String LENGTH_FIELD = "$len";
     public static final String PARENT = "parent";
-    public static final String LARGE_VALUE = "value";
     public static final String PROPERTIES = "properties";
     public static final String CHILDREN = "children";
     public static final String CHILDREN_INFO = "childrenInfo";
@@ -43,17 +42,11 @@ public interface DocumentConstants {
     public static final String STRONG = "strong";
     public static final String REFERENCE_COUNT = "refCount";
     public static final String QUERYABLE_FIELD = "$queryable";
+    public static final String CACHEABLE_FIELD = "$cacheable";
     public static final String REFERENCE_FIELD = "$ref";
     public static final String WEAK_REFERENCE_FIELD = "$wref";
     public static final String SIMPLE_REFERENCE_FIELD = "$sref";
     public static final String BUCKET_ID_LENGTH = "$bucketIdLen";
     public static final String SIZE = "$size";
     public static final String BUCKETS = "$buckets";
-
-    /**
-     * A constant that can be used by a connector implementation as a supplementary document field, that indicates the maximum
-     * number of seconds that particular document should be stored in the workspace cache.
-     */
-    public static final String CACHE_TTL_SECONDS = "cacheTtlSeconds";
-
 }

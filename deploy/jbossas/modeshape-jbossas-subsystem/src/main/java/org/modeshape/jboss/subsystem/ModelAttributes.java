@@ -602,9 +602,9 @@ public class ModelAttributes {
                                                                                                                               .setFlags(AttributeAccess.Flag.RESTART_NONE)
                                                                                                                               .build();
 
-    public static final SimpleAttributeDefinition CACHE_TTL_SECONDS = new MappedAttributeDefinitionBuilder(
-                                                                                                           ModelKeys.CACHE_TTL_SECONDS,
-                                                                                                           ModelType.INT).setXmlName(Attribute.CACHE_TTL_SECONDS.getLocalName())
+    public static final SimpleAttributeDefinition CACHEABLE = new MappedAttributeDefinitionBuilder(
+                                                                                                           ModelKeys.CACHEABLE,
+                                                                                                           ModelType.BOOLEAN).setXmlName(Attribute.CACHEABLE.getLocalName())
                                                                                                                          .setAllowExpression(false)
                                                                                                                          .setAllowNull(true)
                                                                                                                          .setFlags(AttributeAccess.Flag.RESTART_NONE)
@@ -915,8 +915,8 @@ public class ModelAttributes {
     public static final AttributeDefinition[] INDEX_PROVIDER_ATTRIBUTES = {CLASSNAME, MODULE, RELATIVE_TO, PATH, PROPERTIES};
 
     public static final AttributeDefinition[] SEQUENCER_ATTRIBUTES = {PATH_EXPRESSIONS, SEQUENCER_CLASSNAME, MODULE, PROPERTIES};
-    public static final AttributeDefinition[] SOURCE_ATTRIBUTES = {PROJECTIONS, CONNECTOR_CLASSNAME, READONLY, CACHE_TTL_SECONDS,
-        QUERYABLE, MODULE, PROPERTIES, EXPOSE_AS_WORKSPACE};
+    public static final AttributeDefinition[] SOURCE_ATTRIBUTES = { PROJECTIONS, CONNECTOR_CLASSNAME, READONLY, CACHEABLE,
+                                                                    QUERYABLE, MODULE, PROPERTIES, EXPOSE_AS_WORKSPACE};
     public static final AttributeDefinition[] TEXT_EXTRACTOR_ATTRIBUTES = {TEXT_EXTRACTOR_CLASSNAME, MODULE, PROPERTIES};
     public static final AttributeDefinition[] AUTHENTICATOR_ATTRIBUTES = {AUTHENTICATOR_CLASSNAME, MODULE, PROPERTIES};
 }

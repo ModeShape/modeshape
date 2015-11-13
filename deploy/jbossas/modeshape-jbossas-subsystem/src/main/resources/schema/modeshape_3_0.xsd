@@ -636,11 +636,12 @@
             </xs:annotation>
         </xs:attribute>
         <xs:attributeGroup ref="implementation-class-attributes"/>
-        <xs:attribute name="cacheTtlSeconds" type="xs:integer" use="optional">
+        <xs:attribute name="cacheable" type="xs:boolean" use="optional" default="true">
             <xs:annotation>
-                <xs:documentation>The number of seconds which an external node should be held in the workspace cache. If not
-                    specified, the effective TTL is deferred to the workspace cache configuration. If negative, an entry will be
-                    cached forever.
+                <xs:documentation>
+                    Whether nodes exposed by this external source should be cached by the repository or not. By default all
+                    nodes are cached but certain external sources may want to prevent this and implement their own caching in 
+                    order to avoid exposing stale data.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>

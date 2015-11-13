@@ -18,13 +18,13 @@
             <sequencer classname="java" name="modeshape-sequencer-java" path-expression="//a/b"/>
         </sequencers>
         <external-sources>
-            <source cacheTtlSeconds="1"
+            <source cacheable="false"
                     classname="org.modeshape.connector.filesystem.FileSystemConnector"
                     directoryPath="." name="filesystem" readonly="true" exposeAsWorkspace="ws-fs">
                 <projection>default:/projection1 =&gt; /</projection>
                 <projection>other:/projection1 =&gt; /</projection>
             </source>
-            <source cacheTtlSeconds="1"
+            <source cacheable="false"
                     classname="org.modeshape.connector.git.GitConnector"
                     directoryPath="." module="org.modeshape.connector.git"
                     name="git" queryableBranches="master,2.x"

@@ -21,7 +21,6 @@ import java.util.concurrent.ConcurrentMap;
 import org.infinispan.schematic.SchematicDb;
 import org.infinispan.schematic.SchematicEntry;
 import org.infinispan.schematic.document.Document;
-import org.infinispan.util.concurrent.TimeoutException;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.jcr.ExecutionContext;
 import org.modeshape.jcr.JcrI18n;
@@ -34,7 +33,6 @@ import org.modeshape.jcr.cache.RepositoryEnvironment;
 import org.modeshape.jcr.cache.WorkspaceNotFoundException;
 import org.modeshape.jcr.cache.change.ChangeSet;
 import org.modeshape.jcr.cache.change.ChangeSetListener;
-import org.modeshape.jcr.federation.ExternalDocumentStore;
 import org.modeshape.jcr.value.NameFactory;
 import org.modeshape.jcr.value.Path;
 import org.modeshape.jcr.value.PathFactory;
@@ -246,18 +244,11 @@ public class WorkspaceCache implements DocumentCache {
                 }
                 // Create a new node and put into this cache ...
                 CachedNode newNode = new LazyCachedNode(key, doc);
-                try {
-                    Integer cacheTtlSeconds = translator().getCacheTtlSeconds(doc);
-                    if (cacheTtlSeconds != null) {
-                        //TODO author=Horia Chiorean date=10/11/2015 description=Cache TTL seconds are not supported by the current cache
-                    } else {
-                        node = nodesByKey.putIfAbsent(key, newNode);
-                    }
-                } catch (TimeoutException e) {
-                    node = null;
+                if (translator.isCacheable(doc)) {
+                    node = nodesByKey.putIfAbsent(key, newNode);
                 }
                 if (node == null) {
-                    // Either the put timed out or there was no previous entry, so just use our new CachedNode ...
+                    // there was no previous entry, so just use our new CachedNode ...
                     node = newNode;
                 }
             }
@@ -385,16 +376,6 @@ public class WorkspaceCache implements DocumentCache {
         CachedNode root = getNode(getRootKey());
         // expect there to be 1 child under root - the system key
         return root.getChildReferences(this).size() == 1;
-    }
-
-    /**
-     * Tests document store associated with this cache.
-     *
-     * @return true if underlying document store is external source and false
-     * otherwise.
-     */
-    public boolean isExternal() {
-        return this.documentStore instanceof ExternalDocumentStore;
     }
 
     @Override

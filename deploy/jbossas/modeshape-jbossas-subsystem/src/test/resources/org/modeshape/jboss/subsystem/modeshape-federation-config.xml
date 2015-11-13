@@ -14,7 +14,7 @@
       <workspace name="predefinedWorkspace3" />
     </workspaces>
     <external-sources>
-        <source name="mock" classname="org.modeshape.connector.mock.MockConnector" queryable="false" readonly="true" cacheTtlSeconds="-1">
+        <source name="mock" classname="org.modeshape.connector.mock.MockConnector" queryable="false" readonly="true" cacheable="false">
             <projection>default:/projection1 => /doc1</projection>
             <projection>default:/testRoot/projection2 => /doc2</projection>
         </source>

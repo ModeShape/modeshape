@@ -487,7 +487,7 @@ public class ModeShapeSubsystemXMLWriter implements XMLStreamConstants, XMLEleme
                 ModelNode prop = externalSource.getValue();
                 ModelAttributes.CONNECTOR_CLASSNAME.marshallAsAttribute(prop, writer);
                 ModelAttributes.MODULE.marshallAsAttribute(prop, writer);
-                ModelAttributes.CACHE_TTL_SECONDS.marshallAsAttribute(prop, writer);
+                ModelAttributes.CACHEABLE.marshallAsAttribute(prop, writer);
                 ModelAttributes.QUERYABLE.marshallAsAttribute(prop, writer);
                 ModelAttributes.READONLY.marshallAsAttribute(prop, writer);
                 ModelAttributes.EXPOSE_AS_WORKSPACE.marshallAsAttribute(prop, writer);

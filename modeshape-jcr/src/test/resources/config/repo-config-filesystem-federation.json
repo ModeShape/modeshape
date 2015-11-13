@@ -78,7 +78,7 @@
             "directoryPath" : "target/federation/files-json-filter",
             "projections" : [ "default:/json_filter => /" ],
             "enableEvents" : true,
-            "cacheTtlSeconds" : 0,
+            "cacheable" : false,
             "inclusionPattern" : "dir3|.+[.]json$"
         }
     },

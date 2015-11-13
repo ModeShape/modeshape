@@ -12,16 +12,16 @@
     "externalSources" : {
         "mock-source" : {
             "classname" : "org.modeshape.connector.mock.MockConnector",
-            "cacheTtlSeconds" : 1
+            "cacheable" : false
         },
         "mock-source-non-queryable" : {
             "classname" : "org.modeshape.connector.mock.MockConnector",
-            "cacheTtlSeconds" : 1,
+            "cacheable" : false,
             "queryable" : false
         },
         "mock-source-readonly" : {
             "classname" : "org.modeshape.connector.mock.MockConnector",
-            "cacheTtlSeconds" : 1,
+            "cacheable" : false,
             "readonly" : true
         }
     }
