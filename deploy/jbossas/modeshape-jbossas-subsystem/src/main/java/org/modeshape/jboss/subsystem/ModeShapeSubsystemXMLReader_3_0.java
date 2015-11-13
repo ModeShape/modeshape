@@ -1149,8 +1149,8 @@ public class ModeShapeSubsystemXMLReader_3_0 implements XMLStreamConstants, XMLE
                     case MODULE:
                         ModelAttributes.MODULE.parseAndSetParameter(attrValue, externalSource, reader);
                         break;
-                    case CACHE_TTL_SECONDS: {
-                        ModelAttributes.CACHE_TTL_SECONDS.parseAndSetParameter(attrValue, externalSource, reader);
+                    case CACHEABLE: {
+                        ModelAttributes.CACHEABLE.parseAndSetParameter(attrValue, externalSource, reader);
                         break;
                     }
                     case QUERYABLE: {

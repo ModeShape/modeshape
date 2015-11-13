@@ -14,7 +14,7 @@
     "externalSources" : {
         "cmis" : {
             "classname" : "org.modeshape.connector.cmis.CmisConnector",
-            "cacheTtlSeconds" : 5,
+            "cacheable" : false,
             "aclService" : "http://localhost:8090/services/ACLService?wsdl",
             "discoveryService" : "http://localhost:8090/services/DiscoveryService?wsdl",
             "multifilingService" : "http://localhost:8090/services/MultifilingService?wsdl",

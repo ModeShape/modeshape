@@ -1090,8 +1090,8 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                     Channel cacheChannel = checkClustering(database);
                     this.clusteringService = cacheChannel != null ? ClusteringService.startForked(cacheChannel) : null;
 
-                    this.documentStore = connectors.hasConnectors() ? new FederatedDocumentStore(connectors, database) : new LocalDocumentStore(
-                                                                                                                                                database);
+                    LocalDocumentStore localStore = new LocalDocumentStore(database);
+                    this.documentStore = connectors.hasConnectors() ? new FederatedDocumentStore(connectors, localStore) : localStore;
                     this.txnMgr = this.documentStore.transactionManager();
                     this.transactions = createTransactions(cacheName, config.getTransactionMode(), this.txnMgr);
 

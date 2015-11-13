@@ -26,7 +26,6 @@ import java.util.Map;
 import java.util.Set;
 import javax.transaction.TransactionManager;
 import javax.transaction.xa.XAResource;
-import org.infinispan.schematic.SchematicDb;
 import org.infinispan.schematic.SchematicEntry;
 import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.document.EditableDocument;
@@ -68,19 +67,19 @@ public class FederatedDocumentStore implements DocumentStore {
 
     private final LocalDocumentStore localDocumentStore;
     private final Connectors connectors;
+
     private DocumentTranslator translator;
-    private String localSourceKey;
 
     /**
-     * Creates a new instance with the given connectors and local db.
-     * 
+     * Creates a new instance with the given connectors and local store.
+     *
      * @param connectors a {@code non-null} {@link Connectors} instance
-     * @param localDb a {@code non-null} {@link SchematicDb} instance
+     * @param localDocumentStore a {@code non-null} {@link LocalDocumentStore} instance
      */
-    public FederatedDocumentStore( Connectors connectors,
-                                   SchematicDb localDb ) {
+    public FederatedDocumentStore(Connectors connectors,
+                                  LocalDocumentStore localDocumentStore) {
         this.connectors = connectors;
-        this.localDocumentStore = new LocalDocumentStore(localDb);
+        this.localDocumentStore = localDocumentStore;
     }
 
     protected final DocumentTranslator translator() {
@@ -264,7 +263,7 @@ public class FederatedDocumentStore implements DocumentStore {
             if (document != null) {
                 // clone the document, so we don't alter the original
                 EditableDocument editableDocument = replaceConnectorIdsWithNodeKeys(document, connector.getSourceName());
-                editableDocument = updateCachingTtl(connector, editableDocument);
+                editableDocument = updateCaching(connector, editableDocument);
                 editableDocument = updateQueryable(connector, editableDocument);
                 return new FederatedSchematicEntry(editableDocument);
             }
@@ -272,14 +271,12 @@ public class FederatedDocumentStore implements DocumentStore {
         return null;
     }
 
-    private EditableDocument updateCachingTtl( Connector connector,
-                                               EditableDocument editableDocument ) {
+    private EditableDocument updateCaching(Connector connector,
+                                           EditableDocument editableDocument) {
         DocumentReader reader = new FederatedDocumentReader(translator(), editableDocument);
-        // there isn't a specific value set on the document, but the connector has a default value
-        if (reader.getCacheTtlSeconds() == null && connector.getCacheTtlSeconds() != null) {
-            DocumentWriter writer = new FederatedDocumentWriter(null, editableDocument);
-            writer.setCacheTtlSeconds(connector.getCacheTtlSeconds());
-            return writer.document();
+        if (!reader.isCacheable() || !connector.isCacheable()) {
+            translator.setCacheable(editableDocument, false);
+            return editableDocument;
         }
         return editableDocument;
     }
@@ -357,12 +354,12 @@ public class FederatedDocumentStore implements DocumentStore {
 
     @Override
     public void setLocalSourceKey( String localSourceKey ) {
-        this.localSourceKey = localSourceKey;
+        this.localDocumentStore.setLocalSourceKey(localSourceKey);
     }
 
     @Override
     public String getLocalSourceKey() {
-        return this.localSourceKey;
+        return localDocumentStore.getLocalSourceKey();
     }
 
     @Override
@@ -434,6 +431,7 @@ public class FederatedDocumentStore implements DocumentStore {
     }
 
     private boolean isLocalSource( String key ) {
+        String localSourceKey = getLocalSourceKey();
         return !NodeKey.isValidFormat(key) // the key isn't a std key format (probably some internal format)
                || StringUtil.isBlank(localSourceKey) // there isn't a local source configured yet (e.g. system startup)
                || key.startsWith(localSourceKey) // the sources differ
@@ -539,6 +537,7 @@ public class FederatedDocumentStore implements DocumentStore {
 
     private Object convertReferenceValue( Object value,
                                           String sourceName ) {
+        String localSourceKey = getLocalSourceKey();
         if (value instanceof NodeKeyReference) {
             NodeKeyReference ref = (NodeKeyReference)value;
             NodeKey key = ref.getNodeKey();

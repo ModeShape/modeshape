@@ -8,7 +8,7 @@
     "externalSources" : {
         "mock-source" : {
             "classname" : "org.modeshape.connector.mock.MockConnector",
-            "cacheTtlSeconds" : 1,
+            "cacheable" : false,
             "projections" : [
                 "ws1:a/b/c => /d",
                 ":/a/b => /",

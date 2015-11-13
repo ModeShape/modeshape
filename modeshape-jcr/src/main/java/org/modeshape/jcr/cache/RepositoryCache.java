@@ -69,7 +69,8 @@ import org.modeshape.jcr.cache.document.ReadOnlySessionCache;
 import org.modeshape.jcr.cache.document.WorkspaceCache;
 import org.modeshape.jcr.cache.document.WritableSessionCache;
 import org.modeshape.jcr.clustering.ClusteringService;
-import org.modeshape.jcr.federation.ExternalDocumentStore;
+import org.modeshape.jcr.federation.FederatedDocumentStore;
+import org.modeshape.jcr.spi.federation.Connector;
 import org.modeshape.jcr.txn.Transactions;
 import org.modeshape.jcr.txn.Transactions.Transaction;
 import org.modeshape.jcr.value.Name;
@@ -1008,10 +1009,10 @@ public class RepositoryCache {
     public WorkspaceCache createExternalWorkspace(String name, Connectors connectors) {
         String[] tokens = name.split(":");
         
-        String conName = tokens[0];
-        String wsName = tokens[1];
+        String sourceName = tokens[0];
+        String workspaceName = tokens[1];
         
-        this.workspaceNames.add(wsName);
+        this.workspaceNames.add(workspaceName);
         refreshRepositoryMetadata(true);
 
         ConcurrentMap<NodeKey, CachedNode> nodeCache = cacheForWorkspace();
@@ -1019,12 +1020,16 @@ public class RepositoryCache {
         
         //the name of the external connector is used for source name and workspace name
         
-        String sourceKey = NodeKey.keyForSourceName(conName);
-        String workspaceKey = NodeKey.keyForWorkspaceName(conName);
+        String sourceKey = NodeKey.keyForSourceName(sourceName);
+        String workspaceKey = NodeKey.keyForWorkspaceName(workspaceName);
 
         //ask external system to determine root identifier.
-        ExternalDocumentStore documentStore = new ExternalDocumentStore(connectors);
-        String rootId = documentStore.getRootId(sourceKey);
+        Connector connector = connectors.getConnectorForSourceName(sourceName); 
+        if (connector == null) {
+            throw new IllegalArgumentException(JcrI18n.connectorNotFound.text(sourceName));
+        }
+        FederatedDocumentStore documentStore = new FederatedDocumentStore(connectors, this.documentStore().localStore());
+        String rootId = connector.getRootDocumentId();
 
         // Compute the root key for this workspace ...
         NodeKey rootKey = new NodeKey(sourceKey, workspaceKey, rootId);
@@ -1033,10 +1038,10 @@ public class RepositoryCache {
         final WorkspaceCache systemWorkspaceCache = workspaceCachesByName.get(systemWorkspaceName);
         
         WorkspaceCache workspaceCache = new WorkspaceCache(context, getKey(), 
-                wsName, systemWorkspaceCache, documentStore, translator, rootKey, nodeCache, changeBus, repositoryEnvironment());
-        workspaceCachesByName.put(wsName, workspaceCache);
+                workspaceName, systemWorkspaceCache, documentStore, translator, rootKey, nodeCache, changeBus, repositoryEnvironment());
+        workspaceCachesByName.put(workspaceName, workspaceCache);
 
-        return workspace(wsName);
+        return workspace(workspaceName);
     }
     
     /**
@@ -1052,7 +1057,7 @@ public class RepositoryCache {
             String workspaceName,
             boolean readOnly) {
         WorkspaceCache workspaceCache = workspace(workspaceName);
-        if (readOnly || workspaceCache.isExternal()) {
+        if (readOnly) {
             return new ReadOnlySessionCache(context, workspaceCache, repositoryEnvironment);
         }
         return new WritableSessionCache(context, workspaceCache, repositoryEnvironment);

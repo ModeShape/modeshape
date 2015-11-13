@@ -69,14 +69,12 @@ public interface DocumentReader {
      * @return a {@code non-null} {@link Document} instance.
      */
     Document document();
-
+    
     /**
-     * Returns the number of seconds that the underlying document should be cached by the repository, if any.
-     * 
-     * @return either an optional {@link Integer}. If {@code null}, it means that there isn't a special requirement for the
-     *         underlying document.
+     * Returns whether the document should be cached by the repository or not.
+     *
      */
-    Integer getCacheTtlSeconds();
+    boolean isCacheable();
 
     /**
      * Returns name of the primary type of the underlying document.

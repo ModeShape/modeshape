@@ -70,7 +70,7 @@ public enum Attribute {
     STORE_NAME("store-name"),
     USE_ANONYMOUS_IF_AUTH_FAILED("use-anonymous-upon-failed-authentication"),
     WORKSPACE_NAMES("workspace-names"),
-    CACHE_TTL_SECONDS("cacheTtlSeconds"),
+    CACHEABLE("cacheable"),
     QUERYABLE("queryable"),
     READONLY("readonly"),
     EXPOSE_AS_WORKSPACE("exposeAsWorkspace"),

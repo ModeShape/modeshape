@@ -261,8 +261,8 @@ public class FederatedDocumentWriter implements DocumentWriter {
     }
 
     @Override
-    public DocumentWriter setCacheTtlSeconds( int seconds ) {
-        federatedDocument.setNumber(DocumentTranslator.CACHE_TTL_SECONDS, seconds);
+    public DocumentWriter setCacheable(boolean cacheable) {
+        federatedDocument.setBoolean(DocumentTranslator.CACHEABLE_FIELD, cacheable);
         return this;
     }
 

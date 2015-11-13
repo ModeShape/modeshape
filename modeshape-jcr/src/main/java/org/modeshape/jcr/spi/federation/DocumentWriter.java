@@ -199,12 +199,12 @@ public interface DocumentWriter extends PageWriter {
     DocumentWriter setParents( List<String> parentIds );
 
     /**
-     * Sets the value, in seconds, of the amount of the time the underlying document should be cached.
+     * Sets whether a particular document should be cached by the repository or not.
      * 
-     * @param seconds the number of seconds the document should be cached by the repository.
+     * @param cacheable a {@code boolean} flag
      * @return this writer; never null
      */
-    DocumentWriter setCacheTtlSeconds( int seconds );
+    DocumentWriter setCacheable(boolean cacheable);
 
     /**
      * Sets a flag on the underlying document which indicates that it should not be indexed (and therefore will not appear in

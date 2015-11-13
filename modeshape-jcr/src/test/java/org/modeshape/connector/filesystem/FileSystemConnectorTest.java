@@ -94,7 +94,8 @@ public class FileSystemConnectorTest extends SingleUseAbstractTest {
     private JcrTools tools;
 
     @Before
-    public void before() throws Exception {
+    @Override
+    public void beforeEach() throws Exception  {
         tools = new JcrTools();
         readOnlyProjection = new Projection("readonly-files", "target/federation/files-read");
         readOnlyProjectionWithExclusion = new Projection("readonly-files-with-exclusion",
@@ -166,48 +167,11 @@ public class FileSystemConnectorTest extends SingleUseAbstractTest {
     @Test
     @FixFor( "MODE-2061" )
     public void largeFilesTest() throws Exception {
-        largeFilesURIBased();
-        largeFilesContentBased();
+        assertLargeFile("largeFiles");
+        assertLargeFile("largeFilesDefault");
     }
 
-    private void largeFilesURIBased() throws Exception {
-        String childName = "largeFiles";
-        Session session = (Session)testRoot.getSession();
-        String path = testRoot.getPath() + "/" + childName;
-
-        Node files = session.getNode(path);
-        assertThat(files.getName(), is(childName));
-        assertThat(files.getPrimaryNodeType().getName(), is("nt:folder"));
-        long before = System.currentTimeMillis();
-        Node node1 = session.getNode(path + "/large-file1.png");
-        long after = System.currentTimeMillis();
-        long elapsed = after - before;
-        assertThat(node1.getName(), is("large-file1.png"));
-        assertThat(node1.getPrimaryNodeType().getName(), is("nt:file"));
-
-        before = System.currentTimeMillis();
-        Node node1Content = node1.getNode("jcr:content");
-        after = System.currentTimeMillis();
-        elapsed = after - before;
-        assertThat(node1Content.getName(), is("jcr:content"));
-        assertThat(node1Content.getPrimaryNodeType().getName(), is("nt:resource"));
-
-        Binary binary = (Binary)node1Content.getProperty("jcr:data").getBinary();
-        before = System.currentTimeMillis();
-        String dsChecksum = binary.getHexHash();
-        after = System.currentTimeMillis();
-        assertThat(dsChecksum, is(notNullValue()));
-        elapsed = after - before;
-
-        before = System.currentTimeMillis();
-        dsChecksum = binary.getHexHash();
-        after = System.currentTimeMillis();
-        elapsed = after - before;
-        assertTrue(elapsed < 1000);
-    }
-
-    public void largeFilesContentBased() throws Exception {
-        String childName = "largeFilesDefault";
+    private void assertLargeFile(String childName) throws RepositoryException {
         Session session = (Session)testRoot.getSession();
         String path = testRoot.getPath() + "/" + childName;
 

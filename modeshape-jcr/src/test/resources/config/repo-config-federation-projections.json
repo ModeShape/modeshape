@@ -12,7 +12,7 @@
     "externalSources" : {
         "mock-source" : {
             "classname" : "org.modeshape.connector.mock.MockConnector",
-            "cacheTtlSeconds" : 1,
+            "cacheable" : false,
             "projections" : [
                 "default:/projection1 => /doc1",
                 "default:/testRoot/projection2 => /doc2",

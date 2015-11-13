@@ -141,10 +141,10 @@ public class FederatedDocumentReader implements DocumentReader {
     public Document document() {
         return federatedDocument;
     }
-
+    
     @Override
-    public Integer getCacheTtlSeconds() {
-        return federatedDocument.getInteger(DocumentTranslator.CACHE_TTL_SECONDS);
+    public boolean isCacheable() {
+        return federatedDocument.getBoolean(DocumentTranslator.CACHEABLE_FIELD, true);
     }
 
     @Override

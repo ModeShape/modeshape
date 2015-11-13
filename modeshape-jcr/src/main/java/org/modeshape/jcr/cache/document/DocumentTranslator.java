@@ -1486,6 +1486,21 @@ public class DocumentTranslator implements DocumentConstants {
         document.set(QUERYABLE_FIELD, queryable);
     }
 
+    /**
+     * Marks the given document as cacheable, by setting a flag.
+     *
+     * @param document a {@link EditableDocument} instance; never null
+     * @param cacheable a boolean which indicates whether the document should be cacheable or not.
+     */
+    public void setCacheable(EditableDocument document,
+                             boolean cacheable) {
+        document.set(CACHEABLE_FIELD, cacheable);
+    }
+    
+    protected boolean isCacheable(Document document) {
+        return document.getBoolean(CACHEABLE_FIELD, true);
+    }
+
     protected void addFederatedSegment( EditableDocument document,
                                         String externalNodeKey,
                                         String name ) {
@@ -1501,17 +1516,6 @@ public class DocumentTranslator implements DocumentConstants {
         }
     }
 
-    /**
-     * Returns the value of the {@link org.modeshape.jcr.cache.document.DocumentTranslator#CACHE_TTL_SECONDS} field, if such a
-     * value exists.
-     * 
-     * @param document a {@code non-null} document
-     * @return either the value of the above field, or {@code null} if such a value doesn't exist.
-     */
-    protected Integer getCacheTtlSeconds( Document document ) {
-        return document.getInteger(CACHE_TTL_SECONDS);
-    }
-    
     protected String bucketKey( String parentKey, String bucketId ) {
         return parentKey + "/" + bucketId;
     }
