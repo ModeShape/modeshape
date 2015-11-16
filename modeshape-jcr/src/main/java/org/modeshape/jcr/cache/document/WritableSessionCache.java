@@ -444,7 +444,7 @@ public class WritableSessionCache extends AbstractSessionCache {
             lock.lock();
 
             // Before we start the transaction, apply the pre-save operations to the new and changed nodes ...
-            runPreSaveBeforeTransaction(preSaveOperation);
+            runBeforeLocking(preSaveOperation);
 
             final int numNodes = this.changedNodes.size();
 
@@ -470,7 +470,7 @@ public class WritableSessionCache extends AbstractSessionCache {
                     checkForTransaction();
                     
                     // process after locking
-                    runPreSaveAfterLocking(preSaveOperation, persistedCache);
+                    runAfterLocking(preSaveOperation, persistedCache);
 
                     // Now persist the changes ...
                     logChangesBeingSaved(this.changedNodesInOrder, this.changedNodes, null, null);
@@ -540,27 +540,39 @@ public class WritableSessionCache extends AbstractSessionCache {
         txns.updateCache(workspaceCache(), events, txn);
     }
 
-    private void runPreSaveBeforeTransaction( PreSave preSaveOperation ) throws Exception {
+    private void runBeforeLocking(PreSave preSaveOperation) throws Exception {
+        runBeforeLocking(preSaveOperation, changedNodesInOrder);
+    }   
+    
+    private List<NodeKey> runBeforeLocking(PreSave preSaveOperation, Collection<NodeKey> filter) throws Exception {
+        List<NodeKey> nodeKeys = new ArrayList<>();
         if (preSaveOperation != null) {
             SaveContext saveContext = new BasicSaveContext(context());
             for (MutableCachedNode node : this.changedNodes.values()) {
-                if (node == REMOVED) {
+                if (node == REMOVED || !filter.contains(node.getKey())) {
                     continue;
                 }
                 checkNodeNotRemovedByAnotherTransaction(node);
-                preSaveOperation.process(node, saveContext);
-
+                preSaveOperation.processBeforeLocking(node, saveContext);
+                nodeKeys.add(node.getKey());
             }
         }
+        return nodeKeys;
     }
 
-    private void runPreSaveAfterLocking( PreSave preSaveOperation,
-                                         NodeCache persistedCache ) throws Exception {
+    private void runAfterLocking(PreSave preSaveOperation,
+                                 NodeCache persistedCache) throws Exception {
+        runAfterLocking(preSaveOperation, persistedCache, changedNodesInOrder);
+    }
+
+    private void runAfterLocking(PreSave preSaveOperation,
+                                 NodeCache persistedCache,
+                                 Collection<NodeKey> filter) throws Exception {
         if (preSaveOperation != null) {
             SaveContext saveContext = new BasicSaveContext(context());
             for (MutableCachedNode node : this.changedNodes.values()) {
                 // only process existing nodes that have not been removed
-                if (node == REMOVED || node.isNew()) {
+                if (node == REMOVED || !filter.contains(node.getKey())) {
                     continue;
                 }
                 preSaveOperation.processAfterLocking(node, saveContext, persistedCache);
@@ -609,7 +621,7 @@ public class WritableSessionCache extends AbstractSessionCache {
             thatLock.lock();
 
             // Before we start the transaction, apply the pre-save operations to the new and changed nodes ...
-            runPreSaveBeforeTransaction(preSaveOperation);
+            runBeforeLocking(preSaveOperation);
 
             final int numNodes = this.changedNodes.size() + that.changedNodes.size();
 
@@ -639,7 +651,7 @@ public class WritableSessionCache extends AbstractSessionCache {
                         that.checkForTransaction();
                         
                         // process after locking
-                        runPreSaveAfterLocking(preSaveOperation, thisPersistedCache);
+                        runAfterLocking(preSaveOperation, thisPersistedCache);
 
                         // Now persist the changes ...
                         logChangesBeingSaved(this.changedNodesInOrder, this.changedNodes, that.changedNodesInOrder,
@@ -767,21 +779,7 @@ public class WritableSessionCache extends AbstractSessionCache {
             thatLock.lock();
 
             // Before we start the transaction, apply the pre-save operations to the new and changed nodes below the path ...
-            final List<NodeKey> savedNodesInOrder = new LinkedList<NodeKey>();
-
-            // Before we start the transaction, apply the pre-save operations to the new and changed nodes ...
-            if (preSaveOperation != null) {
-                SaveContext saveContext = new BasicSaveContext(context());
-                for (MutableCachedNode node : this.changedNodes.values()) {
-                    if (node == REMOVED || !toBeSaved.contains(node.getKey())) {
-                        continue;
-                    }
-                    checkNodeNotRemovedByAnotherTransaction(node);
-                    preSaveOperation.process(node, saveContext);
-                    savedNodesInOrder.add(node.getKey());
-                }
-            }
-
+            final List<NodeKey> savedNodesInOrder = runBeforeLocking(preSaveOperation, toBeSaved);
             final int numNodes = savedNodesInOrder.size() + that.changedNodesInOrder.size();
 
             int repeat = txns.isCurrentlyInTransaction() ? 1 : MAX_REPEAT_FOR_LOCK_ACQUISITION_TIMEOUT;
@@ -809,15 +807,7 @@ public class WritableSessionCache extends AbstractSessionCache {
                         
                         // process after locking
                         // Before we start the transaction, apply the pre-save operations to the new and changed nodes ...
-                        if (preSaveOperation != null) {
-                            SaveContext saveContext = new BasicSaveContext(context());
-                            for (MutableCachedNode node : this.changedNodes.values()) {
-                                if (node == REMOVED || !toBeSaved.contains(node.getKey())) {
-                                    continue;
-                                }
-                                preSaveOperation.processAfterLocking(node, saveContext, thisPersistedCache);
-                            }
-                        }
+                        runAfterLocking(preSaveOperation, thisPersistedCache, toBeSaved);
 
                         // Now persist the changes ...
                         logChangesBeingSaved(savedNodesInOrder, this.changedNodes, that.changedNodesInOrder, that.changedNodes);
