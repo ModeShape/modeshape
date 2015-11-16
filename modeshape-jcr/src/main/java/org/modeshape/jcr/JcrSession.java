@@ -2091,8 +2091,8 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
         }
 
         @Override
-        public void process( MutableCachedNode node,
-                             SaveContext context ) throws Exception {
+        public void processBeforeLocking(MutableCachedNode node,
+                                         SaveContext context) throws Exception {
             // Most nodes do not need any extra processing, so the first thing to do is figure out whether this
             // node has a primary type or mixin types that need extra processing. Unfortunately, this means we always have
             // to get the primary type and mixin types.
@@ -2117,20 +2117,13 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
             // -----------
             // mix:created
             // -----------
-            boolean initializeVersionHistory = false;
             if (node.isNew()) {
                 if (nodeTypeCapabilities.isCreated(primaryType, mixinTypes)) {
                     // Set the created by and time information if not changed explicitly
                     node.setPropertyIfUnchanged(cache, propertyFactory.create(JcrLexicon.CREATED, context.getTime()));
                     node.setPropertyIfUnchanged(cache, propertyFactory.create(JcrLexicon.CREATED_BY, context.getUserId()));
                 }
-                initializeVersionHistory = nodeTypeCapabilities.isVersionable(primaryType, mixinTypes);
-            } else {
-                // Changed nodes can only be made versionable if the primary type or mixins changed ...
-                if (node.hasChangedPrimaryType() || !node.getAddedMixins(cache).isEmpty()) {
-                    initializeVersionHistory = nodeTypeCapabilities.isVersionable(primaryType, mixinTypes);
-                }
-            }
+            } 
 
             // ----------------
             // mix:lastModified
@@ -2144,44 +2137,14 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
             // ---------------
             // mix:versionable
             // ---------------
-            if (initializeVersionHistory) {
+            if (nodeTypeCapabilities.isVersionable(primaryType, mixinTypes)) {
                 // See if there is a version history for the node ...
                 NodeKey versionableKey = node.getKey();
                 if (!systemContent.hasVersionHistory(versionableKey)) {
-                    // Initialize the version history ...
-                    NodeKey historyKey = systemContent.versionHistoryNodeKeyFor(versionableKey);
-                    NodeKey baseVersionKey = baseVersionKeys == null ? null : baseVersionKeys.get(versionableKey);
-                    // it may happen during an import, that a node with version history & base version is assigned a new key and
-                    // therefore
-                    // the base version points to an existing version while no version history is found initially
-                    boolean shouldCreateNewVersionHistory = true;
-                    if (baseVersionKey != null) {
-                        CachedNode baseVersionNode = systemCache.getNode(baseVersionKey);
-                        if (baseVersionNode != null) {
-                            historyKey = baseVersionNode.getParentKey(systemCache);
-                            shouldCreateNewVersionHistory = (historyKey == null);
-                        }
-                    }
-                    if (shouldCreateNewVersionHistory) {
-                        // a new version history should be initialized
-                        assert historyKey != null;
-                        if (baseVersionKey == null) baseVersionKey = historyKey.withRandomId();
-                        NodeKey originalVersionKey = originalVersionKeys != null ? originalVersionKeys.get(versionableKey) : null;
-                        Path versionHistoryPath = versionManager.versionHistoryPathFor(versionableKey);
-                        systemContent.initializeVersionStorage(versionableKey, historyKey, baseVersionKey, primaryType,
-                                                               mixinTypes, versionHistoryPath, originalVersionKey,
-                                                               context.getTime());
-                    }
-
-                    // Now update the node as if it's checked in (with the exception of the predecessors...)
-                    Reference historyRef = referenceFactory.create(historyKey, true);
-                    Reference baseVersionRef = referenceFactory.create(baseVersionKey, true);
-                    node.setProperty(cache, propertyFactory.create(JcrLexicon.IS_CHECKED_OUT, Boolean.TRUE));
-                    node.setReference(cache, propertyFactory.create(JcrLexicon.VERSION_HISTORY, historyRef), systemCache);
-                    node.setReference(cache, propertyFactory.create(JcrLexicon.BASE_VERSION, baseVersionRef), systemCache);
-                    // JSR 283 - 15.1
-                    node.setReference(cache, propertyFactory.create(JcrLexicon.PREDECESSORS, new Object[] {baseVersionRef}),
-                                      systemCache);
+                    // we have to initialize the version history, but we should only do so after we've locked the 'versionStorage'
+                    // root node because initializing the storage implies adding children under it. 
+                    // So we'll load this node here so that it will be locked later and processed in #processAfterLocking
+                    systemContent.mutableVersionStorageNode();
                 } else {
                     // we're dealing with node which has a version history, check if there any versionable properties present
                     boolean hasVersioningProperties = node.hasProperty(JcrLexicon.IS_CHECKED_OUT, cache)
@@ -2359,7 +2322,50 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
             // We actually can avoid this altogether if certain conditions are met ...
             final Name primaryType = modifiedNode.getPrimaryType(cache);
             final Set<Name> mixinTypes = modifiedNode.getMixinTypes(cache);
-            if (nodeTypeCapabilities.allowsNameSiblings(primaryType, mixinTypes)) return;
+            final NodeKey nodeKey = modifiedNode.getKey();
+            
+            if (nodeTypeCapabilities.isVersionable(primaryType, mixinTypes) && !systemContent.hasVersionHistory(nodeKey)) {
+                // Initialize the version history (at this point we should've locked the versionStorage node exclusively)
+                NodeKey historyKey = systemContent.versionHistoryNodeKeyFor(nodeKey);
+                NodeKey baseVersionKey = baseVersionKeys == null ? null : baseVersionKeys.get(nodeKey);
+                // it may happen during an import, that a node with version history & base version is assigned a new key and
+                // therefore
+                // the base version points to an existing version while no version history is found initially
+                boolean shouldCreateNewVersionHistory = true;
+                if (baseVersionKey != null) {
+                    CachedNode baseVersionNode = systemCache.getNode(baseVersionKey);
+                    if (baseVersionNode != null) {
+                        historyKey = baseVersionNode.getParentKey(systemCache);
+                        shouldCreateNewVersionHistory = (historyKey == null);
+                    }
+                }
+                if (shouldCreateNewVersionHistory) {
+                    // a new version history should be initialized
+                    assert historyKey != null;
+                    if (baseVersionKey == null) {
+                        baseVersionKey = historyKey.withRandomId();
+                    }
+                    NodeKey originalVersionKey = originalVersionKeys != null ? originalVersionKeys.get(nodeKey) : null;
+                    Path versionHistoryPath = versionManager.versionHistoryPathFor(nodeKey);
+                    systemContent.initializeVersionStorage(nodeKey, historyKey, baseVersionKey, primaryType,
+                                                           mixinTypes, versionHistoryPath, originalVersionKey,
+                                                           context.getTime());
+                }
+
+                // Now update the node as if it's checked in (with the exception of the predecessors...)
+                Reference historyRef = referenceFactory.create(historyKey, true);
+                Reference baseVersionRef = referenceFactory.create(baseVersionKey, true);
+                modifiedNode.setProperty(cache, propertyFactory.create(JcrLexicon.IS_CHECKED_OUT, Boolean.TRUE));
+                modifiedNode.setReference(cache, propertyFactory.create(JcrLexicon.VERSION_HISTORY, historyRef), systemCache);
+                modifiedNode.setReference(cache, propertyFactory.create(JcrLexicon.BASE_VERSION, baseVersionRef), systemCache);
+                // JSR 283 - 15.1
+                modifiedNode.setReference(cache,
+                                          propertyFactory.create(JcrLexicon.PREDECESSORS, new Object[] { baseVersionRef }),
+                                          systemCache);
+
+            }
+           
+            if (modifiedNode.isNew() || nodeTypeCapabilities.allowsNameSiblings(primaryType, mixinTypes)) return;
 
             MutableCachedNode.NodeChanges changes = modifiedNode.getNodeChanges();
             Map<NodeKey, Name> appendedOrRenamedChildrenByKey = new HashMap<>();

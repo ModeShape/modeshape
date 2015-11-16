@@ -27,7 +27,9 @@ public interface SessionCache extends NodeCache {
 
     /**
      * The context of a save operation, created during each call to {@link #save} and passed to the
-     * {@link PreSave#process(MutableCachedNode, SaveContext)} invocations.
+     * {@link PreSave#processBeforeLocking(MutableCachedNode, SaveContext)} or 
+     * {@link PreSave#processAfterLocking(MutableCachedNode, SaveContext, NodeCache)} 
+     * invocations.
      */
     public static interface SaveContext {
         /**
@@ -61,8 +63,8 @@ public interface SessionCache extends NodeCache {
          * @param context the context of the save operation; never null
          * @throws Exception if there is a problem during the processing
          */
-        void process( MutableCachedNode modifiedOrNewNode,
-                      SaveContext context ) throws Exception;
+        void processBeforeLocking(MutableCachedNode modifiedOrNewNode,
+                                  SaveContext context) throws Exception;
 
         /**
          * Process the supplied existing node prior to saving the changes but only after the entry corresponding to the key of the
