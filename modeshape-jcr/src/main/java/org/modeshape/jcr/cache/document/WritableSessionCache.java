@@ -1008,8 +1008,9 @@ public class WritableSessionCache extends AbstractSessionCache {
                     translator.addInternalProperties(doc, node.getAddedInternalProperties());
                     
                     SessionNode mutableParent = mutable(newParent);
+                    Name parentPrimaryType = mutableParent.getPrimaryType(this);
                     Set<Name> parentMixinTypes = mutableParent.getMixinTypes(this);
-                    boolean parentAllowsSNS = nodeTypes != null && nodeTypes.allowsNameSiblings(primaryType, parentMixinTypes);
+                    boolean parentAllowsSNS = nodeTypes != null && nodeTypes.allowsNameSiblings(parentPrimaryType, parentMixinTypes);
                     if (!parentAllowsSNS) {
                         // if the parent of the *new* node doesn't allow SNS, we can optimize the path lookup by
                         // looking directly at the parent's appended nodes because:

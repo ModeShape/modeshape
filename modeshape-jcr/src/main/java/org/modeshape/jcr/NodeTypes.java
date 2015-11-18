@@ -284,8 +284,7 @@ public class NodeTypes {
                 }
                 Collection<JcrNodeDefinition> allChildNodeDefinitions = nodeType.allChildNodeDefinitions();
                 if (allChildNodeDefinitions.isEmpty()) nodeTypeNamesWithNoChildNodeDefns.add(name);
-                boolean allowsResidualWithSameNameSiblings = false;
-                boolean allowsOnlySameNameSiblings = true;
+                boolean allowsSNS = false;
                 boolean mixinWithNoChildNodeDefinitions = nodeType.isMixin() && allChildNodeDefinitions.isEmpty();
                 for (JcrNodeDefinition childDefn : allChildNodeDefinitions) {
                     if (childDefn.isMandatory() && !childDefn.isProtected()) {
@@ -298,17 +297,12 @@ public class NodeTypes {
                         // fullDefined = false;
                     }
                     if (childDefn.allowsSameNameSiblings()) {
-                        if (childDefn.isResidual()) {
-                            allowsResidualWithSameNameSiblings = true;
-                        }
-                    } else {
-                        // same name siblings are not allowed ...
-                        allowsOnlySameNameSiblings = false;
+                       allowsSNS = true;
                     }
                 }
                 if (!nodeType.isAbstract()
                     && !isUnorderedCollection
-                    && (allowsResidualWithSameNameSiblings || allowsOnlySameNameSiblings || mixinWithNoChildNodeDefinitions)) {
+                    && (allowsSNS || mixinWithNoChildNodeDefinitions)) {
                     nodeTypeNamesThatAllowSameNameSiblings.add(name);
                 }
 

@@ -1,6 +1,7 @@
 <jcr='http://www.jcp.org/jcr/1.0'>
 <nt='http://www.jcp.org/jcr/nt/1.0'>
 <inf='http://www.example.com/test'>
+<cds="http://www.jcp.org/test/cds/1.0">
 
 [inf:patient] > mix:versionable, nt:hierarchyNode
 + * (inf:patientId) COPY
@@ -18,3 +19,12 @@
 
 [inf:patientId]
 - inf:name (STRING) mandatory COPY
+
+[cds:Sibling] > nt:folder, mix:referenceable
+  - cds:name (STRING)
+
+[cds:SiblingUnstructured] > nt:unstructured, mix:referenceable
+  + cds:sibling (cds:Sibling) = cds:Sibling sns
+
+[cds:SiblingFolder] > nt:folder, mix:referenceable
+  + cds:sibling (cds:Sibling) = cds:Sibling sns  
