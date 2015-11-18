@@ -871,4 +871,18 @@ public class JcrNodeTest extends MultiUseAbstractTest {
             //expected
         }
     }
+    
+    @Test
+    @FixFor("MODE-2533")
+    public void shouldCreateSNSBasedOnParentPrimaryType() throws Exception {
+        registerNodeTypes("cnd/nodetypes-with-sns.cnd");                    
+        Node snsFolder = session.getRootNode().addNode("snsFolder", "cds:SiblingFolder");
+        snsFolder.addNode("cds:sibling", "cds:Sibling");                
+        snsFolder.addNode("cds:sibling", "cds:Sibling");
+        assertNode("/snsFolder/cds:sibling[1]");
+        assertNode("/snsFolder/cds:sibling[2]");
+        session.save();
+        assertNode("/snsFolder/cds:sibling[1]");
+        assertNode("/snsFolder/cds:sibling[2]");
+    }
 }
