@@ -5,17 +5,24 @@ We hope you enjoy it!
 
 ## What's new
 
-This release addresses 18 bugs and 12 enhancements, most notably:
-- Wildfly 9 support. Starting with this version, the ModeShape AS kit can be run both on Wildfly 8 and Wildly 9.
+This release addresses 10 bugs and 7 enhancements, most notably:
+- **Rebuilding indexes incrementally** - prior to this release, ModeShape did not have the ability to rebuild indexes (reindex)
+    from a given point in time, it only supported full reindexing. With this new feature 
+    (that requires the [event journal](https://docs.jboss.org/author/display/MODE40/Journaling) to be enabled) the repository is 
+    able to reindex nodes from a certain timestamp onwards.
+    This new feature also allows, when running in a cluster, for a cluster
+    node which was previously down to update its indexes automatically by getting the *delta* from the other nodes. In other words,
+    a full reindexing operation is no longer required to bring a cluster node up-to-date index-wise.
+    See [the ModeShape documentation](https://docs.jboss.org/author/display/MODE40/Query+and+search#Queryandsearch-Reindexing) for more information.                       
 
-- Support for large collections of flat nodes. This is a long outstanding enhancement which allows large number of children (>500k)
-  to be stored under the same parent node. See [MODE-2109](https://issues.jboss.org/browse/MODE-2109) and [our documentation](https://docs.jboss.org/author/display/MODE40/Large+numbers+of+child+nodes#Largenumbersofchildnodes-Unorderedlargecollections)
-  for more information.
+- **Storing indexes in Lucene** - this has been a long outstanding feature which was missing in ModeShape 4 ever since the new
+    indexing design was introduced. Starting with this release, in addition to the Local (MapDB based) index provider, it is
+    possible to store indexes and run queries using Lucene 5. 
+    See [the ModeShape documentation](https://docs.jboss.org/author/display/MODE40/Lucene) for more information. 
 
-- Enhanced look & feel for the Repository Explorer web application, together with a number of bug fixes.
+- **Allowing CAST as a dynamic operand in queries** - see [this issue](https://issues.jboss.org/browse/MODE-2166) for more information
  
-- New example of how to use and embed a custom authorization and authentication provider in your own application. 
-  The example can be found [here](https://github.com/ModeShape/modeshape-examples/tree/4.4.0.Final/modeshape-custom-security-example)  
+- **Support custom Locales in queries** - see [this issue](https://issues.jboss.org/browse/MODE-1727) for more information      
 
 ## Features
 
