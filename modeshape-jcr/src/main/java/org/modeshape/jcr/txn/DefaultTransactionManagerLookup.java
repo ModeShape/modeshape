@@ -18,8 +18,8 @@ package org.modeshape.jcr.txn;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
-import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 import javax.naming.InitialContext;
@@ -67,20 +67,19 @@ public class DefaultTransactionManagerLookup implements TransactionManagerLookup
     
     @Override
     public TransactionManager getTransactionManager() throws Exception {
-        Supplier<Optional<TransactionManager>> jndi = this::lookInJNDI;
-        Supplier<Optional<TransactionManager>> jbossJTA = this::lookForStandaloneJBossJTA;
-        Supplier<Optional<TransactionManager>> atomikosJTA = this::lookForAtomikosJTA;
-        Optional<TransactionManager> result = Stream.of(jndi, jbossJTA, atomikosJTA)
-                                                    .map(Supplier::get)
-                                                    .filter(Optional::isPresent)
-                                                    .map(Optional::get)
-                                                    .peek((transactionManager)->LOGGER.debug("Found tx manager '{0}'", 
-                                                                                             transactionManager.getClass().getName()))
-                                                    .findFirst();
-        return result.orElseGet(() -> {
-            LOGGER.warn(JcrI18n.warnNoTxManagerFound);
-            return new LocalTransactionManager();
-        });
+        return Stream.of((Supplier<Optional<TransactionManager>>) this::lookInJNDI,
+                         this::lookForStandaloneJBossJTA,
+                         this::lookForAtomikosJTA)
+                     .map(Supplier::get)
+                     .filter(Optional::isPresent)
+                     .map(Optional::get)
+                     .peek((transactionManager) ->
+                                   LOGGER.debug("Found tx manager '{0}'", transactionManager.getClass().getName()))
+                     .findFirst()
+                     .orElseGet(() -> {
+                         LOGGER.warn(JcrI18n.warnNoTxManagerFound);
+                         return new LocalTransactionManager();
+                     });
     }
     
     private Optional<TransactionManager> lookForAtomikosJTA() {
@@ -113,35 +112,35 @@ public class DefaultTransactionManagerLookup implements TransactionManagerLookup
     }
 
     private Optional<TransactionManager> lookInJNDI() {
-        Function<String, TransactionManager> jndiSupplier = jndiName -> {
-            InitialContext context = null;
-            try {
-                context = new InitialContext();
-            } catch (NamingException e) {
-                LOGGER.debug(e, "Cannot create initial JNDI context");
-                return null;
-            }
+        return JNDI_BINDINGS.stream().map(this::lookForJNDIName).filter(Objects::nonNull).findFirst();
+    }
 
-            try {
-                LOGGER.debug("Looking up transaction manager at: '{0}'", jndiName);
-                Object obj = context.lookup(jndiName);
-                if (obj instanceof TransactionManager) {
-                    return (TransactionManager)obj;
-                }
-                LOGGER.debug("Transaction manager not found at: '{0}'", jndiName);
-                return null;
-            } catch (NamingException e) {
-                LOGGER.debug(e, "Failed to lookup '{0}' in JNDI", jndiName);
-                return null;
-            } finally {
-                try {
-                    context.close();
-                } catch (NamingException e) {
-                    LOGGER.debug(e, "Cannot close JNDI context");
-                }
-            }
-        };
+    private TransactionManager lookForJNDIName(String jndiName) {
+        InitialContext context = null;
+        try {
+            context = new InitialContext();
+        } catch (NamingException e) {
+            LOGGER.debug(e, "Cannot create initial JNDI context");
+            return null;
+        }
 
-        return JNDI_BINDINGS.stream().map(jndiSupplier).filter((manager) -> manager != null).findFirst();
+        try {
+            LOGGER.debug("Looking up transaction manager at: '{0}'", jndiName);
+            Object obj = context.lookup(jndiName);
+            if (obj instanceof TransactionManager) {
+                return (TransactionManager)obj;
+            }
+            LOGGER.debug("Transaction manager not found at: '{0}'", jndiName);
+            return null;
+        } catch (NamingException e) {
+            LOGGER.debug(e, "Failed to lookup '{0}' in JNDI", jndiName);
+            return null;
+        } finally {
+            try {
+                context.close();
+            } catch (NamingException e) {
+                LOGGER.debug(e, "Cannot close JNDI context");
+            }
+        }
     }
 }

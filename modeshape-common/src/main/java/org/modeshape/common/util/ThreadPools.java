@@ -15,8 +15,6 @@
  */
 package org.modeshape.common.util;
 
-import java.util.Iterator;
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
@@ -25,6 +23,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Predicate;
 import org.modeshape.common.annotation.ThreadSafe;
 
 /**
@@ -85,29 +84,22 @@ public class ThreadPools implements ThreadPoolFactory {
     }
 
     @Override
-    public void terminateAllPools( long maxWaitTime,
-                                   TimeUnit unit ) {
-        // Calculate the time in the future when we don't need to wait any more ...
-        long futureStopTimeInMillis = System.currentTimeMillis() + TimeUnit.MILLISECONDS.convert(maxWaitTime, unit);
-
-        for (Iterator<Map.Entry<String, ExecutorService>> entryIterator = poolsByName.entrySet().iterator(); entryIterator.hasNext();) {
-            Map.Entry<String, ExecutorService> entry = entryIterator.next();
-            ExecutorService executorService = entry.getValue();
-            if (!executorService.isShutdown()) {
-                executorService.shutdown();
-                // Calculate how long till we have to wait till the future stop time ...
-                long waitTimeInMillis = futureStopTimeInMillis - System.currentTimeMillis();
-                try {
-                    if (waitTimeInMillis > 0) {
-                        executorService.awaitTermination(waitTimeInMillis, TimeUnit.MILLISECONDS);
-                    }
-                    executorService.shutdownNow();
-                } catch (InterruptedException e) {
-                    Thread.interrupted();
-                }
-            }
-
-            entryIterator.remove();
-        }
+    public void terminateAllPools( long maxWaitTime, TimeUnit unit ) {
+        poolsByName.values().stream()
+                            .filter(((Predicate<ExecutorService>) ExecutorService::isShutdown).negate())    
+                            .forEach(executorService -> {
+                                executorService.shutdown();
+                                try {
+                                    if (maxWaitTime > 0) {
+                                        executorService.awaitTermination(maxWaitTime, unit);
+                                    }
+                                    executorService.shutdownNow();
+                                } catch (InterruptedException e) {
+                                    if (Thread.interrupted()) {
+                                        executorService.shutdownNow();
+                                    }
+                                }
+                            });
+        poolsByName.clear();
     }
 }

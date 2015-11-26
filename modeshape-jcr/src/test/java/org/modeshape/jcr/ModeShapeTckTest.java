@@ -69,36 +69,31 @@ import org.apache.jackrabbit.test.AbstractJCRTest;
 import org.apache.jackrabbit.test.api.ShareableNodeTest;
 import org.modeshape.common.FixFor;
 import org.modeshape.jcr.api.JcrTools;
-import junit.framework.Test;
 
 /**
  * Additional ModeShape tests that check for JCR compliance.
  */
 public class ModeShapeTckTest extends AbstractJCRTest {
 
+    private static final String SYSTEM_ROOT_PATH = "/" + JcrLexicon.SYSTEM.getString();
+    private static final String TEST_ROOT_PATH = "/testroot";
+    
     Session session;
     private Map<String, Node> testAreasByWorkspace = new HashMap<String, Node>();
     protected boolean print = false;
 
     public ModeShapeTckTest( String testName ) {
-        super();
-
         this.setName(testName);
         this.isReadOnly = true;
         this.print = false;
     }
 
-    public static Test suite() {
-        return JcrTckSuites.someTestsInline(ModeShapeTckTest.class);
-    }
-
     @Override
     protected void tearDown() throws Exception {
-        try {
-            superuser.getRootNode().getNode(this.nodeName1).remove();
-            superuser.save();
-        } catch (PathNotFoundException ignore) {
-        }
+        superuser.logout();
+        Session superuserSession = getHelper().getSuperuserSession();
+        removeTestNodesForSession(superuserSession, false);
+        removeTestNodesForSession(getHelper().getSuperuserSession("otherWorkspace"), true);
 
         if (session != null) {
             session.logout();
@@ -108,18 +103,44 @@ public class ModeShapeTckTest extends AbstractJCRTest {
 
         Credentials creds = getHelper().getSuperuserCredentials();
         Repository repository = getHelper().getRepository();
-        for (Map.Entry<String, Node> entry : testAreasByWorkspace.entrySet()) {
-            Session session = repository.login(creds, entry.getKey());
+        String superUserWs = superuserSession.getWorkspace().getName();
+        testAreasByWorkspace.entrySet()
+                            .stream()
+                            .filter(entry -> !entry.getKey().equals(superUserWs))
+                            .forEach(entry -> {
+                                Session session = null;
+                                try {
+                                    session = repository.login(creds, entry.getKey());
+                                    Node node = session.getNode(entry.getValue().getPath());
+                                    node.remove();
+                                    session.save();
+                                } catch (Exception e) {
+                                    // ignore ...
+                                } finally {
+                                    if (session != null) {
+                                        session.logout();
+                                    }
+                                }
+                            });
+    }
+
+    @SuppressWarnings("unchecked")
+    private void removeTestNodesForSession(Session superUserSession, boolean ignoreTestRootPath) throws RepositoryException {
+        Node root = superUserSession.getRootNode();
+
+        root.getNodes().forEachRemaining((object) -> {
+            Node node = (Node) object;
             try {
-                Node node = session.getNode(entry.getValue().getPath());
-                node.remove();
-                session.save();
+                String path = node.getPath();
+                if (!path.startsWith(SYSTEM_ROOT_PATH) && (ignoreTestRootPath || !path.startsWith(TEST_ROOT_PATH))) {
+                    node.remove();
+                }
+                
             } catch (RepositoryException e) {
-                // ignore ...
-            } finally {
-                session.logout();
+                throw new RuntimeException(e);
             }
-        }
+        });
+        superUserSession.save();
     }
 
     protected Node getTestRoot( Session session ) throws Exception {

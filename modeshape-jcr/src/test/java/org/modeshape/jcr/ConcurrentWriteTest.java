@@ -22,7 +22,6 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -36,6 +35,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.stream.Collectors;
 import javax.jcr.ItemExistsException;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
@@ -49,7 +49,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
 import org.modeshape.common.annotation.Immutable;
-import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.FileUtil;
 import org.modeshape.common.util.StringUtil;
@@ -75,12 +74,7 @@ public class ConcurrentWriteTest extends SingleUseAbstractTest {
      */
     @Test
     public void shouldAllowMultipleThreadsToConcurrentlyGetRootNode() throws Exception {
-        runConcurrently(500, 16, new Operation() {
-            @Override
-            public void run( Session session ) throws RepositoryException {
-                session.getRootNode();
-            }
-        });
+        runConcurrently(500, 16, Session::getRootNode);
     }
 
     /**
@@ -165,14 +159,11 @@ public class ConcurrentWriteTest extends SingleUseAbstractTest {
         // Now run two threads that are timed very carefully ...
         int numThreads = 2;
         final CyclicBarrier barrier = new CyclicBarrier(numThreads);
-        Operation operation = new Operation() {
-            @Override
-            public void run( Session session ) throws Exception {
-                Node subnode = session.getNode("/node/subnode");
-                subnode.remove();
-                barrier.await();
-                session.save();
-            }
+        Operation operation = session1 -> {
+            Node subnode1 = session1.getNode("/node/subnode");
+            subnode1.remove();
+            barrier.await();
+            session1.save();
         };
         runConcurrently(numThreads, numThreads, operation);
 
@@ -198,15 +189,12 @@ public class ConcurrentWriteTest extends SingleUseAbstractTest {
         // Now run two threads that are timed very carefully ...
         int numThreads = 2;
         final CyclicBarrier barrier = new CyclicBarrier(numThreads);
-        Operation operation = new Operation() {
-            @Override
-            public void run( Session session ) throws Exception {
-                Node testRoot = session.getNode("/testRoot");
-                testRoot.addNode("childB", "nt:unstructured");
-                barrier.await();
-                // one of the saves should fail but it doesn't
-                session.save();
-            }
+        Operation operation = session1 -> {
+            Node testRoot1 = session1.getNode("/testRoot");
+            testRoot1.addNode("childB", "nt:unstructured");
+            barrier.await();
+            // one of the saves should fail but it doesn't
+            session1.save();
         };
 
         run(2, numThreads, 1, operation);
@@ -216,7 +204,7 @@ public class ConcurrentWriteTest extends SingleUseAbstractTest {
     @Test
     @FixFor( "MODE-2216" )
     public void shouldMoveFileAndFoldersConcurrently() throws Exception {
-        shutdownDefaultRepo();
+        stopRepository();
 
         FileUtil.delete("target/move_repository");
 
@@ -230,7 +218,7 @@ public class ConcurrentWriteTest extends SingleUseAbstractTest {
         NodeIterator sourceNodes = session.getNode(sourcePath).getNodes();
         long expectedMoveCount = sourceNodes.getSize();
 
-        final List<Callable<String>> tasks = new ArrayList<Callable<String>>();
+        final List<Callable<String>> tasks = new ArrayList<>();
         while (sourceNodes.hasNext()) {
             final Node node = sourceNodes.nextNode();
             final MoveNodeTask task = new MoveNodeTask(node.getIdentifier(), destPath);
@@ -238,34 +226,40 @@ public class ConcurrentWriteTest extends SingleUseAbstractTest {
         }
 
         ExecutorService executorService = Executors.newFixedThreadPool(threadCount);
-        List<Future<String>> futures = new ArrayList<Future<String>>();
-        for (Callable<String> task : tasks) {
-            futures.add(executorService.submit(task));
+        try {
+            Set<String> movedNodeIds = tasks.stream()
+                                            .map(executorService::submit)
+                                            .map(future -> {
+                                                try {
+                                                    return future.get();
+                                                } catch (Exception e) {
+                                                    throw new RuntimeException(e);
+                                                }
+                                            }).collect(Collectors.toSet());
+            movedNodeIds.stream().forEach(id -> {
+                try {
+                    Node node = session.getNodeByIdentifier(id);
+                    assertNotNull("The document with " + id + " was not found!", node);
+                    assertTrue("The document was not moved to destination folder!", node.getPath().startsWith(destPath));
+                } catch (RepositoryException e) {
+                    throw new RuntimeException(e);
+                }
+            });
+            NodeIterator destNodeIterator = session.getNode(destPath).getNodes();
+            while (destNodeIterator.hasNext()) {
+                assertNotNull("Node could be read", destNodeIterator.nextNode());
+            }
+            assertThat("Incorrect number of nodes moved", (long) movedNodeIds.size(), is(expectedMoveCount));
+            assertFalse("The source parent is not empty", session.getNode(sourcePath).getNodes().hasNext());
+        } finally {
+            executorService.shutdownNow();
         }
-        Set<String> movedNodeIds = new HashSet<String>();
-        for (Future<String> future : futures) {
-            movedNodeIds.add(future.get());
-        }
-
-        for (String id : movedNodeIds) {
-            Node node = session.getNodeByIdentifier(id);
-            assertNotNull("The document with " + id + " was not found!", node);
-            assertTrue("The document was not moved to destination folder!", node.getPath().startsWith(destPath));
-        }
-
-        NodeIterator destNodeIterator = session.getNode(destPath).getNodes();
-        while (destNodeIterator.hasNext()) {
-            assertNotNull("Node could be read", destNodeIterator.nextNode());
-        }
-
-        assertThat("Incorrect number of nodes moved", (long)movedNodeIds.size(), is(expectedMoveCount));
-        assertFalse("The source parent is not empty", session.getNode(sourcePath).getNodes().hasNext());
     }
     
     @Test
     @FixFor( "MODE-2418" )
     public void shouldVersionNodesConcurrently() throws Exception {
-        shutdownDefaultRepo();
+        stopRepository();
         FileUtil.delete("target/persistent_repository/store");
         repository = TestingUtil.startRepositoryWithConfig("config/repo-config-filesystem-jbosstxn-pessimistic.json");
         
@@ -279,44 +273,38 @@ public class ConcurrentWriteTest extends SingleUseAbstractTest {
 
         final String path = "/uploads";
         final int repeatCount = 10;
-        Future<Void> writerResult = pool.submit(new Callable<Void>() {
-            @Override
-            public Void call() throws Exception {
-                Session session = repository.login();
-                try {
-                    VersionManager versionManager = session.getWorkspace().getVersionManager();
+        Future<Void> writerResult = pool.submit((Callable<Void>) () -> {
+            Session session1 = repository.login();
+            try {
+                VersionManager versionManager = session1.getWorkspace().getVersionManager();
 
-                    for (int i = 0; i < repeatCount; i++) {
-                        versionManager.checkout(path);
-                        Node node = session.getNode(path);
-                        String uuid = UUID.randomUUID().toString();
-                        String name = Thread.currentThread().getName() + "_" + uuid;
-                        node.addNode(name, NodeType.NT_FOLDER);
-                        session.save();
-                        versionManager.checkin(path);
-                    }
-                } finally {
-                    session.logout();
+                for (int i = 0; i < repeatCount; i++) {
+                    versionManager.checkout(path);
+                    Node node = session1.getNode(path);
+                    String uuid = UUID.randomUUID().toString();
+                    String name = Thread.currentThread().getName() + "_" + uuid;
+                    node.addNode(name, NodeType.NT_FOLDER);
+                    session1.save();
+                    versionManager.checkin(path);
                 }
-                return null;
+            } finally {
+                session1.logout();
             }
+            return null;
         });   
         
-        Future<Void> readerResult = pool.submit(new Callable<Void>() {
-            @Override
-            public Void call() throws Exception {
-                Session session = repository.login();
-                try {
-                    VersionManager versionManager = session.getWorkspace().getVersionManager();
-                    for (int i = 0; i < repeatCount; i++) {
-                        Version baseVersion = versionManager.getBaseVersion(path);
-                        assertNotNull(baseVersion);
-                        Thread.sleep(100);
-                    }
-                    return null;
-                } finally {
-                    session.logout();                    
+        Future<Void> readerResult = pool.submit((Callable<Void>) () -> {
+            Session session1 = repository.login();
+            try {
+                VersionManager versionManager = session1.getWorkspace().getVersionManager();
+                for (int i = 0; i < repeatCount; i++) {
+                    Version baseVersion = versionManager.getBaseVersion(path);
+                    assertNotNull(baseVersion);
+                    Thread.sleep(100);
                 }
+                return null;
+            } finally {
+                session1.logout();                    
             }
         });
 
@@ -325,17 +313,6 @@ public class ConcurrentWriteTest extends SingleUseAbstractTest {
             readerResult.get();
         } finally {
             pool.shutdownNow();    
-        }
-    }
-
-    private void shutdownDefaultRepo() {
-        if (repository != null) {
-            try {
-                TestingUtil.killRepositories(repository);
-            } finally {
-                repository = null;
-                config = null;
-            }
         }
     }
 
@@ -616,9 +593,9 @@ public class ConcurrentWriteTest extends SingleUseAbstractTest {
      * 
      * @see ConcurrentWriteTest#runConcurrently(int, int, Operation)
      */
-    @ThreadSafe
-    protected static interface Operation {
-        void run( Session session ) throws RepositoryException, Exception;
+    @FunctionalInterface
+    protected interface Operation {
+        void run( Session session ) throws Exception;
     }
 
     private void run( final int totalNumberOfOperations,
@@ -637,58 +614,52 @@ public class ConcurrentWriteTest extends SingleUseAbstractTest {
 
         // Create a session and thread for each client ...
         final Repository repository = this.repository;
-        final Session[] sessions = new Session[numberOfConcurrentClients];
         Thread[] threads = new Thread[numberOfConcurrentClients];
         for (int i = 0; i != numberOfConcurrentClients; ++i) {
-            sessions[i] = repository.login();
             final String threadName = "RepoClient" + (i + 1);
-            Runnable runnable = new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        printMessage("Initializing thread '" + threadName + '"');
+            Runnable runnable = () -> {
+                try {
+                    printMessage("Initializing thread '" + threadName + '"');
 
-                        // Block until all threads are ready to start ...
-                        startLatch.await();
+                    // Block until all threads are ready to start ...
+                    startLatch.await();
 
-                        printMessage("Starting thread '" + threadName + '"');
+                    printMessage("Starting thread '" + threadName + '"');
 
-                        // Perform the operation as many times as requested ...
-                        int repeatCount = 1;
-                        while (true) {
-                            int operationNumber = actualOperationCount.getAndIncrement();
+                    // Perform the operation as many times as requested ...
+                    int repeatCount = 1;
+                    while (true) {
+                        int operationNumber = actualOperationCount.getAndIncrement();
 
-                            if (operationNumber > totalNumberOfOperations) break;
+                        if (operationNumber > totalNumberOfOperations) break;
 
-                            ++repeatCount;
-                            Session session = null;
-                            printMessage("Running operation " + repeatCount + " in thread '" + threadName + '"');
-                            try {
-                                // Create the session ...
-                                session = repository.login();
+                        ++repeatCount;
+                        Session session1 = null;
+                        printMessage("Running operation " + repeatCount + " in thread '" + threadName + '"');
+                        try {
+                            // Create the session ...
+                            session1 = repository.login();
 
-                                // Run the operation ...
-                                operation.run(session);
+                            // Run the operation ...
+                            operation.run(session1);
 
-                            } catch (Throwable e) {
-                                problems.recordError(threadName, repeatCount, e);
-                            } finally {
-                                // Always log out of the session ...
-                                if (session != null) session.logout();
+                        } catch (Throwable e) {
+                            problems.recordError(threadName, repeatCount, e);
+                        } finally {
+                            // Always log out of the session ...
+                            if (session1 != null) session1.logout();
 
-                                if (operationNumber % 100 == 0 && operationNumber > 0) {
-                                    printMessage("Completed " + operationNumber + " operations");
-                                }
+                            if (operationNumber % 100 == 0 && operationNumber > 0) {
+                                printMessage("Completed " + operationNumber + " operations");
                             }
                         }
-                    } catch (InterruptedException e) {
-                        Thread.interrupted();
-                        e.printStackTrace();
-                    } finally {
-                        // Thread is done, so count it down ...
-                        printMessage("Completing thread '" + threadName + '"');
-                        completionLatch.countDown();
                     }
+                } catch (InterruptedException e) {
+                    Thread.interrupted();
+                } finally {
+                    // Thread is done, so count it down ...
+                    printMessage("Completing thread '" + threadName + '"');
+                    completionLatch.countDown();
                 }
             };
             threads[i] = new Thread(runnable, threadName);
@@ -742,7 +713,7 @@ public class ConcurrentWriteTest extends SingleUseAbstractTest {
     }
 
     protected static class Results {
-        private List<Error> errors = new CopyOnWriteArrayList<Error>();
+        private List<Error> errors = new CopyOnWriteArrayList<>();
 
         protected void recordError( String threadName,
                                     int iteration,

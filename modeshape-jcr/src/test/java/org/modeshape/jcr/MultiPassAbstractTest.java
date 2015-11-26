@@ -16,7 +16,7 @@
 package org.modeshape.jcr;
 
 import java.net.URL;
-import java.util.concurrent.Callable;
+import org.infinispan.schematic.document.ParsingException;
 import org.junit.Rule;
 import org.junit.rules.TestRule;
 import org.modeshape.common.junit.SkipTestRule;
@@ -36,21 +36,29 @@ public abstract class MultiPassAbstractTest {
     public TestRule skipTestRule = new SkipTestRule();
 
     protected void startRunStop( RepositoryOperation operation,
-                                 String repositoryConfigFile ) throws Exception {
+                                 String repositoryConfigFile ) {
         URL configUrl = getClass().getClassLoader().getResource(repositoryConfigFile);
-        RepositoryConfiguration config = RepositoryConfiguration.read(configUrl);
+        RepositoryConfiguration config = null;
+        try {
+            config = RepositoryConfiguration.read(configUrl);
+        } catch (ParsingException e) {
+            throw new RuntimeException(e);
+        }
         startRunStop(operation, config);
     }
 
     protected void startRunStop( RepositoryOperation operation,
-                                 RepositoryConfiguration config ) throws Exception {
+                                 RepositoryConfiguration config )  {
         JcrRepository repository = null;
 
         try {
             repository = new JcrRepository(config);
             repository.start();
-
-            operation.setRepository(repository).call();
+            operation.execute(repository);
+        } catch (RuntimeException re) {
+            throw re;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         } finally {
             if (repository != null) {
                 TestingUtil.killRepositoryAndContainer(repository);
@@ -58,12 +66,8 @@ public abstract class MultiPassAbstractTest {
         }
     }
 
-    protected abstract class RepositoryOperation implements Callable<Void> {
-        protected JcrRepository repository;
-
-        protected RepositoryOperation setRepository( JcrRepository repository ) {
-            this.repository = repository;
-            return this;
-        }
+    @FunctionalInterface
+    protected interface RepositoryOperation {
+        void execute(JcrRepository repository) throws Exception;
     }
 }

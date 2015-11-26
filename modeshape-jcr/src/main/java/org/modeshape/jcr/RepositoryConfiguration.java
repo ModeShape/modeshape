@@ -76,6 +76,7 @@ import org.modeshape.jcr.mimetype.NameOnlyDetector;
 import org.modeshape.jcr.mimetype.NullMimeTypeDetector;
 import org.modeshape.jcr.security.AnonymousProvider;
 import org.modeshape.jcr.security.JaasProvider;
+import org.modeshape.jcr.txn.DefaultTransactionManagerLookup;
 import org.modeshape.jcr.value.PropertyType;
 import org.modeshape.jcr.value.binary.AbstractBinaryStore;
 import org.modeshape.jcr.value.binary.BinaryStore;
@@ -487,7 +488,7 @@ public class RepositoryConfiguration {
         /**
          * The default value of the {@link FieldName#TRANSACTION_MANAGER_LOOKUP} field is '{@value} '.
          */
-        public static final String TRANSACTION_MANAGER_LOOKUP = "org.modeshape.jcr.txn.DefaultTransactionManagerLookup";
+        public static final String TRANSACTION_MANAGER_LOOKUP = DefaultTransactionManagerLookup.class.getName();
 
         /**
          * The default value of the {@link FieldName#EVENT_BUS_SIZE} field is '{@value}'
