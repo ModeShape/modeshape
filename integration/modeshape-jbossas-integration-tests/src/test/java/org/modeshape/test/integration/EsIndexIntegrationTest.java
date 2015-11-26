@@ -21,6 +21,8 @@ import javax.annotation.Resource;
 import javax.jcr.Node;
 import javax.jcr.Session;
 import javax.jcr.query.Query;
+import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.node.NodeBuilder;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.shrinkwrap.api.ArchivePaths;
@@ -29,9 +31,12 @@ import org.jboss.shrinkwrap.api.asset.EmptyAsset;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.jboss.shrinkwrap.resolver.api.maven.Maven;
 import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.modeshape.common.util.FileUtil;
 import org.modeshape.jcr.JcrRepository;
 import org.modeshape.jcr.ValidateQuery;
 import org.modeshape.jcr.ValidateQuery.ValidationBuilder;
@@ -43,13 +48,14 @@ import org.modeshape.jcr.api.JcrTools;
  * expected.
  */
 @RunWith(Arquillian.class)
-public class QueryIntegrationTest {
+public class EsIndexIntegrationTest {
 
-    @Resource(mappedName = "/jcr/artifacts")
+    @Resource(mappedName = "/jcr/repo-with-es-index")
     private JcrRepository repository;
     private Session session;
     private boolean print;
     private JcrTools tools;
+    private static org.elasticsearch.node.Node esNode;
 
     @Deployment
     public static WebArchive createDeployment() {
@@ -60,8 +66,32 @@ public class QueryIntegrationTest {
 
         return ShrinkWrap.create(WebArchive.class, "query-test.war").addAsLibraries(testDeps)
                 .addAsWebInfResource(EmptyAsset.INSTANCE, ArchivePaths.create("beans.xml"))
+                .addAsWebInfResource(new File("src/main/webapp/WEB-INF/jboss-deployment-structure.xml"), ArchivePaths.create("jboss-deployment-structure.xml"))
                 .addAsResource(new File("src/test/resources/text-extractor/text-file.txt"))
                 .setManifest(new File("src/main/webapp/META-INF/MANIFEST.MF"));
+    }
+
+    @BeforeClass
+    public static void startES() throws Exception {
+        FileUtil.delete("target/data");
+        Settings localSettings = Settings.settingsBuilder()
+                .put("http.enabled", true)
+                .put("number_of_shards", 1)
+                .put("number_of_replicas", 1)
+                .put("path.home", "target/data")
+                .build();
+
+        //configure Elasticsearch node
+        esNode = NodeBuilder.nodeBuilder().settings(localSettings).local(false).build().start();
+        Thread.currentThread().sleep(1000);
+    }
+
+    @AfterClass
+    public static void stopES() throws Exception {
+        if (esNode != null) {
+            esNode.close();
+        }
+        FileUtil.delete("target/data");
     }
 
     @Before
@@ -87,54 +117,22 @@ public class QueryIntegrationTest {
     }
 
     @Test
-    public void shouldQueryForAllUnstructuredNodes() throws Exception {
-        Node node = session.getRootNode().addNode("query_test");
-        session.save();
-        try {
-            String sql = "select [jcr:path] from [nt:base] where [jcr:name] = 'query_test'";
-            Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
-            validateQuery().rowCount(1).useIndex("names").validate(query, query.execute());
-        } finally {
-            node.remove();
-            session.save();
-        }
-    }
-
-    @Test
-    public void shouldQueryForMixTitle() throws Exception {
+    public void shouldQueryUsingElasticsearchIndex() throws Exception {
         Node testRoot = session.getRootNode().addNode("root");
-        Node node1 = testRoot.addNode("node1");
-        node1.addMixin("mix:title");
-        node1.setProperty("jcr:title", "title_1");
-        Node node2 = testRoot.addNode("node2");
-        node2.addMixin("mix:title");
-        node2.setProperty("jcr:title", "title_2");
+        Node node1 = testRoot.addNode("node5");
+        node1.addMixin("mix:mimeType");
+        node1.setProperty("jcr:mimeType", "5");
+
+        Node node2 = testRoot.addNode("node6");
+        node2.addMixin("mix:mimeType");
+        node2.setProperty("jcr:mimeType", "6");
+
         session.save();
 
         try {
-            String sql = "select [jcr:path] from [mix:title] where [jcr:title] LIKE 'ti%'";
+            String sql = "select [jcr:path] from [mix:mimeType] where [jcr:mimeType] = '5'";
             Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
-            validateQuery().rowCount(2).hasNodesAtPaths("/root/node1", "/root/node2").useIndex("titles").validate(query, query.execute());
-        } finally {
-            testRoot.remove();
-            session.save();
-        }
-    }
-
-    @Test
-    public void shouldQueryForTextContent() throws Exception {
-        Node testRoot = session.getRootNode().addNode("root");
-        tools.uploadFile(session, "/root/file1", resourceStream("text-file.txt"));
-        tools.uploadFile(session, "/root/file2", resourceStream("text-file.txt"));
-        session.save();
-
-        try {
-            String sql = "select [jcr:path] from [nt:resource] where contains([jcr:data], 'red jumps')";
-            Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
-            validateQuery().rowCount(2)
-                    .hasNodesAtPaths("/root/file1/jcr:content", "/root/file2/jcr:content")
-                    .useIndex("textFromFiles")
-                    .validate(query, query.execute());
+            validateQuery().rowCount(1).useIndex("mime-types").validate(query, query.execute());
         } finally {
             testRoot.remove();
             session.save();
@@ -142,6 +140,6 @@ public class QueryIntegrationTest {
     }
 
     private InputStream resourceStream(String path) {
-        return QueryIntegrationTest.class.getClassLoader().getResourceAsStream(path);
+        return EsIndexIntegrationTest.class.getClassLoader().getResourceAsStream(path);
     }
 }
