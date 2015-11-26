@@ -32,7 +32,7 @@ public final class NoClientTransactions extends Transactions {
      * nested simple transactions, so we need effective make sure that only 1 instance of an active transaction can exist at any
      * given time. We cannot use multiple instance because completion functions are instance-dependent
      */
-    private static final ThreadLocal<NestableThreadLocalTransaction> ACTIVE_TRANSACTION = new ThreadLocal<NestableThreadLocalTransaction>();
+    private static final ThreadLocal<NestableThreadLocalTransaction> ACTIVE_TRANSACTION = new ThreadLocal<>();
 
     /**
      * Creates a new instance passing in the given monitor factory and transaction manager

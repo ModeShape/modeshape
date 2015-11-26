@@ -1,7 +1,6 @@
 {
     "name" : "config",
     "jndiName" : "",
-    "transactionMode" : "none",
     "workspaces" : {
         "default" : "load",
         "predefined" : ["load"],

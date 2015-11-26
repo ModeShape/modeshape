@@ -1374,7 +1374,6 @@ public class JcrRepositoryTest {
                                                                       "Deprecated config");
         repository = new JcrRepository(config);
         Problems problems = repository.getStartupProblems();
-        assertEquals("Expected 2 startup warnings:" + problems.toString(), 1, problems.warningCount());
         assertEquals("Expected 2 startup errors: " + problems.toString(), 2, problems.errorCount());
     }
 
@@ -1387,10 +1386,10 @@ public class JcrRepositoryTest {
                                                                       "Deprecated config");
         repository = new JcrRepository(config);
         Problems problems = repository.getStartupProblems();
-        assertEquals("Invalid startup problems:" + problems.toString(), 3, problems.size());
+        assertEquals("Invalid startup problems:" + problems.toString(), 2, problems.size());
         repository.shutdown().get();
         problems = repository.getStartupProblems();
-        assertEquals("Invalid startup problems:" + problems.toString(), 3, problems.size());
+        assertEquals("Invalid startup problems:" + problems.toString(), 2, problems.size());
     }
 
     @FixFor( "MODE-2033" )
@@ -1404,7 +1403,6 @@ public class JcrRepositoryTest {
         repository = new JcrRepository(config);
         repository.start();
         Problems problems = repository.getStartupProblems();
-        assertEquals("Expected 2 startup warnings:" + problems.toString(), 1, problems.warningCount());
         assertEquals("Expected 2 startup errors: " + problems.toString(), 2, problems.errorCount());
     }
 

@@ -50,6 +50,7 @@
 
     <properties>
         <version.javax.jcr>2.0</version.javax.jcr>
+        <version.org.jboss.spec.javax.transaction.jboss-transaction-api_1.1_spec>1.0.1.Final</version.org.jboss.spec.javax.transaction.jboss-transaction-api_1.1_spec>
         <version.org.infinispan>7.2.4.Final</version.org.infinispan>
         <version.org.jgroups>3.6.2.Final</version.org.jgroups>
         <version.com.mchange.c3p0>0.9.5</version.com.mchange.c3p0>  <!-- same as the one used by Infinispan's JDBC cache store -->
@@ -313,6 +314,15 @@
                 <version>${version.javax.jcr}</version>
             </dependency>
 
+            <!--
+                Transactions
+            -->
+            <dependency>
+                <groupId>org.jboss.spec.javax.transaction</groupId>
+                <artifactId>jboss-transaction-api_1.1_spec</artifactId>
+                <version>${version.org.jboss.spec.javax.transaction.jboss-transaction-api_1.1_spec}</version>
+            </dependency>
+            
             <!--
                   Infinispan
               -->

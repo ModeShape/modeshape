@@ -157,7 +157,8 @@
         <version.org.jboss.jbossts.jta>5.1.0.Final</version.org.jboss.jbossts.jta>
         <version.com.atomikos>3.8.0</version.com.atomikos>
         <version.org.picketbox>4.0.21.Final</version.org.picketbox>
-        
+
+        <version.org.jboss.spec.javax.transaction.jboss-transaction-api_1.1_spec>1.0.1.Final</version.org.jboss.spec.javax.transaction.jboss-transaction-api_1.1_spec>
         <version.com.googlecode.concurrentlinkedhashmap>1.4.2</version.com.googlecode.concurrentlinkedhashmap>
         <version.org.infinispan>7.2.4.Final</version.org.infinispan>
         <infinispan.module.slot>ispn-7.2</infinispan.module.slot>
@@ -247,7 +248,6 @@
         <!-- Make sure the version of the bundle plugin is at least this, otherwise it will fork like crazy...-->
         <version.bundle.plugin>3.0.0</version.bundle.plugin>
         <version.gwt.maven.plugin>2.5.1</version.gwt.maven.plugin>
-
         <!--The name of the modeshape-client artifact used by tools-->
         <client.artifactId>modeshape-client</client.artifactId>
 
@@ -792,6 +792,7 @@
             </plugin>
             <plugin>
                 <artifactId>maven-surefire-plugin</artifactId>
+                <version>${version.surefire.plugin}</version>
                 <!-- Manually specify the JUnit provider; see MODE-1140 -->
                 <dependencies>
                     <dependency>
@@ -824,6 +825,7 @@
                     <argLine>-Xmx1524M ${debug.argline} -Xss1024k -Djava.awt.headless=true</argLine>
                     <runOrder>alphabetical</runOrder>
                     <useFile>false</useFile>
+                    <trimStackTrace>false</trimStackTrace>
                 </configuration>
             </plugin>
 
@@ -1200,6 +1202,12 @@
                 <groupId>com.googlecode.concurrentlinkedhashmap</groupId>
                 <artifactId>concurrentlinkedhashmap-lru</artifactId>
                 <version>${version.com.googlecode.concurrentlinkedhashmap}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.jboss.spec.javax.transaction</groupId>
+                <artifactId>jboss-transaction-api_1.1_spec</artifactId>
+                <version>${version.org.jboss.spec.javax.transaction.jboss-transaction-api_1.1_spec}</version>
             </dependency>
             <!--
                 Infinispan

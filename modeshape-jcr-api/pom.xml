@@ -29,6 +29,14 @@
             <groupId>javax.jcr</groupId>
             <artifactId>jcr</artifactId>
         </dependency>
+        
+        <!--
+            Transactions API
+        -->
+        <dependency>
+            <groupId>org.jboss.spec.javax.transaction</groupId>
+            <artifactId>jboss-transaction-api_1.1_spec</artifactId>
+        </dependency>
 
         <!--
         These following are defined as 'provided' in the parent POM, since ModeShape

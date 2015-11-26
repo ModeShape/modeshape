@@ -40,7 +40,7 @@ import org.modeshape.jcr.cache.document.WorkspaceCache;
  */
 public final class SynchronizedTransactions extends Transactions {
 
-    private static final ThreadLocal<NestableThreadLocalTransaction> LOCAL_TRANSACTION = new ThreadLocal<NestableThreadLocalTransaction>();
+    private static final ThreadLocal<NestableThreadLocalTransaction> LOCAL_TRANSACTION = new ThreadLocal<>();
 
     @SuppressWarnings( "rawtypes")
     private final Cache localCache;

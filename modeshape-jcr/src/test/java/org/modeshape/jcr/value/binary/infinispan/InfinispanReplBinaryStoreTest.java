@@ -22,7 +22,9 @@ import org.infinispan.configuration.cache.ConfigurationBuilder;
 import org.infinispan.transaction.LockingMode;
 import org.infinispan.transaction.TransactionMode;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 
+@Ignore("remove in 5")
 public class InfinispanReplBinaryStoreTest extends AbstractInfinispanStoreTest {
 
     @BeforeClass

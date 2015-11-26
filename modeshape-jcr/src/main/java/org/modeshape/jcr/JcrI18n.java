@@ -25,6 +25,9 @@ import org.modeshape.common.i18n.I18n;
 public final class JcrI18n {
 
     public static I18n initializing;
+    
+    public static I18n warnNoTxManagerFound;
+    public static I18n unableToInitializeTxManagerLookup;
 
     public static I18n engineStarting;
     public static I18n engineStarted;

@@ -18,7 +18,7 @@
         ]
     },
     "journaling": {
-        "location": "target/journal",
+        "location": "target/obs_journal",
         "asyncWritesEnabled": false
     }
 }

@@ -1,6 +1,5 @@
 {
     "name" : "Test Repository",
-    "transactionMode" : "none",
     "workspaces" : {
         "predefined" : ["otherWorkspace"],
         "default" : "default",
