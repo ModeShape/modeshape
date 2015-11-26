@@ -330,6 +330,15 @@
             </includes>
         </dependencySet>
 
+        <dependencySet>
+            <useProjectArtifact>false</useProjectArtifact>
+            <outputDirectory>${jboss.kit.modules.location}/org/modeshape/index-provider/elasticsearch/main</outputDirectory>
+            <useTransitiveDependencies>true</useTransitiveDependencies>
+            <includes>
+                <include>org.modeshape:modeshape-elasticsearch-index-provider:jar</include>
+            </includes>
+        </dependencySet>
+
 		<!-- Module for the ModeShape JDBC driver -->
 		<dependencySet>
             <useProjectArtifact>false</useProjectArtifact>
