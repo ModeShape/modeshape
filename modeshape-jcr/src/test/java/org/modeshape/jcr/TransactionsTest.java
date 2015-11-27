@@ -353,11 +353,14 @@ public class TransactionsTest extends SingleUseAbstractTest {
             results.add(result);
         }
 
-        for (Future<Void> result : results) {
-            result.get(10, TimeUnit.SECONDS);
-            result.cancel(true);
+        try {
+            for (Future<Void> result : results) {
+                result.get(10, TimeUnit.SECONDS);
+                result.cancel(true);
+            }
+        } finally {
+            executorService.shutdownNow();
         }
-        executorService.shutdown();
     }
 
     @Test
@@ -387,14 +390,17 @@ public class TransactionsTest extends SingleUseAbstractTest {
             results.add(result);
         }
 
-        for (Future<Void> result : results) {
-            result.get(10, TimeUnit.SECONDS);
+        try {
+            for (Future<Void> result : results) {
+                result.get(10, TimeUnit.SECONDS);
+            }
+            Session session = repository.login();
+            // don't count jcr:system
+            assertEquals(threadsCount, session.getNode("/").getNodes().getSize() - 1);
+            session.logout();
+        } finally {
+            executorService.shutdownNow();
         }
-        executorService.shutdown();
-        Session session = repository.login();
-        // don't count jcr:system
-        assertEquals(threadsCount, session.getNode("/").getNodes().getSize() - 1);
-        session.logout();
     }
 
     @FixFor( "MODE-2371" )
@@ -449,23 +455,27 @@ public class TransactionsTest extends SingleUseAbstractTest {
         node2 = mainSession.getNode("/node2");
         
         ExecutorService executorService = Executors.newFixedThreadPool(1);
-        Future<Void> updaterResult = executorService.submit(new Callable<Void>() {
-            @Override
-            public Void call() throws Exception {
-                JcrSession updater = repository.login();
-                startTransaction();
-                AbstractJcrNode node2 = updater.getNode("/node2");
-                node2.setProperty("prop", "bar");
-                updater.save();
-                commitTransaction();
-                updater.logout();
-                return null;
-            }
-        });
-        updaterResult.get();
-        node2 = mainSession.getNode("/node2");
-        assertEquals("bar", node2.getProperty("prop").getString());
-        mainSession.logout();
+        try {
+            Future<Void> updaterResult = executorService.submit(new Callable<Void>() {
+                @Override
+                public Void call() throws Exception {
+                    JcrSession updater = repository.login();
+                    startTransaction();
+                    AbstractJcrNode node2 = updater.getNode("/node2");
+                    node2.setProperty("prop", "bar");
+                    updater.save();
+                    commitTransaction();
+                    updater.logout();
+                    return null;
+                }
+            });
+            updaterResult.get();
+            node2 = mainSession.getNode("/node2");
+            assertEquals("bar", node2.getProperty("prop").getString());
+            mainSession.logout();
+        } finally {
+            executorService.shutdownNow();
+        }
     }
 
     @Test

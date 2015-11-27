@@ -107,7 +107,7 @@ public class RepositoryBackupAndRestoreTest extends SingleUseAbstractTest {
         assertNoProblems(problems);
 
         // shutdown the repo and remove all repo data (stored on disk)
-        repository().doShutdown();
+        repository().doShutdown(false);
         assertTrue(FileUtil.delete("target/backupArea/backRepo/binaries"));
         assertTrue(FileUtil.delete("target/backupArea/backRepo/store"));
 
@@ -160,7 +160,7 @@ public class RepositoryBackupAndRestoreTest extends SingleUseAbstractTest {
         assertNoProblems(problems);
 
         // shutdown the repo and remove just the repo main store (not the binary store)
-        repository().doShutdown();
+        repository().doShutdown(false);
         assertTrue(FileUtil.delete("target/backupArea/backRepo/store"));
 
         // start a fresh empty repo and then restore just the data without binaries

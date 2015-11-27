@@ -28,7 +28,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
-import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import javax.jcr.NoSuchWorkspaceException;
@@ -350,36 +350,30 @@ public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
     public void shouldNotRemainInInconsistentStateIfErrorsOccurOnStartup() throws Exception {
         FileUtil.delete("target/persistent_repository_initial_content");
         // try and start with a config that will produce an exception
-        String repositoryConfigFile = "config/invalid-repo-config-persistent-initial-content.json";
         try {
-            startRunStop(new RepositoryOperation() {
-                @Override
-                public Void call() throws Exception {
-                    return null;
-                }
-            }, repositoryConfigFile);
+            startRunStop(RepositoryOperation.NO_OP, "config/invalid-repo-config-persistent-initial-content.json");
             fail("Expected a repository exception");
         } catch (RepositoryException e) {
             // expected
         }
-
-        final CountDownLatch restartLatch = new CountDownLatch(1);
+        
         Callable<Void> restartRunnable = new Callable<Void>() {
             @Override
             public Void call() throws Exception {
-                startRunStop(new RepositoryOperation() {
-                    @Override
-                    public Void call() throws Exception {
-                        restartLatch.countDown();
-                        return null;
-                    }
-                }, "config/repo-config-persistent-cache-initial-content.json");
+                startRunStop(RepositoryOperation.NO_OP, "config/repo-config-persistent-cache-initial-content.json");
                 return null;
             }
         };
-        Executors.newSingleThreadExecutor().submit(restartRunnable);
-        // wait the repo to restart or fail
-        assertTrue("Repository did not restart in the expected amount of time", restartLatch.await(1, TimeUnit.MINUTES));
+        ExecutorService executorService = Executors.newSingleThreadExecutor();
+        try {
+            // wait the repo to restart or fail
+            executorService.submit(restartRunnable).get(10, TimeUnit.SECONDS);
+        } catch (java.util.concurrent.TimeoutException e) {
+            fail("Repository did not restart in the expected amount of time");            
+        }
+        finally {
+            executorService.shutdownNow();
+        }
     }
 
     @Test
@@ -398,7 +392,7 @@ public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
             }
         }, "config/repo-config-jj-initial.json");
 
-        startRunStop(new RepositoryOperation() {
+        RepositoryOperation operation = new RepositoryOperation() {
             @Override
             public Void call() throws Exception {
                 JcrSession session = repository.login();
@@ -407,18 +401,9 @@ public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
                 assertEquals("type", content.getProperty("_type").getString());
                 return null;
             }
-        }, "config/repo-config-jj-modified.json");
-
-        startRunStop(new RepositoryOperation() {
-            @Override
-            public Void call() throws Exception {
-                JcrSession session = repository.login();
-                Node content = session.getNode("/content");
-                assertEquals("name", content.getProperty("_name").getString());
-                assertEquals("type", content.getProperty("_type").getString());
-                return null;
-            }
-        }, "config/repo-config-jj-modified.json");
+        };
+        startRunStop(operation, "config/repo-config-jj-modified.json");
+        startRunStop(operation, "config/repo-config-jj-modified.json");
     }
 
     @Test

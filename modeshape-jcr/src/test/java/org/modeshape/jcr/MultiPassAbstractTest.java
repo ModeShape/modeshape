@@ -58,7 +58,14 @@ public abstract class MultiPassAbstractTest {
         }
     }
 
-    protected abstract class RepositoryOperation implements Callable<Void> {
+    protected static abstract class RepositoryOperation implements Callable<Void> {
+        protected static final RepositoryOperation NO_OP = new RepositoryOperation() {
+            @Override
+            public Void call() throws Exception {
+                return null;
+            }
+        }; 
+        
         protected JcrRepository repository;
 
         protected RepositoryOperation setRepository( JcrRepository repository ) {

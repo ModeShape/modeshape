@@ -238,28 +238,32 @@ public class ConcurrentWriteTest extends SingleUseAbstractTest {
         }
 
         ExecutorService executorService = Executors.newFixedThreadPool(threadCount);
-        List<Future<String>> futures = new ArrayList<Future<String>>();
-        for (Callable<String> task : tasks) {
-            futures.add(executorService.submit(task));
-        }
-        Set<String> movedNodeIds = new HashSet<String>();
-        for (Future<String> future : futures) {
-            movedNodeIds.add(future.get());
-        }
+        try {
+            List<Future<String>> futures = new ArrayList<Future<String>>();
+            for (Callable<String> task : tasks) {
+                futures.add(executorService.submit(task));
+            }
+            Set<String> movedNodeIds = new HashSet<String>();
+            for (Future<String> future : futures) {
+                movedNodeIds.add(future.get());
+            }
 
-        for (String id : movedNodeIds) {
-            Node node = session.getNodeByIdentifier(id);
-            assertNotNull("The document with " + id + " was not found!", node);
-            assertTrue("The document was not moved to destination folder!", node.getPath().startsWith(destPath));
-        }
+            for (String id : movedNodeIds) {
+                Node node = session.getNodeByIdentifier(id);
+                assertNotNull("The document with " + id + " was not found!", node);
+                assertTrue("The document was not moved to destination folder!", node.getPath().startsWith(destPath));
+            }
 
-        NodeIterator destNodeIterator = session.getNode(destPath).getNodes();
-        while (destNodeIterator.hasNext()) {
-            assertNotNull("Node could be read", destNodeIterator.nextNode());
-        }
+            NodeIterator destNodeIterator = session.getNode(destPath).getNodes();
+            while (destNodeIterator.hasNext()) {
+                assertNotNull("Node could be read", destNodeIterator.nextNode());
+            }
 
-        assertThat("Incorrect number of nodes moved", (long)movedNodeIds.size(), is(expectedMoveCount));
-        assertFalse("The source parent is not empty", session.getNode(sourcePath).getNodes().hasNext());
+            assertThat("Incorrect number of nodes moved", (long)movedNodeIds.size(), is(expectedMoveCount));
+            assertFalse("The source parent is not empty", session.getNode(sourcePath).getNodes().hasNext());
+        } finally {
+            executorService.shutdownNow();
+        }
     }
     
     @Test
