@@ -6,7 +6,7 @@
         "allowCreation" : true
     },
     "journaling": {
-        "location": "target/journal",
+        "location": "target/tck_journal",
         "asyncWritesEnabled": false
     },
     "security" : {

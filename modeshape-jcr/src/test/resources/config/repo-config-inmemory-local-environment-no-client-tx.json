@@ -1,6 +1,5 @@
 {
     "name" : "No Client Tx Repository",
-    "transactionMode" : "none",
     "storage" : {
         "cacheName" : "inmemoryRepository"
     },

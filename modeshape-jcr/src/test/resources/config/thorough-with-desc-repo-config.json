@@ -1,6 +1,5 @@
 {
     "name" : "Thorough",
-    "transactionMode" : "auto",
     "description" : "This is a sample configuration that defines options with their defaults.",
     "monitoring" : {
         "enabled" : true,

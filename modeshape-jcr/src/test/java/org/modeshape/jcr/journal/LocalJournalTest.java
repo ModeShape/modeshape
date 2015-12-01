@@ -53,8 +53,8 @@ public class LocalJournalTest {
 
     @Before
     public void before() throws Exception {
-        FileUtil.delete("target/journal");
-        this.journal = new LocalJournal("target/journal");
+        FileUtil.delete("target/local_journal");
+        this.journal = new LocalJournal("target/local_journal");
         journal.start();
         insertTestRecords();
     }

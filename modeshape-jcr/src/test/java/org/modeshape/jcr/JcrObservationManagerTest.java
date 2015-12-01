@@ -110,7 +110,7 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
     @Before
     public void beforeEach() throws Exception {
         super.beforeEach();
-        FileUtil.delete("target/journal");
+        FileUtil.delete("target/obs_journal");
         startRepositoryWithConfiguration(resourceStream("config/repo-config-observation.json"));
         session = login(WORKSPACE);
 

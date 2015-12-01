@@ -20,6 +20,7 @@ import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -35,6 +36,7 @@ import org.modeshape.jcr.clustering.ClusteringService;
  */
 public class ClusteredChangeBusTest extends AbstractChangeBusTest {
 
+    private ExecutorService executorService = Executors.newCachedThreadPool();
     private List<ChangeBus> buses = new ArrayList<>();
     private List<ClusteringService> clusteringServices = new ArrayList<>();
 
@@ -61,6 +63,7 @@ public class ClusteredChangeBusTest extends AbstractChangeBusTest {
         for (ClusteringService clusteringService : clusteringServices) {
             clusteringService.shutdown();
         }
+        executorService.shutdownNow();
     }
 
     @Test
@@ -295,7 +298,7 @@ public class ClusteredChangeBusTest extends AbstractChangeBusTest {
         ClusteringService clusteringService = ClusteringService.startStandalone("test-bus-process",
                                                                                 "config/cluster/jgroups-test-config.xml");
         clusteringServices.add(clusteringService);
-        ChangeBus internalBus = new RepositoryChangeBus("repo", Executors.newCachedThreadPool());
+        ChangeBus internalBus = new RepositoryChangeBus("repo", executorService);
         ClusteredChangeBus bus = new ClusteredChangeBus(internalBus, clusteringService);
         bus.start();
         buses.add(bus);

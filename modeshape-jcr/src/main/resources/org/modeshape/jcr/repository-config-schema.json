@@ -18,11 +18,6 @@
             "type" : "string",
             "description" : "The name in JNDI where this repository is to be registered. If not specified, the location is assumed to be 'java:jcr/local/<name>', where '<name>' is the repository name. Setting this field to an empty string signals that the repository should not be registered in JNDI."
         },
-        "transactionMode" : {
-            "type" : "string",
-            "description" : "Whether the repository should expect and detect whether JCR clients modify the content within transactions. The default value of 'auto' will automatically detect the use of both user- and container-managed transactions and also works when the JCR client does not use transactions; this will work in most situations. The value of 'none' specifies that the repository should not attempt to detect existing transactions; this setting is an optimization that should be used *only* if JCR clients will never use transactions to change the repository content.",
-            "enum" : [ "auto", "none" ]
-        },
         "eventBusSize" : {
             "type" : "number",
             "description" : "The maximum number of events that can co-exit in the event bus, before blocking and waiting for the slowest consumer(s) to finish and free up subsequent slots. Should be a power of 2, or the system will auto-adjust to the closest power of 2",
@@ -85,9 +80,21 @@
                     "description" : "The name of the Infinispan configuration file for creating a new cache manager. If a file could not be found (on the thread context classloader, on the application's classpath, or on the system classpath), then the name is assumed to reference an existing Infinispan CacheContainer instance via a valid JNDI name or as the name of a service as defined by the local environment. If no such container is found, then a default Infinispan configuration (a basic, local mode, non-clustered cache) will be used."
                 },
                 "transactionManagerLookup" : {
-                    "type" : "string",
-                    "default" : "org.infinispan.transaction.lookup.GenericTransactionManagerLookup",
-                    "description" : "DEPRECATED: This is no longer used. The transaction manager lookup class should be specified in the Infinispan cache configuration (or in a custom Environment subclass for default caches)."
+                    "type" : "object",
+                    "default" : "default",
+                    "description" : "The configuration of the transaction manager lookup instance",
+                    "additionalProperties" : false,
+                    "properties" : {
+                        "name" : {
+                            "type" : "string",
+                            "default" : "org.modeshape.jcr.txn.DefaultTransactionManagerLookup",
+                            "description" : "The fully qualified name of the TransactionManagerLookup instance which ModeShape should use to detect an active transaction manager"
+                        },
+                        "classloader" : {
+                            "type" : "string",
+                            "description" : "The optional paths that should be used to load the transaction manager lookup class."
+                        }
+                    }
                 },
                 "documentOptimization" : {
                     "type" : "object",

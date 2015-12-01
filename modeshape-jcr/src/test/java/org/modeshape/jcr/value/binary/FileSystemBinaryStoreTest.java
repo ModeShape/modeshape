@@ -321,9 +321,8 @@ public class FileSystemBinaryStoreTest extends AbstractBinaryStoreTest {
         final String text = builder.toString();
         final Binary storedValue = store.storeValue(new ByteArrayInputStream(text.getBytes()), false);
         ExecutorService executor = Executors.newFixedThreadPool(3);
-        Callable<String> readingTask = new Callable<String>() {
-            @Override
-            public String call() throws Exception {
+        try {
+            Callable<String> readingTask = () -> {
                 File tempFile = File.createTempFile("test-binary-store", "bin");
                 try {
                     FileOutputStream fos = new FileOutputStream(tempFile);
@@ -334,17 +333,19 @@ public class FileSystemBinaryStoreTest extends AbstractBinaryStoreTest {
                         fos.write(buff, 0, available);
                     }
                     fos.close();
-
+    
                     return IoUtil.read(tempFile);
                 } finally {
                     tempFile.delete();
                 }
+            };
+            List<Callable<String>> tasks = Arrays.asList(readingTask, readingTask, readingTask);
+            List<Future<String>> futures = executor.invokeAll(tasks, 5, TimeUnit.SECONDS);
+            for (Future<String> future : futures) {
+                assertEquals(text, future.get());
             }
-        };
-        List<Callable<String>> tasks = Arrays.asList(readingTask, readingTask, readingTask);
-        List<Future<String>> futures = executor.invokeAll(tasks, 5, TimeUnit.SECONDS);
-        for (Future<String> future : futures) {
-            assertEquals(text, future.get());
+        } finally {
+            executor.shutdownNow();
         }
     }
 

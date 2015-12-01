@@ -53,7 +53,6 @@ import org.infinispan.schematic.document.EditableDocument;
 import org.infinispan.schematic.document.Editor;
 import org.infinispan.schematic.document.Json;
 import org.infinispan.schematic.document.ParsingException;
-import org.infinispan.transaction.lookup.GenericTransactionManagerLookup;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.collection.Problems;
 import org.modeshape.common.collection.SimpleProblems;
@@ -69,6 +68,7 @@ import org.modeshape.connector.filesystem.FileSystemConnector;
 import org.modeshape.jcr.api.index.IndexColumnDefinition;
 import org.modeshape.jcr.api.index.IndexDefinition;
 import org.modeshape.jcr.api.index.IndexDefinition.IndexKind;
+import org.modeshape.jcr.api.txn.TransactionManagerLookup;
 import org.modeshape.jcr.index.local.LocalIndexProvider;
 import org.modeshape.jcr.mimetype.ContentDetector;
 import org.modeshape.jcr.mimetype.MimeTypeDetector;
@@ -76,6 +76,7 @@ import org.modeshape.jcr.mimetype.NameOnlyDetector;
 import org.modeshape.jcr.mimetype.NullMimeTypeDetector;
 import org.modeshape.jcr.security.AnonymousProvider;
 import org.modeshape.jcr.security.JaasProvider;
+import org.modeshape.jcr.txn.DefaultTransactionManagerLookup;
 import org.modeshape.jcr.value.PropertyType;
 import org.modeshape.jcr.value.binary.AbstractBinaryStore;
 import org.modeshape.jcr.value.binary.BinaryStore;
@@ -220,15 +221,6 @@ public class RepositoryConfiguration {
         public static final String JNDI_NAME = "jndiName";
 
         /**
-         * The specification of whether the repository should expect and detect whether JCR clients modify the content within
-         * transactions. The default value of 'auto' will automatically detect the use of both user- and container-managed
-         * transactions and also works when the JCR client does not use transactions; this will work in most situations. The value
-         * of 'none' specifies that the repository should not attempt to detect existing transactions; this setting is an
-         * optimization that should be used *only* if JCR clients will never use transactions to change the repository content.
-         */
-        public static final String TRANSACTION_MODE = "transactionMode";
-
-        /**
          * The name for the field whose value is a document containing the monitoring information.
          */
         public static final String MONITORING = "monitoring";   
@@ -263,15 +255,9 @@ public class RepositoryConfiguration {
         public static final String CACHE_CONFIGURATION = "cacheConfiguration";
 
         /**
-         * The name for the field containing the name of the Infinispan transaction manager lookup class. This is only used if no
-         * {@link #CACHE_CONFIGURATION cacheConfiguration} value is specified and ModeShape needs to instantiate the Infinispan
-         * {@link CacheContainer}. By default, the {@link GenericTransactionManagerLookup} class is used.
-         *
-         * @deprecated The transaction manager lookup class should be specified in the Infinispan cache configuration (or in a
-         *             custom Environment subclass for default caches)
+         * The name of the field which contains the fully qualified name of the transaction manager lookup class to be used.
          */
-        @Deprecated
-        public static final String CACHE_TRANSACTION_MANAGER_LOOKUP = "transactionManagerLookup";
+        public static final String TRANSACTION_MANAGER_LOOKUP = "transactionManagerLookup";
 
         /**
          * The size threshold that dictates whether binary values should be stored in the binary store. Binary values smaller than
@@ -500,9 +486,9 @@ public class RepositoryConfiguration {
         public static final String DEFAULT = "default";
 
         /**
-         * The default value of the {@link FieldName#TRANSACTION_MODE} field is '{@value} '.
+         * The default value of the {@link FieldName#TRANSACTION_MANAGER_LOOKUP} field is '{@value} '.
          */
-        public static final TransactionMode TRANSACTION_MODE = TransactionMode.AUTO;
+        public static final String TRANSACTION_MANAGER_LOOKUP = DefaultTransactionManagerLookup.class.getName();
 
         /**
          * The default value of the {@link FieldName#EVENT_BUS_SIZE} field is '{@value}'
@@ -574,7 +560,7 @@ public class RepositoryConfiguration {
         public static final String MIMETYPE_DETECTION_CONTENT = "content";
     }
 
-    protected static final Set<List<String>> DEPRECATED_FIELDS;
+    protected static final Set<List<String>> DEPRECATED_FIELDS = Collections.emptySet();
 
     /**
      * The set of field names that should be skipped when {@link Component#createInstance(ClassLoader) instantiating a component}.
@@ -700,11 +686,6 @@ public class RepositoryConfiguration {
         } catch (IOException e) {
             LOGGER.error(e, JcrI18n.unableToLoadRepositoryConfigurationSchema, JSON_SCHEMA_RESOURCE_PATH);
         }
-
-        Set<List<String>> deprecatedFieldNames = new HashSet<List<String>>();
-        deprecatedFieldNames.add(Collections.unmodifiableList(Arrays.asList(new String[] {FieldName.STORAGE,
-            FieldName.CACHE_TRANSACTION_MANAGER_LOOKUP})));
-        DEPRECATED_FIELDS = Collections.unmodifiableSet(deprecatedFieldNames);
     }
 
     /**
@@ -907,6 +888,24 @@ public class RepositoryConfiguration {
             return storage.getString(FieldName.CACHE_CONFIGURATION);
         }
         return null;
+    }
+    
+    public TransactionManagerLookup getTransactionManagerLookup() {
+        Document storage = doc.getDocument(FieldName.STORAGE);
+        String className = Default.TRANSACTION_MANAGER_LOOKUP;
+        String classPath = null;
+        if (storage != null) {
+            Document txManagerLookupDoc = storage.getDocument(FieldName.TRANSACTION_MANAGER_LOOKUP);
+            if (txManagerLookupDoc != null) {
+                className = txManagerLookupDoc.getString(FieldName.NAME, Default.TRANSACTION_MANAGER_LOOKUP);
+                classPath = txManagerLookupDoc.getString(FieldName.CLASSLOADER);
+            }
+        }
+        try {
+            return new Component(className, classPath).createInstance(getClass().getClassLoader());
+        } catch (Exception e) {
+            throw new RuntimeException(JcrI18n.unableToInitializeTxManagerLookup.text(className), e);
+        }
     }
     
     public int getWorkspaceCacheSize() {
@@ -1235,13 +1234,13 @@ public class RepositoryConfiguration {
                 }
                 try {
                     // locate the field instance on which the value will be set
-                    java.lang.reflect.Field instanceField = findField(instance.getClass(), fieldName);
+                    java.lang.reflect.Field instanceField = Reflection.findFieldRecursively(instance.getClass(), fieldName);
                     if (instanceField == null) {
                         LOGGER.warn(JcrI18n.missingFieldOnInstance, fieldName, classname);
                         continue;
                     }
 
-                    Object convertedFieldValue = convertValueToType(instanceField.getType(), fieldValue);
+                    Object convertedFieldValue = DocumentReflection.convertValueToType(instanceField.getType(), fieldValue);
 
                     // if the value is a document, means there is a nested bean
                     if (convertedFieldValue instanceof Document) {
@@ -1258,141 +1257,6 @@ public class RepositoryConfiguration {
                 }
             }
         }
-
-        /**
-         * Attempts "its best" to convert a generic Object value (coming from a Document) to a value which can be set on the field
-         * of a component. Note: thanks to type erasure, generics are not supported.
-         *
-         * @param expectedType the {@link Class} of the field on which the value should be set
-         * @param value a generic value coming from a document. Can be a simple value, another {@link Document} or {@link Array}
-         * @return the converted value, which should be compatible with the expected type.
-         * @throws Exception if anything will fail during the conversion process
-         */
-        private Object convertValueToType( Class<?> expectedType,
-                                           Object value ) throws Exception {
-            // lists are converted to ArrayList
-            if (List.class.isAssignableFrom(expectedType)) {
-                return valueToCollection(value, new ArrayList<Object>());
-            }
-            // sets are converted to HashSet
-            if (Set.class.isAssignableFrom(expectedType)) {
-                return valueToCollection(value, new HashSet<Object>());
-            }
-            // arrays are converted as-is
-            if (expectedType.isArray()) {
-                return valueToArray(expectedType.getComponentType(), value);
-            }
-
-            // maps are converted to hashmap
-            if (Map.class.isAssignableFrom(expectedType)) {
-                // only string keys are supported atm
-                return ((Document)value).toMap();
-            }
-
-            // Strings can be parsed into numbers ...
-            if (value instanceof String) {
-                String strValue = (String)value;
-                // Try the smallest ranges first ...
-                if (Short.TYPE.isAssignableFrom(expectedType) || Short.class.isAssignableFrom(expectedType)) {
-                    try {
-                        return Short.parseShort(strValue);
-                    } catch (NumberFormatException e) {
-                        // ignore and continue ...
-                    }
-                }
-                if (Integer.TYPE.isAssignableFrom(expectedType) || Integer.class.isAssignableFrom(expectedType)) {
-                    try {
-                        return Integer.parseInt(strValue);
-                    } catch (NumberFormatException e) {
-                        // ignore and continue ...
-                    }
-                }
-                if (Long.TYPE.isAssignableFrom(expectedType) || Long.class.isAssignableFrom(expectedType)) {
-                    try {
-                        return Long.parseLong(strValue);
-                    } catch (NumberFormatException e) {
-                        // ignore and continue ...
-                    }
-                }
-                if (Boolean.TYPE.isAssignableFrom(expectedType) || Boolean.class.isAssignableFrom(expectedType)) {
-                    try {
-                        return Boolean.parseBoolean(strValue);
-                    } catch (NumberFormatException e) {
-                        // ignore and continue ...
-                    }
-                }
-                if (Float.TYPE.isAssignableFrom(expectedType) || Float.class.isAssignableFrom(expectedType)) {
-                    try {
-                        return Float.parseFloat(strValue);
-                    } catch (NumberFormatException e) {
-                        // ignore and continue ...
-                    }
-                }
-                if (Double.TYPE.isAssignableFrom(expectedType) || Double.class.isAssignableFrom(expectedType)) {
-                    try {
-                        return Double.parseDouble(strValue);
-                    } catch (NumberFormatException e) {
-                        // ignore and continue ...
-                    }
-                }
-            }
-
-            // return value as it is
-            return value;
-        }
-
-        private Object valueToArray( Class<?> arrayComponentType,
-                                     Object value ) throws Exception {
-            if (value instanceof Array) {
-                Array valueArray = (Array)value;
-                int arraySize = valueArray.size();
-                Object newArray = java.lang.reflect.Array.newInstance(arrayComponentType, arraySize);
-                for (int i = 0; i < ((Array)value).size(); i++) {
-                    Object element = valueArray.get(i);
-                    element = convertValueToType(arrayComponentType, element);
-                    java.lang.reflect.Array.set(newArray, i, element);
-                }
-                return newArray;
-            } else if (value instanceof String) {
-                // Parse the string into a comma-separated set of values (this works if it's just a single value) ...
-                String strValue = (String)value;
-                if (strValue.length() > 0) {
-                    String[] stringValues = strValue.split(",");
-                    Object newArray = java.lang.reflect.Array.newInstance(arrayComponentType, stringValues.length);
-                    for (int i = 0; i < stringValues.length; i++) {
-                        Object element = convertValueToType(arrayComponentType, stringValues[i]);
-                        java.lang.reflect.Array.set(newArray, i, element);
-                    }
-                    return newArray;
-                }
-            }
-
-            // Otherwise, just initialize it to an empty array ...
-            return java.lang.reflect.Array.newInstance(arrayComponentType, 0);
-        }
-
-        private Collection<?> valueToCollection( Object value,
-                                                 Collection<Object> collection ) throws Exception {
-            if (value instanceof Array) {
-                collection.addAll((List<?>)value);
-            } else {
-                collection.add(value);
-            }
-            return collection;
-        }
-
-        public java.lang.reflect.Field findField( Class<?> typeClass,
-                                                  String fieldName ) {
-            java.lang.reflect.Field field = null;
-            if (typeClass != null) {
-                try {
-                    field = typeClass.getDeclaredField(fieldName);
-                } catch (NoSuchFieldException e) {
-                    field = findField(typeClass.getSuperclass(), fieldName);
-                }
-            }
-            return field;
-        }
     }
 
     public boolean isCreatingWorkspacesAllowed() {
@@ -1403,11 +1267,6 @@ public class RepositoryConfiguration {
         return Default.ALLOW_CREATION;
     }
 
-    public TransactionMode getTransactionMode() {
-        String mode = doc.getString(FieldName.TRANSACTION_MODE);
-        return mode != null ? TransactionMode.valueOf(mode.trim().toUpperCase()) : Default.TRANSACTION_MODE;
-    }
-    
     public int getEventBusSize() {
         return doc.getInteger(FieldName.EVENT_BUS_SIZE, Default.EVENT_BUS_SIZE);
     }
@@ -2682,6 +2541,14 @@ public class RepositoryConfiguration {
         private final String classname;
         private final String classpath;
         private final Document document;
+        
+        protected Component(String classname) {
+            this(null, classname, null, EMPTY);
+        }
+        
+        protected Component(String classname, String classpath) {
+            this(null, classname, classpath, EMPTY);
+        } 
 
         protected Component( String name,
                              String classname,
@@ -2822,13 +2689,13 @@ public class RepositoryConfiguration {
                 }
                 try {
                     // locate the field instance on which the value will be set
-                    java.lang.reflect.Field instanceField = findField(instance.getClass(), fieldName);
+                    java.lang.reflect.Field instanceField = Reflection.findFieldRecursively(instance.getClass(), fieldName);
                     if (instanceField == null) {
                         LOGGER.warn(JcrI18n.missingFieldOnInstance, fieldName, getClassname());
                         continue;
                     }
 
-                    Object convertedFieldValue = convertValueToType(instanceField.getType(), fieldValue);
+                    Object convertedFieldValue = DocumentReflection.convertValueToType(instanceField.getType(), fieldValue);
 
                     // if the value is a document, means there is a nested bean
                     if (convertedFieldValue instanceof Document) {
@@ -2845,6 +2712,11 @@ public class RepositoryConfiguration {
                 }
             }
         }
+    }
+    
+    private static final class DocumentReflection {
+        private DocumentReflection() {
+        }
 
         /**
          * Attempts "its best" to convert a generic Object value (coming from a Document) to a value which can be set on the field
@@ -2855,8 +2727,8 @@ public class RepositoryConfiguration {
          * @return the converted value, which should be compatible with the expected type.
          * @throws Exception if anything will fail during the conversion process
          */
-        private Object convertValueToType( Class<?> expectedType,
-                                           Object value ) throws Exception {
+        private static Object convertValueToType(Class<?> expectedType,
+                                                 Object value) throws Exception {
             // lists are converted to ArrayList
             if (List.class.isAssignableFrom(expectedType)) {
                 return valueToCollection(value, new ArrayList<Object>());
@@ -2928,8 +2800,8 @@ public class RepositoryConfiguration {
             return value;
         }
 
-        private Object valueToArray( Class<?> arrayComponentType,
-                                     Object value ) throws Exception {
+        private static Object valueToArray(Class<?> arrayComponentType,
+                                           Object value) throws Exception {
             if (value instanceof Array) {
                 Array valueArray = (Array)value;
                 int arraySize = valueArray.size();
@@ -2958,8 +2830,8 @@ public class RepositoryConfiguration {
             return java.lang.reflect.Array.newInstance(arrayComponentType, 0);
         }
 
-        private Collection<?> valueToCollection( Object value,
-                                                 Collection<Object> collection ) throws Exception {
+        private static Collection<?> valueToCollection(Object value,
+                                                       Collection<Object> collection) throws Exception {
             if (value instanceof Array) {
                 collection.addAll((List<?>)value);
             } else {
@@ -2967,19 +2839,5 @@ public class RepositoryConfiguration {
             }
             return collection;
         }
-
-        private java.lang.reflect.Field findField( Class<?> typeClass,
-                                                   String fieldName ) {
-            java.lang.reflect.Field field = null;
-            if (typeClass != null) {
-                try {
-                    field = typeClass.getDeclaredField(fieldName);
-                } catch (NoSuchFieldException e) {
-                    field = findField(typeClass.getSuperclass(), fieldName);
-                }
-            }
-            return field;
-        }
     }
-
 }

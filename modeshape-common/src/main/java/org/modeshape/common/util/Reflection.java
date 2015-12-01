@@ -257,7 +257,14 @@ public class Reflection {
         }
     }
 
-    private static Field findFieldRecursively(Class<?> c, String fieldName) {
+    /**
+     * Searches for a given field recursively under a particular class 
+     * 
+     * @param c a {@link Class} instance, never null
+     * @param fieldName the name of the field, never null
+     * @return a {@link Field} instance if the field is located anywhere in the hierarchy or {@code null} if no such field exists
+     */
+    public static Field findFieldRecursively(Class<?> c, String fieldName) {
         Field f = null;
         try {
             f = c.getDeclaredField(fieldName);

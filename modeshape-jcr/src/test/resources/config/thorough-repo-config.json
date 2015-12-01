@@ -1,6 +1,5 @@
 {
     "name" : "Thorough",
-    "transactionMode" : "auto",
     "monitoring" : {
         "enabled" : true,
     },
@@ -19,6 +18,10 @@
     "storage" : {
         "cacheName" : "Thorough",
         "cacheConfiguration" : "infinispan_configuration.xml",
+        "transactionManagerLookup" : {
+            "name" : "org.modeshape.jcr.txn.DefaultTransactionManagerLookup",
+            "classloader" : "some_path"
+        },
         "binaryStorage" : {
             "type" : "file",
             "directory" : "Thorough/binaries",    

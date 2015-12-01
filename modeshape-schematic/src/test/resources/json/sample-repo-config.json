@@ -1,6 +1,5 @@
 {
     "name" : "Thorough",
-    "transactionMode" : "auto",
     "monitoring" : {
         "enabled" : true,
     },

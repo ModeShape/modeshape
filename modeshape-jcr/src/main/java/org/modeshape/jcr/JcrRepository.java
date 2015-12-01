@@ -92,7 +92,6 @@ import org.modeshape.jcr.RepositoryConfiguration.FieldName;
 import org.modeshape.jcr.RepositoryConfiguration.GarbageCollection;
 import org.modeshape.jcr.RepositoryConfiguration.JaasSecurity;
 import org.modeshape.jcr.RepositoryConfiguration.Security;
-import org.modeshape.jcr.RepositoryConfiguration.TransactionMode;
 import org.modeshape.jcr.api.AnonymousCredentials;
 import org.modeshape.jcr.api.Repository;
 import org.modeshape.jcr.api.RepositoryManager;
@@ -100,6 +99,7 @@ import org.modeshape.jcr.api.RestoreOptions;
 import org.modeshape.jcr.api.Workspace;
 import org.modeshape.jcr.api.monitor.ValueMetric;
 import org.modeshape.jcr.api.query.Query;
+import org.modeshape.jcr.api.txn.TransactionManagerLookup;
 import org.modeshape.jcr.bus.ChangeBus;
 import org.modeshape.jcr.bus.ClusteredChangeBus;
 import org.modeshape.jcr.bus.RepositoryChangeBus;
@@ -132,7 +132,6 @@ import org.modeshape.jcr.security.EnvironmentAuthenticationProvider;
 import org.modeshape.jcr.security.JaasProvider;
 import org.modeshape.jcr.security.SecurityContext;
 import org.modeshape.jcr.spi.index.IndexManager;
-import org.modeshape.jcr.txn.NoClientTransactions;
 import org.modeshape.jcr.txn.SynchronizedTransactions;
 import org.modeshape.jcr.txn.Transactions;
 import org.modeshape.jcr.value.NamespaceRegistry;
@@ -324,13 +323,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         final ExecutorService executor = Executors.newSingleThreadExecutor(new NamedThreadFactory("modeshape-repository-stop"));
         try {
             // Submit a runnable to terminate all sessions ...
-            Future<Boolean> future = executor.submit(new Callable<Boolean>() {
-                @Override
-                public Boolean call() throws Exception {
-                    return doShutdown();
-                }
-            });
-            return future;
+            return executor.submit(() -> doShutdown(false));
         } finally {
             // Now shutdown the executor and return the future ...
             executor.shutdown();
@@ -378,12 +371,13 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
     }
 
     protected final RunningState doStart() throws Exception {
+        RunningState state = null;
         try {
             stateLock.lock();
             if (this.state.get() == State.RESTORING) {
                 throw new IllegalStateException(JcrI18n.repositoryIsBeingRestoredAndCannotBeStarted.text(getName()));
             }
-            RunningState state = this.runningState.get();
+            state = this.runningState.get();
             if (state == null) {
                 // start the repository by creating the running state ...
                 this.state.set(State.STARTING);
@@ -403,7 +397,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         }
     }
 
-    protected final boolean doShutdown() {
+    protected final boolean doShutdown(boolean rollback) {
         if (this.state.get() == State.NOT_RUNNING) return true;
         try {
             stateLock.lock();
@@ -418,7 +412,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 running.terminateSessions();
 
                 // Now shutdown the running state ...
-                running.shutdown();
+                running.shutdown(rollback);
 
                 // Null out the running state ...
                 this.runningState.set(null);
@@ -540,7 +534,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
             logger.debug("Performing custom system initialization on '{0}' after content has been restored", getName());
             runningState().completeRestore();
             logger.debug("Shutting down '{0}' after content has been restored", getName());
-            doShutdown();
+            doShutdown(false);
             logger.debug("Starting '{0}' after content has been restored", getName());
             start();
             logger.debug("Started '{0}' after content has been restored; beginning indexing of content", getName());
@@ -738,7 +732,6 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         private final Path WORKSPACES_PATH = Paths.path(FieldName.WORKSPACES);
         private final Path PREDEFINED_PATH = Paths.path(FieldName.WORKSPACES, FieldName.PREDEFINED);
         private final Path JNDI_PATH = Paths.path(FieldName.JNDI_NAME);
-        private final Path TRANSACTION_MODE_PATH = Paths.path(FieldName.TRANSACTION_MODE);
         private final Path MINIMUM_BINARY_SIZE_IN_BYTES_PATH = Paths.path(FieldName.STORAGE, FieldName.BINARY_STORAGE,
                                                                           FieldName.MINIMUM_BINARY_SIZE_IN_BYTES);
         private final Path NAME_PATH = Paths.path(FieldName.NAME);
@@ -756,7 +749,6 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         protected boolean workspacesChanged = false;
         protected boolean predefinedWorkspacesChanged = false;
         protected boolean jndiChanged = false;
-        protected boolean transactionMode = false;
         protected boolean largeValueChanged = false;
         protected boolean nameChanged = false;
         protected boolean monitoringChanged = false;
@@ -813,7 +805,6 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
             if (!indexesChanged && path.startsWith(INDEXES_PATH)) indexesChanged = true;
             if (!indexProvidersChanged && path.startsWith(INDEX_PROVIDERS_PATH)) indexProvidersChanged = true;
             if (!jndiChanged && path.equals(JNDI_PATH)) jndiChanged = true;
-            if (!transactionMode && path.equals(TRANSACTION_MODE_PATH)) transactionMode = true;
             if (!nameChanged && path.equals(NAME_PATH)) nameChanged = true;
             if (!monitoringChanged && path.equals(MONITORING_PATH)) monitoringChanged = true;
         }
@@ -945,6 +936,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         private final String systemWorkspaceKey;
         private final RepositoryNodeTypeManager nodeTypes;
         private final RepositoryLockManager lockManager;
+        private final TransactionManagerLookup txMgrLookup;
         private final TransactionManager txnMgr;
         private final Transactions transactions;
         private final String jndiName;
@@ -1042,9 +1034,10 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                     this.context = other.context;
                     this.connectors = other.connectors;
                     this.documentStore = other.documentStore;
+                    this.txMgrLookup = other.txMgrLookup;
                     this.txnMgr = documentStore.transactionManager();
 
-                    this.transactions = createTransactions(this.cache.getName(), config.getTransactionMode(), this.txnMgr);
+                    this.transactions = createTransactions(this.cache.getName(), this.txnMgr);
 
                     suspendExistingUserTransaction();
 
@@ -1093,7 +1086,8 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                     LocalDocumentStore localStore = new LocalDocumentStore(database);
                     this.documentStore = connectors.hasConnectors() ? new FederatedDocumentStore(connectors, localStore) : localStore;
                     this.txnMgr = this.documentStore.transactionManager();
-                    this.transactions = createTransactions(cacheName, config.getTransactionMode(), this.txnMgr);
+                    this.txMgrLookup = config.getTransactionManagerLookup(); 
+                    this.transactions = createTransactions(cacheName, this.txnMgr);
 
                     suspendExistingUserTransaction();
 
@@ -1244,10 +1238,8 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 this.nodeTypesImporter = new NodeTypesImporter(config.getNodeTypes(), this);
 
             } catch (Throwable t) {
-                // remove the document that was written as part of the initialization procedure
-                if (cache != null) {
-                    cache.rollbackRepositoryInfo();
-                }
+                shutdown(true);
+                tempContext.terminateAllPools(0, TimeUnit.MILLISECONDS);
                 // resume any user transaction that may have been suspended earlier
                 resumeExistingUserTransaction();
                 throw (t instanceof Exception) ? (Exception)t : new RuntimeException(t);
@@ -1273,19 +1265,11 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
             return cacheChannel;
         }
 
-        protected Transactions createTransactions( String cacheName,
-                                                   TransactionMode mode,
-                                                   TransactionManager txnMgr ) {
+        protected Transactions createTransactions(String cacheName,
+                                                  TransactionManager txnMgr) {
             if (txnMgr == null) {
                 throw new ConfigurationException(JcrI18n.repositoryCannotBeStartedWithoutTransactionalSupport.text(getName(),
                                                                                                                    cacheName));
-            }
-
-            switch (mode) {
-                case NONE:
-                    return new NoClientTransactions(txnMgr);
-                case AUTO:
-                    break;
             }
             return new SynchronizedTransactions(txnMgr, documentStore.localStore().localCache());
         }
@@ -1346,7 +1330,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                     }
                 });
             } catch (Throwable t) {
-                repositoryCache().rollbackRepositoryInfo();
+                doShutdown(true);
                 resumeExistingUserTransaction();
                 throw t instanceof Exception ? (Exception)t : new RuntimeException(t);
             }
@@ -1652,13 +1636,17 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
             return cache.createSession(context, systemWorkspaceName(), readOnly);
         }
 
-        protected void shutdown() {
-            // if reindexing was asynchronous and is still going on, we need to terminate it before we stop any of caches
-            // or we do anything that affects the nodes
-            this.repositoryQueryManager.stopReindexing();
+        protected void shutdown(boolean rollback) {
+            if (repositoryQueryManager != null) {
+                // if reindexing was asynchronous and is still going on, we need to terminate it before we stop any of caches
+                // or we do anything that affects the nodes
+                this.repositoryQueryManager.stopReindexing();
+            }
 
-            // shutdown the connectors
-            this.connectors.shutdown();
+            if (connectors != null) {
+                // shutdown the connectors
+                this.connectors.shutdown();
+            }
 
             // Remove the scheduled operations ...
             for (ScheduledFuture<?> future : backgroundProcesses) {
@@ -1668,8 +1656,10 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
             // Unregister from JNDI ...
             unbindFromJndi();
 
-            // Shutdown the sequencers ...
-            sequencers().shutdown();
+            if (sequencers != null) {
+                // Shutdown the sequencers ...
+                sequencers.shutdown();
+            }
 
             // Now wait until all the internal sessions are gone ...
             if (!internalSessions.isEmpty()) {
@@ -1684,8 +1674,13 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 }
             }
 
-            // Now shutdown the repository caches ...
-            this.cache.startShutdown();
+            if (cache != null) {
+                if (rollback) {
+                    cache.rollbackRepositoryInfo();
+                }
+                // Now shutdown the repository caches ...
+                this.cache.startShutdown();
+            }
 
             // shutdown the clustering service
             if (this.clusteringService != null) {
@@ -1702,8 +1697,10 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 this.journal.shutdown();
             }
 
-            // Shutdown the query engine ...
-            repositoryQueryManager.shutdown();
+            if (repositoryQueryManager != null) {
+                // Shutdown the query engine ...
+                repositoryQueryManager.shutdown();
+            }
 
             // Shutdown the text extractors
             if (extractors != null) {
@@ -1714,11 +1711,15 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 backupService.shutdown();
             }
 
-            // Shutdown the binary store ...
-            this.binaryStore.shutdown();
+            if (binaryStore != null) {
+                // Shutdown the binary store ...
+                this.binaryStore.shutdown();
+            }
 
-            // Now shutdown the repository caches ...
-            this.cache.completeShutdown();
+            if (cache != null) {
+                // Now shutdown the repository caches ...
+                this.cache.completeShutdown();
+            }
 
             if (statistics != null) {
                 statistics.stop();
@@ -1728,7 +1729,9 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 mbean.stop();
             }
 
-            this.context().terminateAllPools(30, TimeUnit.SECONDS);
+            if (this.context != null) {
+                this.context.terminateAllPools(30, TimeUnit.SECONDS);
+            }
 
             // Shutdown the environment's resources.
             this.environment().shutdown();

@@ -43,7 +43,7 @@ public interface Environment {
      * needs.
      * 
      * @param fallbackLoader the classloader that should be used is the fallback class loader
-     * @param classpathEntries the logical classpath entries
+     * @param classpathEntries the logical classpath entries; may be null
      * @return the classloader
      */
     ClassLoader getClassLoader( ClassLoader fallbackLoader,

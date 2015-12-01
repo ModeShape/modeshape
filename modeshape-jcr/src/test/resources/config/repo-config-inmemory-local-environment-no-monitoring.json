@@ -1,6 +1,5 @@
 {
     "name" : "No Monitoring Repository",
-    "transactionMode" : "none",
     "monitoring" : {
         "enabled" : false
     },

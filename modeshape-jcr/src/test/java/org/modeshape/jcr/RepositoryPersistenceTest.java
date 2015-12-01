@@ -64,46 +64,36 @@ public class RepositoryPersistenceTest extends MultiPassAbstractTest {
         // remove all persisted content ...
         FileUtil.delete(persistentFolder);
 
-        startRunStop(new RepositoryOperation() {
+        startRunStop(repository -> {
+            Session session = repository.login();
 
-            @Override
-            public Void call() throws Exception {
-                Session session = repository.login();
+            final NamespaceRegistry namespaceRegistry = (NamespaceRegistry)session.getWorkspace().getNamespaceRegistry();
 
-                final NamespaceRegistry namespaceRegistry = (NamespaceRegistry)session.getWorkspace().getNamespaceRegistry();
+            namespaceRegistry.registerNamespace("info:a#");
+            namespaceRegistry.registerNamespace("info:b#");
+            namespaceRegistry.registerNamespace("info:c#");
+            assertEquals("ns001", namespaceRegistry.getPrefix("info:a#"));
+            assertEquals("ns002", namespaceRegistry.getPrefix("info:b#"));
+            assertEquals("ns003", namespaceRegistry.getPrefix("info:c#"));
 
-                namespaceRegistry.registerNamespace("info:a#");
-                namespaceRegistry.registerNamespace("info:b#");
-                namespaceRegistry.registerNamespace("info:c#");
-                assertEquals("ns001", namespaceRegistry.getPrefix("info:a#"));
-                assertEquals("ns002", namespaceRegistry.getPrefix("info:b#"));
-                assertEquals("ns003", namespaceRegistry.getPrefix("info:c#"));
+            final Node node = session.getRootNode().addNode("ns001:xyz", NodeType.NT_UNSTRUCTURED);
+            node.setProperty("ns002:abc", "abc");
+            node.setProperty("ns003:def", "def");
 
-                final Node node = session.getRootNode().addNode("ns001:xyz", NodeType.NT_UNSTRUCTURED);
-                node.setProperty("ns002:abc", "abc");
-                node.setProperty("ns003:def", "def");
-
-                session.save();
-                session.logout();
-                return null;
-            }
+            session.save();
+            session.logout();
         }, repositoryConfigFile);
 
-        startRunStop(new RepositoryOperation() {
+        startRunStop(repository -> {
+            Session session = repository.login();
 
-            @Override
-            public Void call() throws Exception {
-                Session session = repository.login();
+            final NamespaceRegistry namespaceRegistry = (NamespaceRegistry)session.getWorkspace().getNamespaceRegistry();
 
-                final NamespaceRegistry namespaceRegistry = (NamespaceRegistry)session.getWorkspace().getNamespaceRegistry();
-
-                assertEquals("ns001", namespaceRegistry.getPrefix("info:a#"));
-                assertEquals("ns002", namespaceRegistry.getPrefix("info:b#"));
-                assertEquals("ns003", namespaceRegistry.getPrefix("info:c#"));
-                session.save();
-                session.logout();
-                return null;
-            }
+            assertEquals("ns001", namespaceRegistry.getPrefix("info:a#"));
+            assertEquals("ns002", namespaceRegistry.getPrefix("info:b#"));
+            assertEquals("ns003", namespaceRegistry.getPrefix("info:c#"));
+            session.save();
+            session.logout();
         }, repositoryConfigFile);
 
     }
@@ -123,78 +113,69 @@ public class RepositoryPersistenceTest extends MultiPassAbstractTest {
 
         final JcrTools tools = new JcrTools();
 
-        startRunStop(new RepositoryOperation() {
-            @Override
-            public Void call() throws Exception {
-                Session session = repository.login();
+        startRunStop(repository -> {
+            Session session = repository.login();
 
-                // Add some content ...
-                session.getRootNode().addNode("testNode");
-                for (File testFile : testFiles) {
-                    String name = testFile.getName();
-                    Node fileNode = tools.uploadFile(session, "/testNode/" + name, testFile);
-                    Binary binary = fileNode.getNode("jcr:content").getProperty("jcr:data").getBinary();
-                    assertThat(binary.getSize(), is(testFileSizesInBytes.get(name)));
-                }
-
-                session.save();
-
-                Node testNode = session.getNode("/testNode");
-                for (File testFile : testFiles) {
-                    String name = testFile.getName();
-                    Node fileNode = testNode.getNode(name);
-                    assertThat(fileNode, is(notNullValue()));
-                    Binary binary = fileNode.getNode("jcr:content").getProperty("jcr:data").getBinary();
-                    byte[] expectedBytes = IoUtil.readBytes(testFile);
-                    byte[] actualBytes = IoUtil.readBytes(binary.getStream());
-                    assertArrayEquals(expectedBytes, actualBytes);
-                }
-
-                Query query = session.getWorkspace().getQueryManager().createQuery("SELECT * FROM [nt:file]", Query.JCR_SQL2);
-                QueryResult results = query.execute();
-                NodeIterator iter = results.getNodes();
-                while (iter.hasNext()) {
-                    Node fileNode = iter.nextNode();
-                    assertThat(fileNode, is(notNullValue()));
-                    String name = fileNode.getName();
-                    Binary binary = fileNode.getNode("jcr:content").getProperty("jcr:data").getBinary();
-                    assertThat(binary.getSize(), is(testFileSizesInBytes.get(name)));
-                }
-
-                session.logout();
-                return null;
+            // Add some content ...
+            session.getRootNode().addNode("testNode");
+            for (File testFile : testFiles) {
+                String name = testFile.getName();
+                Node fileNode = tools.uploadFile(session, "/testNode/" + name, testFile);
+                Binary binary = fileNode.getNode("jcr:content").getProperty("jcr:data").getBinary();
+                assertThat(binary.getSize(), is(testFileSizesInBytes.get(name)));
             }
+
+            session.save();
+
+            Node testNode = session.getNode("/testNode");
+            for (File testFile : testFiles) {
+                String name = testFile.getName();
+                Node fileNode = testNode.getNode(name);
+                assertThat(fileNode, is(notNullValue()));
+                Binary binary = fileNode.getNode("jcr:content").getProperty("jcr:data").getBinary();
+                byte[] expectedBytes = IoUtil.readBytes(testFile);
+                byte[] actualBytes = IoUtil.readBytes(binary.getStream());
+                assertArrayEquals(expectedBytes, actualBytes);
+            }
+
+            Query query = session.getWorkspace().getQueryManager().createQuery("SELECT * FROM [nt:file]", Query.JCR_SQL2);
+            QueryResult results = query.execute();
+            NodeIterator iter = results.getNodes();
+            while (iter.hasNext()) {
+                Node fileNode = iter.nextNode();
+                assertThat(fileNode, is(notNullValue()));
+                String name = fileNode.getName();
+                Binary binary = fileNode.getNode("jcr:content").getProperty("jcr:data").getBinary();
+                assertThat(binary.getSize(), is(testFileSizesInBytes.get(name)));
+            }
+
+            session.logout();
         }, repositoryConfigFile);
 
-        startRunStop(new RepositoryOperation() {
-            @Override
-            public Void call() throws Exception {
+        startRunStop(repository -> {
 
-                Session session = repository.login();
-                assertNotNull(session.getNode("/testNode"));
+            Session session = repository.login();
+            assertNotNull(session.getNode("/testNode"));
 
-                for (File testFile : testFiles) {
-                    String name = testFile.getName();
-                    Node fileNode = session.getNode("/testNode/" + name);
-                    assertNotNull(fileNode);
-                    Binary binary = fileNode.getNode("jcr:content").getProperty("jcr:data").getBinary();
-                    assertThat(binary.getSize(), is(testFileSizesInBytes.get(name)));
-                }
-
-                Query query = session.getWorkspace().getQueryManager().createQuery("SELECT * FROM [nt:file]", Query.JCR_SQL2);
-                QueryResult results = query.execute();
-                NodeIterator iter = results.getNodes();
-                while (iter.hasNext()) {
-                    Node fileNode = iter.nextNode();
-                    String name = fileNode.getName();
-                    Binary binary = fileNode.getNode("jcr:content").getProperty("jcr:data").getBinary();
-                    assertThat(binary.getSize(), is(testFileSizesInBytes.get(name)));
-                }
-
-                session.logout();
-
-                return null;
+            for (File testFile : testFiles) {
+                String name = testFile.getName();
+                Node fileNode = session.getNode("/testNode/" + name);
+                assertNotNull(fileNode);
+                Binary binary = fileNode.getNode("jcr:content").getProperty("jcr:data").getBinary();
+                assertThat(binary.getSize(), is(testFileSizesInBytes.get(name)));
             }
+
+            Query query = session.getWorkspace().getQueryManager().createQuery("SELECT * FROM [nt:file]", Query.JCR_SQL2);
+            QueryResult results = query.execute();
+            NodeIterator iter = results.getNodes();
+            while (iter.hasNext()) {
+                Node fileNode = iter.nextNode();
+                String name = fileNode.getName();
+                Binary binary = fileNode.getNode("jcr:content").getProperty("jcr:data").getBinary();
+                assertThat(binary.getSize(), is(testFileSizesInBytes.get(name)));
+            }
+
+            session.logout();
         }, repositoryConfigFile);
     }
 

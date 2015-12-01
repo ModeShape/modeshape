@@ -34,7 +34,6 @@ import org.modeshape.jcr.RepositoryConfiguration.FieldName;
 import org.modeshape.jcr.RepositoryConfiguration.Indexes;
 import org.modeshape.jcr.RepositoryConfiguration.JaasSecurity;
 import org.modeshape.jcr.RepositoryConfiguration.Security;
-import org.modeshape.jcr.RepositoryConfiguration.TransactionMode;
 import org.modeshape.jcr.api.index.IndexDefinition;
 import org.modeshape.jcr.api.index.IndexDefinition.IndexKind;
 
@@ -107,14 +106,12 @@ public class RepositoryConfigurationTest {
 
     @Test
     public void shouldSuccessfullyValidateSampleRepositoryConfiguration() {
-        RepositoryConfiguration config = assertHasWarnings(0, "sample-repo-config.json");
-        assertThat(config.getTransactionMode(), is(TransactionMode.AUTO));
+        assertHasWarnings(0, "sample-repo-config.json");
     }
 
     @Test
     public void shouldSuccessfullyValidateSampleRepositoryConfiguration2() {
-        RepositoryConfiguration config = assertValid("config/sample-repo-config.json");
-        assertThat(config.getTransactionMode(), is(TransactionMode.NONE));
+        assertValid("config/sample-repo-config.json");
     }
 
     @Test
