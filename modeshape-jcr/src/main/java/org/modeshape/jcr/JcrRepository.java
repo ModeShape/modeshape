@@ -325,7 +325,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
             Future<Boolean> future = executor.submit(new Callable<Boolean>() {
                 @Override
                 public Boolean call() throws Exception {
-                    return doShutdown();
+                    return doShutdown(false);
                 }
             });
             return future;
@@ -401,7 +401,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         }
     }
 
-    protected final boolean doShutdown() {
+    protected final boolean doShutdown(boolean rollback) {
         if (this.state.get() == State.NOT_RUNNING) return true;
         try {
             stateLock.lock();
@@ -416,7 +416,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 running.terminateSessions();
 
                 // Now shutdown the running state ...
-                running.shutdown();
+                running.shutdown(rollback);
 
                 // Null out the running state ...
                 this.runningState.set(null);
@@ -538,7 +538,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
             logger.debug("Performing custom system initialization on '{0}' after content has been restored", getName());
             runningState().completeRestore();
             logger.debug("Shutting down '{0}' after content has been restored", getName());
-            doShutdown();
+            doShutdown(false);
             logger.debug("Starting '{0}' after content has been restored", getName());
             start();
             logger.debug("Started '{0}' after content has been restored; beginning indexing of content", getName());
@@ -1243,10 +1243,9 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 this.nodeTypesImporter = new NodeTypesImporter(config.getNodeTypes(), this);
 
             } catch (Throwable t) {
-                // remove the document that was written as part of the initialization procedure
-                if (cache != null) {
-                    cache.rollbackRepositoryInfo();
-                }
+                shutdown(true);
+                // shut down all the tread pools that were created...
+                tempContext.terminateAllPools(0, TimeUnit.MILLISECONDS);
                 // resume any user transaction that may have been suspended earlier
                 resumeExistingUserTransaction();
                 throw (t instanceof Exception) ? (Exception)t : new RuntimeException(t);
@@ -1345,7 +1344,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                     }
                 });
             } catch (Throwable t) {
-                repositoryCache().rollbackRepositoryInfo();
+                doShutdown(true);
                 resumeExistingUserTransaction();
                 throw t instanceof Exception ? (Exception)t : new RuntimeException(t);
             }
@@ -1651,24 +1650,30 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
             return cache.createSession(context, systemWorkspaceName(), readOnly);
         }
 
-        protected void shutdown() {
-            // if reindexing was asynchronous and is still going on, we need to terminate it before we stop any of caches
-            // or we do anything that affects the nodes
-            this.repositoryQueryManager.stopReindexing();
+        protected void shutdown(boolean rollback) {
+            if (repositoryQueryManager != null) {
+                // if reindexing was asynchronous and is still going on, we need to terminate it before we stop any of caches
+                // or we do anything that affects the nodes
+                this.repositoryQueryManager.stopReindexing();
+            }
 
-            // shutdown the connectors
-            this.connectors.shutdown();
-
+            if (connectors != null) {
+                // shutdown the connectors
+                this.connectors.shutdown();
+            }
+            
             // Remove the scheduled operations ...
             for (ScheduledFuture<?> future : backgroundProcesses) {
                 future.cancel(true);
             }
-
+           
             // Unregister from JNDI ...
             unbindFromJndi();
 
-            // Shutdown the sequencers ...
-            sequencers().shutdown();
+            if (sequencers != null) {
+                // Shutdown the sequencers ...
+                sequencers().shutdown();
+            }
 
             // Now wait until all the internal sessions are gone ...
             if (!internalSessions.isEmpty()) {
@@ -1683,8 +1688,13 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 }
             }
 
-            // Now shutdown the repository caches ...
-            this.cache.startShutdown();
+            if (cache != null) {
+                if (rollback) {
+                    this.cache.rollbackRepositoryInfo();
+                }
+                // Now shutdown the repository caches ...
+                this.cache.startShutdown();
+            }
 
             // shutdown the clustering service
             if (this.clusteringService != null) {
@@ -1701,8 +1711,10 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 this.journal.shutdown();
             }
 
-            // Shutdown the query engine ...
-            repositoryQueryManager.shutdown();
+            if (repositoryQueryManager != null) {
+                // Shutdown the query engine ...
+                repositoryQueryManager.shutdown();
+            }
 
             // Shutdown the text extractors
             if (extractors != null) {
@@ -1713,11 +1725,15 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 backupService.shutdown();
             }
 
-            // Shutdown the binary store ...
-            this.binaryStore.shutdown();
-
-            // Now shutdown the repository caches ...
-            this.cache.completeShutdown();
+            if (binaryStore != null) {
+                // Shutdown the binary store ...
+                this.binaryStore.shutdown();
+            }
+            
+            if (cache != null) {
+                // Now shutdown the repository caches ...
+                this.cache.completeShutdown();
+            }
 
             if (statistics != null) {
                 statistics.stop();
@@ -1727,7 +1743,9 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 mbean.stop();
             }
 
-            this.context().terminateAllPools(30, TimeUnit.SECONDS);
+            if (context != null) {
+                this.context.terminateAllPools(30, TimeUnit.SECONDS);
+            }
 
             // Shutdown the environment's resources.
             this.environment().shutdown();

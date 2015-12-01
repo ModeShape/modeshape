@@ -87,23 +87,20 @@ public class ThreadPools implements ThreadPoolFactory {
     @Override
     public void terminateAllPools( long maxWaitTime,
                                    TimeUnit unit ) {
-        // Calculate the time in the future when we don't need to wait any more ...
-        long futureStopTimeInMillis = System.currentTimeMillis() + TimeUnit.MILLISECONDS.convert(maxWaitTime, unit);
-
         for (Iterator<Map.Entry<String, ExecutorService>> entryIterator = poolsByName.entrySet().iterator(); entryIterator.hasNext();) {
             Map.Entry<String, ExecutorService> entry = entryIterator.next();
             ExecutorService executorService = entry.getValue();
             if (!executorService.isShutdown()) {
                 executorService.shutdown();
-                // Calculate how long till we have to wait till the future stop time ...
-                long waitTimeInMillis = futureStopTimeInMillis - System.currentTimeMillis();
                 try {
-                    if (waitTimeInMillis > 0) {
-                        executorService.awaitTermination(waitTimeInMillis, TimeUnit.MILLISECONDS);
+                    if (maxWaitTime > 0) {
+                        executorService.awaitTermination(maxWaitTime, unit);
                     }
                     executorService.shutdownNow();
                 } catch (InterruptedException e) {
-                    Thread.interrupted();
+                    if (Thread.interrupted()) {
+                        executorService.shutdownNow();
+                    }
                 }
             }
 
