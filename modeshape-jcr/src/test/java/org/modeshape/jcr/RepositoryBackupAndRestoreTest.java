@@ -17,6 +17,7 @@ package org.modeshape.jcr;
 
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
@@ -27,6 +28,7 @@ import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import javax.jcr.Binary;
@@ -34,6 +36,7 @@ import javax.jcr.ImportUUIDBehavior;
 import javax.jcr.NoSuchWorkspaceException;
 import javax.jcr.Node;
 import javax.jcr.PathNotFoundException;
+import javax.jcr.PropertyIterator;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.query.Query;
@@ -49,11 +52,12 @@ import org.modeshape.common.statistic.Stopwatch;
 import org.modeshape.common.util.FileUtil;
 import org.modeshape.common.util.IoUtil;
 import org.modeshape.jcr.api.BackupOptions;
+import org.modeshape.jcr.api.JcrTools;
 import org.modeshape.jcr.api.Problems;
 import org.modeshape.jcr.api.RestoreOptions;
 
 /**
- * Test performance writing graph subtrees of various sizes with varying number of properties
+ * Tests repository backup and restore
  */
 public class RepositoryBackupAndRestoreTest extends SingleUseAbstractTest {
 
@@ -65,6 +69,7 @@ public class RepositoryBackupAndRestoreTest extends SingleUseAbstractTest {
     private File backupArea;
     private File backupDirectory;
     private File backupDirectory2;
+    private File backupRepoDir;
     
     @Override
     protected RepositoryConfiguration createRepositoryConfiguration( String repositoryName,
@@ -81,7 +86,8 @@ public class RepositoryBackupAndRestoreTest extends SingleUseAbstractTest {
         FileUtil.delete(backupArea);
         backupDirectory.mkdirs();
         backupDirectory2.mkdirs();
-        new File(backupArea, "backRepo").mkdirs();
+        backupRepoDir = new File(backupArea, "backupRepo");
+        backupRepoDir.mkdirs();
         new File(backupArea, "restoreRepo").mkdirs();
         super.beforeEach();
     }
@@ -108,8 +114,7 @@ public class RepositoryBackupAndRestoreTest extends SingleUseAbstractTest {
 
         // shutdown the repo and remove all repo data (stored on disk)
         repository().doShutdown(false);
-        assertTrue(FileUtil.delete("target/backupArea/backRepo/binaries"));
-        assertTrue(FileUtil.delete("target/backupArea/backRepo/store"));
+        assertTrue(FileUtil.delete(backupRepoDir));
 
         // start a fresh empty repo and then restore
         startRepositoryWithConfiguration(resourceStream("config/backup-repo-config.json"));
@@ -127,7 +132,7 @@ public class RepositoryBackupAndRestoreTest extends SingleUseAbstractTest {
      */
     @Test
     @FixFor( "MODE-2440" )
-    public void shouldRestoreLegacy381Repository() throws Exception {
+    public void shouldRestoreLegacy381RepositoryWithSameName() throws Exception {
         // extract the old repo backup 
         File legacyBackupDir = extractZip("legacy_backup/repoBackups381.zip", this.backupArea);
         assertTrue("Zip content not extracted correctly", legacyBackupDir.exists() && legacyBackupDir.canRead() && legacyBackupDir.isDirectory());
@@ -138,6 +143,39 @@ public class RepositoryBackupAndRestoreTest extends SingleUseAbstractTest {
         assertFilesInWorkspcae("default");
         assertFilesInWorkspcae("ws2");
         assertFilesInWorkspcae("ws3");
+    }
+
+    /**
+     * Test that a repository backed up using ModeShape 3.8.1 is restored correctly using another repository name and cache name.
+     */
+    @Test
+    @FixFor("MODE-2539")
+    public void shouldRestoreLegacy381RepositoryWithDifferentName() throws Exception {
+        // extract the old repo backup 
+        File legacyBackupDir = extractZip("legacy_backup/repoBackups381_2.zip", this.backupArea);
+        assertTrue("Zip content not extracted correctly", legacyBackupDir.exists() && legacyBackupDir.canRead() && legacyBackupDir.isDirectory());
+        
+        Problems problems = session().getWorkspace().getRepositoryManager().restoreRepository(legacyBackupDir);
+        assertNoProblems(problems);
+        final Session session = repository.login();
+        final AtomicInteger totalCount = new AtomicInteger(0);
+        tools.onEachNode(session, false, new JcrTools.NodeOperation() {
+            @Override
+            public void run(Node node) throws Exception {
+                if (node.getPath().equals("/")) {
+                    return;
+                }
+                totalCount.incrementAndGet();
+                // the backup created 7 properties per node + the primary type
+                PropertyIterator properties = node.getProperties();
+                assertEquals(8, properties.getSize());
+                while (properties.hasNext()) {
+                    assertNotNull(properties.nextProperty().getString());
+                }
+            }
+        });        
+        // the backup should have 1110 nodes without the root...
+        assertEquals(1110, totalCount.get());
     }
 
     @Test
@@ -161,7 +199,7 @@ public class RepositoryBackupAndRestoreTest extends SingleUseAbstractTest {
 
         // shutdown the repo and remove just the repo main store (not the binary store)
         repository().doShutdown(false);
-        assertTrue(FileUtil.delete("target/backupArea/backRepo/store"));
+        assertTrue(FileUtil.delete(new File(backupRepoDir, "store")));
 
         // start a fresh empty repo and then restore just the data without binaries
         startRepositoryWithConfiguration(resourceStream("config/backup-repo-config.json"));

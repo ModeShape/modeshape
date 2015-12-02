@@ -69,9 +69,9 @@ abstract class LocalMapIndex<T, V> extends LocalIndex<V> {
         } else {
             logger.debug("Creating storage for '{0}' index in workspace '{1}'", name, workspaceName);
             this.isNew = true;
-            this.options = db.createHashMap(name + "/options").make();
+            this.options = db.createHashMap(name + "/options").makeOrGet();
             this.keysByValue = db.createTreeMap(name).counterEnable().comparator(valueSerializer.getComparator())
-                                 .keySerializer(valueSerializer).make();
+                                 .keySerializer(valueSerializer).makeOrGet();
             // Create the TreeSet used in the reverse mapping, but we have to set a comparator that works in terms of the
             // Fun.Tuple2<String,T> ...
             final Comparator<String> strComparator = ValueComparators.STRING_COMPARATOR;
@@ -82,7 +82,7 @@ abstract class LocalMapIndex<T, V> extends LocalIndex<V> {
                                                                                                        strSerializer,
                                                                                                        valueRawSerializer,
                                                                                                        revComparator);
-            this.valuesByKey = db.createTreeSet(name + "/inverse").comparator(revComparator).serializer(revSerializer).make();
+            this.valuesByKey = db.createTreeSet(name + "/inverse").comparator(revComparator).serializer(revSerializer).makeOrGet();
         }
         this.comparator = valueSerializer.getComparator();
 
