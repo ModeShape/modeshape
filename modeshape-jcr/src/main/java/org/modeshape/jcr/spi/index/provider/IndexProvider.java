@@ -918,13 +918,16 @@ public abstract class IndexProvider {
                 }
             }
         }
-        // Remove the managed indexes for workspaces that no longer exist ...
-        removeProvidedIndexes(observable, new Predicate<AtomicIndex>() {
-            @Override
-            public boolean test( AtomicIndex index ) {
-                return !changes.getRemovedWorkspaces().contains(index.workspaceName());
-            }
-        });
+        final Set<String> removedWorkspaces = changes.getRemovedWorkspaces();
+        if (!removedWorkspaces.isEmpty()) {
+            // Remove the managed indexes for workspaces that no longer exist ...
+            removeProvidedIndexes(observable, new Predicate<AtomicIndex>() {
+                @Override
+                public boolean test(AtomicIndex index) {
+                    return removedWorkspaces.contains(index.workspaceName());
+                }
+            });
+        }
         refreshDelegateIndexWriter(nodeTypesSupplier);
     }
 
@@ -1025,13 +1028,16 @@ public abstract class IndexProvider {
                 });
             }
         }
-        // Remove all of the managed indexes for REMOVED index definitions ...
-        removeProvidedIndexes(observable, new Predicate<AtomicIndex>() {
-            @Override
-            public boolean test( AtomicIndex index ) {
-                return changes.getRemovedIndexDefinitions().contains(index.getName());
-            }
-        });
+        final Set<String> removedIndexDefinitions = changes.getRemovedIndexDefinitions();
+        if (!removedIndexDefinitions.isEmpty()) {
+            // Remove all of the managed indexes for REMOVED index definitions ...
+            removeProvidedIndexes(observable, new Predicate<AtomicIndex>() {
+                @Override
+                public boolean test(AtomicIndex index) {
+                    return removedIndexDefinitions.contains(index.getName());
+                }
+            });
+        }
         refreshDelegateIndexWriter(nodeTypesSupplier);
     }
 
@@ -1342,7 +1348,7 @@ public abstract class IndexProvider {
                 AtomicIndex index = providedIter.next().getValue();
                 if (predicate.test(index)) {
                     removeProvidedIndex(index, observable);
-                    iter.remove();
+                    providedIter.remove();
                     // Look for this provided index in the reverse lookup ...
                     Map<String, AtomicIndex> byIndexName = providedIndexesByIndexNameByWorkspaceName.get(index.workspaceName());
                     byIndexName.remove(index.getName());

@@ -128,14 +128,15 @@ public class RepositoryCache {
     private final RepositoryFeaturesDetector repositoryFeaturesDetector;
     private final int workspaceCacheSize;
 
-    public RepositoryCache(ExecutionContext context,
-                           DocumentStore documentStore,
-                           ClusteringService clusteringService,
-                           RepositoryConfiguration configuration,
-                           ContentInitializer initializer,
-                           RepositoryEnvironment repositoryEnvironment,
-                           ChangeBus changeBus,
-                           Upgrades upgradeFunctions) {
+    public RepositoryCache( ExecutionContext context,
+                            DocumentStore documentStore,
+                            ClusteringService clusteringService,
+                            RepositoryConfiguration configuration,
+                            ContentInitializer initializer,
+                            RepositoryEnvironment repositoryEnvironment,
+                            ChangeBus changeBus,
+                            Upgrades upgradeFunctions ) {
+        assert initializer != null;
         this.context = context;
         this.configuration = configuration;
         this.documentStore = documentStore;
@@ -282,10 +283,7 @@ public class RepositoryCache {
             logger.debug("Creating the '{0}' workspace in repository '{1}'", systemWorkspaceName, name);
             // We have to create the initial "/jcr:system" content ...
             MutableCachedNode root = systemSession.mutable(systemRootKey);
-            if (initializer == null) {
-                initializer = NO_OP_INITIALIZER;
-            }
-            initializer.initialize(systemSession, root);
+            initializer.initializeSystemArea(systemSession, root);
             systemSession.save();
             // Now we need to forcibly refresh the system workspace cache ...
             refreshWorkspace(systemWorkspaceName);
@@ -298,6 +296,14 @@ public class RepositoryCache {
             }
         } else {
             logger.debug("Found existing '{0}' workspace in repository '{1}'", systemWorkspaceName, name);
+            // even if the system node is already there and the system area was not initialized, it can happen that certain parts
+            // of the jcr:system area is still missing. For example restoring a 3.x repository into 4.x. Therefore this needs to 
+            // be performed here, after we've loaded the system root nodes
+            if (initializer.initializeIndexStorage(systemSession, systemSession.mutable(systemNode.getKey()))) {
+                logger.debug("Initialized index storage area in the '{0}' workspace of the repository '{1}'", 
+                             systemWorkspaceName, name);
+                systemSession.save();
+            }
         }
         this.systemKey = systemRef.getKey();
 
@@ -474,7 +480,17 @@ public class RepositoryCache {
         return this;
     }
 
-    private <V> V runInTransaction( Callable<V> operation, int retryCountOnLockTimeout, String... keysToLock ) {
+    /**
+     * Runs the given operation within a transaction, after optionally locking some keys.
+     *
+     * @param operation a {@link Callable} instance; may not be null
+     * @param retryCountOnLockTimeout the number of times the operation should be retried if a timeout occurs while trying
+     * to obtain the locks
+     * @param keysToLock an optional {@link String[]} representing the keys to lock before performing the operation
+     * @param <V> the return type of the operation
+     * @return the result of operation
+     */
+    public  <V> V runInTransaction( Callable<V> operation, int retryCountOnLockTimeout, String... keysToLock ) {
         // Start a transaction ...
         Transactions txns = repositoryEnvironment.getTransactions();
         try {
@@ -1119,10 +1135,22 @@ public class RepositoryCache {
         return name;
     }
 
-    public interface ContentInitializer {
-        void initialize(SessionCache session, MutableCachedNode parent);
+    public static interface ContentInitializer {
+        /**
+         * Initializes the system part of the repository.
+         *
+         * @param session a {@link SessionCache} instance, never {@code null}
+         * @param parent a {@link MutableCachedNode} instance under which the initialization should be done, never {@code null}
+         */
+        public void initializeSystemArea(SessionCache session, MutableCachedNode parent);
+        
+        /**
+         * Initializes the system part of the repository that deals with index storage.
+         *
+         * @param session a {@link SessionCache} instance, never {@code null}
+         * @param systemNode a {@link MutableCachedNode} instance, never {@code null}
+         * @return {@code true} if the initialization was performed, {@code false} otherwise.
+         */
+        public boolean initializeIndexStorage(SessionCache session, MutableCachedNode systemNode);
     }
-
-    public static final ContentInitializer NO_OP_INITIALIZER = (session, parent) -> {
-    };
 }
