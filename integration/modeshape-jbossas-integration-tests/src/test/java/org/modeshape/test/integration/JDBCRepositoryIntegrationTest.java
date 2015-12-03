@@ -59,14 +59,8 @@ public class JDBCRepositoryIntegrationTest {
     @Resource( mappedName = "/jcr/jdbcRepositoryWithEviction" )
     private Repository repositoryWithEviction;
 
-    @Resource (mappedName =  "/jcr/binaryJDBCRepository")
-    private JcrRepository repositoryWithBinaryJDBCStore;
-
     @Resource (mappedName =  "/jcr/dbBinaryJDBCRepository")
     private JcrRepository repositoryWithDbBinaryStorage;
-
-    @Resource (mappedName =  "/jcr/binaryIndexingJDBCRepository")
-    private JcrRepository binaryIndexingJDBCRepository;
 
     @Deployment
     public static WebArchive createDeployment() {
@@ -110,21 +104,9 @@ public class JDBCRepositoryIntegrationTest {
     }
 
     @Test
-    @FixFor( "MODE-1676" )
-    public void shouldPersistBinaryDataInJDBCBinaryStore() throws Exception {
-        persistBinaryContent(repositoryWithBinaryJDBCStore);
-    }
-
-    @Test
     @FixFor( "MODE-2194" )
     public void shouldPersistBinaryDataInDBBinaryStore() throws Exception {
         persistBinaryContent(repositoryWithDbBinaryStorage);
-    }
-
-    @Test
-    @FixFor( "MODE-1841" )
-    public void shouldPersistBinaryDataInJDBCIndexingBinaryStore() throws Exception {
-        persistBinaryContent(binaryIndexingJDBCRepository);
     }
 
     private void persistBinaryContent( JcrRepository repository ) throws RepositoryException, IOException {

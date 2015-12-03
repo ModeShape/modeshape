@@ -29,43 +29,5 @@
                         path="${jboss.server.data.dir}/modeshape/store/artifacts-ha"/>
             </persistence>
         </replicated-cache>
-        <!-- 
-            Binary data
-        -->
-        <replicated-cache name="artifacts-binary-fs" mode="SYNC" statistics="false">
-            <locking
-                    isolation="READ_COMMITTED"
-                    acquire-timeout="6000"/>
-            <transaction
-                    mode="NON_XA"
-                    locking="PESSIMISTIC"/>
-            <persistence
-                    passivation="false">
-                <file-store
-                        shared="false"
-                        preload="false"
-                        purge="true"
-                        path="${jboss.server.data.dir}/modeshape/binary-store/artifacts-ha-binary-fs"/>
-            </persistence>
-        </replicated-cache>
-        <!-- 
-            Binary metadata 
-        -->
-        <replicated-cache name="artifacts-binary-fs-meta" mode="SYNC" statistics="false">
-            <locking
-                    isolation="READ_COMMITTED"
-                    acquire-timeout="1000"/>
-            <transaction
-                    mode="NON_XA"
-                    locking="PESSIMISTIC"/>
-            <persistence
-                    passivation="false">
-                <file-store
-                        shared="false"
-                        preload="false"
-                        purge="true"
-                        path="${jboss.server.data.dir}/modeshape/binary-store/artifacts-ha-binary-fs-meta"/>
-            </persistence>
-        </replicated-cache>
     </cache-container>
 </infinispan>

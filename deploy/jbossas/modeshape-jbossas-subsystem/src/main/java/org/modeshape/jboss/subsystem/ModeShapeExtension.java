@@ -97,14 +97,12 @@ public class ModeShapeExtension implements Extension {
         // Binary storage submodel and type submodels
         final ManagementResourceRegistration binaryStorageSubmodel = repositorySubmodel.registerSubModel(ModeShapeBinaryStorageResource.INSTANCE);
         binaryStorageSubmodel.registerSubModel(ModeShapeFileBinaryStorageResource.DEFAULT);
-        binaryStorageSubmodel.registerSubModel(ModeShapeCacheBinaryStorageResource.DEFAULT);
         binaryStorageSubmodel.registerSubModel(ModeShapeDatabaseBinaryStorageResource.DEFAULT);
         binaryStorageSubmodel.registerSubModel(ModeShapeCustomBinaryStorageResource.DEFAULT);
         binaryStorageSubmodel.registerSubModel(ModeShapeTransientBinaryStorageResource.DEFAULT);
 
         ManagementResourceRegistration compositeStorageSubmodel = binaryStorageSubmodel.registerSubModel(ModeShapeCompositeBinaryStorageResource.INSTANCE);
         compositeStorageSubmodel.registerSubModel(ModeShapeFileBinaryStorageResource.NESTED);
-        compositeStorageSubmodel.registerSubModel(ModeShapeCacheBinaryStorageResource.NESTED);
         compositeStorageSubmodel.registerSubModel(ModeShapeDatabaseBinaryStorageResource.NESTED);
         compositeStorageSubmodel.registerSubModel(ModeShapeCustomBinaryStorageResource.NESTED);
     }

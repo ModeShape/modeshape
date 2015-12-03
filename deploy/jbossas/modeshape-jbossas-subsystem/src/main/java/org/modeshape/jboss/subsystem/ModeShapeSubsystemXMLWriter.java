@@ -276,17 +276,6 @@ public class ModeShapeSubsystemXMLWriter implements XMLStreamConstants, XMLEleme
             ModelAttributes.STORE_NAME.marshallAsAttribute(storage, false, writer);
             ModelAttributes.MIME_TYPE_DETECTION.marshallAsAttribute(storage, false, writer);
             writer.writeEndElement();
-        } else if (ModelKeys.CACHE_BINARY_STORAGE.equals(storageType)) {
-            writer.writeStartElement(Element.CACHE_BINARY_STORAGE.getLocalName());
-            ModelAttributes.MINIMUM_BINARY_SIZE.marshallAsAttribute(storage, false, writer);
-            ModelAttributes.MINIMUM_STRING_SIZE.marshallAsAttribute(storage, false, writer);
-            ModelAttributes.DATA_CACHE_NAME.marshallAsAttribute(storage, false, writer);
-            ModelAttributes.METADATA_CACHE_NAME.marshallAsAttribute(storage, false, writer);
-            ModelAttributes.CHUNK_SIZE.marshallAsAttribute(storage, false, writer);
-            ModelAttributes.CACHE_CONFIG.marshallAsAttribute(storage, false, writer);
-            ModelAttributes.STORE_NAME.marshallAsAttribute(storage, false, writer);
-            ModelAttributes.MIME_TYPE_DETECTION.marshallAsAttribute(storage, false, writer);
-            writer.writeEndElement();
         } else if (ModelKeys.DB_BINARY_STORAGE.equals(storageType)) {
             writer.writeStartElement(Element.DB_BINARY_STORAGE.getLocalName());
             ModelAttributes.MINIMUM_BINARY_SIZE.marshallAsAttribute(storage, false, writer);
@@ -303,7 +292,6 @@ public class ModeShapeSubsystemXMLWriter implements XMLStreamConstants, XMLEleme
             ModelAttributes.MIME_TYPE_DETECTION.marshallAsAttribute(storage, false, writer);
 
             writeNestedStoresOfType(storage, ModelKeys.NESTED_STORAGE_TYPE_FILE, ModelKeys.FILE_BINARY_STORAGE, writer);
-            writeNestedStoresOfType(storage, ModelKeys.NESTED_STORAGE_TYPE_CACHE, ModelKeys.CACHE_BINARY_STORAGE, writer);
             writeNestedStoresOfType(storage, ModelKeys.NESTED_STORAGE_TYPE_DB, ModelKeys.DB_BINARY_STORAGE, writer);
             writeNestedStoresOfType(storage, ModelKeys.NESTED_STORAGE_TYPE_CUSTOM, ModelKeys.CUSTOM_BINARY_STORAGE, writer);
 

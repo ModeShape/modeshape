@@ -123,17 +123,7 @@
                             path="${jboss.server.data.dir}/modeshape/store/infinispanRepository"/>
             </persistence>
         </local-cache>
-        <local-cache name="binaryJDBCRepository" statistics="false">
-            <transaction
-                    mode="NON_XA"
-                    locking="PESSIMISTIC"/>
-        </local-cache>
         <local-cache name="dbBinaryJDBCRepository" statistics="false">
-            <transaction
-                    mode="NON_XA"
-                    locking="PESSIMISTIC"/>
-        </local-cache>
-        <local-cache name="binaryIndexingJDBCRepository" statistics="false">
             <transaction
                     mode="NON_XA"
                     locking="PESSIMISTIC"/>

@@ -79,80 +79,6 @@ public class BinaryStorageIntegrationTest extends SingleUseAbstractTest {
         storeStringsAndAssert("stringNode");
     }
 
-    @Test
-    @FixFor( "MODE-2051" )
-    public void shouldStoreBinariesIntoCacheBinaryStoreWithTransientRepository() throws Exception {
-        startRepositoryWithConfiguration(resourceStream("config/repo-config-cache-binary-storage.json"));
-        byte[] smallData = randomBytes(100);
-        storeBinaryAndAssert(smallData, "smallNode");
-        byte[] largeData = randomBytes(3 * 1025);
-        storeBinaryAndAssert(largeData, "largeNode");
-        storeStringsAndAssert("stringNode");
-    }
-
-    @Test
-    @FixFor( "MODE-2051" )
-    public void shouldStoreBinariesIntoSameCacheBinaryStoreAsRepository() throws Exception {
-        FileUtil.delete("target/persistent_repository");
-        startRepositoryWithConfiguration(resourceStream(
-                "config/repo-config-cache-persistent-binary-storage-same-location.json"));
-        byte[] smallData = randomBytes(100);
-        storeBinaryAndAssert(smallData, "smallNode");
-        byte[] largeData = randomBytes(3 * 1024);
-        storeBinaryAndAssert(largeData, "largeNode");
-    }
-
-    @Test
-    @FixFor( "MODE-1752" )
-    public void shouldCorrectlySkipBytesFromCacheBinaryStoreStream() throws Exception {
-        startRepositoryWithConfiguration(resourceStream("config/repo-config-cache-binary-storage.json"));
-        // chunk size is configured to 1000
-        byte[] data = randomBytes(3003);
-        InputStream inputStream = storeBinaryProperty(data, "skipNode1");
-        assertEquals(2, inputStream.skip(2));
-        assertEquals(1, inputStream.skip(1));
-        assertEquals(1000, inputStream.skip(1000));
-        assertEquals(1001, inputStream.skip(1001));
-        assertEquals(999, inputStream.skip(1000));
-        assertEquals(0, inputStream.skip(1));
-        assertEquals(0, inputStream.skip(10));
-        inputStream.close();
-
-        inputStream = storeBinaryProperty(data, "skipNode2");
-        assertEquals(3003, inputStream.skip(3003));
-        assertEquals(0, inputStream.skip(1));
-        assertEquals(0, inputStream.skip(10));
-        inputStream.close();
-
-        inputStream = storeBinaryProperty(data, "skipNode3");
-        assertEquals(2000, inputStream.skip(2000));
-        assertEquals(1003, inputStream.skip(1003));
-        assertEquals(0, inputStream.skip(1));
-        inputStream.close();
-    }
-
-    @Test
-    @FixFor( "MODE-1752" )
-    public void shouldCorrectlyReadBytesAfterSkippingFromCacheBinaryStoreStream() throws Exception {
-        startRepositoryWithConfiguration(resourceStream("config/repo-config-cache-binary-storage.json"));
-        // chunk size is configured to 1000
-        byte[] data = randomBytes(3003);
-        InputStream inputStream = storeBinaryProperty(data, "skipNode1");
-        assertEquals(2, inputStream.skip(2));
-        byte[] expected = new byte[data.length - 2];
-        System.arraycopy(data, 2, expected, 0, data.length - 2);
-        assertArrayEquals(expected, IoUtil.readBytes(inputStream));
-
-        inputStream = storeBinaryProperty(data, "skipNode2");
-        assertEquals(3003, inputStream.skip(3003));
-        assertArrayEquals(new byte[0], IoUtil.readBytes(inputStream));
-
-        inputStream = storeBinaryProperty(data, "skipNode3");
-        assertEquals(2000, inputStream.skip(2000));
-        expected = new byte[data.length - 2000];
-        System.arraycopy(data, 2000, expected, 0, data.length - 2000);
-        assertArrayEquals(expected, IoUtil.readBytes(inputStream));
-    }
 
     @Test
     @FixFor( "MODE-2200" )
@@ -200,24 +126,11 @@ public class BinaryStorageIntegrationTest extends SingleUseAbstractTest {
         checkUnusedBinariesAreCleanedUp();
     }
 
-    @Test
-    @FixFor( "MODE-2144" )
-    public void shouldCleanupUnusedBinariesForCacheBinaryStore() throws Exception {
-        startRepositoryWithConfiguration(resourceStream("config/repo-config-cache-binary-storage.json"));
-        checkUnusedBinariesAreCleanedUp();
-    }
 
     @Test
     @FixFor( "MODE-2303" )
     public void binaryUsageShouldChangeAfterSavingFS() throws Exception {
         startRepositoryWithConfiguration(resourceStream("config/repo-config-persistent-cache.json"));
-        checkBinaryUsageAfterSaving();
-    }
-
-    @Test
-    @FixFor( "MODE-2303" )
-    public void binaryUsageShouldChangeAfterSavingInfinispan() throws Exception {
-        startRepositoryWithConfiguration(resourceStream("config/repo-config-cache-binary-storage.json"));
         checkBinaryUsageAfterSaving();
     }
 

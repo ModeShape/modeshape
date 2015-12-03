@@ -16,10 +16,8 @@
         "cacheName" : "persistentRepository",
         "cacheConfiguration" : "config/cluster/infinispan-clustered-persistent-1.xml",
         "binaryStorage":{
-            "type": "cache",
-            "cacheConfiguration": "config/cluster/infinispan-clustered-persistent-1.xml",
-            "dataCacheName": "binary-data",
-            "metadataCacheName": "binary-meta-data",
+            "type": "file",
+            "directory": "target/clustered/binaries",
             "minimumBinarySizeInBytes": 4096
         }
     },

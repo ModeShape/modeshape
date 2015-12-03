@@ -129,11 +129,6 @@
                         <xs:documentation>The binary files are stored on the local file system.</xs:documentation>
                     </xs:annotation>
                 </xs:element>
-                <xs:element name="cache-binary-storage" type="cache-binary-storage">
-                    <xs:annotation>
-                        <xs:documentation>The binary files are stored in an Infinispan cache.</xs:documentation>
-                    </xs:annotation>
-                </xs:element>
                 <xs:element name="db-binary-storage" type="db-binary-storage">
                     <xs:annotation>
                         <xs:documentation>The binary files are stored in a relational database.</xs:documentation>
@@ -712,16 +707,6 @@
         <xs:attributeGroup ref="nested-binary-storage-attributes"/>
     </xs:complexType>
 
-    <xs:complexType name="cache-binary-storage">
-        <xs:attributeGroup ref="binary-storage-attributes"/>
-        <xs:attributeGroup ref="cache-binary-storage-attributes"/>
-    </xs:complexType>
-
-    <xs:complexType name="nested-cache-binary-storage">
-        <xs:attributeGroup ref="cache-binary-storage-attributes"/>
-        <xs:attributeGroup ref="nested-binary-storage-attributes"/>
-    </xs:complexType>
-
     <xs:complexType name="db-binary-storage">
         <xs:attributeGroup ref="binary-storage-attributes"/>
         <xs:attribute name="data-source-jndi-name" type="xs:string" use="required">
@@ -762,11 +747,6 @@
                 <xs:element name="file-binary-storage" type="nested-file-binary-storage">
                     <xs:annotation>
                         <xs:documentation>The binary files are stored on the local file system.</xs:documentation>
-                    </xs:annotation>
-                </xs:element>
-                <xs:element name="cache-binary-storage" type="nested-cache-binary-storage">
-                    <xs:annotation>
-                        <xs:documentation>The binary files are stored in an Infinispan cache.</xs:documentation>
                     </xs:annotation>
                 </xs:element>
                 <xs:element name="db-binary-storage" type="nested-db-binary-storage">
@@ -840,37 +820,6 @@
         <xs:attribute name="store-name" type="xs:string" use="required">
             <xs:annotation>
                 <xs:documentation>A unique name for the binary store.</xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-    </xs:attributeGroup>
-
-    <xs:attributeGroup name="cache-binary-storage-attributes">
-        <xs:attribute name="data-cache-name" type="xs:string">
-            <xs:annotation>
-                <xs:documentation>The name of the Infinispan cache where data will be stored.
-                    If not provided, the default will be '{repositoryName}-binary-data'
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-        <xs:attribute name="metadata-cache-name" type="xs:string">
-            <xs:annotation>
-                <xs:documentation>The name of the Infinispan cache where metadata will be stored.
-                    If not provided, the default will be '{repositoryName}-binary-metadata'
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-        <xs:attribute name="cache-config" type="xs:string">
-            <xs:annotation>
-                <xs:documentation> The relative path (to the repository's config-relative-to folder) where an optional Infinispan configuration
-                    file is located for the binary store. If not provided, the repository's configuration file will be used.
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>        
-        <xs:attribute name="chunk-size" type="xs:integer">
-            <xs:annotation>
-                <xs:documentation>The size (in bytes) of a segment which dictates into how many segments a binary value is split.
-                    Each chunk is stored as an entry in the cache. If not provided, defaults to 1048576 bytes (1 MB).
-                </xs:documentation>
             </xs:annotation>
         </xs:attribute>
     </xs:attributeGroup>

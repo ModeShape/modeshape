@@ -30,14 +30,12 @@ public class ModelKeys {
     static final String ANONYMOUS_USERNAME = "anonymous-username";
     static final String STORAGE_TYPE = "storage-type";
     static final String NESTED_STORAGE_TYPE_FILE = "nested-storage-type-file";
-    static final String NESTED_STORAGE_TYPE_CACHE = "nested-storage-type-cache";
     static final String NESTED_STORAGE_TYPE_DB = "nested-storage-type-db";
     static final String NESTED_STORAGE_TYPE_CUSTOM = "nested-storage-type-custom";
     static final String CACHE_CONFIG = "cache-config";
     static final String CONFIG_RELATIVE_TO = "config-relative-to";
     static final String CACHE_NAME = "cache-name";
     static final String CLASSNAME = "classname";
-    static final String DATA_CACHE_NAME = "data-cache-name";
     static final String DATA_SOURCE_JNDI_NAME = "data-source-jndi-name";
     static final String DEFAULT_WORKSPACE = "default-workspace";
     static final String DOCUMENT_OPTIMIZATION_THREAD_POOL = "document-optimization-thread-pool";
@@ -51,9 +49,6 @@ public class ModelKeys {
     static final String GARBAGE_COLLECTION_INITIAL_TIME = "garbage-collection-initial-time";
     static final String GARBAGE_COLLECTION_INTERVAL = "garbage-collection-interval";
     static final String JNDI_NAME = "jndi-name";
-    static final String LOCK_CACHE_NAME = "lock-cache-name";
-    static final String METADATA_CACHE_NAME = "metadata-cache-name";
-    static final String CHUNK_SIZE = "chunk-size";
     static final String MINIMUM_BINARY_SIZE = "minimum-binary-size";
     static final String MINIMUM_STRING_SIZE = "minimum-string-size";
     static final String MIME_TYPE_DETECTION = "mime-type-detection";
@@ -89,7 +84,6 @@ public class ModelKeys {
     static final String FILE_BINARY_STORAGE = "file-binary-storage";
     static final String DB_BINARY_STORAGE = "db-binary-storage";
     static final String COMPOSITE_BINARY_STORAGE = "composite-binary-storage";
-    static final String CACHE_BINARY_STORAGE = "cache-binary-storage";
     static final String CUSTOM_BINARY_STORAGE = "custom-binary-storage";
 
     static final String SEQUENCER = "sequencer";
