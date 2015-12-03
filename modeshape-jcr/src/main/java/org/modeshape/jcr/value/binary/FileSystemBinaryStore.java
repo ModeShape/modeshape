@@ -108,7 +108,6 @@ public class FileSystemBinaryStore extends AbstractBinaryStore {
             tmpFile = File.createTempFile(TEMP_FILE_PREFIX, TEMP_FILE_SUFFIX);
             IoUtil.write(hashingStream, new BufferedOutputStream(new FileOutputStream(tmpFile)),
                          AbstractBinaryStore.MEDIUM_BUFFER_SIZE);
-            hashingStream.close();
             byte[] sha1 = hashingStream.getHash();
             BinaryKey key = new BinaryKey(sha1);
 
