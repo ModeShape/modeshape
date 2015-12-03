@@ -15,18 +15,19 @@
  */
 package org.modeshape.jcr;
 
+import org.modeshape.jcr.cache.ChildReferences;
 import org.modeshape.jcr.cache.MutableCachedNode;
 import org.modeshape.jcr.cache.NodeKey;
-import org.modeshape.jcr.cache.RepositoryCache.ContentInitializer;
+import org.modeshape.jcr.cache.RepositoryCache;
 import org.modeshape.jcr.cache.SessionCache;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.Property;
 import org.modeshape.jcr.value.PropertyFactory;
 
 /**
- * The {@link ContentInitializer} implementation that populates the "/jcr:system" content for a new repository.
+ * The {@link RepositoryCache.ContentInitializer} implementation that populates the "/jcr:system" content for a repository.
  */
-class SystemContentInitializer implements ContentInitializer {
+class SystemContentInitializer implements RepositoryCache.ContentInitializer {
 
     protected static final String INDEXES_NODE_ID = "mode:indexes";
     protected static final String SYSTEM_NODE_ID = "jcr:system";
@@ -37,8 +38,8 @@ class SystemContentInitializer implements ContentInitializer {
     }
 
     @Override
-    public void initialize( SessionCache session,
-                            MutableCachedNode parent ) {
+    public void initializeSystemArea(SessionCache session,
+                                     MutableCachedNode parent) {
         this.propFactory = session.getContext().getPropertyFactory();
         MutableCachedNode system = null;
         MutableCachedNode namespaces = null;
@@ -82,8 +83,22 @@ class SystemContentInitializer implements ContentInitializer {
         locks.excludeFromSearch();
 
         // Create the "/jcr:system/mode:indexes" node which we don't want to index
-        MutableCachedNode indexes = createNode(session, system, INDEXES_NODE_ID, ModeShapeLexicon.INDEXES, ModeShapeLexicon.INDEXES);
-        indexes.excludeFromSearch();
+        initializeIndexStorage(session, system);
+    }
+
+    @Override
+    public boolean initializeIndexStorage(SessionCache session, MutableCachedNode systemNode) {
+        this.propFactory = session.getContext().getPropertyFactory();
+        assert systemNode != null;
+        ChildReferences childReferences = systemNode.getChildReferences(session);
+        //initializes the /jcr:system/mode:indexes node if not already present.
+        NodeKey indexesNodeKey = systemNode.getKey().withId(INDEXES_NODE_ID); 
+        if (!childReferences.hasChild(indexesNodeKey)) {
+            MutableCachedNode indexes = createNode(session, systemNode, INDEXES_NODE_ID, ModeShapeLexicon.INDEXES, ModeShapeLexicon.INDEXES);
+            indexes.excludeFromSearch();
+            return true;
+        }
+        return false;
     }
 
     protected MutableCachedNode createNode( SessionCache session,

@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
@@ -160,7 +161,7 @@ public class BackupService {
                 try {
                     repository.completeRestore(options);
                 } catch (Throwable t) {
-                    restoreActivity.problems.addError(JcrI18n.repositoryCannotBeRestartedAfterRestore, repository.getName(),
+                    restoreActivity.problems.addError(t, JcrI18n.repositoryCannotBeRestartedAfterRestore, repository.getName(),
                                                       t.getMessage());
                 } finally {
                     runningState.resumeExistingUserTransaction();
@@ -532,15 +533,22 @@ public class BackupService {
 
         @Override
         public Problems execute() {
-            boolean includeBinaries = binaryDirectory.exists() && binaryDirectory.canRead() && options.includeBinaries(); 
-            if (includeBinaries) {
-                removeExistingBinaryFiles();
-                restoreBinaryFiles();
-            }
+            // run the restore as a transactional unit so that if anything fails the entire changes are rolled back...            
+            repositoryCache.runInTransaction(new Callable<Void>() {
+                @Override
+                public Void call() throws Exception {
+                    boolean includeBinaries = binaryDirectory.exists() && binaryDirectory.canRead() && options.includeBinaries();
+                    if (includeBinaries) {
+                        removeExistingBinaryFiles();
+                        restoreBinaryFiles();
+                    }
 
-            removeExistingDocuments();
-            restoreDocuments(backupDirectory); // first pass of documents
-            restoreDocuments(changeDirectory); // documents changed while backup was being made
+                    removeExistingDocuments();
+                    restoreDocuments(backupDirectory); // first pass of documents
+                    restoreDocuments(changeDirectory); // documents changed while backup was being made
+                    return null;
+                }
+            }, 0);
             return problems;
         }
 

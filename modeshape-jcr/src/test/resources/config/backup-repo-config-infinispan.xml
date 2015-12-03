@@ -15,7 +15,7 @@
                             shared="false"
                             preload="false"
                             purge="false"
-                            path="target/backupArea/backRepo/store"/>
+                            path="target/backupArea/backupRepo/store"/>
             </persistence>
         </local-cache>
     </cache-container>
