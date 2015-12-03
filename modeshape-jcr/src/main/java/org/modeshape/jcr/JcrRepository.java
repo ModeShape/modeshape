@@ -137,7 +137,6 @@ import org.modeshape.jcr.txn.Transactions;
 import org.modeshape.jcr.value.NamespaceRegistry;
 import org.modeshape.jcr.value.ValueFactories;
 import org.modeshape.jcr.value.binary.BinaryStore;
-import org.modeshape.jcr.value.binary.infinispan.InfinispanBinaryStore;
 import org.modeshape.jmx.RepositoryStatisticsBean;
 
 /**
@@ -912,13 +911,6 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         List<Cache<?, ?>> caches = new ArrayList<Cache<?, ?>>();
         LocalDocumentStore localDocumentStore = running.documentStore().localStore();
         caches.add(localDocumentStore.localCache());
-        // Add the binary store's cache, if there is one ...
-        BinaryStore store = running.binaryStore();
-        if (store instanceof InfinispanBinaryStore) {
-            InfinispanBinaryStore ispnStore = (InfinispanBinaryStore)store;
-            caches.addAll(ispnStore.getCaches());
-        }
-
         return caches;
     }
 

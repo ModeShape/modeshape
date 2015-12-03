@@ -60,8 +60,6 @@ import org.modeshape.jcr.RepositoryStatistics;
  */
 public class RepositoryService implements Service<JcrRepository>, Environment {
 
-    public static final String BINARY_STORAGE_CONTAINER_NAME = "binaries";
-    
     private static final Logger LOG = Logger.getLogger(RepositoryService.class.getPackage().getName());
 
     private final InjectedValue<ModeShapeEngine> engineInjector = new InjectedValue<ModeShapeEngine>();
@@ -182,30 +180,9 @@ public class RepositoryService implements Service<JcrRepository>, Environment {
             BinaryStorage binaryStorageConfig = binaryStorageInjector.getValue();
             assert binaryStorageConfig != null;
             EditableDocument binaryConfig = binaryStorageConfig.getBinaryConfiguration();
-            String binaryStoreType = binaryConfig.getString(FieldName.TYPE);
-            if (RepositoryConfiguration.FieldValue.BINARY_STORAGE_TYPE_CACHE.equalsIgnoreCase(binaryStoreType)) {
-                String cacheConfiguration = binaryConfig.getString(FieldName.CACHE_CONFIGURATION);
-                if (StringUtil.isBlank(cacheConfiguration)) {
-                    // no explicit cache config defined for the binary store, use the repo's config
-                    binaryConfig.set(FieldName.CACHE_CONFIGURATION, this.cacheConfig);
-                }
-            } else if (RepositoryConfiguration.FieldValue.BINARY_STORAGE_TYPE_COMPOSITE.equalsIgnoreCase(binaryStoreType)) {
-                EditableDocument nestedStores = binaryConfig.getDocument(FieldName.COMPOSITE_STORE_NAMED_BINARY_STORES);
-                for (String storeName : nestedStores.keySet()) {
-                    EditableDocument nestedStore = nestedStores.getDocument(storeName);
-                    if (RepositoryConfiguration.FieldValue.BINARY_STORAGE_TYPE_CACHE.equalsIgnoreCase(nestedStore.getString(FieldName.TYPE))) {
-                        String cacheConfiguration = nestedStore.getString(FieldName.CACHE_CONFIGURATION);
-                        if (StringUtil.isBlank(cacheConfiguration)) {
-                            // no explicit cache config defined for the binary store, use the repo's config
-                            nestedStore.set(FieldName.CACHE_CONFIGURATION, this.cacheConfig);
-                        }
-                    }
-                }
-            }
 
             // Create a new configuration document ...
             EditableDocument config = Schematic.newDocument(repositoryConfiguration.getDocument());
-
             config.getOrCreateDocument(FieldName.STORAGE).setDocument(FieldName.BINARY_STORAGE, binaryConfig);
 
             if (config.containsField(FieldName.JOURNALING)) {

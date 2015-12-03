@@ -85,7 +85,6 @@ import org.modeshape.jcr.value.binary.CompositeBinaryStore;
 import org.modeshape.jcr.value.binary.DatabaseBinaryStore;
 import org.modeshape.jcr.value.binary.FileSystemBinaryStore;
 import org.modeshape.jcr.value.binary.TransientBinaryStore;
-import org.modeshape.jcr.value.binary.infinispan.InfinispanBinaryStore;
 import org.modeshape.sequencer.cnd.CndSequencer;
 
 /**
@@ -405,10 +404,7 @@ public class RepositoryConfiguration {
         public static final String CLASSLOADER = "classloader";
         public static final String CLASSNAME = "classname";
         public static final String DATA_SOURCE_JNDI_NAME = "dataSourceJndiName";
-        public static final String DATA_CACHE_NAME = "dataCacheName";
         public static final String INDEXES = "indexes";
-        public static final String METADATA_CACHE_NAME = "metadataCacheName";
-        public static final String CHUNK_SIZE = "chunkSize";
         public static final String TEXT_EXTRACTION = "textExtraction";
         public static final String EXTRACTORS = "extractors";
         public static final String SEQUENCING = "sequencing";
@@ -544,7 +540,6 @@ public class RepositoryConfiguration {
     public static final class FieldValue {
         public static final String BINARY_STORAGE_TYPE_TRANSIENT = "transient";
         public static final String BINARY_STORAGE_TYPE_FILE = "file";
-        public static final String BINARY_STORAGE_TYPE_CACHE = "cache";
         public static final String BINARY_STORAGE_TYPE_DATABASE = "database";
         public static final String BINARY_STORAGE_TYPE_COMPOSITE = "composite";
         public static final String BINARY_STORAGE_TYPE_CUSTOM = "custom";
@@ -1136,23 +1131,6 @@ public class RepositoryConfiguration {
                     // Use the DataSource in JNDI ...
                     store = new DatabaseBinaryStore(dataSourceJndi);
                 }
-            } else if (type.equalsIgnoreCase(FieldValue.BINARY_STORAGE_TYPE_CACHE)) {
-                String metadataCacheName = binaryStorage.getString(FieldName.METADATA_CACHE_NAME, getName());
-                String blobCacheName = binaryStorage.getString(FieldName.DATA_CACHE_NAME, getName());
-                String cacheConfiguration = binaryStorage.getString(FieldName.CACHE_CONFIGURATION); // may be null
-                int chunkSize = binaryStorage.getInteger(FieldName.CHUNK_SIZE, InfinispanBinaryStore.DEFAULT_CHUNK_SIZE);
-                boolean dedicatedCacheContainer = false;
-                if (cacheConfiguration == null) {
-                    cacheConfiguration = getCacheConfiguration();
-                } else {
-                    dedicatedCacheContainer = true;
-                }
-                CacheContainer cacheContainer = getCacheContainer(cacheConfiguration);
-
-                // String cacheTransactionManagerLookupClass = binaryStorage.getString(FieldName.CACHE_TRANSACTION_MANAGER_LOOKUP,
-                // Default.CACHE_TRANSACTION_MANAGER_LOOKUP);
-                store = new InfinispanBinaryStore(cacheContainer, dedicatedCacheContainer, metadataCacheName, blobCacheName,
-                                                  chunkSize);
             } else if (type.equalsIgnoreCase(FieldValue.BINARY_STORAGE_TYPE_COMPOSITE)) {
 
                 Map<String, BinaryStore> binaryStores = new LinkedHashMap<String, BinaryStore>();

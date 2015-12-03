@@ -8,10 +8,8 @@
         "cacheName" : "persistentRepository",
         "cacheConfiguration" : "config/infinispan-persistent.xml",
         "binaryStorage" : {
-            "type"  : "cache",
-            "cacheConfiguration" : "config/infinispan-persistent-binary-store.xml",
-            "dataCacheName" : "persistentRepository",
-            "metadataCacheName" : "binary-meta-data",
+            "type"  : "file",
+            "directory" : "target/persistent_repository/binaries",
             "minimumBinarySizeInBytes" : 1024
         }
     },

@@ -468,29 +468,8 @@
                     <initial-content>initial-content-default.xml</initial-content>
                 </workspaces>
             </repository>
-            <repository name="infinispanRepository" anonymous-roles="admin" cache-config="modeshape/infinispan-test-caches.xml">
-                <workspaces cache-size="10">
-                    <workspace name="default"/>
-                </workspaces>
-                <cache-binary-storage data-cache-name="binary-fs"
-                                      metadata-cache-name="binary-fs-meta"
-                                      cache-config="modeshape/infinispan-test-binary-caches.xml"
-                                      min-string-size="10"
-                                      min-value-size="1024"
-                                      chunk-size="1000"
-                                      mime-type-detection="name"/>
-            </repository>
-            <repository name="binaryJDBCRepository" anonymous-roles="admin" cache-config="modeshape/infinispan-test-caches.xml">
-                <cache-binary-storage cache-config="modeshape/infinispan-test-binary-caches.xml" mime-type-detection="none"/>
-            </repository>
             <repository name="dbBinaryJDBCRepository" anonymous-roles="admin" cache-config="modeshape/infinispan-test-caches.xml">
                 <db-binary-storage data-source-jndi-name="java:jboss/datasources/ExampleDS" mime-type-detection="none"/>
-            </repository>
-            <repository name="binaryIndexingJDBCRepository" anonymous-roles="admin" cache-config="modeshape/infinispan-test-caches.xml">
-                <cache-binary-storage cache-config="modeshape/infinispan-test-binary-caches.xml"
-                                      data-cache-name="binaryJDBCRepository-binary-data-wb"
-                                      metadata-cache-name="binaryJDBCRepository-binary-metadata-wb"
-                                      mime-type-detection="none"/>
             </repository>
             <repository name="transient" anonymous-roles="admin" cache-name="sample" cache-config="modeshape/infinispan-test-caches.xml">
                 <transient-binary-storage min-string-size="100" mime-type-detection="none"/>
@@ -506,10 +485,7 @@
                     <file-binary-storage store-name="fs2"
                                          path="modeshape/compositeBinaryStoreRepository/binaries/fs2"
                                          relative-to="jboss.server.data.dir"/>
-                    <cache-binary-storage store-name="default"
-                                          data-cache-name="binary-fs"
-                                          metadata-cache-name="binary-fs-meta"
-                            />
+                    <db-binary-storage store-name="default" data-source-jndi-name="java:jboss/datasources/ExampleDS" />                           
                 </composite-binary-storage>
             </repository>
             <repository name="journalingRepository" cache-config="modeshape/infinispan-test-caches.xml" anonymous-roles="admin">

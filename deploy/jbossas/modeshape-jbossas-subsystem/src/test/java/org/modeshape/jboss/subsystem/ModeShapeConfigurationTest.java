@@ -108,11 +108,6 @@ public class ModeShapeConfigurationTest extends AbstractSubsystemBaseTest {
     }
 
     @Test
-    public void testOutputPersistenceOfConfigurationWithCacheBinaryStorage() throws Exception {
-        parse(readResource("modeshape-cache-binary-storage.xml"));
-    }
-
-    @Test
     public void testOutputPersistenceOfConfigurationWithCompositeBinaryStores() throws Exception {
         parse(readResource("modeshape-composite-binary-storage-config.xml"));
     }

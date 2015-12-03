@@ -17,32 +17,6 @@
                             purge="false"
                             path="target/persistent_repository"/>
             </persistence>
-        </local-cache> 
-        <local-cache name="binary-data" statistics="false">
-            <transaction
-                    mode="NON_XA"
-                    locking="PESSIMISTIC"/>
-            <persistence
-                    passivation="false">
-                <file-store fetch-state="false"
-                            shared="false"
-                            preload="false"
-                            purge="false"
-                            path="target/persistent_repository"/>
-            </persistence>
-        </local-cache>
-        <local-cache name="binary-meta-data" statistics="false">
-            <transaction
-                    mode="NON_XA"
-                    locking="PESSIMISTIC"/>
-            <persistence
-                    passivation="false">
-                <file-store fetch-state="false"
-                            shared="false"
-                            preload="false"
-                            purge="false"
-                            path="target/persistent_repository"/>
-            </persistence>
         </local-cache>
     </cache-container>
 </infinispan>

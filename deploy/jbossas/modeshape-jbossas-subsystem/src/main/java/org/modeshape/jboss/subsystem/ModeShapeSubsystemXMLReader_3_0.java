@@ -235,10 +235,6 @@ public class ModeShapeSubsystemXMLReader_3_0 implements XMLStreamConstants, XMLE
                     addBinaryStorageConfiguration(repositories, repositoryName);
                     binaryStorage = parseDatabaseBinaryStorage(reader, repositoryName, false);
                     break;
-                case CACHE_BINARY_STORAGE:
-                    addBinaryStorageConfiguration(repositories, repositoryName);
-                    binaryStorage = parseCacheBinaryStorage(reader, repositoryName, false);
-                    break;
                 case COMPOSITE_BINARY_STORAGE:
                     addBinaryStorageConfiguration(repositories, repositoryName);
                     multipleStorageNodes = parseCompositeBinaryStorage(reader, repositoryName);
@@ -564,70 +560,6 @@ public class ModeShapeSubsystemXMLReader_3_0 implements XMLStreamConstants, XMLE
         return storageType;
     }
 
-    private ModelNode parseCacheBinaryStorage( final XMLExtendedStreamReader reader,
-                                               final String repositoryName,
-                                               boolean nested ) throws XMLStreamException {
-        final ModelNode storageType = new ModelNode();
-        storageType.get(OP).set(ADD);
-        storageType.get(OP_ADDR)
-                   .add(SUBSYSTEM, ModeShapeExtension.SUBSYSTEM_NAME)
-                   .add(ModelKeys.REPOSITORY, repositoryName)
-                   .add(ModelKeys.CONFIGURATION, ModelKeys.BINARY_STORAGE);
-
-        String storeName = null;
-        if (reader.getAttributeCount() > 0) {
-            for (int i = 0; i < reader.getAttributeCount(); i++) {
-                String attrName = reader.getAttributeLocalName(i);
-                String attrValue = reader.getAttributeValue(i);
-                Attribute attribute = Attribute.forName(attrName);
-                switch (attribute) {
-                // The rest go on the ModelNode for the type ...
-                    case DATA_CACHE_NAME:
-                        ModelAttributes.DATA_CACHE_NAME.parseAndSetParameter(attrValue, storageType, reader);
-                        break;
-                    case META_CACHE_NAME:
-                        ModelAttributes.METADATA_CACHE_NAME.parseAndSetParameter(attrValue, storageType, reader);
-                        break;
-                    case CACHE_CONFIG:
-                        ModelAttributes.CACHE_CONFIG.parseAndSetParameter(attrValue, storageType, reader);
-                        break;
-                    case CHUNK_SIZE:
-                        ModelAttributes.CHUNK_SIZE.parseAndSetParameter(attrValue, storageType, reader);
-                        break;
-                    case MIN_VALUE_SIZE:
-                        ModelAttributes.MINIMUM_BINARY_SIZE.parseAndSetParameter(attrValue, storageType, reader);
-                        break;
-                    case MIN_STRING_SIZE:
-                        ModelAttributes.MINIMUM_STRING_SIZE.parseAndSetParameter(attrValue, storageType, reader);
-                        break;
-                    case MIME_TYPE_DETECTION:
-                        ModelAttributes.MIME_TYPE_DETECTION.parseAndSetParameter(attrValue, storageType, reader);
-                        break;
-                    case STORE_NAME:
-                        if (nested) {
-                            // part of a composite binary store
-                            storeName = attrValue.trim();
-                            ModelAttributes.STORE_NAME.parseAndSetParameter(attrValue, storageType, reader);
-                            break;
-                        }
-                    default:
-                        throw ParseUtils.unexpectedAttribute(reader, i);
-                }
-            }
-        }
-        requireNoElements(reader);
-
-        if (nested) {
-            storageType.get(OP_ADDR)
-                       .add(ModelKeys.STORAGE_TYPE, ModelKeys.COMPOSITE_BINARY_STORAGE)
-                       .add(ModelKeys.NESTED_STORAGE_TYPE_CACHE, storeName);
-        } else {
-            storageType.get(OP_ADDR).add(ModelKeys.STORAGE_TYPE, ModelKeys.CACHE_BINARY_STORAGE);
-        }
-
-        return storageType;
-    }
-
     private ModelNode parseDatabaseBinaryStorage( final XMLExtendedStreamReader reader,
                                                   final String repositoryName,
                                                   boolean nested ) throws XMLStreamException {
@@ -788,9 +720,6 @@ public class ModeShapeSubsystemXMLReader_3_0 implements XMLStreamConstants, XMLE
                     break;
                 case DB_BINARY_STORAGE:
                     nestedBinaryStore = parseDatabaseBinaryStorage(reader, repositoryName, true);
-                    break;
-                case CACHE_BINARY_STORAGE:
-                    nestedBinaryStore = parseCacheBinaryStorage(reader, repositoryName, true);
                     break;
                 case CUSTOM_BINARY_STORAGE:
                     nestedBinaryStore = parseCustomBinaryStorage(reader, repositoryName, true);
