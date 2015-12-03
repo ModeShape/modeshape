@@ -160,7 +160,7 @@ public class BackupService {
                 try {
                     repository.completeRestore(options);
                 } catch (Throwable t) {
-                    restoreActivity.problems.addError(JcrI18n.repositoryCannotBeRestartedAfterRestore, repository.getName(),
+                    restoreActivity.problems.addError(t, JcrI18n.repositoryCannotBeRestartedAfterRestore, repository.getName(),
                                                       t.getMessage());
                 } finally {
                     runningState.resumeExistingUserTransaction();
@@ -532,7 +532,13 @@ public class BackupService {
 
         @Override
         public Problems execute() {
-            boolean includeBinaries = binaryDirectory.exists() && binaryDirectory.canRead() && options.includeBinaries(); 
+            // run the restore as a transactional unit so that if anything fails the entire changes are rolled back...            
+            repositoryCache.runInTransaction(this::restore, 0);
+            return problems;
+        }
+
+        private Void restore() {
+            boolean includeBinaries = binaryDirectory.exists() && binaryDirectory.canRead() && options.includeBinaries();
             if (includeBinaries) {
                 removeExistingBinaryFiles();
                 restoreBinaryFiles();
@@ -541,7 +547,7 @@ public class BackupService {
             removeExistingDocuments();
             restoreDocuments(backupDirectory); // first pass of documents
             restoreDocuments(changeDirectory); // documents changed while backup was being made
-            return problems;
+            return null;
         }
 
         public void removeExistingBinaryFiles() {
