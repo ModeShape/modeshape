@@ -36,8 +36,6 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import javax.naming.Context;
-import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import javax.security.auth.login.LoginException;
 import org.infinispan.manager.CacheContainer;
@@ -257,6 +255,21 @@ public class RepositoryConfiguration {
          * The name of the field which contains the fully qualified name of the transaction manager lookup class to be used.
          */
         public static final String TRANSACTION_MANAGER_LOOKUP = "transactionManagerLookup";
+
+        /**
+         * The name of the clustering top-level configuration document
+         */
+        public static final String CLUSTERING = "clustering";
+
+        /**
+         * The name of the cluster as used by JChannel.connect
+         */
+        public static final String CLUSTER_NAME = "clusterName";
+        
+        /**
+         * The the path to the JGroups configuration file
+         */
+        public static final String CLUSTER_CONFIGURATION = "configuration";
 
         /**
          * The size threshold that dictates whether binary values should be stored in the binary store. Binary values smaller than
@@ -510,6 +523,8 @@ public class RepositoryConfiguration {
         public static final String ANONYMOUS_USERNAME = "<anonymous>";
 
         public static final boolean MONITORING_ENABLED = true;
+        public static final String CLUSTER_NAME = "ModeShape-JCR";
+        public static final String CLUSTER_CONFIG = "org/modeshape/jcr/clustering/jgroups-config.xml";
 
         public static final String SEQUENCING_POOL = "modeshape-sequencer";
         public static final String TEXT_EXTRACTION_POOL = "modeshape-text-extractor";
@@ -918,6 +933,10 @@ public class RepositoryConfiguration {
     protected CacheContainer getCacheContainer( String config ) throws IOException, NamingException {
         if (config == null) config = getCacheConfiguration();
         return environment.getCacheContainer(config);
+    }
+
+    public Clustering getClustering() {
+        return new Clustering(doc.getDocument(FieldName.CLUSTERING));
     }
 
     public BinaryStorage getBinaryStorage() {
@@ -1488,15 +1507,7 @@ public class RepositoryConfiguration {
             return monitoring.getBoolean(FieldName.MONITORING_ENABLED, Default.MONITORING_ENABLED);
         }
     }
-
-    /**
-     * Possible options for rebuilding the indexes upon startup.
-     */
-    public enum TransactionMode {
-        AUTO,
-        NONE
-    }
-
+    
     /**
      * Get the ordered list of index providers defined in the configuration.
      *
@@ -2237,6 +2248,36 @@ public class RepositoryConfiguration {
         }
     }
 
+    /**
+     * Class holding the clustering configuration for a repository.
+     */
+    @Immutable
+    public class Clustering {
+
+        private final Document clusteringDoc;
+
+        public Clustering(Document clusteringDoc) {
+            this.clusteringDoc = clusteringDoc != null ? clusteringDoc : EMPTY;
+        }
+
+        /**
+         * Checks whether clustering is enabled or not.
+         *
+         * @return true if clustering is enabled, or false otherwise
+         */
+        public boolean isEnabled() {
+            return this.clusteringDoc != EMPTY;
+        }
+
+        public String getClusterName() {
+            return clusteringDoc.getString(FieldName.CLUSTER_NAME, Default.CLUSTER_NAME);
+        }
+
+        public String getConfiguration() {
+            return clusteringDoc.getString(FieldName.CLUSTER_CONFIGURATION, Default.CLUSTER_CONFIG);
+        }
+    }
+
     @Immutable
     public class Journaling {
 
@@ -2352,22 +2393,6 @@ public class RepositoryConfiguration {
             aliases.append('"').append(validAlias).append('"');
         }
         return aliases.toString();
-    }
-
-    protected Map<String, Object> readProperties( Document document,
-                                                  String... skipFieldNames ) {
-        Map<String, Object> props = new HashMap<String, Object>();
-        Set<String> skipFields = new HashSet<String>(Arrays.asList(skipFieldNames));
-        for (Field field : document.fields()) {
-            String name = field.getName();
-            if (skipFields.contains(name)) continue;
-            props.put(name, field.getValue());
-        }
-        return props;
-    }
-
-    protected Context jndiContext() throws NamingException {
-        return new InitialContext();
     }
 
     /**

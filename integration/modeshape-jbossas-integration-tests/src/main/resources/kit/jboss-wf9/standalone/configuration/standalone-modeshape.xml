@@ -3,6 +3,7 @@
 <server xmlns="urn:jboss:domain:3.0">
     <extensions>
         <extension module="org.jboss.as.clustering.infinispan"/>
+        <extension module="org.jboss.as.clustering.jgroups"/>
         <extension module="org.jboss.as.connector"/>
         <extension module="org.jboss.as.deployment-scanner"/>
         <extension module="org.jboss.as.ee"/>
@@ -474,9 +475,26 @@
             <repository name="transient" anonymous-roles="admin" cache-name="sample" cache-config="modeshape/infinispan-test-caches.xml">
                 <transient-binary-storage min-string-size="100" mime-type-detection="none"/>
             </repository>
-            <repository name="repo-clustered1" cache-config="modeshape/infinispan-test-clustered-caches.xml" anonymous-roles="admin"/>
-            <repository name="repo-clustered2" cache-config="modeshape/infinispan-test-clustered-caches.xml" anonymous-roles="admin"/>
-
+            <repository name="repo-clustered1" cache-config="modeshape/infinispan-test-clustered-caches.xml"
+                        anonymous-roles="admin"
+                        cluster-name="modeshape-wf-it"
+                        cluster-config="${jboss.server.config.dir}/modeshape/jgroups-test-config.xml"/>
+            <repository name="repo-clustered2" cache-config="modeshape/infinispan-test-clustered-caches.xml"
+                        anonymous-roles="admin"
+                        cluster-name="modeshape-wf-it"
+                        cluster-config="${jboss.server.config.dir}/modeshape/jgroups-test-config.xml"/>
+            <!--
+                Enable once ISPN is gone
+            <repository name="repo-clustered3"
+                        cache-config="modeshape/infinispan-test-clustered-caches.xml"
+                        anonymous-roles="admin"
+                        cluster-name="modeshape-wf-it"
+                        cluster-stack="tcp"/>
+            <repository name="repo-clustered4" cache-config="modeshape/infinispan-test-clustered-caches.xml"
+                        anonymous-roles="admin"
+                        cluster-name="modeshape-wf-it"
+                        cluster-stack="tcp"/>
+            -->
             <repository name="compositeBinaryStoreRepository" cache-config="modeshape/infinispan-test-caches.xml" anonymous-roles="admin">
                 <composite-binary-storage min-value-size="100">
                     <file-binary-storage store-name="fs1"
@@ -538,6 +556,44 @@
             <cached-connection-manager/>
         </subsystem>
         <subsystem xmlns="urn:jboss:domain:jdr:1.0"/>
+        <subsystem xmlns="urn:jboss:domain:jgroups:3.0">
+            <channels default="ee">
+                <channel name="ee"/>
+            </channels>
+            <stacks default="udp">
+                <stack name="udp">
+                    <transport type="UDP" socket-binding="jgroups-udp"/>
+                    <protocol type="PING"/>
+                    <protocol type="MERGE3"/>
+                    <protocol type="FD_SOCK" socket-binding="jgroups-udp-fd"/>
+                    <protocol type="FD_ALL"/>
+                    <protocol type="VERIFY_SUSPECT"/>
+                    <protocol type="pbcast.NAKACK2"/>
+                    <protocol type="UNICAST3"/>
+                    <protocol type="pbcast.STABLE"/>
+                    <protocol type="pbcast.GMS"/>
+                    <protocol type="UFC"/>
+                    <protocol type="MFC"/>
+                    <protocol type="FRAG2"/>
+                    <protocol type="RSVP"/>
+                </stack>
+                <stack name="tcp">
+                    <transport type="TCP" socket-binding="jgroups-tcp"/>
+                    <protocol type="MPING" socket-binding="jgroups-mping"/>
+                    <protocol type="MERGE3"/>
+                    <protocol type="FD_SOCK" socket-binding="jgroups-tcp-fd"/>
+                    <protocol type="FD"/>
+                    <protocol type="VERIFY_SUSPECT"/>
+                    <protocol type="pbcast.NAKACK2"/>
+                    <protocol type="UNICAST3"/>
+                    <protocol type="pbcast.STABLE"/>
+                    <protocol type="pbcast.GMS"/>
+                    <protocol type="MFC"/>
+                    <protocol type="FRAG2"/>
+                    <protocol type="RSVP"/>
+                </stack>
+            </stacks>
+        </subsystem>
         <subsystem xmlns="urn:jboss:domain:jmx:1.3">
             <expose-resolved-model/>
             <expose-expression-model/>
@@ -671,6 +727,12 @@
         <socket-binding name="ajp" port="${jboss.ajp.port:8009}"/>
         <socket-binding name="http" port="${jboss.http.port:8080}"/>
         <socket-binding name="https" port="${jboss.https.port:8443}"/>
+        <socket-binding name="jgroups-mping" port="0" multicast-address="${jboss.default.multicast.address:230.0.0.4}" multicast-port="45700"/>
+        <socket-binding name="jgroups-tcp" port="7600"/>
+        <socket-binding name="jgroups-tcp-fd" port="57600"/>
+        <socket-binding name="jgroups-udp" port="55200" multicast-address="${jboss.default.multicast.address:230.0.0.4}" multicast-port="45688"/>
+        <socket-binding name="jgroups-udp-fd" port="54200"/>
+        <socket-binding name="modcluster" port="0" multicast-address="224.0.1.105" multicast-port="23364"/>
         <socket-binding name="txn-recovery-environment" port="4712"/>
         <socket-binding name="txn-status-manager" port="4713"/>
         <outbound-socket-binding name="mail-smtp">

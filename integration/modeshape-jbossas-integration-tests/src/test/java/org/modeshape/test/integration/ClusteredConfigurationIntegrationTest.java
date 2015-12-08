@@ -19,6 +19,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import java.io.File;
 import javax.annotation.Resource;
+import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.query.Query;
 import javax.jcr.query.QueryManager;
@@ -66,12 +67,13 @@ public class ClusteredConfigurationIntegrationTest {
 
     @Test
     @FixFor({"MODE-1923", "MODE-1929", "MODE-2226"})
-    public void clusteredRepositoryShouldHaveStartedUp() throws Exception {
-        Session session = clusteredRepository1.login();
-        assertNotNull(session);
-        session.logout();
+    public void clusteredRepositoryShouldHaveStartedUpUsingExternalJGroupsConfigFile() throws Exception {
+        checkRepoStarted(clusteredRepository1);
+        checkRepoStarted(clusteredRepository2);
+    }
 
-        session = clusteredRepository2.login();
+    private void checkRepoStarted(JcrRepository repository) throws RepositoryException {
+        Session session = repository.login();
         assertNotNull(session);
         session.logout();
     }

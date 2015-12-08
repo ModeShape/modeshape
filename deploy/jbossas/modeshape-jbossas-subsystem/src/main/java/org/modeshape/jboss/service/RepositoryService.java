@@ -42,6 +42,7 @@ import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
 import org.jboss.msc.value.InjectedValue;
 import org.jboss.security.ISecurityManagement;
+import org.jgroups.Channel;
 import org.modeshape.common.collection.Problems;
 import org.modeshape.common.util.DelegatingClassLoader;
 import org.modeshape.common.util.StringUtil;
@@ -53,6 +54,7 @@ import org.modeshape.jcr.NoSuchRepositoryException;
 import org.modeshape.jcr.RepositoryConfiguration;
 import org.modeshape.jcr.RepositoryConfiguration.FieldName;
 import org.modeshape.jcr.RepositoryStatistics;
+import org.wildfly.clustering.jgroups.ChannelFactory;
 
 /**
  * A <code>RepositoryService</code> instance is the service responsible for initializing a {@link JcrRepository} in the ModeShape
@@ -62,25 +64,24 @@ public class RepositoryService implements Service<JcrRepository>, Environment {
 
     private static final Logger LOG = Logger.getLogger(RepositoryService.class.getPackage().getName());
 
-    private final InjectedValue<ModeShapeEngine> engineInjector = new InjectedValue<ModeShapeEngine>();
-    private final InjectedValue<BinaryStorage> binaryStorageInjector = new InjectedValue<BinaryStorage>();
-    private final InjectedValue<String> dataDirectoryPathInjector = new InjectedValue<String>();
-    private final InjectedValue<ModuleLoader> moduleLoaderInjector = new InjectedValue<ModuleLoader>();
-    private final InjectedValue<RepositoryStatistics> monitorInjector = new InjectedValue<RepositoryStatistics>();
-    private final InjectedValue<ISecurityManagement> securityManagementServiceInjector = new InjectedValue<ISecurityManagement>();
+    private final InjectedValue<ModeShapeEngine> engineInjector = new InjectedValue<>();
+    private final InjectedValue<BinaryStorage> binaryStorageInjector = new InjectedValue<>();
+    private final InjectedValue<String> dataDirectoryPathInjector = new InjectedValue<>();
+    private final InjectedValue<ModuleLoader> moduleLoaderInjector = new InjectedValue<>();
+    private final InjectedValue<RepositoryStatistics> monitorInjector = new InjectedValue<>();
+    private final InjectedValue<ChannelFactory> channelFactoryInjector = new InjectedValue<>();
+    private final InjectedValue<ISecurityManagement> securityManagementServiceInjector = new InjectedValue<>();
 
     private final ConcurrentHashMap<String, CacheContainer> containers;
     private final String cacheConfigRelativeTo;
-    private final String cacheConfig;
     private final RepositoryConfiguration repositoryConfiguration;
 
     private String journalPath;
     private String journalRelativeTo;
 
-    public RepositoryService( RepositoryConfiguration repositoryConfiguration, String cacheConfig, String cacheConfigRelativeTo ) {
+    public RepositoryService(RepositoryConfiguration repositoryConfiguration, String cacheConfigRelativeTo) {
         this.repositoryConfiguration = repositoryConfiguration;
         this.containers = new ConcurrentHashMap<>();
-        this.cacheConfig = cacheConfig;
         this.cacheConfigRelativeTo = cacheConfigRelativeTo;
     }
 
@@ -163,6 +164,12 @@ public class RepositoryService implements Service<JcrRepository>, Environment {
     @Override
     public void shutdown() {
         // Do nothing; this is the Environment's shutdown method
+    }
+
+    @Override
+    public Channel getChannel(String name) throws Exception {
+        final ChannelFactory channelFactory = channelFactoryInjector.getOptionalValue();
+        return channelFactory != null ? channelFactory.createChannel(name) : null;
     }
 
     public final String repositoryName() {
@@ -601,6 +608,10 @@ public class RepositoryService implements Service<JcrRepository>, Environment {
     
     public InjectedValue<ISecurityManagement> getSecurityManagementServiceInjector() {
         return securityManagementServiceInjector;
+    }
+
+    public InjectedValue<ChannelFactory> getChannelFactoryInjector() {
+        return channelFactoryInjector;
     }
 
     private ModuleLoader moduleLoader() {

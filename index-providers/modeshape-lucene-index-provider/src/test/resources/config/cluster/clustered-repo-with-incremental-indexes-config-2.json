@@ -12,6 +12,7 @@
     "journaling" : {
         "location" : "target/clustered/journal2"
     },
+    "clustering" : {},
     "indexProviders" : {
         "lucene" : {
             "classname" : "lucene",

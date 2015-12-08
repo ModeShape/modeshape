@@ -18,7 +18,10 @@ package org.modeshape.jcr;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsNull.nullValue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import java.util.EnumSet;
 import org.infinispan.schematic.Schematic;
@@ -407,6 +410,38 @@ public class RepositoryConfigurationTest {
     public void shouldReadJournalingConfiguration() {
         assertValid("config/repo-config-journaling.json");
     }
+
+    @Test
+    public void shouldNotEnableClusteringIfMissingDocument() throws Exception {
+        RepositoryConfiguration config = RepositoryConfiguration.read("{ 'name' = 'nm', 'storage' : {}}");
+        RepositoryConfiguration.Clustering clusteringConfiguration = config.getClustering();
+        assertFalse(clusteringConfiguration.isEnabled());
+    }
+
+
+    @Test
+    public void shouldAllowClusteringToBeConfigured() throws Exception {
+        String clusterName = "testCluster";
+        String channelConfig = "someConfig";
+
+        RepositoryConfiguration config = RepositoryConfiguration.read("{ \"clustering\" : {\"clusterName\":\"" + clusterName
+                                                                      + "\", \"configuration\": \"" + channelConfig
+                                                                      + "\"} }");
+        RepositoryConfiguration.Clustering clusteringConfiguration = config.getClustering();
+        assertTrue(clusteringConfiguration.isEnabled());
+        assertEquals(clusterName, clusteringConfiguration.getClusterName());
+        assertEquals(channelConfig, clusteringConfiguration.getConfiguration());
+    }
+    
+    @Test
+    public void shouldUseDefaultClusteringValues() throws Exception {
+        RepositoryConfiguration config = RepositoryConfiguration.read("{ \"clustering\" : {} }");
+        RepositoryConfiguration.Clustering clusteringConfiguration = config.getClustering();
+        assertTrue(clusteringConfiguration.isEnabled());
+        assertEquals(Default.CLUSTER_NAME, clusteringConfiguration.getClusterName());
+        assertEquals(Default.CLUSTER_CONFIG, clusteringConfiguration.getConfiguration());
+    }
+
 
     protected RepositoryConfiguration assertValid( RepositoryConfiguration config ) {
         Problems results = config.validate();

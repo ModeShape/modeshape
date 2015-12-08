@@ -230,6 +230,31 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
+        <xs:attribute name="cluster-name" type="xs:string">
+            <xs:annotation>
+                <xs:documentation>
+                    Defines the name of the communication channel used by this and other clustered repositories. This is 
+                    required when a repository should be clustered.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="cluster-stack" type="xs:string">
+            <xs:annotation>
+                <xs:documentation>
+                    Defines the name of the Wildlfy JGroups stack used by the repository when clustered. This is relative to 
+                    the JGroups subsystem defined in Wildfly. 
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="cluster-config" type="xs:string">
+            <xs:annotation>
+                <xs:documentation>
+                    Defines the JGroups configuration that should be used when clustering. This should only be used
+                    when there isn't an explicit cluster-stack configured and should contain the full path to a JGroup XML file
+                    For example: ${jboss.server.config.dir}/modeshape/jgroups.xml
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
         <xs:attribute name="garbage-collection-thread-pool" type="xs:string" use="optional" default="modeshape-gc">
             <xs:annotation>
                 <xs:documentation>Name of the thread pool that should be used for background garbage collection

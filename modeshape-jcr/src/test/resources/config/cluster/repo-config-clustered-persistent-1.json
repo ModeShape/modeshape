@@ -21,6 +21,9 @@
             "minimumBinarySizeInBytes": 4096
         }
     },
+    "clustering" : {
+        //use defaults
+    },
     "security" : {
         "anonymous" : {
             "roles" : ["readonly","readwrite","admin"],

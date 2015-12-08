@@ -18,6 +18,8 @@ package org.modeshape.jcr.clustering;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
@@ -93,7 +95,7 @@ public abstract class ClusteringService {
     /**
      * The JGroups channel which will be used to send/receive event across the cluster
      */
-    protected JChannel channel;
+    protected Channel channel;
 
     /**
      * The service used for cluster-wide locking
@@ -299,6 +301,18 @@ public abstract class ClusteringService {
         clusteringService.init();
         return clusteringService;
     }
+    
+    /**
+     * Starts a standalone clustering service which uses the supplied channel.
+     * 
+     * @param channel a  {@link Channel} instance, may not be {@code null}
+     * @return a {@link org.modeshape.jcr.clustering.ClusteringService} instance, never null
+     */
+    public static ClusteringService startStandalone(Channel channel) {
+        ClusteringService clusteringService = new StandaloneClusteringService(channel);
+        clusteringService.init();
+        return clusteringService;
+    }
 
     /**
      * Starts a new clustering service by forking a channel of an existing JGroups channel.
@@ -334,7 +348,7 @@ public abstract class ClusteringService {
         }
     }
 
-    protected JChannel getChannel() {
+    protected Channel getChannel() {
         return channel;
     }
 
@@ -445,17 +459,26 @@ public abstract class ClusteringService {
 
     private static class StandaloneClusteringService extends ClusteringService {
         private final String jgroupsConfig;
-
+        
         protected StandaloneClusteringService( String clusterName,
                                                String jgroupsConfig ) {
             super(clusterName);
             this.jgroupsConfig = jgroupsConfig;
+            this.channel = null;
+        }
+
+        protected StandaloneClusteringService( Channel channel ) {
+            super(channel.getClusterName());
+            this.jgroupsConfig = null;
+            this.channel = channel;
         }
 
         @Override
         protected void init() {
             try {
-                this.channel = newChannel(jgroupsConfig);
+                if (this.channel == null) {
+                    this.channel = newChannel(jgroupsConfig);
+                }
 
                 ProtocolStack protocolStack = channel.getProtocolStack();
                 Protocol centralLock = protocolStack.findProtocol(CENTRAL_LOCK.class);
@@ -489,6 +512,14 @@ public abstract class ClusteringService {
             ProtocolStackConfigurator configurator = null;
             // check if it points to a file accessible via the class loader
             InputStream stream = ClusteringService.class.getClassLoader().getResourceAsStream(jgroupsConfig);
+            if (stream == null) {
+                LOGGER.debug("Unable to locate configuration file '{0}' using the clustering service class loader.", jgroupsConfig);
+                try {
+                    stream = new FileInputStream(jgroupsConfig);
+                } catch (FileNotFoundException e) {
+                    throw new RepositoryException(ClusteringI18n.missingConfigurationFile.text(jgroupsConfig));
+                }                 
+            }
             try {
                 configurator = XmlConfigurator.getInstance(stream);
             } catch (IOException e) {

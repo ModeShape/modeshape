@@ -553,6 +553,28 @@
                 },
             }
         },
+        "clustering": {
+            "type": "object",
+            "description": "The clustering configuration. If absent, clustering will be disabled",
+            "additionalProperties": false,
+            "properties": {
+                "clusterName": {
+                    "type": "string",
+                    "default" : "ModeShape-JCR",
+                    "description": "The name of the cluster to which a JGroups channel will connect"
+                    
+                },
+                "configuration": {
+                    "type": "string",
+                    "default" : "org/modeshape/jcr/clustering/jgroups-config.xml",
+                    "description": "The path to the JGroups configuration file that should be used"
+                },
+                "description": {
+                    "type": "string",
+                    "description": "The optional description of this section of the configuration. It is unused by ModeShape."
+                }
+            }
+        },
         "workspaces" : {
             "type" : "object",
             "additionalProperties" : false,

@@ -29,6 +29,7 @@ public class ClusteringI18n {
     public static I18n errorReceivingMessage;
     public static I18n memberOfClusterIsSuspect;
     public static I18n channelConfigurationError;
+    public static I18n missingConfigurationFile;
 
     private ClusteringI18n() {
     }

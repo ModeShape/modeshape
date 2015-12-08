@@ -1,0 +1,12 @@
+{
+    "name" : "Clustered Repository",
+    "workspaces" : {
+        "predefined" : ["otherWorkspace"],
+        "default" : "default",
+        "allowCreation" : true
+    },
+    "clustering" : {
+        "clusterName" : "modeshape",
+        "configuration" : "config/no-file.xml"
+    }
+}

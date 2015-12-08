@@ -45,6 +45,9 @@ public class ModelKeys {
     static final String DOCUMENT_OPTIMIZATION_CHILD_COUNT_TOLERANCE = "document-optimization-child-count-tolerance";
     static final String EVENT_BUS_SIZE = "event-bus-size";
     static final String ENABLE_MONITORING = "enable-monitoring";
+    static final String CLUSTER_NAME = "cluster-name";
+    static final String CLUSTER_STACK = "cluster-stack";
+    static final String CLUSTER_CONFIG = "cluster-config";
     static final String GARBAGE_COLLECTION_THREAD_POOL = "garbage-collection-thread-pool";
     static final String GARBAGE_COLLECTION_INITIAL_TIME = "garbage-collection-initial-time";
     static final String GARBAGE_COLLECTION_INTERVAL = "garbage-collection-interval";

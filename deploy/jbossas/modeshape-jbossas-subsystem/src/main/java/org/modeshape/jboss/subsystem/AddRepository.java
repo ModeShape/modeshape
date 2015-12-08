@@ -52,6 +52,7 @@ import org.modeshape.jcr.ModeShapeEngine;
 import org.modeshape.jcr.RepositoryConfiguration;
 import org.modeshape.jcr.RepositoryConfiguration.FieldName;
 import org.modeshape.jcr.api.monitor.RepositoryMonitor;
+import org.wildfly.clustering.jgroups.ChannelFactory;
 
 public class AddRepository extends AbstractAddStepHandler {
 
@@ -114,6 +115,7 @@ public class AddRepository extends AbstractAddStepHandler {
         final String cacheName = attribute(context, model, ModelAttributes.CACHE_NAME, repositoryName);
         String infinispanConfig = attribute(context, model, ModelAttributes.CACHE_CONFIG, null);
         String configRelativeTo = attribute(context, model, ModelAttributes.CONFIG_RELATIVE_TO).asString();
+        final String clusterName = attribute(context, model, ModelAttributes.CLUSTER_NAME, null);
         final boolean enableMonitoring = attribute(context, model, ModelAttributes.ENABLE_MONITORING).asBoolean();
         final String gcThreadPool = attribute(context, model, ModelAttributes.GARBAGE_COLLECTION_THREAD_POOL, null);
         final String gcInitialTime = attribute(context, model, ModelAttributes.GARBAGE_COLLECTION_INITIAL_TIME, null);
@@ -168,7 +170,7 @@ public class AddRepository extends AbstractAddStepHandler {
         
         // security
         parseSecurity(context, model, configDoc);
-        
+
         // Now create the repository service that manages the lifecycle of the JcrRepository instance ...
         RepositoryConfiguration repositoryConfig = new RepositoryConfiguration(configDoc, repositoryName);
         String configRelativeToSystemProperty = System.getProperty(configRelativeTo);
@@ -178,7 +180,7 @@ public class AddRepository extends AbstractAddStepHandler {
         if (!configRelativeTo.endsWith("/")) {
             configRelativeTo = configRelativeTo  + "/";
         }
-        RepositoryService repositoryService = new RepositoryService(repositoryConfig, infinispanConfig, configRelativeTo);
+        RepositoryService repositoryService = new RepositoryService(repositoryConfig, configRelativeTo);
         ServiceName repositoryServiceName = ModeShapeServiceNames.repositoryServiceName(repositoryName);
 
         // Sequencing
@@ -227,8 +229,17 @@ public class AddRepository extends AbstractAddStepHandler {
                 docOpt.setNumber(FieldName.OPTIMIZATION_CHILD_COUNT_TOLERANCE, optTolerance.intValue());
             }
         }
+        
+        if (!StringUtil.isBlank(clusterName)) {
+            final String clusterConfig = attribute(context, model, ModelAttributes.CLUSTER_CONFIG, null);
+            parseClustering(clusterName, clusterConfig, configDoc);
+            final String clusterStackName = attribute(context, model, ModelAttributes.CLUSTER_STACK, null);
+            if (!StringUtil.isBlank(clusterStackName)) {
+                repositoryServiceBuilder.addDependency(ServiceName.JBOSS.append("jgroups", "factory", clusterStackName),
+                                      ChannelFactory.class, repositoryService.getChannelFactoryInjector());
+            }
+        }
 
-    
         // Add the dependency to the Security Manager
         repositoryServiceBuilder.addDependency(SecurityManagementService.SERVICE_NAME, ISecurityManagement.class,
                                                repositoryService.getSecurityManagementServiceInjector());
@@ -299,6 +310,14 @@ public class AddRepository extends AbstractAddStepHandler {
         newControllers.add(binderBuilder.install());
         newControllers.add(binaryStorageBuilder.install());
         newControllers.add(monitorBuilder.install());
+    }
+
+    private void parseClustering(String clusterName, String clusterConfig, EditableDocument configDoc)  {
+        EditableDocument clustering = configDoc.getOrCreateDocument(FieldName.CLUSTERING);
+        clustering.setString(FieldName.CLUSTER_NAME, clusterName);
+        if (!StringUtil.isBlank(clusterConfig)) {
+            clustering.setString(FieldName.CLUSTER_CONFIGURATION, clusterConfig);                        
+        }
     }
 
     private void parseTextExtraction( ModelNode model, EditableDocument configDoc ) {

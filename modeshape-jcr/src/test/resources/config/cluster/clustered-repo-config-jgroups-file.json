@@ -5,12 +5,8 @@
         "default" : "default",
         "allowCreation" : true
     },
-    "storage" : {
-        "cacheName" : "repo_cache",
-        "cacheConfiguration" : "config/cluster/clustered-repo-config-ispn.xml"
-    },
     "clustering" : {
-        "clusterName" : "Clustered Repository Cluster",
+        "clusterName" : "modeshape",
         "configuration" : "config/cluster/jgroups-test-config.xml"
-    }                   
+    }
 }

@@ -37,6 +37,7 @@ import org.infinispan.transaction.LockingMode;
 import org.infinispan.transaction.TransactionMode;
 import org.infinispan.transaction.lookup.GenericTransactionManagerLookup;
 import org.infinispan.transaction.lookup.TransactionManagerLookup;
+import org.jgroups.Channel;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.DelegatingClassLoader;
@@ -111,6 +112,11 @@ public class LocalEnvironment implements Environment {
     @Override
     public synchronized void shutdown() {
         if (!shared) doShutdown();
+    }
+
+    @Override
+    public Channel getChannel(String name) throws Exception {
+        return null;
     }
 
     /**
