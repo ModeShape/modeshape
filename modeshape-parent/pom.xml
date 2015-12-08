@@ -2059,6 +2059,12 @@
                 <version>${version.org.wildfly}</version>
                 <scope>provided</scope>
             </dependency>
+            <dependency>
+                <groupId>org.wildfly</groupId>
+                <artifactId>wildfly-clustering-jgroups-api</artifactId>
+                <version>${version.org.wildfly}</version>
+                <scope>provided</scope>
+            </dependency>
             <!--JCA connector-->
             <dependency>
                 <groupId>org.jboss.ironjacamar</groupId>

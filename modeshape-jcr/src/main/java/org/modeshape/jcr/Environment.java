@@ -18,6 +18,7 @@ package org.modeshape.jcr;
 import java.io.IOException;
 import javax.naming.NamingException;
 import org.infinispan.manager.CacheContainer;
+import org.jgroups.Channel;
 import org.modeshape.common.annotation.ThreadSafe;
 
 /**
@@ -48,6 +49,15 @@ public interface Environment {
      */
     ClassLoader getClassLoader( ClassLoader fallbackLoader,
                                 String... classpathEntries );
+    
+    /**
+     * Get the JGroups channel with the given logical name.
+     *
+     * @param name the name of the channel; may not be null
+     * @return the channel, or null if there is no such channel and the environment does not support clustering
+     * @throws Exception if there is a problem obtaining the named channel
+     */
+    Channel getChannel(String name) throws Exception;
 
     /**
      * Shutdown this environment, allowing it to reclaim any resources.

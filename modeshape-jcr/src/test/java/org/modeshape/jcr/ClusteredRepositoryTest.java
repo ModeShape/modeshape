@@ -282,7 +282,7 @@ public class ClusteredRepositoryTest {
             
             // shut the second repo down
             long priorToShutdown = System.currentTimeMillis();
-            assertTrue("Second repository has not shutdown in the expected amount of time", repository2.shutdown().get(3,
+            assertTrue("Second repository has not shutdown in the expected amount of time", repository2.shutdown().get(5,
                                                                                                                        TimeUnit.SECONDS));
             
             // add a new node in the first repo
@@ -497,6 +497,29 @@ public class ClusteredRepositoryTest {
             validateQuery().hasNodesAtPaths("/repo1_node2").useIndex("titleIndex").validate(query, query.execute());
         } finally {
             TestingUtil.killRepositories(repository1, repository2);            
+        }
+    }
+
+    @Test
+    @FixFor({"MODE-1701", "MODE-2542"})
+    public void shouldStartRepositoryWithJGroupsXMLConfigurationFile() throws Exception {
+        JcrRepository repository = null;
+        try {
+            repository = TestingUtil.startRepositoryWithConfig("config/cluster/clustered-repo-config-jgroups-file.json");
+            assertEquals(ModeShapeEngine.State.RUNNING, repository.getState());
+        } finally {
+            TestingUtil.killRepository(repository);
+        }
+    }
+
+    @Test
+    @FixFor({"MODE-1701", "MODE-2542"})
+    public void shouldNotStartRepositoryWithInvalidJGroupsConfiguration() throws Exception {
+        try {
+            TestingUtil.startRepositoryWithConfig("config/cluster/clustered-repo-config-invalid-jgroups-file.json");
+            fail("Should reject invalid JGroups file...");
+        } catch (RuntimeException e) {
+            //expected
         }
     }
 

@@ -64,11 +64,8 @@ import javax.security.auth.login.LoginContext;
 import javax.transaction.SystemException;
 import javax.transaction.Transaction;
 import javax.transaction.TransactionManager;
-import org.infinispan.AdvancedCache;
 import org.infinispan.Cache;
 import org.infinispan.manager.CacheContainer;
-import org.infinispan.remoting.rpc.RpcManager;
-import org.infinispan.remoting.transport.jgroups.JGroupsTransport;
 import org.infinispan.schematic.Schematic;
 import org.infinispan.schematic.SchematicDb;
 import org.infinispan.schematic.document.Array;
@@ -1070,9 +1067,18 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                     logger.debug("Loading cache '{0}' from cache container {1}", cacheName, container);
                     SchematicDb database = Schematic.get(container, cacheName);
 
-                    Channel cacheChannel = checkClustering(database);
-                    this.clusteringService = cacheChannel != null ? ClusteringService.startForked(cacheChannel) : null;
-
+                    RepositoryConfiguration.Clustering clustering = config.getClustering();
+                    if (clustering.isEnabled()) {
+                        final String clusterName = clustering.getClusterName();
+                        Channel channel = environment().getChannel(clusterName);
+                        if (channel != null) {
+                            this.clusteringService = ClusteringService.startStandalone(channel);
+                        } else {
+                            this.clusteringService = ClusteringService.startStandalone(clusterName, clustering.getConfiguration());        
+                        }
+                    } else {
+                        this.clusteringService = null;
+                    }
                     LocalDocumentStore localStore = new LocalDocumentStore(database);
                     this.documentStore = connectors.hasConnectors() ? new FederatedDocumentStore(connectors, localStore) : localStore;
                     this.txnMgr = this.documentStore.transactionManager();
@@ -1235,26 +1241,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 throw (t instanceof Exception) ? (Exception)t : new RuntimeException(t);
             }
         }
-
-        protected Channel checkClustering( SchematicDb database ) {
-            Channel cacheChannel = null;
-            if (database.getCache() instanceof AdvancedCache) {
-                RpcManager rpcManager = ((AdvancedCache<?, ?>)database.getCache()).getRpcManager();
-                if (rpcManager != null && rpcManager.getTransport() instanceof JGroupsTransport) {
-                    cacheChannel = ((JGroupsTransport)rpcManager.getTransport()).getChannel();
-                }
-            }
-            if (logger.isDebugEnabled()) {
-                if (cacheChannel != null) {
-                    logger.debug("ModeShape detected active Infinispan cluster '{0}' and will be started in clustered mode",
-                                 cacheChannel.getClusterName());
-                } else {
-                    logger.debug("ModeShape could not detect an active Infinispan cluster and will be started in non-clustered mode");
-                }
-            }
-            return cacheChannel;
-        }
-
+        
         protected Transactions createTransactions(String cacheName,
                                                   TransactionManager txnMgr) {
             if (txnMgr == null) {

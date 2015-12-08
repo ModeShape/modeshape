@@ -149,6 +149,15 @@ public class ModeShapeSubsystemXMLReader_3_0 implements XMLStreamConstants, XMLE
                     case ENABLE_MONITORING:
                         ModelAttributes.ENABLE_MONITORING.parseAndSetParameter(attrValue, repository, reader);
                         break;
+                    case CLUSTER_STACK:
+                        ModelAttributes.CLUSTER_STACK.parseAndSetParameter(attrValue, repository, reader);
+                        break;
+                    case CLUSTER_NAME:
+                        ModelAttributes.CLUSTER_NAME.parseAndSetParameter(attrValue, repository, reader);
+                        break;   
+                    case CLUSTER_CONFIG:
+                        ModelAttributes.CLUSTER_CONFIG.parseAndSetParameter(attrValue, repository, reader);
+                        break;
                     case SECURITY_DOMAIN:
                         ModelAttributes.SECURITY_DOMAIN.parseAndSetParameter(attrValue, repository, reader);
                         break;

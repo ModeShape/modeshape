@@ -121,6 +121,11 @@ public class ModeShapeConfigurationTest extends AbstractSubsystemBaseTest {
     public void testOutputPersistenceOfConfigurationWithWorkspaceInitialContent() throws Exception {
         parse(readResource("modeshape-initial-content-config.xml"));
     }
+    
+    @Test
+    public void testOutputPersistenceOfConfigurationWithClustering() throws Exception {
+        parse(readResource("modeshape-clustered-config.xml"));
+    }
 
     @Test
     public void testOutputPersistenceOfConfigurationWithNodeTypes() throws Exception {

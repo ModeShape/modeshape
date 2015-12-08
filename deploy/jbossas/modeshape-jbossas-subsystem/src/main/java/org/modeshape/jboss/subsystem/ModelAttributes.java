@@ -237,6 +237,27 @@ public class ModelAttributes {
                                                                                                                                      FieldName.MONITORING_ENABLED)
                                                                                                                              .build();
 
+    public static final SimpleAttributeDefinition CLUSTER_NAME = new MappedAttributeDefinitionBuilder(ModelKeys.CLUSTER_NAME,
+                                                                                                      ModelType.STRING).setXmlName(Attribute.CLUSTER_NAME.getLocalName())
+                                                                                                                       .setAllowExpression(true)
+                                                                                                                       .setAllowNull(true)
+                                                                                                                       .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+                                                                                                                       .build();
+
+    public static final SimpleAttributeDefinition CLUSTER_STACK = new MappedAttributeDefinitionBuilder(ModelKeys.CLUSTER_STACK,
+                                                                                                       ModelType.STRING).setXmlName(Attribute.CLUSTER_STACK.getLocalName())
+                                                                                                                        .setAllowExpression(true)
+                                                                                                                        .setAllowNull(true)
+                                                                                                                        .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+                                                                                                                        .build();
+
+    public static final SimpleAttributeDefinition CLUSTER_CONFIG = new MappedAttributeDefinitionBuilder(ModelKeys.CLUSTER_CONFIG,
+                                                                                                       ModelType.STRING).setXmlName(Attribute.CLUSTER_CONFIG.getLocalName())
+                                                                                                                        .setAllowExpression(true)
+                                                                                                                        .setAllowNull(true)
+                                                                                                                        .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+                                                                                                                        .build();
+
     public static final SimpleAttributeDefinition GARBAGE_COLLECTION_THREAD_POOL = new MappedAttributeDefinitionBuilder(
                                                                                                                         ModelKeys.GARBAGE_COLLECTION_THREAD_POOL,
                                                                                                                         ModelType.STRING).setXmlName(Attribute.GARBAGE_COLLECTION_THREAD_POOL.getLocalName())
@@ -852,6 +873,7 @@ public class ModelAttributes {
     public static final AttributeDefinition[] WEBAPP_ATTRIBUTES = {EXPLODED};
 
     public static final AttributeDefinition[] REPOSITORY_ATTRIBUTES = {CACHE_NAME, CACHE_CONFIG, CONFIG_RELATIVE_TO, JNDI_NAME, ENABLE_MONITORING,
+        CLUSTER_NAME, CLUSTER_STACK, CLUSTER_CONFIG,
         SECURITY_DOMAIN, ANONYMOUS_ROLES, ANONYMOUS_USERNAME, USE_ANONYMOUS_IF_AUTH_FAILED, NODE_TYPES, DEFAULT_WORKSPACE,
         PREDEFINED_WORKSPACE_NAMES, ALLOW_WORKSPACE_CREATION, WORKSPACES_CACHE_SIZE, DEFAULT_INITIAL_CONTENT,
         WORKSPACES_INITIAL_CONTENT, GARBAGE_COLLECTION_THREAD_POOL,
