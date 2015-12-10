@@ -118,14 +118,6 @@ public class CacheSchematicDb implements SchematicDb {
     }
 
     @Override
-    public void replace( String key,
-                         Document document ) {
-        SchematicEntryLiteral newEntry = new SchematicEntryLiteral(key, document);
-        // use storeForWriting because we don't care about the return type - i.e. we're doing a local replace
-        storeForWriting.replace(key, newEntry);
-    }
-
-    @Override
     public SchematicEntry remove( String key ) {
         // we can't use storeForWriting, because we care about the return value here
         return store.remove(key);

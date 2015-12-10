@@ -25,7 +25,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import javax.transaction.TransactionManager;
-import javax.transaction.xa.XAResource;
 import org.infinispan.schematic.SchematicEntry;
 import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.document.EditableDocument;
@@ -118,7 +117,7 @@ public class FederatedDocumentStore implements DocumentStore {
     public SchematicEntry storeDocument( String key,
                                          Document document ) {
         if (isLocalSource(key)) {
-            return localStore().putIfAbsent(key, document);
+            return localStore().storeDocument(key, document);
         }
         Connector connector = connectors.getConnectorForSourceKey(sourceKey(key));
         if (connector != null) {
@@ -345,11 +344,6 @@ public class FederatedDocumentStore implements DocumentStore {
     @Override
     public TransactionManager transactionManager() {
         return localStore().transactionManager();
-    }
-
-    @Override
-    public XAResource xaResource() {
-        return localStore().xaResource();
     }
 
     @Override

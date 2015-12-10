@@ -13,10 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.modeshape.jcr.cache;
+package org.modeshape.jcr;
 
-import org.modeshape.jcr.NodeTypes;
-import org.modeshape.jcr.cache.document.TransactionalWorkspaceCaches;
 import org.modeshape.jcr.txn.Transactions;
 
 /**
@@ -25,18 +23,11 @@ import org.modeshape.jcr.txn.Transactions;
 public interface RepositoryEnvironment {
 
     /**
-     * Get the interface for working with transactions.
+     * Returns the repository's {@link Transactions} instance
      * 
-     * @return the transactions object
+     * @return a {@link Transactions} instance, never {@code null}
      */
     Transactions getTransactions();
-
-    /**
-     * Get the factory used to obtain the transactional workspace caches.
-     * 
-     * @return the factory; never null
-     */
-    TransactionalWorkspaceCaches getTransactionalWorkspaceCacheFactory();
 
     /**
      * Returns the id of the repository's {@link org.modeshape.jcr.journal.ChangeJournal}

@@ -22,9 +22,7 @@ import org.modeshape.common.logging.Logger;
 import org.modeshape.jcr.ExecutionContext;
 import org.modeshape.jcr.cache.CachedNode;
 import org.modeshape.jcr.cache.NodeKey;
-import org.modeshape.jcr.cache.RepositoryEnvironment;
 import org.modeshape.jcr.cache.SessionCache;
-import org.modeshape.jcr.value.BinaryKey;
 
 /**
  * A read-only {@link SessionCache} implementation.
@@ -34,10 +32,9 @@ public class ReadOnlySessionCache extends AbstractSessionCache {
 
     private static final Logger LOGGER = Logger.getLogger(ReadOnlySessionCache.class);
 
-    public ReadOnlySessionCache( ExecutionContext context,
-                                 WorkspaceCache workspaceCache,
-                                 RepositoryEnvironment repositoryEnvironment ) {
-        super(context, workspaceCache, repositoryEnvironment);
+    public ReadOnlySessionCache(ExecutionContext context,
+                                WorkspaceCache workspaceCache) {
+        super(context, workspaceCache);
     }
 
     @Override
@@ -67,11 +64,6 @@ public class ReadOnlySessionCache extends AbstractSessionCache {
 
     @Override
     protected void doClear( CachedNode node ) {
-        // do nothing
-    }
-
-    @Override
-    protected void addBinaryReference( NodeKey nodeKey, BinaryKey... binaryKeys ) {
         // do nothing
     }
 
@@ -120,4 +112,8 @@ public class ReadOnlySessionCache extends AbstractSessionCache {
         return sb.toString();
     }
 
+    @Override
+    public void checkForTransaction() {
+        // do nothing
+    }
 }

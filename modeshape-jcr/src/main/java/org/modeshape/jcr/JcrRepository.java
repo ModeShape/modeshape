@@ -103,12 +103,10 @@ import org.modeshape.jcr.bus.RepositoryChangeBus;
 import org.modeshape.jcr.cache.NodeCache;
 import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.cache.RepositoryCache;
-import org.modeshape.jcr.cache.RepositoryEnvironment;
 import org.modeshape.jcr.cache.SessionCache;
 import org.modeshape.jcr.cache.WorkspaceNotFoundException;
 import org.modeshape.jcr.cache.document.DocumentStore;
 import org.modeshape.jcr.cache.document.LocalDocumentStore;
-import org.modeshape.jcr.cache.document.TransactionalWorkspaceCaches;
 import org.modeshape.jcr.clustering.ClusteringService;
 import org.modeshape.jcr.federation.FederatedDocumentStore;
 import org.modeshape.jcr.journal.ChangeJournal;
@@ -420,6 +418,10 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         return true;
     }
 
+    public Transactions transactions() {
+        return runningState().transactions;
+    }
+
     protected final IndexManager getIndexManager() {
         return runningState().queryManager().getIndexManager();
     }
@@ -685,13 +687,8 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
             SecurityContext securityContext = sessionContext.getSecurityContext();
             boolean writable = JcrSession.hasRole(securityContext, ModeShapeRoles.READWRITE, repoName, workspaceName)
                                || JcrSession.hasRole(securityContext, ModeShapeRoles.ADMIN, repoName, workspaceName);
-            JcrSession session = null;
-            if (running.useXaSessions()) {
-                session = new JcrXaSession(this, workspaceName, sessionContext, attributes, !writable);
-            } else {
-                session = new JcrSession(this, workspaceName, sessionContext, attributes, !writable);
-            }
-
+            JcrSession session = new JcrSession(this, workspaceName, sessionContext, attributes, !writable);
+            
             // Need to make sure that the user has access to this session
             session.checkWorkspacePermission(workspaceName, ModeShapePermissions.READ);
             running.addSession(session, false);
@@ -931,8 +928,8 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         private final ExecutionContext context;
         private final ExecutionContext internalWorkerContext;
         private final ReadWriteLock activeSessionLock = new ReentrantReadWriteLock();
-        private final WeakHashMap<JcrSession, Object> activeSessions = new WeakHashMap<JcrSession, Object>();
-        private final WeakHashMap<JcrSession, Object> internalSessions = new WeakHashMap<JcrSession, Object>();
+        private final WeakHashMap<JcrSession, Object> activeSessions = new WeakHashMap<>();
+        private final WeakHashMap<JcrSession, Object> internalSessions = new WeakHashMap<>();
         private final RepositoryStatistics statistics;
         private final RepositoryStatisticsBean mbean;
         private final BinaryStore binaryStore;
@@ -944,7 +941,6 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         private final TextExtractors extractors;
         private final ChangeBus changeBus;
         private final ExecutorService changeDispatchingQueue;
-        private final boolean useXaSessions;
         private final MimeTypeDetector mimeTypeDetector;
         private final BackupService backupService;
         private final InitialContentImporter initialContentImporter;
@@ -1164,8 +1160,6 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                     this.statistics.set(ValueMetric.WORKSPACE_COUNT, cache.getWorkspaceNames().size());
                 }
 
-                this.useXaSessions = this.transactions instanceof SynchronizedTransactions;
-
                 if (other != null && !change.securityChanged) {
                     this.authenticators = other.authenticators;
                     this.anonymousCredentialsIfSuppliedCredentialsFail = other.anonymousCredentialsIfSuppliedCredentialsFail;
@@ -1381,10 +1375,6 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
 
         protected final Sequencers sequencers() {
             return sequencers;
-        }
-
-        protected final boolean useXaSessions() {
-            return useXaSessions;
         }
 
         final String name() {
@@ -1878,25 +1868,18 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
     }
 
     protected class JcrRepositoryEnvironment implements RepositoryEnvironment {
-        private final TransactionalWorkspaceCaches transactionalWorkspaceCacheFactory;
         private final Transactions transactions;
         private final String journalId;
 
         protected JcrRepositoryEnvironment( Transactions transactions,
                                             String journalId ) {
             this.transactions = transactions;
-            this.transactionalWorkspaceCacheFactory = new TransactionalWorkspaceCaches(transactions);
             this.journalId = journalId;
         }
 
         @Override
         public Transactions getTransactions() {
             return transactions;
-        }
-
-        @Override
-        public TransactionalWorkspaceCaches getTransactionalWorkspaceCacheFactory() {
-            return transactionalWorkspaceCacheFactory;
         }
 
         @Override

@@ -18,7 +18,6 @@ package org.modeshape.jcr.cache.document;
 
 import java.util.Collection;
 import javax.transaction.TransactionManager;
-import javax.transaction.xa.XAResource;
 import org.infinispan.schematic.SchematicEntry;
 import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.document.EditableDocument;
@@ -154,13 +153,6 @@ public interface DocumentStore {
      * @return a {@link TransactionManager} instance, never null.
      */
     public TransactionManager transactionManager();
-
-    /**
-     * Returns a resource used in distributed transactions
-     *
-     * @return an {@link XAResource instance} or {@code null}
-     */
-    public XAResource xaResource();
 
     /**
      * Returns a local store instance which will use the local Infinispan cache to store/retrieve information.

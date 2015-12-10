@@ -28,10 +28,10 @@ import org.infinispan.schematic.document.EditableDocument;
 import org.junit.Before;
 import org.junit.Test;
 import org.modeshape.jcr.ExecutionContext;
+import org.modeshape.jcr.RepositoryEnvironment;
 import org.modeshape.jcr.cache.ChildReference;
 import org.modeshape.jcr.cache.MutableCachedNode;
 import org.modeshape.jcr.cache.NodeKey;
-import org.modeshape.jcr.cache.RepositoryEnvironment;
 import org.modeshape.jcr.cache.SessionCache;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.Path.Segment;
@@ -50,8 +50,9 @@ public class DocumentOptimizerTest extends AbstractSessionCacheTest {
     @Override
     protected SessionCache createSessionCache( ExecutionContext context,
                                                WorkspaceCache cache,
+                                               TransactionalWorkspaceCaches txWsCaches,
                                                RepositoryEnvironment repositoryEnvironment ) {
-        return new WritableSessionCache(context, workspaceCache, repositoryEnvironment);
+        return new WritableSessionCache(context, workspaceCache, txWsCaches, repositoryEnvironment);
     }
 
     @Test

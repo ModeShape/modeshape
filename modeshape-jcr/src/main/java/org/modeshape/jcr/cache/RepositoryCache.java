@@ -49,6 +49,7 @@ import org.modeshape.jcr.JcrLexicon;
 import org.modeshape.jcr.ModeShape;
 import org.modeshape.jcr.ModeShapeLexicon;
 import org.modeshape.jcr.RepositoryConfiguration;
+import org.modeshape.jcr.RepositoryEnvironment;
 import org.modeshape.jcr.Upgrades;
 import org.modeshape.jcr.api.value.DateTime;
 import org.modeshape.jcr.bus.ChangeBus;
@@ -66,6 +67,7 @@ import org.modeshape.jcr.cache.document.LocalDocumentStore;
 import org.modeshape.jcr.cache.document.LocalDocumentStore.DocumentOperation;
 import org.modeshape.jcr.cache.document.LocalDocumentStore.DocumentOperationResults;
 import org.modeshape.jcr.cache.document.ReadOnlySessionCache;
+import org.modeshape.jcr.cache.document.TransactionalWorkspaceCaches;
 import org.modeshape.jcr.cache.document.WorkspaceCache;
 import org.modeshape.jcr.cache.document.WritableSessionCache;
 import org.modeshape.jcr.clustering.ClusteringService;
@@ -118,6 +120,7 @@ public class RepositoryCache {
     protected final String systemWorkspaceName;
     protected final Logger logger;
     private final RepositoryEnvironment repositoryEnvironment;
+    private final TransactionalWorkspaceCaches txWorkspaceCaches;
     private final String processKey;
     protected final Upgrades upgrades;
     private volatile boolean initializingRepository = false;
@@ -144,6 +147,7 @@ public class RepositoryCache {
         this.minimumStringLengthForBinaryStorage.set(configuration.getBinaryStorage().getMinimumStringSize());
         this.translator = new DocumentTranslator(this.context, this.documentStore, this.minimumStringLengthForBinaryStorage.get());
         this.repositoryEnvironment = repositoryEnvironment;
+        this.txWorkspaceCaches = new TransactionalWorkspaceCaches(repositoryEnvironment.getTransactions());
         this.processKey = context.getProcessId();
         this.logger = Logger.getLogger(getClass());
         this.rootNodeId = RepositoryConfiguration.ROOT_NODE_ID;
@@ -188,7 +192,7 @@ public class RepositoryCache {
             doc.setNumber(REPOSITORY_UPGRADE_ID_FIELD_NAME, upgrades.getLatestAvailableUpgradeId());
 
             // store the repository info
-            if (this.documentStore.localStore().putIfAbsent(REPOSITORY_INFO_KEY, doc) != null) {
+            if (this.documentStore.storeDocument(REPOSITORY_INFO_KEY, doc) != null) {
                 // if clustered, we should be holding a cluster-wide lock, so if some other process managed to write under this
                 // key,
                 // smth is seriously wrong. If not clustered, only 1 thread will always perform repository initialization.
@@ -613,10 +617,10 @@ public class RepositoryCache {
                     // We need to create a new entry ...
                     EditableDocument newDoc = Schematic.newDocument();
                     translator.setKey(newDoc, systemMetadataKey);
-                    systemEntry = documentStore().localStore().putIfAbsent(systemMetadataKeyStr, newDoc);
+                    systemEntry = documentStore.storeDocument(systemMetadataKeyStr, newDoc);
                     if (systemEntry == null) {
                         // Read-read the entry that we just put, so we can populate it with the same code that edits it ...
-                        systemEntry = documentStore().localStore().get(systemMetadataKeyStr);
+                        systemEntry = documentStore.get(systemMetadataKeyStr);
                     }
                 }
                 EditableDocument doc = documentStore().localStore().edit(systemMetadataKeyStr, true, false);
@@ -843,12 +847,11 @@ public class RepositoryCache {
                                                                        documentStore, translator, rootKey, nodeCache,
                                                                        changeBus, repositoryEnvironment());
 
-                    if (documentStore.localStore().putIfAbsent(rootKey.toString(), rootDoc) == null) {
+                    if (documentStore.storeDocument(rootKey.toString(), rootDoc) == null) {
                         // we are the first node to perform the initialization, so we need to link the system node
                         if (!RepositoryCache.this.systemWorkspaceName.equals(name)) {
                             logger.debug("Creating '{0}' workspace in repository '{1}'", name, getName());
-                            SessionCache workspaceSession = new WritableSessionCache(context, result,
-                                                                                     repositoryEnvironment);
+                            SessionCache workspaceSession = new WritableSessionCache(context, result, txWorkspaceCaches, repositoryEnvironment);
                             MutableCachedNode workspaceRootNode = workspaceSession.mutable(workspaceSession.getRootKey());
                             workspaceRootNode.linkChild(workspaceSession, RepositoryCache.this.systemKey, JcrLexicon.SYSTEM);
 
@@ -878,7 +881,7 @@ public class RepositoryCache {
         WorkspaceCache removed = this.workspaceCachesByName.remove(name);
         if (removed != null) {
             removed.signalDeleted();
-            repositoryEnvironment.getTransactionalWorkspaceCacheFactory().remove(name);
+            txWorkspaceCaches.rollbackActiveTransactionsForWorkspace(name);
         }
     }
 
@@ -1074,9 +1077,9 @@ public class RepositoryCache {
             boolean readOnly) {
         WorkspaceCache workspaceCache = workspace(workspaceName);
         if (readOnly) {
-            return new ReadOnlySessionCache(context, workspaceCache, repositoryEnvironment);
+            return new ReadOnlySessionCache(context, workspaceCache);
         }
-        return new WritableSessionCache(context, workspaceCache, repositoryEnvironment);
+        return new WritableSessionCache(context, workspaceCache, txWorkspaceCaches, repositoryEnvironment);
     }
 
     /**

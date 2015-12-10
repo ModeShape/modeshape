@@ -47,6 +47,7 @@ import org.modeshape.jcr.JcrNtLexicon;
 import org.modeshape.jcr.JcrSession;
 import org.modeshape.jcr.ModeShapeLexicon;
 import org.modeshape.jcr.NodeTypes;
+import org.modeshape.jcr.RepositoryEnvironment;
 import org.modeshape.jcr.api.Binary;
 import org.modeshape.jcr.cache.CachedNode;
 import org.modeshape.jcr.cache.ChildReference;
@@ -60,7 +61,6 @@ import org.modeshape.jcr.cache.NodeNotFoundInParentException;
 import org.modeshape.jcr.cache.PathCache;
 import org.modeshape.jcr.cache.ReferrerCounts;
 import org.modeshape.jcr.cache.ReferrerCounts.MutableReferrerCounts;
-import org.modeshape.jcr.cache.RepositoryEnvironment;
 import org.modeshape.jcr.cache.SessionCache;
 import org.modeshape.jcr.cache.WrappedException;
 import org.modeshape.jcr.value.BinaryKey;
@@ -947,7 +947,7 @@ public class SessionNode implements MutableCachedNode {
         
         // if there are any binary usage changes, send them to the session cache
         if (!binaryChanges.isEmpty()) {
-            session(cache).addBinaryReference(key, binaryChanges.toArray(new BinaryKey[binaryChanges.size()]));
+            writableSession(cache).addBinaryReference(key, binaryChanges.toArray(new BinaryKey[binaryChanges.size()]));
         }
 
         // if an existing reference property was just updated with the same value in the same order, it is a no-op so we should just 

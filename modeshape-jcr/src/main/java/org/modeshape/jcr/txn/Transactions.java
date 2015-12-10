@@ -121,11 +121,16 @@ public abstract class Transactions {
     public abstract Transaction begin() throws NotSupportedException, SystemException;
 
     /**
-     * Returns a the current ModeShape transaction, if one exists.
+     * Returns a the current ModeShape transaction, if one exists. 
+     * <p>
+     * A ModeShape transaction may not necessarily exist when a 
+     * {@link javax.transaction.Transaction} is active. This is because ModeShape transactions are only created when a 
+     * {@link org.modeshape.jcr.JcrSession} is saved.
+     * </p>
      *
      * @return either a {@link org.modeshape.jcr.txn.Transactions.Transaction instance} or {@code null}
      */
-    public abstract Transaction currentTransaction();
+    public abstract Transaction currentModeShapeTransaction();
 
     /**
      * Notify the workspace of the supplied changes, if and when the current transaction is completed. If the current thread is

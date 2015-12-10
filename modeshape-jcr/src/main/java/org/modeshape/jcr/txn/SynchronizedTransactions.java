@@ -67,7 +67,7 @@ public final class SynchronizedTransactions extends Transactions {
     }
 
     @Override
-    public Transaction currentTransaction() {
+    public Transaction currentModeShapeTransaction() {
         Transaction localTx = LOCAL_TRANSACTION.get();
         if (localTx != null) {
             return localTx;
@@ -132,14 +132,11 @@ public final class SynchronizedTransactions extends Transactions {
             txnMgr.begin();
             localTx = new NestableThreadLocalTransaction(txnMgr, LOCAL_TRANSACTION).begin();
             // we'll resume the original transaction once we've completed (regardless whether successfully or not)
-            localTx.uponCompletion(new TransactionFunction() {
-                @Override
-                public void execute() {
-                    try {
-                        txnMgr.resume(suspended);
-                    } catch (Exception e) {
-                        throw new RuntimeException(e);
-                    }
+            localTx.uponCompletion(() -> {
+                try {
+                    txnMgr.resume(suspended);
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
                 }
             });
             return logTransactionInformation(localTx);
@@ -206,12 +203,7 @@ public final class SynchronizedTransactions extends Transactions {
         if (changes != null && !changes.isEmpty()) {
             if (transaction instanceof SynchronizedTransaction) {
                 // only issue the changes when the transaction is successfully committed
-                transaction.uponCommit(new TransactionFunction() {
-                    @Override
-                    public void execute() {
-                        workspace.changed(changes);
-                    }
-                });
+                transaction.uponCommit(() -> workspace.changed(changes));
                 if (workspace instanceof TransactionalWorkspaceCache) {
                     ((TransactionalWorkspaceCache)workspace).changedWithinTransaction(changes);
                 }

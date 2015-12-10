@@ -19,14 +19,13 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import javax.transaction.TransactionManager;
 import org.modeshape.jcr.ExecutionContext;
 import org.modeshape.jcr.NodeTypes;
+import org.modeshape.jcr.RepositoryEnvironment;
 import org.modeshape.jcr.bus.RepositoryChangeBus;
 import org.modeshape.jcr.cache.CachedNode;
 import org.modeshape.jcr.cache.NodeCache;
 import org.modeshape.jcr.cache.NodeKey;
-import org.modeshape.jcr.cache.RepositoryEnvironment;
 import org.modeshape.jcr.cache.SessionCache;
 import org.modeshape.jcr.cache.change.PrintingChangeSetListener;
 import org.modeshape.jcr.txn.NoClientTransactions;
@@ -57,9 +56,10 @@ public abstract class AbstractSessionCacheTest extends AbstractNodeCacheTest {
         workspaceCache = new WorkspaceCache(context, "repo", "ws", null, documentStore, translator, ROOT_KEY_WS1, nodeCache,
                                             changeBus, null);
         loadJsonDocuments(resource(resourceNameForWorkspaceContentDocument()));
-        RepositoryEnvironment sessionEnv = createRepositoryEnvironment();
-        session1 = createSessionCache(context, workspaceCache, sessionEnv);
-        session2 = createSessionCache(context, workspaceCache, sessionEnv);
+        RepositoryEnvironment repositoryEnv = createRepositoryEnvironment();
+        TransactionalWorkspaceCaches txWsCaches = new TransactionalWorkspaceCaches(repositoryEnv.getTransactions());
+        session1 = createSessionCache(context, workspaceCache, txWsCaches, repositoryEnv);
+        session2 = createSessionCache(context, workspaceCache, txWsCaches, repositoryEnv);
         return session1;
     }
 
@@ -71,23 +71,14 @@ public abstract class AbstractSessionCacheTest extends AbstractNodeCacheTest {
 
     protected abstract SessionCache createSessionCache( ExecutionContext context,
                                                         WorkspaceCache cache,
+                                                        TransactionalWorkspaceCaches txWsCaches,
                                                         RepositoryEnvironment sessionEnv );
 
     protected RepositoryEnvironment createRepositoryEnvironment() {
-        final TransactionManager txnMgr = txnManager();
         return new RepositoryEnvironment() {
-            private final Transactions transactions = new NoClientTransactions(txnMgr);
-            private final TransactionalWorkspaceCaches transactionalWorkspaceCacheFactory = new TransactionalWorkspaceCaches(
-                                                                                                                             transactions);
-
             @Override
             public Transactions getTransactions() {
-                return transactions;
-            }
-
-            @Override
-            public TransactionalWorkspaceCaches getTransactionalWorkspaceCacheFactory() {
-                return transactionalWorkspaceCacheFactory;
+                return new NoClientTransactions(txnManager());
             }
 
             @Override
