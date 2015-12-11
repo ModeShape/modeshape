@@ -121,16 +121,6 @@ public interface SchematicDb extends Lifecycle {
                                 Document document );
 
     /**
-     * Replace the existing document and metadata at the given key with the document that is supplied. This method does nothing if
-     * there is not an existing entry at the given key.
-     *
-     * @param key the key or identifier for the document
-     * @param document the new document that is to replace the existing document (or binary content)
-     */
-    void replace( String key,
-                  Document document );
-
-    /**
      * Remove the existing document at the given key.
      *
      * @param key the key or identifier for the document

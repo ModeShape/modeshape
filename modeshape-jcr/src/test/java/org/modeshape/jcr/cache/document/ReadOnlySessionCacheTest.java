@@ -16,7 +16,7 @@
 package org.modeshape.jcr.cache.document;
 
 import org.modeshape.jcr.ExecutionContext;
-import org.modeshape.jcr.cache.RepositoryEnvironment;
+import org.modeshape.jcr.RepositoryEnvironment;
 import org.modeshape.jcr.cache.SessionCache;
 
 /**
@@ -27,7 +27,8 @@ public class ReadOnlySessionCacheTest extends AbstractSessionCacheTest {
     @Override
     protected SessionCache createSessionCache( ExecutionContext context,
                                                WorkspaceCache cache,
+                                               TransactionalWorkspaceCaches txWsCaches,
                                                RepositoryEnvironment repositoryEnvironment ) {
-        return new ReadOnlySessionCache(context, workspaceCache, repositoryEnvironment);
+        return new ReadOnlySessionCache(context, workspaceCache);
     }
 }

@@ -26,7 +26,6 @@ import javax.transaction.NotSupportedException;
 import javax.transaction.RollbackException;
 import javax.transaction.SystemException;
 import javax.transaction.TransactionManager;
-import javax.transaction.xa.XAResource;
 import org.infinispan.Cache;
 import org.infinispan.distexec.DistributedCallable;
 import org.infinispan.schematic.Schematic;
@@ -74,7 +73,7 @@ public class LocalDocumentStore implements DocumentStore {
     @Override
     public SchematicEntry storeDocument( String key,
                                          Document document ) {
-        return putIfAbsent(key, document);
+        return database.putIfAbsent(key, document);
     }
 
     @Override
@@ -97,19 +96,6 @@ public class LocalDocumentStore implements DocumentStore {
      * 
      * @param key the key or identifier for the document
      * @param document the document that is to be stored
-     * @return the existing entry for the supplied key, or null if there was no entry and the put was successful
-     * @see SchematicDb#putIfAbsent(String, org.infinispan.schematic.document.Document)
-     */
-    public SchematicEntry putIfAbsent( String key,
-                                       Document document ) {
-        return database.putIfAbsent(key, document);
-    }
-
-    /**
-     * Store the supplied document and metadata at the given key.
-     * 
-     * @param key the key or identifier for the document
-     * @param document the document that is to be stored
      * @see SchematicDb#put(String, org.infinispan.schematic.document.Document)
      */
     public void put( String key,
@@ -124,18 +110,6 @@ public class LocalDocumentStore implements DocumentStore {
      */
     public void put( Document entryDocument ) {
         database.put(entryDocument);
-    }
-
-    /**
-     * Replace the existing document and metadata at the given key with the document that is supplied. This method does nothing if
-     * there is not an existing entry at the given key.
-     * 
-     * @param key the key or identifier for the document
-     * @param document the new document that is to replace the existing document (or binary content) the replacement
-     */
-    public void replace( String key,
-                         Document document ) {
-        database.replace(key, document);
     }
 
     @Override
@@ -169,11 +143,6 @@ public class LocalDocumentStore implements DocumentStore {
     @Override
     public TransactionManager transactionManager() {
         return localCache().getAdvancedCache().getTransactionManager();
-    }
-
-    @Override
-    public XAResource xaResource() {
-        return localCache().getAdvancedCache().getXAResource();
     }
 
     @Override

@@ -27,7 +27,7 @@
              xsi:schemaLocation="http://www.jboss.org/ironjacamar/schema 
              http://www.jboss.org/ironjacamar/schema/ironjacamar_1_0.xsd">
 
-  <transaction-support>XATransaction</transaction-support>
+  <transaction-support>LocalTransaction</transaction-support>
   
   <connection-definitions>
     <connection-definition class-name="org.modeshape.jca.JcrManagedConnectionFactory" jndi-name="java:/eis/JcrCciConnectionFactory" pool-name="JcrCciConnectionFactory">

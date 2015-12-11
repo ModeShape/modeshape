@@ -39,6 +39,7 @@ import javax.transaction.HeuristicMixedException;
 import javax.transaction.HeuristicRollbackException;
 import javax.transaction.NotSupportedException;
 import javax.transaction.RollbackException;
+import javax.transaction.Status;
 import javax.transaction.SystemException;
 import org.infinispan.schematic.Schematic;
 import org.infinispan.schematic.SchematicEntry;
@@ -54,6 +55,7 @@ import org.modeshape.jcr.ExecutionContext;
 import org.modeshape.jcr.JcrI18n;
 import org.modeshape.jcr.JcrLexicon;
 import org.modeshape.jcr.NodeTypes;
+import org.modeshape.jcr.RepositoryEnvironment;
 import org.modeshape.jcr.TimeoutException;
 import org.modeshape.jcr.api.Binary;
 import org.modeshape.jcr.api.value.DateTime;
@@ -72,7 +74,6 @@ import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.cache.NodeNotFoundException;
 import org.modeshape.jcr.cache.PathCache;
 import org.modeshape.jcr.cache.ReferentialIntegrityException;
-import org.modeshape.jcr.cache.RepositoryEnvironment;
 import org.modeshape.jcr.cache.SessionCache;
 import org.modeshape.jcr.cache.WrappedException;
 import org.modeshape.jcr.cache.change.ChangeSet;
@@ -119,33 +120,44 @@ public class WritableSessionCache extends AbstractSessionCache {
     private static final long PAUSE_TIME_BEFORE_REPEAT_FOR_LOCK_ACQUISITION_TIMEOUT = 50L;
 
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
+    private final Transactions txns;
+    private final RepositoryEnvironment repositoryEnvironment;
+    private final ConcurrentHashMap<Integer, Transactions.TransactionFunction> completeTxFunctionByTxId = new ConcurrentHashMap<>();
+    private final TransactionalWorkspaceCaches txWorkspaceCaches;
     private Map<NodeKey, SessionNode> changedNodes;
     private Set<NodeKey> replacedNodes;
     private LinkedHashSet<NodeKey> changedNodesInOrder;
     private Map<NodeKey, ReferrerChanges> referrerChangesForRemovedNodes;
-    private final Transactions txns;
-    
+
+
     /**
      * Track the binary keys which are being referenced/unreferenced by nodes so they can be locked in ISPN
      */                        
-    private final ConcurrentHashMap<NodeKey, Set<BinaryKey>> binaryReferencesByNodeKey; 
+    private final ConcurrentHashMap<NodeKey, Set<BinaryKey>> binaryReferencesByNodeKey;
 
     /**
      * Create a new SessionCache that can be used for making changes to the workspace.
      *
      * @param context the execution context; may not be null
      * @param workspaceCache the (shared) workspace cache; may not be null
+     * @param txWorkspaceCaches a {@link TransactionalWorkspaceCaches} instance, never {@code null}
      * @param repositoryEnvironment the context for the session; may not be null
      */
-    public WritableSessionCache( ExecutionContext context,
-                                 WorkspaceCache workspaceCache,
-                                 RepositoryEnvironment repositoryEnvironment ) {
-        super(context, workspaceCache, repositoryEnvironment);
-        this.changedNodes = new HashMap<NodeKey, SessionNode>();
-        this.changedNodesInOrder = new LinkedHashSet<NodeKey>();
-        this.referrerChangesForRemovedNodes = new HashMap<NodeKey, ReferrerChanges>();
-        this.binaryReferencesByNodeKey = new ConcurrentHashMap<NodeKey, Set<BinaryKey>>();
+    public WritableSessionCache(ExecutionContext context,
+                                WorkspaceCache workspaceCache,
+                                TransactionalWorkspaceCaches txWorkspaceCaches,
+                                RepositoryEnvironment repositoryEnvironment) {
+        super(context, workspaceCache);
+        this.changedNodes = new HashMap<>();
+        this.changedNodesInOrder = new LinkedHashSet<>();
+        this.referrerChangesForRemovedNodes = new HashMap<>();
+        this.binaryReferencesByNodeKey = new ConcurrentHashMap<>();
+        assert repositoryEnvironment != null;
         this.txns = repositoryEnvironment.getTransactions();
+        this.repositoryEnvironment = repositoryEnvironment;
+        assert txWorkspaceCaches != null;
+        this.txWorkspaceCaches = txWorkspaceCaches;
+        checkForTransaction();        
     }
 
     protected final void assertInSession( SessionNode node ) {
@@ -373,6 +385,60 @@ public class WritableSessionCache extends AbstractSessionCache {
             return !changedNodesInOrder.isEmpty();
         } finally {
             lock.unlock();
+        }
+    }
+
+    /**
+     * Signal that this session cache should check for an existing transaction and use the appropriate workspace cache. If there
+     * is a (new to this session) transaction, then this session will use a transaction-specific workspace cache (shared by other
+     * sessions participating in the same transaction), and upon completion of the transaction the session will switch back to the
+     * shared workspace cache.
+     */
+    @Override
+    public void checkForTransaction() {
+        try {
+            Transactions transactions = repositoryEnvironment.getTransactions();
+            javax.transaction.Transaction txn = transactions.getTransactionManager().getTransaction();
+            if (txn != null && txn.getStatus() == Status.STATUS_ACTIVE) {
+                // There is an active transaction, so we need a transaction-specific workspace cache ...
+                setWorkspaceCache(txWorkspaceCaches.getTransactionalCache(getWorkspace()));
+                // only register the function if there's an active ModeShape transaction because we need to run the
+                // function *only after* ISPN has committed its transaction & updated the cache
+                // if there isn't an active ModeShape transaction, one will become active later during "save"
+                // otherwise, "save" is never called meaning this cache should be discarded
+                Transactions.Transaction modeshapeTx = transactions.currentModeShapeTransaction();
+                if (modeshapeTx != null) {
+                    // we can use the identity hash code as a tx id, because we essentially want a different tx function for each
+                    // different transaction and as long as a tx is active, it should not be garbage collected, hence we should
+                    // get different IDs for different transactions
+                    final int txId = System.identityHashCode(modeshapeTx);
+                    if (!completeTxFunctionByTxId.containsKey(txId)) {
+                        // create and register the complete transaction function only once
+                        Transactions.TransactionFunction completeFunction = () -> completeTransaction(txId);
+                        if (completeTxFunctionByTxId.putIfAbsent(txId, completeFunction) == null) {
+                            // we only want 1 completion function per tx id
+                            modeshapeTx.uponCompletion(completeFunction);
+                        }
+                    }
+                }
+            } else {
+                // There is no active transaction, so just use the shared workspace cache ...
+                completeTransaction(null);
+            }
+        } catch (Exception e) {
+            logger().error(e, JcrI18n.errorDeterminingCurrentTransactionAssumingNone, workspaceName(), e.getMessage());
+        }
+    }
+
+    /**
+     * Signal that the transaction that was active and in which this session participated has completed and that this session
+     * should no longer use a transaction-specific workspace cache.
+     */
+    private void completeTransaction(final Integer txId) {
+        // reset the ws cache to the shared (global one)
+        setWorkspaceCache(sharedWorkspaceCache());
+        if (txId != null) {
+            completeTxFunctionByTxId.remove(txId);
         }
     }
 
@@ -911,7 +977,7 @@ public class WritableSessionCache extends AbstractSessionCache {
         String workspaceName = persistedCache.getWorkspaceName();
         String repositoryKey = persistedCache.getRepositoryKey();
         RecordingChanges changes = new RecordingChanges(context.getId(), context.getProcessId(), repositoryKey, workspaceName,
-                                                        sessionContext().journalId());
+                                                        repositoryEnvironment.journalId());
 
         // Get the documentStore ...
         DocumentStore documentStore = persistedCache.documentStore();
@@ -1607,13 +1673,7 @@ public class WritableSessionCache extends AbstractSessionCache {
                         if (property != null) {
                             if (property.isBinary() && !node.isPropertyNew(this, property.getName())) {
                                 // We need to register the binary value as not being in use anymore
-                                for (Object binaryObject : property.getValuesAsArray()) {
-                                    assert binaryObject instanceof Binary;
-                                    if (binaryObject instanceof AbstractBinary) {
-                                        BinaryKey binaryKey = ((AbstractBinary)binaryObject).getKey();
-                                        addBinaryReference(nodeKey, binaryKey);
-                                    }
-                                }                                                                       
+                                collectBinaryReferences(nodeKey, property);
                             }
                         }
                     }
@@ -1641,13 +1701,7 @@ public class WritableSessionCache extends AbstractSessionCache {
 
                             if (property.isBinary()) {
                                 // We need to register the binary value as not being in use anymore
-                                for (Object binaryObject : property.getValuesAsArray()) {
-                                    assert binaryObject instanceof Binary;
-                                    if (binaryObject instanceof AbstractBinary) {
-                                        BinaryKey binaryKey = ((AbstractBinary)binaryObject).getKey();
-                                        addBinaryReference(nodeKey, binaryKey);
-                                    }
-                                }
+                                collectBinaryReferences(nodeKey, property);
                             }
                         }
                     }
@@ -1689,19 +1743,28 @@ public class WritableSessionCache extends AbstractSessionCache {
         }
     }
 
+    private void collectBinaryReferences(NodeKey nodeKey, Property property) {
+        property.forEach(value->{
+            assert value instanceof Binary;
+            if (value instanceof AbstractBinary) {
+                BinaryKey binaryKey = ((AbstractBinary)value).getKey();
+                addBinaryReference(nodeKey, binaryKey);
+            }
+        });
+    }
+
     @Override
     public boolean isDestroyed( NodeKey key ) {
         return changedNodes.get(key) == REMOVED;
     }
 
-    @Override
     protected void addBinaryReference( NodeKey nodeKey, BinaryKey... binaryKeys ) {
         if (binaryKeys.length == 0) {
             return;
         }
         Set<BinaryKey> binaryReferencesForNode = this.binaryReferencesByNodeKey.get(nodeKey);
         if (binaryReferencesForNode == null) {
-            Set<BinaryKey> emptySet = Collections.newSetFromMap(new ConcurrentHashMap<BinaryKey, Boolean>());
+            Set<BinaryKey> emptySet = Collections.newSetFromMap(new ConcurrentHashMap<>());
             binaryReferencesForNode = this.binaryReferencesByNodeKey.putIfAbsent(nodeKey, emptySet);
             if (binaryReferencesForNode == null) {
                 binaryReferencesForNode = emptySet;

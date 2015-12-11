@@ -30,8 +30,9 @@ import javax.resource.spi.ManagedConnection;
 import javax.resource.spi.ManagedConnectionMetaData;
 import javax.security.auth.Subject;
 import javax.transaction.xa.XAResource;
-
 import org.modeshape.common.logging.Logger;
+import org.modeshape.jcr.JcrSession;
+import org.modeshape.jcr.txn.Transactions;
 
 
 /**
@@ -56,7 +57,8 @@ public class JcrManagedConnection implements ManagedConnection {
     private final List<ConnectionEventListener> listeners = new CopyOnWriteArrayList<ConnectionEventListener>();
 
     private final JcrConnectionRequestInfo cri;
-    private Session session;
+    private JcrSession session;
+    private Transactions transactions;
 
     // Handles.
     private final List<JcrSessionHandle> handles = new CopyOnWriteArrayList<JcrSessionHandle>();
@@ -76,6 +78,7 @@ public class JcrManagedConnection implements ManagedConnection {
 
         // init repository and open session
         this.session = openSession();
+        this.transactions = session.getRepository().transactions();
     }
 
     /**
@@ -120,11 +123,11 @@ public class JcrManagedConnection implements ManagedConnection {
      * @return new JCR session handle object.
      * @throws ResourceException if there is an error opening the session
      */
-    private Session openSession() throws ResourceException {
+    private JcrSession openSession() throws ResourceException {
         try {
             Repository repo = mcf.getRepository();
             Session s = repo.login(cri.getCredentials(), cri.getWorkspace());
-            return s;
+            return (JcrSession) s;
         } catch (RepositoryException e) {
             throw new ResourceException("Failed to create session: " + e.getMessage(), e);
         }
@@ -172,6 +175,7 @@ public class JcrManagedConnection implements ManagedConnection {
     public void cleanup() throws ResourceException {
         this.session.logout();
         this.session = openSession();
+        this.transactions = session.getRepository().transactions();
         this.handles.clear();
     }
 
@@ -229,7 +233,7 @@ public class JcrManagedConnection implements ManagedConnection {
     /**
      * Gets the log writer for this ManagedConnection instance.
      * 
-     * @return Character ourput stream associated with this Managed-Connection instance
+     * @return Character output stream associated with this Managed-Connection instance
      * @throws ResourceException generic exception if operation fails
      */
     @Override
@@ -256,7 +260,7 @@ public class JcrManagedConnection implements ManagedConnection {
      */
     @Override
     public LocalTransaction getLocalTransaction() throws ResourceException {
-        return null;
+        return new JcrLocalTransaction(transactions); 
     }
 
     /**
@@ -267,7 +271,7 @@ public class JcrManagedConnection implements ManagedConnection {
      */
     @Override
     public XAResource getXAResource() throws ResourceException {
-        return (XAResource)session;
+        throw new UnsupportedOperationException("ModeShape 5 does not support XA");
     }
 
     /**

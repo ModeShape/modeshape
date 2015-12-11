@@ -44,7 +44,7 @@ public final class NoClientTransactions extends Transactions {
     }
 
     @Override
-    public Transaction currentTransaction() {
+    public Transaction currentModeShapeTransaction() {
         return ACTIVE_TRANSACTION.get();
     }
 

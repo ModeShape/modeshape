@@ -15,10 +15,12 @@
  */
 package org.modeshape.jcr.cache.document;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
-import java.util.Set;
+import java.util.stream.Stream;
 import javax.transaction.RollbackException;
 import javax.transaction.Status;
 import javax.transaction.Synchronization;
@@ -26,6 +28,7 @@ import javax.transaction.SystemException;
 import javax.transaction.Transaction;
 import javax.transaction.TransactionManager;
 import org.modeshape.common.logging.Logger;
+import org.modeshape.common.util.CheckArg;
 import org.modeshape.jcr.JcrI18n;
 import org.modeshape.jcr.txn.Transactions;
 
@@ -33,120 +36,77 @@ import org.modeshape.jcr.txn.Transactions;
  * A manager for keeping track of transaction-specific WorkspaceCache instances.
  */
 public class TransactionalWorkspaceCaches {
-
-    private TransactionManager txnMgr;
-    private Map<Transaction, Map<String, TransactionalWorkspaceCache>> transactionalCachesByTransaction = new HashMap<Transaction, Map<String, TransactionalWorkspaceCache>>();
+    private static final Logger LOGGER = Logger.getLogger(TransactionalWorkspaceCache.class);
+    
+    private final TransactionManager txnMgr;
+    private final Map<Transaction, Map<String, TransactionalWorkspaceCache>> transactionalCachesByTransaction = new HashMap<>();
 
     public TransactionalWorkspaceCaches( Transactions transactions ) {
-        this.txnMgr = transactions != null ? transactions.getTransactionManager() : null;
+        CheckArg.isNotNull(transactions, "transactions");
+        this.txnMgr = transactions.getTransactionManager();
     }
-
-    public WorkspaceCache getTransactionalWorkspaceCache( WorkspaceCache sharedWorkspaceCache )
-        throws SystemException, RollbackException {
-        if (txnMgr == null) return sharedWorkspaceCache;
-
+    
+    protected WorkspaceCache getTransactionalCache(WorkspaceCache globalWorkspaceCache) throws Exception {
         // Get the current transaction ...
         Transaction txn = txnMgr.getTransaction();
-        if (txn == null || txn.getStatus() != Status.STATUS_ACTIVE) return sharedWorkspaceCache;
+        if (txn == null || txn.getStatus() != Status.STATUS_ACTIVE) return globalWorkspaceCache;
+
 
         synchronized (this) {
-            String workspaceName = sharedWorkspaceCache.getWorkspaceName();
-            Map<String, TransactionalWorkspaceCache> workspaceCachesForTransaction = transactionalCachesByTransaction.get(txn);
-            if (workspaceCachesForTransaction == null) {
-                // No transactional caches for this transaction yet ...
-                workspaceCachesForTransaction = new HashMap<String, TransactionalWorkspaceCache>();
-                transactionalCachesByTransaction.put(txn, workspaceCachesForTransaction);
-                TransactionalWorkspaceCache newCache = createCache(sharedWorkspaceCache, txn);
-                workspaceCachesForTransaction.put(workspaceName, newCache);
-                return newCache;
-            }
-
-            TransactionalWorkspaceCache cache = workspaceCachesForTransaction.get(workspaceName);
-            if (cache != null) {
-                return cache;
-            }
-
-            // No transactional cache for this workspace ...
-            cache = createCache(sharedWorkspaceCache, txn);
-            workspaceCachesForTransaction.put(workspaceName, cache);
-            return cache;
+            String workspaceName = globalWorkspaceCache.getWorkspaceName();
+            return transactionalCachesByTransaction.computeIfAbsent(txn, tx -> new HashMap<>())
+                                                   .computeIfAbsent(workspaceName,
+                                                                    wsName -> createCache(globalWorkspaceCache, txn));
         }
     }
-
-    public synchronized void remove( String workspaceName ) {
-        if (txnMgr == null) return;
-        Set<Transaction> transactions = new HashSet<Transaction>();
-        synchronized (this) {
-            for (Map.Entry<Transaction, Map<String, TransactionalWorkspaceCache>> entry : transactionalCachesByTransaction.entrySet()) {
-                if (entry.getValue().containsKey(workspaceName)) {
-                    transactions.add(entry.getKey());
-                }
-            }
-        }
-        for (Transaction transaction : transactions) {
-            try {
-                // rollback the transaction ...
-                transaction.rollback();
-            } catch (SystemException e) {
-                Logger.getLogger(getClass())
-                      .error(JcrI18n.errorWhileRollingBackActiveTransactionUsingWorkspaceThatIsBeingDeleted,
-                             workspaceName,
-                             e.getMessage());
-            }
-        }
+    
+    public synchronized void rollbackActiveTransactionsForWorkspace(String workspaceName) {
+        List<Transaction> toRemove = new ArrayList<>();
+        // first rollback all active transactions and collect them at the same time...
+        transactionalCachesByTransaction.entrySet().stream()
+                                        .filter(entry -> entry.getValue().containsKey(workspaceName))
+                                        .map(Map.Entry::getKey)
+                                        .forEach(tx -> {
+                                            toRemove.add(tx);
+                                            try {
+                                                tx.rollback();
+                                            } catch (SystemException e) {
+                                                LOGGER.error(e,
+                                                             JcrI18n.errorWhileRollingBackActiveTransactionUsingWorkspaceThatIsBeingDeleted,
+                                                             workspaceName, e.getMessage());
+                                            }
+                                        });
+        // then remove them from the map
+        toRemove.stream().forEach(transactionalCachesByTransaction::remove);         
     }
 
     protected synchronized void remove( Transaction txn ) {
         transactionalCachesByTransaction.remove(txn);
     }
-
-    /**
-     * Invoke the supplied operation on each of the transactional workspace caches associated with the supplied transaction.
-     * 
-     * @param txn the transaction; may not be null
-     * @param operation the operation to call on each {@link TransactionalWorkspaceCache} in the given transaction; may not be
-     *        null
-     */
-    synchronized void onAllWorkspacesInTransaction( final Transaction txn,
-                                                    final OnEachTransactionalCache operation ) {
-        assert operation != null;
-        assert txn != null;
-        Map<String, TransactionalWorkspaceCache> cachesForTxn = transactionalCachesByTransaction.get(txn);
-        if (cachesForTxn != null) {
-            for (TransactionalWorkspaceCache cache : cachesForTxn.values()) {
-                if (cache != null) operation.execute(cache);
-            }
-        }
+    
+    protected synchronized Stream<TransactionalWorkspaceCache> workspaceCachesFor(final Transaction txn) {
+        return transactionalCachesByTransaction.getOrDefault(txn, Collections.emptyMap()).values().stream();
     }
 
-    /**
-     * See #onAllWorkspacesInTransaction
-     */
-    static interface OnEachTransactionalCache {
-        /**
-         * Invoke the operation on the supplied cache
-         * 
-         * @param cache the transactional workspace cache; never null
-         */
-        void execute( TransactionalWorkspaceCache cache );
-    }
-
-    protected TransactionalWorkspaceCache createCache( WorkspaceCache sharedWorkspaceCache,
-                                                       final Transaction txn ) throws SystemException, RollbackException {
+    private TransactionalWorkspaceCache createCache(WorkspaceCache sharedWorkspaceCache,
+                                                    final Transaction txn) {
         final TransactionalWorkspaceCache cache = new TransactionalWorkspaceCache(sharedWorkspaceCache, this, txn);
-        txn.registerSynchronization(new Synchronization() {
-
-            @Override
-            public void beforeCompletion() {
-                // do nothing ...
-            }
-
-            @Override
-            public void afterCompletion( int status ) {
-                // No matter what, remove this transactional cache from the maps ...
-                remove(txn);
-            }
-        });
+        try {
+            txn.registerSynchronization(new Synchronization() {
+                @Override
+                public void beforeCompletion() {
+                    // do nothing ...
+                }
+    
+                @Override
+                public void afterCompletion( int status ) {
+                    // No matter what, remove this transactional cache from the maps ...
+                    remove(txn);
+                }
+            });
+        } catch (RollbackException | SystemException e) {
+            throw new RuntimeException(e);
+        } 
         return cache;
     }
 }
