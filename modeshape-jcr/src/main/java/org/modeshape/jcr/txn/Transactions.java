@@ -130,7 +130,38 @@ public abstract class Transactions {
      *
      * @return either a {@link org.modeshape.jcr.txn.Transactions.Transaction instance} or {@code null}
      */
-    public abstract Transaction currentModeShapeTransaction();
+    public abstract Transaction currentTransaction();
+
+    /**
+     * Commits the current transaction, if one exists.
+     *
+     * @throws IllegalStateException If the calling thread is not associated with a transaction.
+     * @throws SystemException If the transaction service fails in an unexpected way.
+     * @throws HeuristicMixedException If a heuristic decision was made and some some parts of the transaction have been
+     *         committed while other parts have been rolled back.
+     * @throws HeuristicRollbackException If a heuristic decision to roll back the transaction was made.
+     */
+    public void commit() throws HeuristicRollbackException, RollbackException, HeuristicMixedException, SystemException {
+        Transaction transaction = currentTransaction();
+        if (transaction == null) {
+            throw new IllegalStateException("No active transaction");
+        }
+        transaction.commit();     
+    }
+ 
+   /**
+     * Rolls back the current transaction, if one exists.
+     *
+     * @throws IllegalStateException If the calling thread is not associated with a transaction.
+     * @throws SystemException If the transaction service fails in an unexpected way.
+     */
+    public void rollback() throws SystemException {
+        Transaction transaction = currentTransaction();
+        if (transaction == null) {
+            throw new IllegalStateException("No active transaction");
+        }
+        transaction.rollback();     
+    }
 
     /**
      * Notify the workspace of the supplied changes, if and when the current transaction is completed. If the current thread is
@@ -200,10 +231,9 @@ public abstract class Transactions {
         int status() throws SystemException;
 
         /**
-         * Register a function that will be called when the current transaction completes, or immediately if there is not
-         * currently an active transaction.
-         * The function will be executed regardless whether the transaction was committed or rolled back and regardless if 
-         * the commit or rollback call failed or not.
+         * Register a function that will be called when the current transaction completes. The function will be executed 
+         * regardless whether the transaction was committed or rolled back and regardless if the commit or rollback call failed 
+         * or not.
          *
          * @param function the completion function
          */

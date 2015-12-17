@@ -500,7 +500,6 @@ public abstract class AbstractJcrRepositoryTest {
     protected static int calculateTotalNumberOfNodesInTree( int numberOfChildrenPerNode,
                                                             int depth,
                                                             boolean countRoot ) {
-        assert depth > 0;
         assert numberOfChildrenPerNode > 0;
         int totalNumber = 0;
         for (int i = 0; i <= depth; ++i) {

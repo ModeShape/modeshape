@@ -58,31 +58,31 @@ public class DocumentOptimizerTest extends AbstractSessionCacheTest {
     @Test
     public void shouldNotSplitDocumentWithChildReferenceBlocksThatAreAlreadyTooSmall() throws Exception {
         NodeKey key = new NodeKey("source1works1-childB");
-        txnManager().begin();
+        transactions().begin();
         EditableDocument doc = workspaceCache.documentStore().edit(key.toString(), true);
         EditableArray children = doc.getArray(DocumentTranslator.CHILDREN);
         String nextBlock = doc.getDocument(DocumentTranslator.CHILDREN_INFO).getString(DocumentTranslator.NEXT_BLOCK);
         boolean changed = optimizer.splitChildren(key, doc, children, 100, 50, true, nextBlock);
-        txnManager().commit();
+        transactions().commit();
         assertThat(changed, is(false));
     }
 
     @Test
     public void shouldMergeDocumentWithTooSmallChildReferencesSegmentInFirstBlock() throws Exception {
         NodeKey key = new NodeKey("source1works1-childB");
-        txnManager().begin();
+        transactions().begin();
         EditableDocument doc = workspaceCache.documentStore().edit(key.toString(), true);
         EditableArray children = doc.getArray(DocumentTranslator.CHILDREN);
         String nextBlock = doc.getDocument(DocumentTranslator.CHILDREN_INFO).getString(DocumentTranslator.NEXT_BLOCK);
         optimizer.mergeChildren(key, doc, children, true, nextBlock);
-        txnManager().commit();
+        transactions().commit();
 
         // Refetch the document, which should no longer be segmented ...
-        txnManager().begin();
+        transactions().begin();
         doc = workspaceCache.documentStore().edit(key.toString(), true);
         assertInfo(key.toString(), 2, null, null, true, 0);
         children = doc.getArray(DocumentTranslator.CHILDREN);
-        txnManager().commit();
+        transactions().commit();
         assertThat(children.size(), is(2));
         assertChildren(doc, name("childC"), name("childD"));
 
@@ -101,11 +101,11 @@ public class DocumentOptimizerTest extends AbstractSessionCacheTest {
         session1.save();
 
         // Optimize the storage ...
-        txnManager().begin();
+        transactions().begin();
         NodeKey key = nodeB.getKey();
         EditableDocument doc = workspaceCache.documentStore().edit(key.toString(), true);
         optimizer.optimizeChildrenBlocks(key, doc, 9, 5);
-        txnManager().commit();
+        transactions().commit();
 
         print(false);
         print(doc, true);
@@ -122,12 +122,12 @@ public class DocumentOptimizerTest extends AbstractSessionCacheTest {
         session1.save();
 
         // Optimize the storage ...
-        txnManager().begin();
+        transactions().begin();
         NodeKey key = nodeB.getKey();
         EditableDocument doc = workspaceCache.documentStore().edit(key.toString(), true);
         optimizer.optimizeChildrenBlocks(key, doc, 5, 3); // will merge into a single block ...
         optimizer.optimizeChildrenBlocks(key, doc, 5, 3); // will split into two blocks ...
-        txnManager().commit();
+        transactions().commit();
 
         print(false);
         print(doc, true);
@@ -138,10 +138,10 @@ public class DocumentOptimizerTest extends AbstractSessionCacheTest {
         MutableCachedNode nodeB = check(session1).mutableNode("/childB");
 
         // Make it optimum to start out ...
-        txnManager().begin();
+        transactions().begin();
         NodeKey key = nodeB.getKey();
         optimizer.optimizeChildrenBlocks(key, null, 5, 2); // will merge into a single block ...
-        txnManager().commit();
+        transactions().commit();
         // Save the session, otherwise the database is inconsistent after the optimize operation
         session1.save();
         nodeB = check(session1).mutableNode("/childB");
@@ -162,18 +162,18 @@ public class DocumentOptimizerTest extends AbstractSessionCacheTest {
             print(false);
             print("\nOptimizing...");
             print(document(key), true);
-            txnManager().begin();
+            transactions().begin();
             optimizer.optimizeChildrenBlocks(key, null, 5, 2); // will split into blocks ...
-            txnManager().commit();
+            transactions().commit();
             print("\nOptimized...");
             print(document(key), true);
             print(false);
         }
 
         // Optimize the storage ...
-        txnManager().begin();
+        transactions().begin();
         optimizer.optimizeChildrenBlocks(key, null, 5, 2); // will split into blocks ...
-        txnManager().commit();
+        transactions().commit();
 
         print(false);
         print(document(key), true);

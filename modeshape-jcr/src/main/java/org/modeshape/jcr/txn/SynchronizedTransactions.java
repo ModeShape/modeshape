@@ -67,7 +67,7 @@ public final class SynchronizedTransactions extends Transactions {
     }
 
     @Override
-    public Transaction currentModeShapeTransaction() {
+    public Transaction currentTransaction() {
         Transaction localTx = LOCAL_TRANSACTION.get();
         if (localTx != null) {
             return localTx;

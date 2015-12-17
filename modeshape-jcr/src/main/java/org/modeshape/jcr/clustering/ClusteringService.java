@@ -28,6 +28,7 @@ import java.io.ObjectStreamClass;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -35,6 +36,7 @@ import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.Lock;
 import javax.jcr.RepositoryException;
 import org.jgroups.Address;
 import org.jgroups.Channel;
@@ -58,12 +60,13 @@ import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.StringUtil;
 
 /**
- * ModeShape service which handles sending/receiving messages in a cluster via JGroups
+ * ModeShape service which handles sending/receiving messages in a cluster via JGroups. This service is also a
+ * {@link org.modeshape.jcr.locking.LockingService} when running in a cluster, relying on JGroups' {@link CENTRAL_LOCK} protocol.
  * 
  * @author Horia Chiorean (hchiorea@redhat.com)
  */
 @ThreadSafe
-public abstract class ClusteringService {
+public abstract class ClusteringService implements org.modeshape.jcr.locking.LockingService {
 
     protected static final Logger LOGGER = Logger.getLogger(ClusteringService.class);
 
@@ -71,11 +74,6 @@ public abstract class ClusteringService {
      * An approximation about the maximum delay in local time that we consider acceptable.
      */
     private static final long DEFAULT_MAX_CLOCK_DELAY_CLUSTER_MILLIS = TimeUnit.MINUTES.toMillis(10);
-
-    /**
-     * The name for a global cluster lock
-     */
-    private static final String GLOBAL_LOCK = "modeshape-global-lock";
 
     /**
      * The listener for channel changes.
@@ -181,34 +179,61 @@ public abstract class ClusteringService {
         membersInCluster.set(1);
         return true;
     }
-
-    /**
-     * Acquires a cluster-wide lock, waiting a maximum amount of time for it.
-     * 
-     * @param time an amount of time
-     * @param unit a {@link java.util.concurrent.TimeUnit}; may not be null
-     * @return {@code true} if the lock was successfully acquired, {@code false} otherwise
-     * @see java.util.concurrent.locks.Lock#tryLock(long, java.util.concurrent.TimeUnit)
-     */
+    
+    @Override
     public boolean tryLock( long time,
-                            TimeUnit unit ) {
+                            TimeUnit unit,
+                            String... names) {
+        Set<String> successfullyAcquiredLocks = new HashSet<>();
         try {
-            return lockService.getLock(GLOBAL_LOCK).tryLock(time, unit);
-        } catch (InterruptedException e) {
-            LOGGER.debug("Thread " + Thread.currentThread().getName()
-                         + " received interrupt request while waiting to acquire lock '{0}'", GLOBAL_LOCK);
-            Thread.interrupted();
+            for (String name : names) {
+                boolean success = true;
+                LOGGER.debug("Attempting to lock {0}", name);
+                try {
+                    success = lockService.getLock(name).tryLock(time, unit);
+                    LOGGER.debug("{0} locked successfully", name);
+                } catch (InterruptedException e) {
+                    LOGGER.debug("Thread " + Thread.currentThread().getName()
+                                 + " received interrupt request while waiting to acquire lock '{0}'", name);
+                    Thread.currentThread().interrupt();
+                    success = false;
+                }
+                if (!success) {
+                    LOGGER.debug("Unable to acquire lock on {0}. Reverting back the already obtained locks: {1}", name, 
+                                 successfullyAcquiredLocks);
+                    unlock(successfullyAcquiredLocks.toArray(new String[successfullyAcquiredLocks.size()]));
+                    return false;
+                }
+                successfullyAcquiredLocks.add(name);
+            }
+        } catch (Throwable t) {
+            LOGGER.debug(t, "Unexpected exception while attempting to lock");
+            unlock(successfullyAcquiredLocks.toArray(new String[successfullyAcquiredLocks.size()]));
             return false;
         }
+        return true;        
     }
-
-    /**
-     * Unlocks a previously acquired cluster-wide lock.
-     * 
-     * @see java.util.concurrent.locks.Lock#unlock()
-     */
-    public void unlock() {
-        lockService.getLock(GLOBAL_LOCK).unlock();
+    
+    @Override
+    public boolean unlock(String...names) {
+        boolean success = true;
+        try {
+            for (String name : names) {
+                LOGGER.debug("Attempting to unlock {0}", name);
+                Lock lock = lockService.getLock(name);
+                if (!lock.tryLock()) {
+                    LOGGER.debug("Unlock {0} failed. Lock is held by someone else...", name);
+                    //we can't lock, meaning we aren't really holding this lock so therefore we shouldn't be able to unlock it
+                    success = false;
+                }
+                lock.unlock();
+                LOGGER.debug("Unlocked {0}", name);
+            }
+            return success;
+        } catch (Throwable t) {
+            LOGGER.debug(t, "Unexpected exception while attempting to unlock");
+            return false;
+        }
     }
 
     /**
@@ -561,15 +586,21 @@ public abstract class ClusteringService {
         @Override
         protected void init() {
             try {
-                Protocol topProtocol = mainChannel.getProtocolStack().getTopProtocol();
+                ProtocolStack stack = mainChannel.getProtocolStack();
+                Protocol topProtocol = stack.getTopProtocol();
                 String forkStackId = this.clusterName;
 
-                boolean alreadyHasForkProtocol = mainChannel.getProtocolStack().findProtocol(FORK.class) != null;
+                boolean alreadyHasForkProtocol = stack.findProtocol(FORK.class) != null;
+                if (!alreadyHasForkProtocol) {
+                    // this is workaround for this bug: https://issues.jboss.org/browse/JGRP-1984
+                    FORK fork = new FORK();
+                    fork.setProtocolStack(stack);
+                    stack.insertProtocol(fork, ProtocolStack.ABOVE, topProtocol.getClass());
+                }
 
                 // add the fork at the top of the stack to preserve the default configuration
                 // and use the name of the cluster as the stack id
-                this.channel = new ForkChannel(mainChannel, forkStackId, FORK_CHANNEL_NAME, true, ProtocolStack.ABOVE,
-                                               topProtocol.getClass(), new CENTRAL_LOCK());
+                this.channel = new ForkChannel(mainChannel, forkStackId, FORK_CHANNEL_NAME, new CENTRAL_LOCK());
 
                 // always add central lock to the stack
                 this.lockService = new LockService(this.channel);
@@ -595,6 +626,8 @@ public abstract class ClusteringService {
                     existingForksForChannel.add(forkStackId);
                 }
 
+            } catch (RuntimeException rt) {
+                throw rt;
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }

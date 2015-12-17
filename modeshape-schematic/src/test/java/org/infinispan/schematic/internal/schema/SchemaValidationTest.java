@@ -13,16 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.infinispan.schematic;
+package org.infinispan.schematic.internal.schema;
 
 import java.io.InputStream;
+import org.infinispan.schematic.DocumentLibrary;
+import org.infinispan.schematic.SchemaLibrary;
 import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.document.Json;
 import org.infinispan.schematic.internal.InMemoryDocumentLibrary;
 import org.infinispan.schematic.internal.document.Paths;
-import org.infinispan.schematic.internal.schema.SchemaDocument;
-import org.infinispan.schematic.internal.schema.SchemaDocumentCache;
-import org.infinispan.schematic.internal.schema.ValidationResult;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;

@@ -31,7 +31,6 @@ import org.infinispan.schematic.internal.document.BasicDocument;
 import org.infinispan.schematic.internal.document.DocumentEditor;
 import org.infinispan.schematic.internal.document.MutableDocument;
 import org.infinispan.schematic.internal.marshall.Ids;
-import org.infinispan.util.concurrent.TimeoutException;
 
 /**
  * The primary implementation of {@link SchematicEntry}.
@@ -146,17 +145,12 @@ public class SchematicEntryLiteral implements SchematicEntry {
         return value;
     }
 
-    protected EditableDocument edit( String key,
-                                     AdvancedCache<String, SchematicEntry> cache,
-                                     AdvancedCache<String, SchematicEntry> lockingCache ) {
-        if (lockingCache != null) {
-            if (!lockingCache.lock(key)) {
-                throw new TimeoutException("Unable to aquire lock on " + key);
-            }
-        }
+    protected EditableDocument edit(String key,
+                                    AdvancedCache<String, SchematicEntry> cache) {
+       
         MutableDocument copy = (MutableDocument)value.clone();
         SchematicEntryLiteral newEntry = new SchematicEntryLiteral(copy);
-        cache.put(getKey(), newEntry);
+        cache.put(key, newEntry);
         return new DocumentEditor((MutableDocument)newEntry.getContent());
     }
 

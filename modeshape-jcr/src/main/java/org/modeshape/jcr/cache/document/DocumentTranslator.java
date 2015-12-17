@@ -1243,7 +1243,7 @@ public class DocumentTranslator implements DocumentConstants {
         String sha1 = binaryKey.toString();
         String key = keyForBinaryReferenceDocument(sha1);
         // don't acquire a lock since we've already done this at the beginning of the #save
-        EditableDocument entry = documentStore.edit(key, false, false);
+        EditableDocument entry = documentStore.edit(key, false);
         if (entry == null) {
             // The document doesn't yet exist, so create it ...
             Document content = Schematic.newDocument(SHA1, sha1, REFERENCE_COUNT, 1L);
@@ -1294,7 +1294,7 @@ public class DocumentTranslator implements DocumentConstants {
                 BinaryKey binaryKey = new BinaryKey(sha1);
                 // Find the document metadata and decrement the usage count ...
                 // Don't acquire a lock since we should've done so at the beginning of the #save method
-                EditableDocument sha1Usage = documentStore.edit(keyForBinaryReferenceDocument(sha1), false, false);
+                EditableDocument sha1Usage = documentStore.edit(keyForBinaryReferenceDocument(sha1), false);
                 if (sha1Usage != null) {
                     Long countValue = sha1Usage.getLong(REFERENCE_COUNT);
                     assert countValue != null;
@@ -1540,7 +1540,7 @@ public class DocumentTranslator implements DocumentConstants {
 
         // add all the new children into their corresponding buckets, creating each bucket if it does not exist
         // we don't need to worry about locking here because the parent document should've already been locked at the beginning
-        // of the transaction ensuring (theoretically ;) linearizability 
+        // of the transaction acting as a monitor 
         Map<BucketId, Set<ChildReference>> additionsPerBucket = new HashMap<>((int)appended.size());
 
         // first collect all the new references into buckets...
@@ -1561,7 +1561,9 @@ public class DocumentTranslator implements DocumentConstants {
             BucketId bucketId = entry.getKey();
             String bucketKey = bucketKey(parentKey, bucketId.toString());
             boolean newBucket = !documentStore.containsKey(bucketKey);
-            EditableDocument bucketDoc = documentStore.edit(bucketKey, true, false);
+            // we don't worry about locking the bucket keys because the parent key should've already been locked, acting therefore
+            // as a monitor for all the buckets
+            EditableDocument bucketDoc = documentStore.edit(bucketKey, true);
             assert bucketDoc != null;
             for (ChildReference ref : entry.getValue()) {
                 // we store each key,name pair directly in the bucket
@@ -1617,14 +1619,16 @@ public class DocumentTranslator implements DocumentConstants {
 
     protected void persistBucketRemovalChanges( NodeKey parentKey,
                                                 Map<BucketId, Set<NodeKey>> removalsPerBucket ) {
-        EditableDocument parentDoc = documentStore.edit(parentKey.toString(), false, false);
+        EditableDocument parentDoc = documentStore.edit(parentKey.toString(), false);
         // for each bucket, get the corresponding document (locking it) and make the children changes
         for (Map.Entry<BucketId, Set<NodeKey>> entry : removalsPerBucket.entrySet()) {
             BucketId bucketId = entry.getKey();
             Set<NodeKey> removalsFromBucket = entry.getValue();
             String bucketIdString = bucketId.toString();
             String bucketKey = bucketKey(parentKey.toString(), bucketIdString);
-            EditableDocument bucketDoc = documentStore.edit(bucketKey, false, true);
+            // we don't worry about locking the bucket keys because the parent key should've already been locked, acting therefore
+            // as a monitor for all the buckets 
+            EditableDocument bucketDoc = documentStore.edit(bucketKey, false);
             assert bucketDoc != null;
             for (NodeKey toRemove : removalsFromBucket) {
                 // keys are stored directly in the bucket
@@ -1638,8 +1642,8 @@ public class DocumentTranslator implements DocumentConstants {
     }
     
     protected void removeAllBucketsFromUnorderedCollection( NodeKey parentDocKey ) {
-        // should already have been loaded into the cache
-        EditableDocument parentDoc = documentStore.edit(parentDocKey.toString(), false, false);
+        // should already have been loaded into the cache and the parent locked
+        EditableDocument parentDoc = documentStore.edit(parentDocKey.toString(), false);
         assert parentDoc != null;
         EditableArray bucketsIds = parentDoc.getArray(BUCKETS);
         if (bucketsIds == null || bucketsIds.isEmpty()) {

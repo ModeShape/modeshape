@@ -112,6 +112,8 @@ import org.modeshape.jcr.federation.FederatedDocumentStore;
 import org.modeshape.jcr.journal.ChangeJournal;
 import org.modeshape.jcr.journal.ClusteredJournal;
 import org.modeshape.jcr.journal.LocalJournal;
+import org.modeshape.jcr.locking.LockingService;
+import org.modeshape.jcr.locking.StandaloneLockingService;
 import org.modeshape.jcr.mimetype.MimeTypeDetector;
 import org.modeshape.jcr.mimetype.NullMimeTypeDetector;
 import org.modeshape.jcr.query.parse.FullTextSearchParser;
@@ -126,7 +128,6 @@ import org.modeshape.jcr.security.AuthenticationProviders;
 import org.modeshape.jcr.security.EnvironmentAuthenticationProvider;
 import org.modeshape.jcr.security.JaasProvider;
 import org.modeshape.jcr.security.SecurityContext;
-import org.modeshape.jcr.spi.index.IndexManager;
 import org.modeshape.jcr.txn.SynchronizedTransactions;
 import org.modeshape.jcr.txn.Transactions;
 import org.modeshape.jcr.value.NamespaceRegistry;
@@ -420,10 +421,6 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
 
     public Transactions transactions() {
         return runningState().transactions;
-    }
-
-    protected final IndexManager getIndexManager() {
-        return runningState().queryManager().getIndexManager();
     }
 
     protected final DocumentStore documentStore() {
@@ -947,10 +944,11 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         private final SystemContentInitializer systemContentInitializer;
         private final NodeTypesImporter nodeTypesImporter;
         private final Connectors connectors;
-        private final List<ScheduledFuture<?>> backgroundProcesses = new ArrayList<ScheduledFuture<?>>();
+        private final List<ScheduledFuture<?>> backgroundProcesses = new ArrayList<>();
         private final Problems problems;
         private final ChangeJournal journal;
         private final ClusteringService clusteringService;
+        private final LockingService lockingService;
 
         private Transaction existingUserTransaction;
         private RepositoryCache cache;
@@ -1018,9 +1016,8 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                     this.connectors = other.connectors;
                     this.documentStore = other.documentStore;
                     this.txMgrLookup = other.txMgrLookup;
-                    this.txnMgr = documentStore.transactionManager();
-
-                    this.transactions = createTransactions(this.cache.getName(), this.txnMgr);
+                    this.txnMgr = other.txnManager();
+                    this.transactions = other.transactions;
 
                     suspendExistingUserTransaction();
 
@@ -1051,6 +1048,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                     this.changeDispatchingQueue = other.changeDispatchingQueue;
                     this.clusteringService = other.clusteringService;
                     this.journal = other.journal;
+                    this.lockingService = other.lockingService;
                 } else {
                     // find the Schematic database and Infinispan Cache ...
                     CacheContainer container = config.getContentCacheContainer();
@@ -1075,11 +1073,10 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                     } else {
                         this.clusteringService = null;
                     }
-                    LocalDocumentStore localStore = new LocalDocumentStore(database);
-                    this.documentStore = connectors.hasConnectors() ? new FederatedDocumentStore(connectors, localStore) : localStore;
-                    this.txnMgr = this.documentStore.transactionManager();
+                    this.lockingService = this.clusteringService != null ? this.clusteringService : new StandaloneLockingService();
+                    this.txnMgr = database.transactionManager();
                     this.txMgrLookup = config.getTransactionManagerLookup(); 
-                    this.transactions = createTransactions(cacheName, this.txnMgr);
+                    this.transactions = createTransactions(cacheName, this.txnMgr, database);
 
                     suspendExistingUserTransaction();
 
@@ -1122,8 +1119,13 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                         this.journal = null;
                     }
 
+                    // Set up the document store and environment
+                    final RepositoryEnvironment repositoryEnvironment = new JcrRepositoryEnvironment(transactions, lockingService,
+                                                                                                     journalId());
+                    LocalDocumentStore localStore = new LocalDocumentStore(database, repositoryEnvironment);
+                    this.documentStore = connectors.hasConnectors() ? new FederatedDocumentStore(connectors, localStore) : localStore;
+
                     // Set up the repository cache ...
-                    final RepositoryEnvironment repositoryEnvironment = new JcrRepositoryEnvironment(this.transactions, journalId());
                     this.cache = new RepositoryCache(context, documentStore, clusteringService, config, systemContentInitializer,
                                                      repositoryEnvironment, changeBus, Upgrades.STANDARD_UPGRADES);
 
@@ -1237,12 +1239,13 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         }
         
         protected Transactions createTransactions(String cacheName,
-                                                  TransactionManager txnMgr) {
+                                                  TransactionManager txnMgr,
+                                                  SchematicDb db) {
             if (txnMgr == null) {
                 throw new ConfigurationException(JcrI18n.repositoryCannotBeStartedWithoutTransactionalSupport.text(getName(),
                                                                                                                    cacheName));
             }
-            return new SynchronizedTransactions(txnMgr, documentStore.localStore().localCache());
+            return new SynchronizedTransactions(txnMgr, db.getCache());
         }
 
         /**
@@ -1434,9 +1437,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         }
 
         protected final TransactionManager txnManager() {
-            TransactionManager mgr = documentStore().transactionManager();
-            assert mgr != null;
-            return mgr;
+            return transactions.getTransactionManager();
         }
 
         protected final RepositoryNodeTypeManager nodeTypeManager() {
@@ -1869,11 +1870,12 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
 
     protected class JcrRepositoryEnvironment implements RepositoryEnvironment {
         private final Transactions transactions;
+        private final LockingService lockingService;
         private final String journalId;
-
-        protected JcrRepositoryEnvironment( Transactions transactions,
-                                            String journalId ) {
+        
+        private JcrRepositoryEnvironment(Transactions transactions, LockingService lockingService, String journalId) {
             this.transactions = transactions;
+            this.lockingService = lockingService;
             this.journalId = journalId;
         }
 
@@ -1885,6 +1887,11 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         @Override
         public String journalId() {
             return journalId;
+        }
+
+        @Override
+        public LockingService lockingService() {
+            return lockingService;
         }
 
         @Override

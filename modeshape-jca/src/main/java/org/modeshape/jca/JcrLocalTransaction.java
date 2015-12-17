@@ -52,7 +52,7 @@ public final class JcrLocalTransaction implements LocalTransaction {
     @Override
     public void commit() throws ResourceException {
         try {
-            final Transactions.Transaction transaction = transactions.currentModeShapeTransaction();
+            final Transactions.Transaction transaction = transactions.currentTransaction();
             if (transaction == null) {
                 throw new LocalTransactionException("A local transaction does not exist");
             }
@@ -64,7 +64,7 @@ public final class JcrLocalTransaction implements LocalTransaction {
 
     @Override
     public void rollback() throws ResourceException {
-        final Transactions.Transaction transaction = transactions.currentModeShapeTransaction();
+        final Transactions.Transaction transaction = transactions.currentTransaction();
         if (transaction == null) {
             throw new LocalTransactionException("A local transaction does not exist");
         }

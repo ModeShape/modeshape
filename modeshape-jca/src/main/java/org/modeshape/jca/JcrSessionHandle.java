@@ -44,9 +44,6 @@ import javax.jcr.nodetype.NoSuchNodeTypeException;
 import javax.jcr.retention.RetentionManager;
 import javax.jcr.security.AccessControlManager;
 import javax.jcr.version.VersionException;
-import javax.transaction.xa.XAException;
-import javax.transaction.xa.XAResource;
-import javax.transaction.xa.Xid;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -55,7 +52,7 @@ import org.xml.sax.SAXException;
  * 
  * @author kulikov
  */
-public class JcrSessionHandle implements Session, XAResource {
+public class JcrSessionHandle implements Session {
 
     /**
      * Managed connection.
@@ -320,62 +317,4 @@ public class JcrSessionHandle implements Session, XAResource {
     public RetentionManager getRetentionManager() throws UnsupportedRepositoryOperationException, RepositoryException {
         return session().getRetentionManager();
     }
-
-    private XAResource getXAResource() {
-        return (XAResource)session();
-    }
-
-    @Override
-    public void commit( Xid xid,
-                        boolean bln ) throws XAException {
-        getXAResource().commit(xid, bln);
-    }
-
-    @Override
-    public void end( Xid xid,
-                     int i ) throws XAException {
-        getXAResource().end(xid, i);
-    }
-
-    @Override
-    public void forget( Xid xid ) throws XAException {
-        getXAResource().forget(xid);
-    }
-
-    @Override
-    public int getTransactionTimeout() throws XAException {
-        return getXAResource().getTransactionTimeout();
-    }
-
-    @Override
-    public boolean isSameRM( XAResource xar ) throws XAException {
-        return getXAResource().isSameRM(xar);
-    }
-
-    @Override
-    public int prepare( Xid xid ) throws XAException {
-        return getXAResource().prepare(xid);
-    }
-
-    @Override
-    public Xid[] recover( int i ) throws XAException {
-        return getXAResource().recover(i);
-    }
-
-    @Override
-    public void rollback( Xid xid ) throws XAException {
-        getXAResource().rollback(xid);
-    }
-
-    @Override
-    public boolean setTransactionTimeout( int i ) throws XAException {
-        return getXAResource().setTransactionTimeout(i);
-    }
-
-    @Override
-    public void start( Xid xid,
-                       int i ) throws XAException {
-        getXAResource().start(xid, i);
-    }
-
 }
