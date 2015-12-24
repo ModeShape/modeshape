@@ -92,7 +92,7 @@ public class ClusteringServiceLockingTest extends StandaloneLockingServiceTest {
         ClusteringService service1 = newLockingService();
         ClusteringService service2 = newLockingService();
         assertTrue(service1.tryLock("lock1", "lock2"));
-        assertTrue(service2.tryLock(10, TimeUnit.MILLISECONDS, "lock3", "lock4"));         
+        assertTrue(service2.tryLock("lock3", "lock4"));         
     }
 
     @Test
@@ -100,12 +100,11 @@ public class ClusteringServiceLockingTest extends StandaloneLockingServiceTest {
         ClusteringService service1 = newLockingService();
         ClusteringService service2 = newLockingService();
         assertTrue(service1.tryLock("lock1", "lock2"));
-        assertFalse(service2.tryLock(10, TimeUnit.MILLISECONDS, "lock2", "lock3"));
-        assertTrue(service1.unlock("lock2"));
-        Thread.sleep(10);
-        assertTrue(service2.tryLock(10, TimeUnit.MILLISECONDS, "lock2", "lock3"));
-        assertFalse(service1.unlock("lock2"));
-        assertTrue(service2.unlock("lock2", "lock3"));
+        assertFalse(service2.tryLock("lock2", "lock3"));
+        assertTrue(service1.unlock("lock2").isEmpty());
+        assertTrue(service2.tryLock("lock2", "lock3"));
+        assertFalse(service1.unlock("lock2").isEmpty());
+        assertTrue(service2.unlock("lock2", "lock3").isEmpty());
     }
 
     @Test
@@ -115,24 +114,25 @@ public class ClusteringServiceLockingTest extends StandaloneLockingServiceTest {
         ClusteringService service3 = newLockingService();
         ClusteringService service4 = newLockingService();
         assertTrue(service1.tryLock("lock1", "lock2"));
-        assertFalse(service2.tryLock(10, TimeUnit.MILLISECONDS, "lock2", "lock3"));
-        assertFalse(service3.tryLock(10, TimeUnit.MILLISECONDS, "lock4", "lock1"));
-        assertTrue(service4.tryLock(10, TimeUnit.MILLISECONDS, "lock5", "lock6"));
-        assertFalse(service1.tryLock(10, TimeUnit.MILLISECONDS, "lock1", "lock5"));
-        assertFalse(service1.tryLock(10, TimeUnit.MILLISECONDS, "lock6", "lock1"));
+        assertFalse(service2.tryLock("lock2", "lock3"));
+        assertFalse(service3.tryLock("lock4", "lock1"));
+        assertTrue(service4.tryLock("lock5", "lock6"));
+        assertFalse(service1.tryLock("lock1", "lock5"));
+        assertFalse(service1.tryLock("lock6", "lock1"));
 
-        assertTrue(service1.unlock("lock1", "lock2"));
-        assertTrue(service4.unlock("lock5", "lock6"));
+        assertTrue(service1.unlock("lock1", "lock2").isEmpty());
+        assertTrue(service4.unlock("lock5", "lock6").isEmpty());
         
-        assertTrue(service2.tryLock(10, TimeUnit.MILLISECONDS, "lock2", "lock3"));
-        assertTrue(service3.tryLock(10, TimeUnit.MILLISECONDS, "lock4", "lock1"));
-        assertFalse(service1.tryLock(10, TimeUnit.MILLISECONDS, "lock1", "lock5"));
-        assertFalse(service1.tryLock(10, TimeUnit.MILLISECONDS, "lock6", "lock1"));
+        assertTrue(service2.tryLock("lock2", "lock3"));
+        assertTrue(service3.tryLock("lock4", "lock1"));
+        assertFalse(service1.tryLock( "lock1", "lock5"));
+        assertFalse(service1.tryLock("lock6", "lock1"));
     }
-
+    
     @Override
     protected ClusteringService newLockingService() {
-        ClusteringService service = ClusteringService.startStandalone("locking-cluster", "config/cluster/jgroups-test-config.xml");
+        ClusteringService service = ClusteringService.startStandalone("locking-cluster", "config/cluster/jgroups-test-config.xml");  
+        service.setLockTimeout(100);
         testClusteringServices.push(service);
         return service;
     }

@@ -1074,6 +1074,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                         this.clusteringService = null;
                     }
                     this.lockingService = this.clusteringService != null ? this.clusteringService : new StandaloneLockingService();
+                    this.lockingService.setLockTimeout(config.getLockTimeoutMillis());
                     this.txnMgr = database.transactionManager();
                     this.txMgrLookup = config.getTransactionManagerLookup(); 
                     this.transactions = createTransactions(cacheName, this.txnMgr, database);

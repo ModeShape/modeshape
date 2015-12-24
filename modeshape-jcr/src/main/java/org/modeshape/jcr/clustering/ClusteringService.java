@@ -57,6 +57,7 @@ import org.jgroups.stack.ProtocolStack;
 import org.modeshape.common.SystemFailureException;
 import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.logging.Logger;
+import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.StringUtil;
 
 /**
@@ -119,6 +120,11 @@ public abstract class ClusteringService implements org.modeshape.jcr.locking.Loc
      * A list of message consumers which register themselves with this service.
      */
     private final Set<MessageConsumer<Serializable>> consumers;
+
+    /**
+     * The default lock timeout
+     */
+    private volatile long lockTimeoutMillis = 0;
 
     protected ClusteringService( String clusterName ) {
         assert clusterName != null;
@@ -184,56 +190,65 @@ public abstract class ClusteringService implements org.modeshape.jcr.locking.Loc
     public boolean tryLock( long time,
                             TimeUnit unit,
                             String... names) {
-        Set<String> successfullyAcquiredLocks = new HashSet<>();
-        try {
-            for (String name : names) {
-                boolean success = true;
-                LOGGER.debug("Attempting to lock {0}", name);
-                try {
-                    success = lockService.getLock(name).tryLock(time, unit);
-                    LOGGER.debug("{0} locked successfully", name);
-                } catch (InterruptedException e) {
-                    LOGGER.debug("Thread " + Thread.currentThread().getName()
-                                 + " received interrupt request while waiting to acquire lock '{0}'", name);
-                    Thread.currentThread().interrupt();
-                    success = false;
-                }
-                if (!success) {
-                    LOGGER.debug("Unable to acquire lock on {0}. Reverting back the already obtained locks: {1}", name, 
-                                 successfullyAcquiredLocks);
-                    unlock(successfullyAcquiredLocks.toArray(new String[successfullyAcquiredLocks.size()]));
-                    return false;
-                }
-                successfullyAcquiredLocks.add(name);
+        Set<Lock> successfullyAcquiredLocks = new HashSet<>();
+        for (String name : names) {
+            boolean success = false;
+            LOGGER.debug("Attempting to lock {0}", name);
+            Lock lock = lockService.getLock(name);
+            try {
+                success = time > 0 ? lock.tryLock(time, unit) : lock.tryLock();
+                LOGGER.debug("{0} locked successfully", name);
+            } catch (InterruptedException e) {
+                LOGGER.debug("Thread " + Thread.currentThread().getName()
+                             + " received interrupt request while waiting to acquire lock '{0}'", name);
+                Thread.currentThread().interrupt();
+            } catch (Exception e) {
+                LOGGER.debug(e, "Unexpected exception while trying to obtain cluster lock {0}", name);
             }
-        } catch (Throwable t) {
-            LOGGER.debug(t, "Unexpected exception while attempting to lock");
-            unlock(successfullyAcquiredLocks.toArray(new String[successfullyAcquiredLocks.size()]));
-            return false;
+            if (!success) {
+                LOGGER.debug("Unable to acquire lock on {0}. Reverting back the already obtained locks: {1}", name,
+                             successfullyAcquiredLocks);
+                successfullyAcquiredLocks.stream().forEach(Lock::unlock);
+                return false;
+            }
+            successfullyAcquiredLocks.add(lock);
         }
         return true;        
     }
-    
+
     @Override
-    public boolean unlock(String...names) {
-        boolean success = true;
-        try {
-            for (String name : names) {
-                LOGGER.debug("Attempting to unlock {0}", name);
-                Lock lock = lockService.getLock(name);
-                if (!lock.tryLock()) {
-                    LOGGER.debug("Unlock {0} failed. Lock is held by someone else...", name);
-                    //we can't lock, meaning we aren't really holding this lock so therefore we shouldn't be able to unlock it
-                    success = false;
-                }
+    public boolean tryLock(String... names) {
+        return tryLock(lockTimeoutMillis, TimeUnit.MILLISECONDS, names);
+    }
+
+    @Override
+    public void setLockTimeout(long lockTimeoutMillis) {
+        CheckArg.isNonNegative(lockTimeoutMillis, "lockTimeoutMillis");
+        this.lockTimeoutMillis = lockTimeoutMillis;
+    }
+
+    @Override
+    public List<String> unlock(String... names) {
+        List<String> result = new ArrayList<>();
+        for (String name : names) {
+            LOGGER.debug("Attempting to unlock {0}", name);
+            Lock lock = lockService.getLock(name);
+            // JG locks are do not have a holder count, so locking/unlocking an already held lock is a no-op
+            if (!lock.tryLock()) {
+                LOGGER.debug("Unlock {0} failed. Lock is held by someone else...", name);
+                //we can't lock, meaning we aren't really holding this lock so therefore we shouldn't be able to unlock it
+                result.add(name);
+                continue;
+            } 
+            try {
                 lock.unlock();
                 LOGGER.debug("Unlocked {0}", name);
+            } catch (Exception e) {
+                LOGGER.debug(e, "Unexpected exception while trying to unlock {0}", name);
+                result.add(name);                        
             }
-            return success;
-        } catch (Throwable t) {
-            LOGGER.debug(t, "Unexpected exception while attempting to unlock");
-            return false;
         }
+        return result;
     }
 
     /**

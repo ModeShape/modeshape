@@ -203,6 +203,9 @@ public class ModeShapeSubsystemXMLReader_3_0 implements XMLStreamConstants, XMLE
                     case EVENT_BUS_SIZE: 
                         ModelAttributes.EVENT_BUS_SIZE.parseAndSetParameter(attrValue, repository, reader);
                         break;
+                    case LOCK_TIMEOUT_MILLIS: 
+                        ModelAttributes.LOCK_TIMEOUT_MILLIS.parseAndSetParameter(attrValue, repository, reader);
+                        break;
                     default:
                         throw ParseUtils.unexpectedAttribute(reader, i);
                 }

@@ -15,6 +15,7 @@
  */
 package org.modeshape.jcr.locking;
 
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -44,24 +45,31 @@ public interface LockingService {
      boolean tryLock(long time, TimeUnit unit, String... names);
 
     /**
-     * Attempts to acquire a series of locks immediately.
+     * Attempts to acquire a series of locks using the default lock timeout. If not timeout is explicitly set, this will not wait
+     * to obtain the lock.
      * <p>
      * NOTE: Implementors must make sure that either all the locks are obtained, or none. Otherwise possible deadlocks can occur.
      * </p>
      * 
      * @param names the names of the locks to acquire
      * @return {@code true} if *all* the locks were successfully acquired, {@code false} otherwise
+     * @see #setLockTimeout(long)  
      */
-    default boolean tryLock(String... names) {
-        return tryLock(0, TimeUnit.MILLISECONDS, names);
-    }
+     boolean tryLock(String... names);
 
     /**
-     * Unlocks a series of locks. If a lock cannot be released, it's up to the implementor to decide whether this method 
-     * returns immediately or attempts to continue with the other locks. 
+     * Unlocks a number of locks.  
      *
      * @param names the names of the locks to unlock
-     * @return {@code true} if all the locks were successfully unlocked, or {@code false} if at least one lock could not be unlocked.
+     * @return a {@link List} of {@link String} representing the names of the locks that could not be unlocked. If all the locks were
+     * successfully unlocked, this should be empty; never {@code null}
      */
-    boolean unlock(String... names);
+    List<String> unlock(String... names);
+
+    /**
+     * Sets the value of the default lock timeout that should be used when {@link #tryLock(String...)} is called.
+     * 
+     * @param lockTimeoutMillis a number of milliseconds; must be positive 
+     */
+    void setLockTimeout(long lockTimeoutMillis);
 }

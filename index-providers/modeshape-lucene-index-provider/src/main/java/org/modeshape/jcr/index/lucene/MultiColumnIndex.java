@@ -74,7 +74,7 @@ class MultiColumnIndex extends LuceneIndex {
             // THIS IS A COSTLY OPERATION...
             if (documentExists(nodeKey)) {
                 // we're updating an existing document
-                logger.debug("Updating the property '{0}' of document '{1}' in the Lucene index '{2}' with the values '{3}'", values,
+                logger.debug("Updating the property '{0}' of document '{1}' in the Lucene index '{2}' with the values '{3}'",
                              propertyName, nodeKey, name, values);
                 Document oldDocument = searcher.loadDocumentById(nodeKey);
                 Document newDocument = clone(oldDocument, propertyName);

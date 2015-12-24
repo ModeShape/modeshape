@@ -25,12 +25,23 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import javax.jcr.Binary;
+import javax.jcr.ItemExistsException;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.PathNotFoundException;
@@ -49,6 +60,7 @@ import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.FileUtil;
 import org.modeshape.common.util.IoUtil;
 import org.modeshape.common.util.StringUtil;
+import org.modeshape.jcr.api.JcrTools;
 import org.modeshape.jcr.api.observation.Event;
 
 /**
@@ -521,6 +533,92 @@ public class ClusteredRepositoryTest {
         } catch (RuntimeException e) {
             //expected
         }
+    }
+
+    @Test
+    public void shouldLockNodesCorrectlyInCluster() throws Exception {
+        JcrRepository repository1 = TestingUtil.startRepositoryWithConfig("config/cluster/clustered-repo-config.json");
+        JcrSession session1 = repository1.login();
+
+        JcrRepository repository2 = TestingUtil.startRepositoryWithConfig("config/cluster/clustered-repo-config.json");
+        JcrSession session2 = repository2.login();
+
+        session1.getRootNode().addNode("folder", "nt:folder");
+        session1.save();
+        Thread.sleep(100);
+        
+        assertNotNull(session2.getNode("/folder"));
+        session1.logout();
+        session2.logout();
+        
+        CyclicBarrier cyclicBarrier = new CyclicBarrier(3);
+        // add a number of file names to a list
+        List<String> fileNames = IntStream.range(1, 100).mapToObj(i -> "file" + i).collect(Collectors.toList());
+        ExecutorService executors = Executors.newFixedThreadPool(2);
+        try {
+            // run a tasks on cluster node 1 which attempts to create each file from that list under the parent folder
+            CompletableFuture<Boolean> taskOnClusterNode1 = CompletableFuture.supplyAsync(addFilesToFolder(repository1,
+                                                                                                           cyclicBarrier,
+                                                                                                           "node1",
+                                                                                                           fileNames), executors);
+            List<String> revertedList = new ArrayList<>(fileNames);
+            Collections.reverse(revertedList);
+            // run a tasks on cluster node 2 which attempts to create each file from that list in reverse under the parent folder
+            CompletableFuture<Boolean> taskOnClusterNode2 = CompletableFuture.supplyAsync(addFilesToFolder(repository2,
+                                                                                                           cyclicBarrier,
+                                                                                                           "node2",
+                                                                                                           revertedList), executors);
+            cyclicBarrier.await(10, TimeUnit.SECONDS);
+            boolean resultFromNode1 = taskOnClusterNode1.get(10, TimeUnit.SECONDS);
+            boolean resultFromNode2 = taskOnClusterNode2.get(10, TimeUnit.SECONDS);
+            // nt:folder does not allow SNS, so if locking working correctly only one of the 2 cluster nodes should've managed
+            // to add all the files
+            if (resultFromNode1 && resultFromNode2) {
+                fail("Only one of the cluster nodes should've succeeded ");
+            } 
+            String expectedClusterNode = resultFromNode1 ? "node1" : "node2";
+            JcrSession session = repository1.login();
+            Node folder = session.getNode("/folder");
+            for (NodeIterator nodeIterator = folder.getNodes(); nodeIterator.hasNext();) {
+                Node file = nodeIterator.nextNode();
+                InputStream is = file.getNode("jcr:content").getProperty("jcr:data").getBinary().getStream();
+                String content = IoUtil.read(is);
+                assertEquals(expectedClusterNode, content);
+            }
+            session.logout();
+        } finally {
+            TestingUtil.killRepositories(repository1, repository2);
+            executors.shutdownNow();
+        }
+    }
+
+    private Supplier<Boolean> addFilesToFolder(JcrRepository repository, CyclicBarrier cyclicBarrier, String clusterNodeId, 
+                                               List<String> fileNames) throws RepositoryException {
+        JcrTools tools = new JcrTools();
+        JcrSession session = repository.login();
+        return  () -> {
+            try {
+                fileNames.forEach(fileName -> {
+                    try {
+                        tools.uploadFile(session, "/folder/" + fileName, new ByteArrayInputStream(clusterNodeId.getBytes()));
+                    } catch (RepositoryException | IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                });
+                cyclicBarrier.await();
+                session.save();
+                return true;
+            } catch (ItemExistsException ies) {
+                return false;
+            } catch (Exception e) {
+                e.printStackTrace();
+                throw new RuntimeException(e);
+            } finally {
+                if (session != null) {
+                    session.logout();
+                }
+            }
+        };
     }
 
     private void assertChangesArePropagatedInCluster( Session process1Session,

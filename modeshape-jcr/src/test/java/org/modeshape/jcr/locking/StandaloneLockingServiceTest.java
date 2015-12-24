@@ -15,13 +15,13 @@
  */
 package org.modeshape.jcr.locking;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
 import org.junit.Test;
 
 /**
@@ -36,7 +36,7 @@ public class StandaloneLockingServiceTest {
         LockingService service = newLockingService();
         String lockName = "test";
         assertTrue(service.tryLock(lockName));
-        assertTrue(service.unlock(lockName));
+        assertTrue(service.unlock(lockName).isEmpty());
     }
 
     @Test
@@ -44,14 +44,7 @@ public class StandaloneLockingServiceTest {
         LockingService service = newLockingService();
         String[] lockNames = new String[] {"lock1", "lock2"};
         assertTrue(service.tryLock(lockNames));
-        assertTrue(service.unlock(lockNames));
-    }
-    
-    @Test
-    public void shouldLockReentrantlyMultipleLocksWithTimeout() {
-        LockingService service = newLockingService();
-        String[] lockNames = new String[] {"lock1", "lock2", "lock2"};
-        assertTrue(service.tryLock(1, TimeUnit.SECONDS, lockNames));
+        assertTrue(service.unlock(lockNames).isEmpty());
     }
     
     @Test
@@ -59,7 +52,7 @@ public class StandaloneLockingServiceTest {
         LockingService service = newLockingService();
         CompletableFuture.runAsync(() -> assertTrue(service.tryLock("lock1"))).get();
         CompletableFuture.runAsync(() -> assertTrue(service.tryLock("lock2"))).get();
-        assertFalse(service.unlock("lock1", "lock2"));
+        assertEquals(service.unlock("lock1", "lock2").size(), 2);
     }
 
     @Test
@@ -70,7 +63,8 @@ public class StandaloneLockingServiceTest {
                 new String[lockNames.size()]))));
         Collections.reverse(lockNames);
         op1.thenRunAsync(() -> assertFalse(service.tryLock(lockNames.toArray(new String[lockNames.size()]))))
-           .thenRunAsync(() -> assertFalse(service.unlock(lockNames.toArray(new String[lockNames.size()])))); 
+           .thenRunAsync(() -> assertEquals(service.unlock(lockNames.toArray(new String[lockNames.size()])).size(),
+                                            lockNames.size())); 
     }
     
     @Test
@@ -79,10 +73,25 @@ public class StandaloneLockingServiceTest {
         CompletableFuture.runAsync(() -> assertTrue(service.tryLock("lock1", "lock2", "lock3"))).get();
         assertFalse(service.tryLock("lock4", "lock5", "lock2"));
         assertTrue(service.tryLock("lock4", "lock5"));
-        assertTrue(service.unlock("lock4", "lock5"));
+        assertTrue(service.unlock("lock4", "lock5").isEmpty());
     }
-
+    
+    @Test
+    public void unlockShouldReleaseReentrantLocks() throws Exception {
+        LockingService service = newLockingService();
+        String[] locks = { "lock1", "lock2", "lock3" };
+        CompletableFuture.runAsync(() -> {
+            assertTrue(service.tryLock(locks));
+            assertTrue(service.tryLock(locks));
+            assertTrue(service.tryLock(locks));
+            assertTrue(service.unlock(locks).isEmpty());
+        }).get();
+        assertTrue(service.tryLock(locks));
+    }
+    
     protected LockingService newLockingService() {
-        return new StandaloneLockingService();
+        LockingService lockingService = new StandaloneLockingService();
+        lockingService.setLockTimeout(0);
+        return lockingService;
     }
 }

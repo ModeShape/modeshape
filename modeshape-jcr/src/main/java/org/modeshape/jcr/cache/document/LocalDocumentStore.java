@@ -18,7 +18,6 @@ package org.modeshape.jcr.cache.document;
 
 import java.io.Serializable;
 import java.util.Collection;
-import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 import javax.transaction.HeuristicMixedException;
 import javax.transaction.HeuristicRollbackException;
@@ -131,7 +130,7 @@ public class LocalDocumentStore implements DocumentStore {
         }
         try {
             LockingService lockingService = repoEnv.lockingService();
-            boolean locked = lockingService.tryLock(10, TimeUnit.SECONDS, keys);
+            boolean locked = lockingService.tryLock(keys);
             if (locked) {
                 tx.uponCompletion(() -> lockingService.unlock(keys));
             }

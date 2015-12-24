@@ -249,7 +249,12 @@ public class RepositoryConfiguration {
          * in JNDI for an Infinispan CacheContainer instance. If no such container is found, then a default Infinispan
          * configuration (a basic, local mode, non-clustered cache) will be used.
          */
-        public static final String CACHE_CONFIGURATION = "cacheConfiguration";
+        public static final String CACHE_CONFIGURATION = "cacheConfiguration";   
+        
+        /**
+         * The maximum number of milliseconds to wait when a lock cannot be obtained on a node
+         */
+        public static final String LOCK_TIMEOUT_MILLIS = "lockTimeoutMillis";
 
         /**
          * The name of the field which contains the fully qualified name of the transaction manager lookup class to be used.
@@ -493,6 +498,11 @@ public class RepositoryConfiguration {
          * The default value of the {@link FieldName#DEFAULT} field is '{@value} '.
          */
         public static final String DEFAULT = "default";
+
+        /**
+         * The default value of the {@link FieldName#LOCK_TIMEOUT_MILLIS} field is '{@value}' millis.
+         */
+        public static final long LOCK_TIMEOUT = 10000;
 
         /**
          * The default value of the {@link FieldName#TRANSACTION_MANAGER_LOOKUP} field is '{@value} '.
@@ -898,6 +908,10 @@ public class RepositoryConfiguration {
             return storage.getString(FieldName.CACHE_CONFIGURATION);
         }
         return null;
+    }
+
+    public long getLockTimeoutMillis() {
+        return doc.getLong(FieldName.LOCK_TIMEOUT_MILLIS, Default.LOCK_TIMEOUT);
     }
     
     public TransactionManagerLookup getTransactionManagerLookup() {

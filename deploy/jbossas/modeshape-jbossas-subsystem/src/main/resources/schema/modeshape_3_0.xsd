@@ -347,6 +347,14 @@
                     to finish and free up subsequent slots. Should be a power of 2, or the system will auto-adjust to the closest power of 2
                 </xs:documentation>
             </xs:annotation>
+        </xs:attribute>   
+        <xs:attribute name="lock-timeout-millis" type="xs:long" use="optional" default="10000">
+            <xs:annotation>
+                <xs:documentation>
+                    The maximum number of milliseconds to wait in order to obtain locks on repository nodes in case 
+                    of concurrent writes. Defaults to 10 seconds. In highly-concurrent cases, this may be increased.
+                </xs:documentation>
+            </xs:annotation>
         </xs:attribute>
     </xs:complexType>
 

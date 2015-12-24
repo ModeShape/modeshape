@@ -417,8 +417,7 @@ public class RepositoryConfigurationTest {
         RepositoryConfiguration.Clustering clusteringConfiguration = config.getClustering();
         assertFalse(clusteringConfiguration.isEnabled());
     }
-
-
+    
     @Test
     public void shouldAllowClusteringToBeConfigured() throws Exception {
         String clusterName = "testCluster";
@@ -442,7 +441,18 @@ public class RepositoryConfigurationTest {
         assertEquals(Default.CLUSTER_CONFIG, clusteringConfiguration.getConfiguration());
     }
 
+    @Test
+    public void shouldUseDefaultLockingTimeout() throws Exception {
+        RepositoryConfiguration config = RepositoryConfiguration.read("{ 'name' = 'nm', 'storage' : {}}");
+        assertEquals(Default.LOCK_TIMEOUT, config.getLockTimeoutMillis());
+    }
 
+    @Test
+    public void shouldUseCustomLockingTimeout() throws Exception {
+        RepositoryConfiguration config = RepositoryConfiguration.read("{ 'name' = 'nm', 'lockTimeoutMillis' : 100}");
+        assertEquals(100, config.getLockTimeoutMillis());
+    }
+    
     protected RepositoryConfiguration assertValid( RepositoryConfiguration config ) {
         Problems results = config.validate();
         assertThat(results.toString(), results.hasProblems(), is(false));
