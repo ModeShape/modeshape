@@ -56,7 +56,7 @@
         <picketbox.version>4.0.21.Final</picketbox.version>
         <atomikos.version>3.8.0</atomikos.version>
         <jbossjta.version>5.1.0.Final</jbossjta.version>
-        <mongo.driver.version>2.7.3</mongo.driver.version>
+        <mongo.driver.version>2.14.0</mongo.driver.version>
         <embedmongo.version>1.28</embedmongo.version>
         <cassandra-cql-driver>2.0.0-rc2</cassandra-cql-driver>
         <tika.version>1.8</tika.version>
