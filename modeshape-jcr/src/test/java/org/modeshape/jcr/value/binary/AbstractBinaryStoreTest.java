@@ -29,10 +29,15 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 import java.util.UUID;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import javax.jcr.Binary;
 import javax.jcr.RepositoryException;
+import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestRule;
@@ -59,7 +64,8 @@ public abstract class AbstractBinaryStoreTest {
      * We need to generate the test byte arrays based on the minimum binary size, because that controls the distinction between
      * Stored/In Memory binary values.
      */
-    public static final byte[] STORED_LARGE_BINARY = new byte[(int)(AbstractBinaryStore.DEFAULT_MINIMUM_BINARY_SIZE_IN_BYTES * 4)];
+    public static final int LARGE_BINARY_SIZE = (int) AbstractBinaryStore.DEFAULT_MINIMUM_BINARY_SIZE_IN_BYTES * 4;
+    public static final byte[] STORED_LARGE_BINARY = new byte[LARGE_BINARY_SIZE];
     public static final BinaryKey STORED_LARGE_KEY;
     public static final byte[] IN_MEMORY_BINARY = new byte[(int)(AbstractBinaryStore.DEFAULT_MINIMUM_BINARY_SIZE_IN_BYTES / 2)];
     public static final BinaryKey IN_MEMORY_KEY;
@@ -262,6 +268,46 @@ public abstract class AbstractBinaryStoreTest {
             extractedText = binaryStore.getText(binaryValue);
         }
         assertEquals(DummyTextExtractor.EXTRACTED_TEXT, extractedText);
+    }
+
+    @Test
+    @FixFor("MODE-2547")
+    public void shouldStoreBinariesConcurrently() throws Exception {
+        int binariesCount = 11;  //to cover MongoDB, make sure this is >10 which is the default Mongo pool size
+        List<byte[]> bytesToStore = new ArrayList<>(binariesCount);
+        for (int i = 0; i < binariesCount; i++) {
+            byte[] data = new byte[LARGE_BINARY_SIZE];
+            RANDOM.nextBytes(data);
+            bytesToStore.add(data);
+        }
+
+        ExecutorService executorService = Executors.newFixedThreadPool(binariesCount);
+        try {
+            final CyclicBarrier barrier = new CyclicBarrier(binariesCount + 1);
+            List<Future<BinaryValue>> results = new ArrayList<>(binariesCount);
+            for (final byte[] data : bytesToStore) {
+                Future<BinaryValue> result = executorService.submit(new Callable<BinaryValue>() {
+                    @Override
+                    public BinaryValue call() throws Exception {
+                        barrier.await();
+                        return getBinaryStore().storeValue(new ByteArrayInputStream(data), false);
+                    }
+                });
+                results.add(result);
+            }
+            barrier.await();
+            List<BinaryValue> storedBinaries = new ArrayList<>(binariesCount);
+            for (Future<BinaryValue> result : results) {
+                storedBinaries.add(result.get(2, TimeUnit.SECONDS));
+            }
+            for (int i = 0; i < binariesCount; i++) {
+                byte[] expectedBytes = bytesToStore.get(i);
+                byte[] actualBytes = IoUtil.readBytes(storedBinaries.get(i).getStream());
+                Assert.assertArrayEquals("Invalid binary found", expectedBytes, actualBytes);
+            }
+        } finally {
+            executorService.shutdownNow();
+        }
     }
 
     protected static final class DummyMimeTypeDetector implements MimeTypeDetector {

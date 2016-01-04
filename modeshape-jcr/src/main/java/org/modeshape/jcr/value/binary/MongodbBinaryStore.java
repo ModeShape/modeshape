@@ -33,8 +33,10 @@ import com.mongodb.DB;
 import com.mongodb.DBCollection;
 import com.mongodb.DBCursor;
 import com.mongodb.DBObject;
-import com.mongodb.Mongo;
+import com.mongodb.MongoClient;
+import com.mongodb.MongoCredential;
 import com.mongodb.ServerAddress;
+import com.mongodb.WriteConcern;
 
 /**
  * A {@link BinaryStore} implementation that uses a MongoDB for persisting binary values.
@@ -343,28 +345,27 @@ public class MongodbBinaryStore extends AbstractBinaryStore {
             throw new RuntimeException("Database name is not specified");
         }
 
-        initMongoDatabase();
-
-        // authenticate if required
-        if (!StringUtil.isBlank(username) && !StringUtil.isBlank(password)) {
-            if (!db.authenticate(username, password.toCharArray())) {
-                throw new RuntimeException("Invalid username/password");
-            }
-        }
+        initMongo(username, password);
     }
 
-    private void initMongoDatabase() {
+    private void initMongo(String username, String password) {
+        List<MongoCredential> credentials = new ArrayList<>();
+        if (!StringUtil.isBlank(username) && !StringUtil.isBlank(password)) {
+            credentials.add(MongoCredential.createCredential(username, database, password.toCharArray()));
+        }
+
         // connect to database
         try {
-            Mongo mongo = null;
+            MongoClient client = null;
             if (!replicaSet.isEmpty()) {
-                mongo = new Mongo(replicaSet(replicaSet));
+                client = new MongoClient(replicaSet(replicaSet), credentials);
             } else if (!StringUtil.isBlank(host)) {
-                mongo = new Mongo(host, port);
+                client = new MongoClient(new ServerAddress(host, port), credentials);
             } else {
-                mongo = new Mongo();
+                client = new MongoClient(new ServerAddress(), credentials);
             }
-            db = mongo.getDB(database);
+            client.setWriteConcern(WriteConcern.ACKNOWLEDGED);
+            db = client.getDB(database);
         } catch (UnknownHostException e) {
             throw new RuntimeException(e);
         }

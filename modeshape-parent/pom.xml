@@ -278,7 +278,7 @@
         <jcommander.version>1.5</jcommander.version>
         <wsdl4j.version>1.6.2</wsdl4j.version>
         <bson4jackson.version>1.1.2</bson4jackson.version>
-        <mongo.driver.version>2.7.3</mongo.driver.version>
+        <mongo.driver.version>2.14.0</mongo.driver.version>
         <embedmongo.version>1.28</embedmongo.version>
         <json.simple.version>1.1</json.simple.version>
         <logback.version>0.9.29</logback.version>
