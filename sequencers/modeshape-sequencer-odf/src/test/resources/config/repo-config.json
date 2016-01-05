@@ -1,0 +1,11 @@
+{
+    "name" : "OpenDocument Format Sequencer Test Repository",
+    "sequencing" : {
+        "sequencers" : {
+            "OpenDocument Format sequencer" :  {
+                "classname" : "org.modeshape.sequencer.odf.OdfMetadataSequencer",
+                "pathExpressions" : ["default://(*.(odt|ods|odp|odg|ott|ots|otp|otg))/jcr:content[@jcr:data] => default:/sequenced/odf" ]
+            }
+        }
+    }
+}
