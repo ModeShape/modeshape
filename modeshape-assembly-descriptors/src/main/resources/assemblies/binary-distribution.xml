@@ -102,6 +102,10 @@
             <outputDirectory>/modules/modeshape-sequencer-zip</outputDirectory>
         </fileSet>   
         <fileSet>
+            <directory>../sequencers/modeshape-sequencer-audio/target/${binary.dist.name}</directory>
+            <outputDirectory>/modules/modeshape-sequencer-audio</outputDirectory>
+        </fileSet>
+        <fileSet>
             <directory>../index-providers/modeshape-lucene-index-provider/target/${binary.dist.name}</directory>
             <outputDirectory>/modules/modeshape-lucene-index-provider</outputDirectory>
         </fileSet>   
