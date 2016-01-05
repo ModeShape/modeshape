@@ -198,7 +198,7 @@ public interface SessionCache extends NodeCache {
      * existing mutable node is returned; otherwise, a new mutable node is created and added to the session's cache.
      * 
      * @param key the key for the node; may not be null
-     * @return the mutable child node
+     * @return the mutable child node; never null
      * @throws NodeNotFoundException if there is no existing node in the session cache or workspace cache
      * @throws UnsupportedOperationException if this session is marked for read-only operations
      */

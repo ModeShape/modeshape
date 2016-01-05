@@ -38,6 +38,7 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import javax.jcr.RepositoryException;
 import org.modeshape.common.annotation.ThreadSafe;
+import org.modeshape.common.logging.Logger;
 import org.modeshape.common.text.Inflector;
 import org.modeshape.common.util.StringUtil;
 import org.modeshape.jcr.Connectors;
@@ -93,6 +94,8 @@ public class SessionNode implements MutableCachedNode {
         LOCK_FOR_NON_SESSION,
         UNLOCK;
     }
+    
+    private static final Logger LOGGER = Logger.getLogger(SessionNode.class);
 
     private final NodeKey key;
     private final ConcurrentMap<Name, Property> changedProperties = new ConcurrentHashMap<Name, Property>();
@@ -1250,26 +1253,31 @@ public class SessionNode implements MutableCachedNode {
                                                NodeKey childKey ) {
         // First, manipulate the child node. But we have to see whether this node is a primary parent or an additional parent ...
         SessionNode child = session.mutable(childKey);
-        if (child.getParentKey(session).equals(this.key)) {
-            // The child's parent is this node. If there are additional parents, then we should pick the first additional parent
-            // and use it as the new primary parent ...
-            Set<NodeKey> additionalParentKeys = child.getAdditionalParentKeys(session);
-            if (additionalParentKeys.isEmpty()) {
-                child.newParent = null;
+        NodeKey parentKey = child.getParentKey(session);
+        if (parentKey != null) {
+            if (parentKey.equals(this.key)) {
+                // The child's parent is this node. If there are additional parents, then we should pick the first additional parent
+                // and use it as the new primary parent ...
+                Set<NodeKey> additionalParentKeys = child.getAdditionalParentKeys(session);
+                if (additionalParentKeys.isEmpty()) {
+                    child.newParent = null;
+                } else {
+                    // There are additional parents, and we're removing the primary parent
+                    NodeKey newParentKey = additionalParentKeys.iterator().next();
+                    child.replaceParentWithAdditionalParent(session, this.key, newParentKey);
+                }
             } else {
-                // There are additional parents, and we're removing the primary parent
-                NodeKey newParentKey = additionalParentKeys.iterator().next();
-                child.replaceParentWithAdditionalParent(session, this.key, newParentKey);
-            }
-        } else {
-            // The child's parent is NOT this node, so this node must be an additional parent...
-            boolean removed = child.removeAdditionalParent(session, this.key);
-            if (!removed) {
-                // Not a primary or additional parent ...
-                if (!getChildReferences(session).hasChild(childKey)) {
-                    throw new NodeNotFoundException(childKey);
+                // The child's parent is NOT this node, so this node must be an additional parent...
+                boolean removed = child.removeAdditionalParent(session, this.key);
+                if (!removed) {
+                    // Not a primary or additional parent ...
+                    if (!getChildReferences(session).hasChild(childKey)) {
+                        throw new NodeNotFoundException(childKey);
+                    }
                 }
             }
+        } else {
+            LOGGER.warn(JcrI18n.warnCorruptedChildParentRef, childKey);
         }
 
         // Now, update this node (the parent) ...

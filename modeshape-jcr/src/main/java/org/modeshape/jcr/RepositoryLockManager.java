@@ -21,6 +21,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -32,7 +33,6 @@ import java.util.concurrent.TimeUnit;
 import javax.jcr.Node;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
-import javax.jcr.lock.Lock;
 import javax.jcr.lock.LockException;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.annotation.ThreadSafe;
@@ -123,6 +123,7 @@ class RepositoryLockManager implements ChangeSetListener {
             SystemContent system = new SystemContent(systemCache);
             CachedNode locks = system.locksNode();
             MutableCachedNode mutableLocks = null;
+            Set<NodeKey> corruptedLocks = new HashSet<>();
             for (ChildReference ref : locks.getChildReferences(systemCache)) {
                 CachedNode node = systemCache.getNode(ref);
                 if (node == null) {
@@ -132,14 +133,21 @@ class RepositoryLockManager implements ChangeSetListener {
                     NodeKey lockKey = ref.getKey();
                     logger.warn(JcrI18n.lockNotFound, lockKey);
                     mutableLocks.removeChild(systemCache, lockKey);
+                    corruptedLocks.add(lockKey);
                     continue;
                 }
-                
                 ModeShapeLock lock = new ModeShapeLock(node, systemCache);
                 locksByNodeKey.put(lock.getLockedNodeKey(), lock);
             }
             if (mutableLocks != null) {
                 system.save();
+                for (Iterator<Map.Entry<NodeKey, ModeShapeLock>> locksIterator = locksByNodeKey.entrySet().iterator(); 
+                     locksIterator.hasNext();) {
+                    NodeKey lockKey = locksIterator.next().getValue().getLockKey();
+                    if (corruptedLocks.contains(lockKey)) {
+                        locksIterator.remove();
+                    }
+                }
             }
         } catch (Throwable e) {
             logger.error(e, JcrI18n.errorRefreshingLocks, repository.name());
@@ -726,6 +734,11 @@ class RepositoryLockManager implements ChangeSetListener {
                     String token = lockToken();
                     return lockManager.hasLockToken(token);
                 }
+
+                @Override
+                public NodeKey lockKey() {
+                    return lockKey;
+                }
             };
         }
 
@@ -734,5 +747,9 @@ class RepositoryLockManager implements ChangeSetListener {
             return "Lock " + lockKey + " for " + lockedNodeKey + " in '" + workspaceName + "' (" + (deep ? "deep," : "shallow;")
                    + (sessionScoped ? "session;" : "global;") + "owner='" + lockOwner + "';token='" + lockToken + "';";
         }
+    }
+    
+    protected interface Lock extends javax.jcr.lock.Lock {
+        NodeKey lockKey();
     }
 }
