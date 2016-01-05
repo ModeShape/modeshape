@@ -1,0 +1,11 @@
+{
+    "name" : "PDF Sequencer Test Repository",
+    "sequencing" : {
+        "sequencers" : {
+            "PDF sequencer" :  {
+                "classname" : "org.modeshape.sequencer.pdf.PdfMetadataSequencer",
+                "pathExpressions" : [ "default:/(*.pdf)/jcr:content[@jcr:data] => /sequenced/pdf" ]
+            }
+        }
+    }
+}

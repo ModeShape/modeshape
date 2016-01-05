@@ -299,6 +299,7 @@
         <eclipse.emf.ecore.version>2.4.2</eclipse.emf.ecore.version>
         <eclipse.emf.ecorechange.version>2.2.3</eclipse.emf.ecorechange.version>
         <eclipse.emf.ecorexmi.version>2.4.1</eclipse.emf.ecorexmi.version>
+        <pdfbox.version>1.8.10</pdfbox.version>
         <tika.version>1.8</tika.version>
         <image.metadata.extractor>2.6.2</image.metadata.extractor>
         <version.org.apache.lucene>5.3.1</version.org.apache.lucene>
@@ -1849,6 +1850,17 @@
                 <groupId>org.eclipse.emf</groupId>
                 <artifactId>ecore-xmi</artifactId>
                 <version>${eclipse.emf.ecorexmi.version}</version>
+            </dependency>
+            <!--PDF sequencer-->
+            <dependency>
+                <groupId>org.apache.pdfbox</groupId>
+                <artifactId>pdfbox</artifactId>
+                <version>${pdfbox.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.pdfbox</groupId>
+                <artifactId>jempbox</artifactId>
+                <version>${pdfbox.version}</version>
             </dependency>
 
             <!--TIKA text extractor
