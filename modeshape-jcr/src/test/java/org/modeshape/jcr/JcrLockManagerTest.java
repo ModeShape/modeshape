@@ -15,6 +15,8 @@
  */
 package org.modeshape.jcr;
 
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import javax.jcr.InvalidItemStateException;
 import javax.jcr.Session;
@@ -75,5 +77,33 @@ public class JcrLockManagerTest extends SingleUseAbstractTest {
         
         testNode.addMixin("mix:created");        
         session.save();
+    }
+    
+    @Test
+    @FixFor( "MODE-2450" )
+    public void shouldCleanupCorruptedLocks() throws Exception {
+        final AbstractJcrNode testNode = session.getRootNode().addNode("test");
+        final String path = testNode.getPath();
+        testNode.addMixin("mix:lockable");
+        session.save();
+        final org.modeshape.jcr.RepositoryLockManager.Lock lock = (RepositoryLockManager.Lock) 
+                session.getWorkspace().getLockManager().lock(path, false, false, Long.MAX_VALUE, session.getUserID());
+        Assert.assertNotNull(lock);
+        session.logout();
+        
+        //forcibly remove the lock node from the system area...
+        assertTrue(repository.documentStore().remove(lock.lockKey().toString()));
+        
+        //and then force a refresh
+        RepositoryLockManager lockManager = repository.lockManager();
+        lockManager.refreshFromSystem();
+        
+        //check that the lock has been removed 
+        session = repository.login();
+        assertFalse(session.getWorkspace().getLockManager().isLocked("/test"));
+        
+        // issue another refresh and verify the node is still unlocked
+        lockManager.refreshFromSystem();
+        assertFalse(session.getWorkspace().getLockManager().isLocked("/test"));
     }
 }

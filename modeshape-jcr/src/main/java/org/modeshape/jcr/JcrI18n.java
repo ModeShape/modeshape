@@ -215,6 +215,7 @@ public final class JcrI18n {
     public static I18n propertyIsProtected;
     public static I18n operationNotSupportedForUnorderedCollections;
     public static I18n invalidUnorderedCollectionType;
+    public static I18n warnCorruptedChildParentRef;
     
 
     public static I18n cannotRemoveRootNode;
