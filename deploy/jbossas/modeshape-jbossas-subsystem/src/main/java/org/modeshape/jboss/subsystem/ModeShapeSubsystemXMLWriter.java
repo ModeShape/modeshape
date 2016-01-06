@@ -206,6 +206,10 @@ public class ModeShapeSubsystemXMLWriter implements XMLStreamConstants, XMLEleme
                                   ModelNode repository ) throws XMLStreamException {
         boolean started = false;
         // Write these model attributes of 'repository' onto the 'journaling' XML element ...
+        if (ModelAttributes.JOURNAL_ENABLED.isMarshallable(repository, false)) {
+            started = startIfNeeded(writer, Element.JOURNALING, started);
+            ModelAttributes.JOURNAL_ENABLED.marshallAsAttribute(repository, writer);
+        }
         if (ModelAttributes.JOURNAL_PATH.isMarshallable(repository, false)) {
             started = startIfNeeded(writer, Element.JOURNALING, started);
             ModelAttributes.JOURNAL_PATH.marshallAsAttribute(repository, writer);

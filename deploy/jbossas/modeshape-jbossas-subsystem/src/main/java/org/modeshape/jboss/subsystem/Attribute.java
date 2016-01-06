@@ -84,6 +84,7 @@ public enum Attribute {
     JOURNAL_GC_INITIAL_TIME("journal-gc-initial-time"),
     JOURNAL_PATH("journal-path"),
     JOURNAL_RELATIVE_TO("journal-relative-to"),
+    JOURNAL_ENABLED("enabled"),
     INDEX_KIND("kind"),
     SYNCHRONOUS("synchronous"),
     PROVIDER_NAME("provider-name"),

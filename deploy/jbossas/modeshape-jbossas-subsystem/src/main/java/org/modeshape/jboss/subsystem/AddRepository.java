@@ -459,6 +459,11 @@ public class AddRepository extends AbstractAddStepHandler {
                                   EditableDocument configDoc ) throws OperationFailedException {
         if (model.hasDefined(ModelKeys.JOURNALING)) {
             EditableDocument journaling = configDoc.getOrCreateDocument(FieldName.JOURNALING);
+            
+            if (model.hasDefined(ModelKeys.JOURNAL_ENABLED)) {
+                boolean enabled = attribute(context, model, ModelAttributes.JOURNAL_ENABLED).asBoolean();
+                journaling.setBoolean(FieldName.JOURNAL_ENABLED, enabled);
+            }
 
             // set it temporarily on the repository service because the final location needs to be resolved later
             if (model.hasDefined(ModelKeys.JOURNAL_RELATIVE_TO)) {

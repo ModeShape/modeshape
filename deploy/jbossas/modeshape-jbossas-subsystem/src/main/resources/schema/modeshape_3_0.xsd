@@ -424,6 +424,11 @@
         <xs:annotation>
             <xs:documentation>The configuration for the change journal</xs:documentation>
         </xs:annotation>
+        <xs:attribute name="enabled" type="xs:boolean" default="true">
+            <xs:annotation>
+                <xs:documentation>Whether the journal should be enabled or not. By default the journal is enabled.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
         <xs:attribute name="journal-relative-to" type="xs:string">
             <xs:annotation>
                 <xs:documentation>The base directory in which to store journal contents. By default this path is jboss.server.data.dir/modeshape/repositoryName

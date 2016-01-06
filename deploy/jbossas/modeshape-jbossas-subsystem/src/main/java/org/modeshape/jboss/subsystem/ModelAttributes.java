@@ -834,6 +834,13 @@ public class ModelAttributes {
                                                                                                                        .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                                                                                                                        .build();
 
+    public static final SimpleAttributeDefinition JOURNAL_ENABLED = new MappedAttributeDefinitionBuilder(ModelKeys.JOURNAL_ENABLED,
+                                                                                                         ModelType.BOOLEAN).setXmlName(Attribute.JOURNAL_ENABLED.getLocalName())
+                                                                                                                       .setAllowExpression(true)
+                                                                                                                       .setAllowNull(true)
+                                                                                                                       .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+                                                                                                                       .build();
+
     public static final SimpleAttributeDefinition JOURNAL_RELATIVE_TO = new MappedAttributeDefinitionBuilder(
                                                                                                              ModelKeys.JOURNAL_RELATIVE_TO,
                                                                                                              ModelType.STRING).setXmlName(Attribute.JOURNAL_RELATIVE_TO.getLocalName())

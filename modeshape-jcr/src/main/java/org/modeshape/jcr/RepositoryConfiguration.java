@@ -467,6 +467,11 @@ public class RepositoryConfiguration {
         public static final String JOURNAL_LOCATION = "location";
 
         /**
+         * Whether the journal should be enabled or not
+         */
+        public static final String JOURNAL_ENABLED = "enabled";
+
+        /**
          * The maximum number of days journal entries should be stored on disk
          */
         public static final String MAX_DAYS_TO_KEEP_RECORDS = "maxDaysToKeepRecords";
@@ -2307,7 +2312,7 @@ public class RepositoryConfiguration {
          * @return true if journaling is enabled, or false otherwise
          */
         public boolean isEnabled() {
-            return this.journalingDoc != EMPTY;
+            return this.journalingDoc != EMPTY && this.journalingDoc.getBoolean(FieldName.JOURNAL_ENABLED, true);
         }
 
         /**
