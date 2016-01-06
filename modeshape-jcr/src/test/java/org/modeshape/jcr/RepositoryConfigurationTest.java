@@ -19,7 +19,9 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import java.util.EnumSet;
 import org.infinispan.schematic.Schematic;
@@ -432,7 +434,25 @@ public class RepositoryConfigurationTest {
     @Test
     @FixFor( "MODE-1683" )
     public void shouldReadJournalingConfiguration() {
-        assertValid("config/repo-config-journaling.json");
+        RepositoryConfiguration configuration = assertValid("config/repo-config-journaling.json");
+        assertTrue(configuration.getJournaling().isEnabled());
+    }
+
+    @Test
+    @FixFor( "MODE-2556" )
+    public void journalShouldBeDisabledIfConfigurationSectionIsMissing() {
+        Document doc = Schematic.newDocument(FieldName.NAME, "repoName");
+        RepositoryConfiguration config = new RepositoryConfiguration(doc, "repoName");
+        assertFalse(config.getJournaling().isEnabled()); 
+    }
+
+    @Test
+    @FixFor( "MODE-2556" )
+    public void journalShouldBeDisabledIfExplicitlyConfigured() {
+        Document journalingConfig = Schematic.newDocument(FieldName.JOURNAL_ENABLED, false);
+        Document doc = Schematic.newDocument(FieldName.NAME, "repoName", FieldName.JOURNALING, journalingConfig);
+        RepositoryConfiguration config = new RepositoryConfiguration(doc, "repoName");
+        assertFalse(config.getJournaling().isEnabled()); 
     }
 
     protected RepositoryConfiguration assertValid( RepositoryConfiguration config ) {

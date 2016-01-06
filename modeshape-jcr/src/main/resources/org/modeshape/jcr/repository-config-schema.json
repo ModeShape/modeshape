@@ -977,6 +977,11 @@
             "type" : "object",
             "description" : "The journal configuration which enables ModeShape to store a local journal of all the changes",
             "properties" : {
+                "enabled" : {
+                    "type" : "boolean",
+                    "description" : "Whether the journal should be enabled or not",
+                    "default" : true
+                },
                 "location" : {
                     "type" : "string",
                     "description" : "The folder where the journal entries are stored by ModeShape",

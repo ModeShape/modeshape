@@ -402,7 +402,10 @@ public class ModeShapeSubsystemXMLReader_2_1 implements XMLStreamConstants, XMLE
                 String attrValue = reader.getAttributeValue(i);
                 Attribute attribute = Attribute.forName(attrName);
                 switch (attribute) {
-                // Set these as properties on the repository ModelNode ...
+                    // Set these as properties on the repository ModelNode ...
+                    case JOURNAL_ENABLED: 
+                        ModelAttributes.JOURNAL_ENABLED.parseAndSetParameter(attrValue, repository, reader);                        
+                        break;                
                     case JOURNAL_PATH:
                         ModelAttributes.JOURNAL_PATH.parseAndSetParameter(attrValue, repository, reader);
                         break;
