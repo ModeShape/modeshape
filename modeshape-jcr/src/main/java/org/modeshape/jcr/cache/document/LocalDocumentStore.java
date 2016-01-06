@@ -18,25 +18,20 @@ package org.modeshape.jcr.cache.document;
 
 import java.io.Serializable;
 import java.util.Collection;
-import java.util.Set;
-import java.util.concurrent.ExecutionException;
+import java.util.function.BiFunction;
 import javax.transaction.HeuristicMixedException;
 import javax.transaction.HeuristicRollbackException;
-import javax.transaction.NotSupportedException;
 import javax.transaction.RollbackException;
 import javax.transaction.SystemException;
-import javax.transaction.TransactionManager;
 import org.infinispan.Cache;
-import org.infinispan.distexec.DistributedCallable;
-import org.infinispan.schematic.Schematic;
 import org.infinispan.schematic.SchematicDb;
 import org.infinispan.schematic.SchematicEntry;
 import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.document.EditableDocument;
-import org.modeshape.common.SystemFailureException;
-import org.modeshape.jcr.InfinispanUtil;
-import org.modeshape.jcr.InfinispanUtil.Combiner;
-import org.modeshape.jcr.InfinispanUtil.Location;
+import org.modeshape.common.util.CheckArg;
+import org.modeshape.jcr.RepositoryEnvironment;
+import org.modeshape.jcr.locking.LockingService;
+import org.modeshape.jcr.txn.Transactions;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.binary.ExternalBinaryValue;
 
@@ -49,15 +44,20 @@ import org.modeshape.jcr.value.binary.ExternalBinaryValue;
 public class LocalDocumentStore implements DocumentStore {
 
     private final SchematicDb database;
+    private final RepositoryEnvironment repoEnv;
     private String localSourceKey;
 
     /**
      * Creates a new local store with the given database
-     * 
+     *
      * @param database a {@link SchematicDb} instance which must be non-null.
+     * @param repoEnv a {@link RepositoryEnvironment} instance which must be non-null
      */
-    public LocalDocumentStore( SchematicDb database ) {
+    public LocalDocumentStore(SchematicDb database, RepositoryEnvironment repoEnv) {
+        CheckArg.isNotNull(database, "database");
         this.database = database;
+        CheckArg.isNotNull(repoEnv, "repoEnv");
+        this.repoEnv = repoEnv;
     }
 
     @Override
@@ -119,7 +119,27 @@ public class LocalDocumentStore implements DocumentStore {
 
     @Override
     public boolean lockDocuments( Collection<String> keys ) {
-        return database.lock(keys);
+        return lockDocuments(keys.toArray(new String[keys.size()]));
+    }
+
+    @Override
+    public boolean lockDocuments(String... keys) {
+        Transactions.Transaction tx = repoEnv.getTransactions().currentTransaction();
+        if (tx == null) {
+            throw new IllegalStateException("Cannot attempt to lock documents without an existing ModeShape transaction");
+        }
+        try {
+            LockingService lockingService = repoEnv.lockingService();
+            boolean locked = lockingService.tryLock(keys);
+            if (locked) {
+                tx.uponCompletion(() -> lockingService.unlock(keys));
+            }
+            return locked;
+        } catch (RuntimeException rt) {
+            throw rt;            
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
@@ -129,20 +149,8 @@ public class LocalDocumentStore implements DocumentStore {
     }
 
     @Override
-    public EditableDocument edit( String key,
-                                  boolean createIfMissing,
-                                  boolean acquireLock ) {
-        return database.editContent(key, createIfMissing, acquireLock);
-    }
-
-    @Override
     public LocalDocumentStore localStore() {
         return this;
-    }
-
-    @Override
-    public TransactionManager transactionManager() {
-        return localCache().getAdvancedCache().getTransactionManager();
     }
 
     @Override
@@ -206,40 +214,38 @@ public class LocalDocumentStore implements DocumentStore {
      * 
      * @param operation the operation to be performed
      * @return the summary of the number of documents that were affected
-     * @throws InterruptedException if the process is interrupted
-     * @throws ExecutionException if there is an error while getting executing the operation
      */
-    public DocumentOperationResults performOnEachDocument( DocumentOperation operation )
-        throws InterruptedException, ExecutionException {
-        DistributedOperation distOp = new DistributedOperation(operation);
-        return InfinispanUtil.execute(database.getCache(), Location.LOCALLY, distOp, distOp);
-    }
-
-    /**
-     * An operation upon a persisted document.
-     */
-    public static abstract class DocumentOperation implements Serializable {
-        private static final long serialVersionUID = 1L;
-        protected Cache<String, SchematicEntry> cache;
-
-        /**
-         * Invoked by execution environment after the operation has been migrated for execution to a specific Infinispan node.
-         * 
-         * @param cache cache whose keys are used as input data for this DistributedCallable task
-         */
-        public void setEnvironment( Cache<String, SchematicEntry> cache ) {
-            this.cache = cache;
-        }
-
-        /**
-         * Execute the operation upon the given {@link EditableDocument}.
-         * 
-         * @param key the document's key; never null
-         * @param document the editable document; never null
-         * @return true if the operation modified the document, or false otherwise
-         */
-        public abstract boolean execute( String key,
-                                         EditableDocument document );
+    public DocumentOperationResults performOnEachDocument( BiFunction<String, EditableDocument, Boolean> operation ) {
+        DocumentOperationResults results = new DocumentOperationResults();
+        Transactions transactions = repoEnv.getTransactions();
+        database.keys().forEach(key -> {
+            // We operate upon each document within a transaction ...
+            try {
+                transactions.begin();
+                lockDocuments(key);
+                EditableDocument doc = edit(key, false);
+                if (doc != null) {
+                    if (operation.apply(key, doc)) {
+                        results.recordModified();
+                    } else {
+                        results.recordUnmodified();
+                    }
+                }
+                transactions.commit();
+            } catch (RollbackException | HeuristicMixedException | HeuristicRollbackException err) {
+                // Couldn't be committed, but the txn is already rolled back ...
+                results.recordFailure();
+            } catch (Throwable t) {
+                results.recordFailure();
+                // any other exception/error we should rollback and just continue (skipping this key for now) ...
+                try {
+                    transactions.rollback();
+                } catch (SystemException e) {
+                    //ignore....
+                }
+            }
+        });
+        return results;
     }
 
     public static class DocumentOperationResults implements Serializable {
@@ -317,92 +323,6 @@ public class LocalDocumentStore implements DocumentStore {
         public String toString() {
             return "" + modifiedCount + " documents changed, " + unmodifiedCount + " unchanged, " + skipCount + " skipped, and "
                    + failureCount + " resulted in errors or failures";
-        }
-    }
-
-    protected static class DistributedOperation
-        implements DistributedCallable<String, SchematicEntry, DocumentOperationResults>, Serializable,
-        Combiner<DocumentOperationResults> {
-        private static final long serialVersionUID = 1L;
-
-        private transient SchematicDb db;
-        private transient Set<String> inputKeys;
-        private transient TransactionManager txnMgr;
-        private transient DocumentOperation operation;
-
-        protected DistributedOperation( DocumentOperation operation ) {
-            this.operation = operation;
-        }
-
-        @Override
-        public void setEnvironment( Cache<String, SchematicEntry> cache,
-                                    Set<String> inputKeys ) {
-            assert cache != null;
-            assert inputKeys != null;
-            this.db = Schematic.get(cache);
-            this.inputKeys = inputKeys;
-            this.txnMgr = cache.getAdvancedCache().getTransactionManager();
-            this.operation.setEnvironment(cache);
-        }
-
-        @Override
-        public DocumentOperationResults call() throws Exception {
-            DocumentOperationResults results = new DocumentOperationResults();
-            for (String key : inputKeys) {
-                // We operate upon each document within a transaction ...
-                try {
-                    txnMgr.begin();
-                    EditableDocument doc = db.editContent(key, false, true);
-                    if (doc != null) {
-                        if (operation.execute(key, doc)) {
-                            results.recordModified();
-                        } else {
-                            results.recordUnmodified();
-                        }
-                    }
-                    txnMgr.commit();
-                } catch (org.infinispan.util.concurrent.TimeoutException e) {
-                    // Couldn't wait long enough for the lock, so skip this for now ...
-                    results.recordSkipped();
-                } catch (NotSupportedException err) {
-                    // No nested transactions are supported ...
-                    results.recordFailure();
-                    throw new SystemFailureException(err);
-                } catch (SecurityException err) {
-                    // No privilege to commit ...
-                    results.recordFailure();
-                    throw new SystemFailureException(err);
-                } catch (IllegalStateException err) {
-                    // Not associated with a txn??
-                    results.recordFailure();
-                    throw new SystemFailureException(err);
-                } catch (RollbackException err) {
-                    // Couldn't be committed, but the txn is already rolled back ...
-                    results.recordFailure();
-                } catch (HeuristicMixedException err) {
-                    // Rollback has occurred ...
-                    results.recordFailure();
-                } catch (HeuristicRollbackException err) {
-                    // Rollback has occurred ...
-                    results.recordFailure();
-                } catch (SystemException err) {
-                    // System failed unexpectedly ...
-                    results.recordFailure();
-                    throw new SystemFailureException(err);
-                } catch (Throwable t) {
-                    // any other exception/error we should rollback and just continue (skipping this key for now) ...
-                    txnMgr.rollback();
-                    results.recordFailure();
-                    continue;
-                }
-            }
-            return results;
-        }
-
-        @Override
-        public DocumentOperationResults combine( DocumentOperationResults priorResult,
-                                                 DocumentOperationResults newResult ) {
-            return priorResult.combine(newResult);
         }
     }
 }

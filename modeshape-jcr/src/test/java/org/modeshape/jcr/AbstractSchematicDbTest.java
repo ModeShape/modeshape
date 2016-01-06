@@ -39,6 +39,8 @@ import org.infinispan.transaction.lookup.DummyTransactionManagerLookup;
 import org.junit.After;
 import org.junit.Before;
 import org.modeshape.common.logging.Logger;
+import org.modeshape.jcr.cache.document.TestRepositoryEnvironment;
+import org.modeshape.jcr.txn.Transactions;
 
 /**
  * An abstract base class for unit tests that require an testable SchematicDb instance.
@@ -46,9 +48,9 @@ import org.modeshape.common.logging.Logger;
 public abstract class AbstractSchematicDbTest {
 
     protected SchematicDb schematicDb;
+    protected RepositoryEnvironment repoEnv;
 
     private EmbeddedCacheManager cm;
-    private TransactionManager tm;
     private Logger logger;
 
     @Before
@@ -63,7 +65,8 @@ public abstract class AbstractSchematicDbTest {
         cm = new DefaultCacheManager(globalConfigurationBuilder.build(), configurationBuilder.build(), true);
         // Now create the SchematicDb ...
         schematicDb = Schematic.get(cm, "documents");
-        tm = schematicDb.getCache().getAdvancedCache().getTransactionManager();
+        TransactionManager tm = schematicDb.getCache().getAdvancedCache().getTransactionManager();
+        repoEnv = new TestRepositoryEnvironment(tm);
     }
 
     @After
@@ -72,14 +75,15 @@ public abstract class AbstractSchematicDbTest {
             TestUtil.killCacheContainers(cm);
         } finally {
             schematicDb = null;
-            tm = null;
+            repoEnv = null;
         }
     }
 
-    protected TransactionManager txnManager() {
-        return tm;
+    protected Transactions transactions() {
+        return repoEnv.getTransactions();
     }
-
+    
+    
     protected EmbeddedCacheManager cacheManager() {
         return cm;
     }

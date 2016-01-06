@@ -44,6 +44,7 @@ public class ModelKeys {
     static final String DOCUMENT_OPTIMIZATION_CHILD_COUNT_TARGET = "document-optimization-child-count-target";
     static final String DOCUMENT_OPTIMIZATION_CHILD_COUNT_TOLERANCE = "document-optimization-child-count-tolerance";
     static final String EVENT_BUS_SIZE = "event-bus-size";
+    static final String LOCK_TIMEOUT_MILLIS = "lock-timeout-millis";
     static final String ENABLE_MONITORING = "enable-monitoring";
     static final String CLUSTER_NAME = "cluster-name";
     static final String CLUSTER_STACK = "cluster-stack";

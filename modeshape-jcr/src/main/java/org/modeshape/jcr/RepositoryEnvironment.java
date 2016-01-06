@@ -15,6 +15,7 @@
  */
 package org.modeshape.jcr;
 
+import org.modeshape.jcr.locking.LockingService;
 import org.modeshape.jcr.txn.Transactions;
 
 /**
@@ -43,4 +44,11 @@ public interface RepositoryEnvironment {
      * been initialized yet).
      */
     NodeTypes nodeTypes();
+
+    /**
+     * Returns the locking service used by the repository to make sure writes are strongly consistent.
+     *
+     * @return a {@link LockingService} instance, never {@code null}
+     */
+    LockingService lockingService();
 }

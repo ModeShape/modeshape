@@ -13,18 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.infinispan.schematic.internal;
+package org.modeshape.jcr.cache.document;
 
 import java.io.InputStream;
 import org.infinispan.AdvancedCache;
 import org.infinispan.configuration.cache.ConfigurationBuilder;
+import org.infinispan.configuration.global.GlobalConfigurationBuilder;
 import org.infinispan.manager.DefaultCacheManager;
 import org.infinispan.manager.EmbeddedCacheManager;
-import org.infinispan.schematic.SchemaValidationTest;
 import org.infinispan.schematic.SchematicEntry;
 import org.infinispan.schematic.TestUtil;
 import org.infinispan.schematic.document.Document;
+import org.infinispan.schematic.internal.CacheSchematicDb;
 import org.infinispan.schematic.internal.document.BasicDocument;
+import org.infinispan.schematic.internal.schema.SchemaValidationTest;
 import org.infinispan.transaction.lookup.DummyTransactionManagerLookup;
 import org.junit.After;
 import org.junit.Before;
@@ -42,8 +44,10 @@ public class CacheSchematicDbTest {
         ConfigurationBuilder configurationBuilder = new ConfigurationBuilder();
         configurationBuilder.invocationBatching().enable().transaction()
                             .transactionManagerLookup(new DummyTransactionManagerLookup());
-
-        cm = new DefaultCacheManager(configurationBuilder.build());
+        configurationBuilder.jmxStatistics().disable();
+        GlobalConfigurationBuilder globalConfigurationBuilder = new GlobalConfigurationBuilder();
+        globalConfigurationBuilder.globalJmxStatistics().allowDuplicateDomains(true);
+        cm = new DefaultCacheManager(globalConfigurationBuilder.build(), configurationBuilder.build());
         cache = (AdvancedCache)cm.getCache("documents");
         db = new CacheSchematicDb(cache);
     }

@@ -16,14 +16,11 @@
 
 package org.modeshape.jcr.clustering;
 
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.BitSet;
 import java.util.List;
 import java.util.Stack;
-import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import org.junit.After;
@@ -75,37 +72,6 @@ public class ClusteringServiceTest {
 
         consumer1.assertAllPayloadsConsumed();
         consumer2.assertAllPayloadsConsumed();
-    }
-
-    @Test
-    public void shouldAllowGlobalLocking() throws Exception {
-        BitSet bits = new BitSet();
-
-        CountDownLatch consumer1Latch = new CountDownLatch(1);
-        ClusteringService service1 = startStandalone("test-cluster1");
-        String consumer1Id = UUID.randomUUID().toString();
-        LockConsumer consumer1 = new LockConsumer(consumer1Id, consumer1Latch, 0, bits, service1);
-        service1.addConsumer(consumer1);
-
-        CountDownLatch consumer2Latch = new CountDownLatch(1);
-        ClusteringService service2 = startStandalone("test-cluster1");
-        String consumer2Id = UUID.randomUUID().toString();
-        LockConsumer consumer2 = new LockConsumer(consumer2Id, consumer2Latch, 1, bits, service2);
-        service2.addConsumer(consumer2);
-
-        //send a message from service2 to service1, this should make service1 acquire the lock
-        service2.sendMessage(consumer2Id);
-        //make sure the lock was acquired
-        consumer1Latch.await(2, TimeUnit.SECONDS);
-        //check that service1 made the change which means it has the lock
-        assertTrue(bits.get(0));
-
-        //send a message from service1 to service2, while service 1 should have the lock
-        service1.sendMessage(consumer1Id);
-        //make sure service2 tried to acquire the lock
-        consumer2Latch.await(2, TimeUnit.SECONDS);
-        //check that service2 didn't get to make the changes
-        assertFalse(bits.get(1));
     }
 
     @Test
@@ -178,36 +144,6 @@ public class ClusteringServiceTest {
 
         protected void assertAllPayloadsConsumed() throws InterruptedException {
             assertTrue("Not all payloads received", payloadsLatch.await(1, TimeUnit.SECONDS));
-        }
-    }
-
-    protected class LockConsumer extends MessageConsumer<String> {
-        private final String id;
-        private final BitSet bits;
-        private final CountDownLatch latch;
-        private final int positionToFlip;
-        private final ClusteringService clusteringService;
-
-        protected LockConsumer( String id, CountDownLatch latch, int positionToFlip, BitSet bits,
-                                ClusteringService clusteringService ) {
-            super(String.class);
-            this.id = id;
-            this.bits = bits;
-            this.clusteringService = clusteringService;
-            this.positionToFlip = positionToFlip;
-            this.latch = latch;
-        }
-
-        @Override
-        public void consume( String payload ) {
-            if (payload.equalsIgnoreCase(id)) {
-                //ignore messages from self
-                return;
-            }
-            if (clusteringService.tryLock(100, TimeUnit.MILLISECONDS)) {
-                bits.set(positionToFlip, true);
-            }
-            latch.countDown();
         }
     }
 }

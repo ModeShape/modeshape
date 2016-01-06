@@ -13,24 +13,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.infinispan.schematic;
+package org.modeshape.jcr.cache.document;
 
 import javax.transaction.TransactionManager;
 import org.infinispan.configuration.cache.ConfigurationBuilder;
+import org.infinispan.configuration.global.GlobalConfigurationBuilder;
 import org.infinispan.manager.DefaultCacheManager;
 import org.infinispan.manager.EmbeddedCacheManager;
+import org.infinispan.schematic.Schematic;
+import org.infinispan.schematic.SchematicDb;
+import org.infinispan.schematic.TestUtil;
 import org.infinispan.transaction.LockingMode;
 import org.infinispan.transaction.TransactionMode;
 import org.infinispan.transaction.lookup.DummyTransactionManagerLookup;
 import org.infinispan.util.concurrent.IsolationLevel;
 import org.junit.After;
 import org.junit.Before;
+import org.modeshape.jcr.RepositoryEnvironment;
+import org.modeshape.jcr.txn.Transactions;
 
-public abstract class AbstractSchematicDbTest {
+public abstract class AbstractDocumentStoreTest {
 
-    protected SchematicDb db;
     protected EmbeddedCacheManager cm;
-    protected TransactionManager tm;
+    protected RepositoryEnvironment repoEnv;
+    protected LocalDocumentStore localStore;
 
     @Before
     public void beforeTest() {
@@ -43,10 +49,14 @@ public abstract class AbstractSchematicDbTest {
                             .lockingMode(LockingMode.PESSIMISTIC)
                             .locking()
                             .isolationLevel(IsolationLevel.READ_COMMITTED);
-        cm = new DefaultCacheManager(configurationBuilder.build());
+        GlobalConfigurationBuilder globalConfigurationBuilder = new GlobalConfigurationBuilder();
+        globalConfigurationBuilder.globalJmxStatistics().allowDuplicateDomains(true);
+        cm = new DefaultCacheManager(globalConfigurationBuilder.build(), configurationBuilder.build());
         // Now create the SchematicDb ...
-        db = Schematic.get(cm, "documents");
-        tm = db.getCache().getAdvancedCache().getTransactionManager();
+        SchematicDb db = Schematic.get(cm, "documents");
+        TransactionManager tm = db.getCache().getAdvancedCache().getTransactionManager();
+        repoEnv = new TestRepositoryEnvironment(tm);
+        localStore = new LocalDocumentStore(db, repoEnv);
     }
 
     @After
@@ -55,21 +65,15 @@ public abstract class AbstractSchematicDbTest {
             TestUtil.killCacheContainers(cm);
         } finally {
             cm = null;
-            db = null;
             try {
-                TestUtil.killTransaction(tm);
+                TestUtil.killTransaction(transactions().getTransactionManager());
             } finally {
-                tm = null;
+                repoEnv = null;
             }
         }
     }
 
-    protected SchematicDb db() {
-        return db;
+    protected Transactions transactions() {
+        return repoEnv.getTransactions();
     }
-
-    protected TransactionManager tm() {
-        return tm;
-    }
-
 }

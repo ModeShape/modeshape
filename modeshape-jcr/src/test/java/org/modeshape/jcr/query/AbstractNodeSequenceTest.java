@@ -51,8 +51,8 @@ public class AbstractNodeSequenceTest extends AbstractNodeCacheTest {
     protected NodeCache createCache() {
         executor = Executors.newCachedThreadPool();
         changeBus = new RepositoryChangeBus("repo", executor);
-        ConcurrentMap<NodeKey, CachedNode> nodeCache = new ConcurrentHashMap<NodeKey, CachedNode>();
-        DocumentStore documentStore = new LocalDocumentStore(schematicDb);
+        ConcurrentMap<NodeKey, CachedNode> nodeCache = new ConcurrentHashMap<>();
+        DocumentStore documentStore = new LocalDocumentStore(schematicDb, repoEnv);
         DocumentTranslator translator = new DocumentTranslator(context, documentStore, 100L);
         WorkspaceCache workspaceCache = new WorkspaceCache(context, "repo", "ws", null, documentStore, translator, ROOT_KEY_WS1,
                                                            nodeCache, changeBus, null);

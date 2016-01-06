@@ -30,12 +30,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import javax.transaction.NotSupportedException;
 import javax.transaction.SystemException;
-import org.infinispan.Cache;
 import org.infinispan.schematic.Schematic;
 import org.infinispan.schematic.SchematicEntry;
 import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.document.EditableDocument;
-import org.infinispan.util.concurrent.TimeoutException;
 import org.modeshape.common.SystemFailureException;
 import org.modeshape.common.collection.Collections;
 import org.modeshape.common.i18n.I18n;
@@ -64,7 +62,6 @@ import org.modeshape.jcr.cache.document.DocumentOptimizer;
 import org.modeshape.jcr.cache.document.DocumentStore;
 import org.modeshape.jcr.cache.document.DocumentTranslator;
 import org.modeshape.jcr.cache.document.LocalDocumentStore;
-import org.modeshape.jcr.cache.document.LocalDocumentStore.DocumentOperation;
 import org.modeshape.jcr.cache.document.LocalDocumentStore.DocumentOperationResults;
 import org.modeshape.jcr.cache.document.ReadOnlySessionCache;
 import org.modeshape.jcr.cache.document.TransactionalWorkspaceCaches;
@@ -101,6 +98,7 @@ public class RepositoryCache {
     private static final String REPOSITORY_UPGRADE_ID_FIELD_NAME = "lastUpgradeId";
     private static final String REPOSITORY_UPGRADED_AT_FIELD_NAME = "lastUpgradedAt";
     private static final String REPOSITORY_UPGRADER_FIELD_NAME = "upgrader";
+    private static final String INITIALIZATION_LOCK = "modeshape-init-lock";
 
     private final ExecutionContext context;
     private final RepositoryConfiguration configuration;
@@ -162,7 +160,7 @@ public class RepositoryCache {
             int minutesToWait = 10;
             LOGGER.debug("Waiting at most for {0} minutes while verifying the status of the '{1}' repository", minutesToWait,
                          name);
-            if (!clusteringService.tryLock(minutesToWait, TimeUnit.MINUTES)) {
+            if (!clusteringService.tryLock(minutesToWait, TimeUnit.MINUTES, INITIALIZATION_LOCK)) {
                 throw new SystemFailureException(JcrI18n.repositoryWasNeverInitializedAfterMinutes.text(name, minutesToWait));
             }
             LOGGER.debug("Repository '{0}' acquired clustered-wide lock for performing initialization or verifying status", name);
@@ -228,7 +226,7 @@ public class RepositoryCache {
                 this.upgradingRepository = runInTransaction(() -> {
                     LocalDocumentStore store = documentStore().localStore();
                     store.lockDocuments(Collections.unmodifiableSet(REPOSITORY_INFO_KEY));
-                    EditableDocument editor = store.edit(REPOSITORY_INFO_KEY, true, false);
+                    EditableDocument editor = store.edit(REPOSITORY_INFO_KEY, true);
                     if (editor.get(REPOSITORY_UPGRADER_FIELD_NAME) == null) {
                         // Make sure that some other process didn't sneak in and already upgrade ...
                         int lastUpgradeId = editor.getInteger(REPOSITORY_UPGRADE_ID_FIELD_NAME, 0);
@@ -369,7 +367,7 @@ public class RepositoryCache {
         } finally {
             // if we have a global cluster-wide lock, make sure its released
             if (isHoldingClusterLock) {
-                clusteringService.unlock();
+                clusteringService.unlock(INITIALIZATION_LOCK);
                 LOGGER.debug("Repository '{0}' released clustered-wide lock after failing to start up ", name);
             }
         }
@@ -438,20 +436,20 @@ public class RepositoryCache {
                 runInTransaction(() -> {
                     LocalDocumentStore store = documentStore().localStore();
                     store.lockDocuments(Collections.unmodifiableSet(REPOSITORY_INFO_KEY));
-                    EditableDocument repositoryInfo = store.edit(REPOSITORY_INFO_KEY, true, false);
+                    EditableDocument repositoryInfo = store.edit(REPOSITORY_INFO_KEY, true);
                     if (repositoryInfo.get(REPOSITORY_INITIALIZED_AT_FIELD_NAME) == null) {
                         DateTime now = context().getValueFactories().getDateFactory().create();
                         repositoryInfo.setDate(REPOSITORY_INITIALIZED_AT_FIELD_NAME, now.toDate());
                     }
                     return null;
-                }, 1, REPOSITORY_INFO_KEY);
+                }, 0);
                 LOGGER.debug("Repository '{0}' is fully initialized", name);
             }
             return this;
         } finally {
             // if we have a global cluster-wide lock, make sure its released
             if (isHoldingClusterLock) {
-                clusteringService.unlock();
+                clusteringService.unlock(INITIALIZATION_LOCK);
                 LOGGER.debug("Repository '{0}' released clustered-wide lock after successful startup", name);
             }
         }
@@ -466,7 +464,7 @@ public class RepositoryCache {
                     LOGGER.debug("Recording upgrade completion in repository '{0}'", name);
 
                     LocalDocumentStore store = documentStore().localStore();
-                    EditableDocument editor = store.edit(REPOSITORY_INFO_KEY, true, false);
+                    EditableDocument editor = store.edit(REPOSITORY_INFO_KEY, true);
                     DateTime now = context().getValueFactories().getDateFactory().create();
                     editor.setDate(REPOSITORY_UPGRADED_AT_FIELD_NAME, now.toDate());
                     editor.setNumber(REPOSITORY_UPGRADE_ID_FIELD_NAME, lastUpgradeId);
@@ -623,7 +621,7 @@ public class RepositoryCache {
                         systemEntry = documentStore.get(systemMetadataKeyStr);
                     }
                 }
-                EditableDocument doc = documentStore().localStore().edit(systemMetadataKeyStr, true, false);
+                EditableDocument doc = documentStore().localStore().edit(systemMetadataKeyStr, true);
                 PropertyFactory propFactory = context().getPropertyFactory();
                 translator.setProperty(doc, propFactory.create(name("workspaces"), workspaceNames), null, null);
                 translator.setProperty(doc, propFactory.create(name("accessControl"), accessControlEnabled), null, null);
@@ -1099,34 +1097,15 @@ public class RepositoryCache {
         Stopwatch sw = new Stopwatch();
         logger.info(JcrI18n.beginChildrenOptimization, getName());
         sw.start();
-
+        
+        DocumentOptimizer optimizer = new DocumentOptimizer(documentStore());
         try {
-            DocumentOperationResults results = documentStore().localStore().performOnEachDocument(new DocumentOperation() {
-                private static final long serialVersionUID = 1L;
-
-                private DocumentOptimizer optimizer;
-
-                @Override
-                public void setEnvironment( Cache<String, SchematicEntry> cache ) {
-                    super.setEnvironment(cache);
-                    this.optimizer = new DocumentOptimizer(cache);
-                }
-
-                @Override
-                public boolean execute( String key,
-                                        EditableDocument document ) {
-                    return this.optimizer.optimizeChildrenBlocks(new NodeKey(key), document, targetCountPerBlock, tolerance);
-                }
-            });
+            DocumentOperationResults results = documentStore().localStore().performOnEachDocument((key, document) -> 
+                optimizer.optimizeChildrenBlocks(new NodeKey(key), document, targetCountPerBlock, tolerance)
+            );
             sw.stop();
             logger.info(JcrI18n.completeChildrenOptimization, getName(), sw.getTotalDuration().toSimpleString(), results);
             return results;
-        } catch (TimeoutException te) {
-            // we were unable to obtain some locks in ISPN while trying to do optimize so we'll just log this since the operation
-            // will be retried later and the transaction should've been rolled back
-            if (logger.isDebugEnabled()) {
-                logger.debug(te, "Unable to obtain ISPN locks while trying to perform document optimization");
-            }
         } catch (Throwable e) {
             logger.info(JcrI18n.errorDuringChildrenOptimization, getName(), sw.getTotalDuration().toSimpleString(), e);
         }

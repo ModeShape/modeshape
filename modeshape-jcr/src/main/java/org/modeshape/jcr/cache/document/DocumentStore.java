@@ -17,7 +17,6 @@
 package org.modeshape.jcr.cache.document;
 
 import java.util.Collection;
-import javax.transaction.TransactionManager;
 import org.infinispan.schematic.SchematicEntry;
 import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.document.EditableDocument;
@@ -31,7 +30,7 @@ import org.modeshape.jcr.value.binary.ExternalBinaryValue;
  * @author Horia Chiorean (hchiorea@redhat.com)
  */
 public interface DocumentStore {
-
+    
     /**
      * Get the entry with the supplied key.
      *
@@ -80,44 +79,56 @@ public interface DocumentStore {
 
     /**
      * Attempts to lock all of the documents with the given keys.
+     * 
+     * <p>
+     * NOTE: This should only be called within an existing transaction. If this operation succeeds, all the locked keys will
+     * be released automatically when the transaction completes (regardless whether successfully or not).
+     * </p>
      *
      * @param keys the set of keys identifying the documents that are to be updated via
      *        {@link #updateDocument(String, Document, SessionNode)} or via {@link #edit(String,boolean)}.
      * @return true if the documents were locked, or false if not all of the documents could be locked
+     * @throws IllegalStateException if no active transaction can be detected when the locking is attempted
 |    */
-    public boolean lockDocuments( Collection<String> keys );
+    public boolean lockDocuments( Collection<String> keys );   
+    
+    /**
+     * Attempts to lock all of the documents with the given keys.
+     * <p>
+     * NOTE: This should only be called within an existing transaction. If this operation succeeds, all the locked keys will
+     * be released automatically when the transaction completes (regardless whether successfully or not)
+     * </p>
+         
+     * @param keys the set of keys identifying the documents that are to be updated via
+     *        {@link #updateDocument(String, Document, SessionNode)} or via {@link #edit(String,boolean)}.
+     * @return true if the documents were locked, or false if not all of the documents could be locked
+     * @throws IllegalStateException if no active transaction can be detected when the locking is attempted
+    */
+    public boolean lockDocuments( String... keys );
 
     /**
-     * Edit the existing document at the given key after attempting to lock it first.
+     * Edit the existing document at the given key. 
+     * <p>
+     *     NOTE: This method does not perform any locking on that key. As such, the caller code should make sure 
+     *     {@link #lockDocuments} is called first on all the keys that are about to be changed if the operation
+     *     can be performed from a concurrent context.
+     * </p>
      *
      * @param key the key or identifier for the document
      * @param createIfMissing true if a new entry should be created and added to the database if an existing entry does not exist
      * @return true if a document was removed, or false if there was no document with that key
      * @throws DocumentStoreException if there is a problem removing the document
-     * @throws org.infinispan.util.concurrent.TimeoutException if the lock cannot be acquired within the configured lock acquisition time.
      */
-    public EditableDocument edit( String key,
-                                  boolean createIfMissing );
-
-    /**
-     * Edit the existing document at the given key, and optionally explicitly locking the entry before returning the editor.
-     *
-     * @param key the key or identifier for the document
-     * @param createIfMissing true if a new entry should be created and added to the database if an existing entry does not exist.
-     * Implementations are free to ignore this flag.
-     * @param acquireLock true if the lock for the entry should be obtained before returning, or false if the lock was already
-     *        obtained via {@link #lockDocuments(Collection)} within the current transaction.
-     * @return true if a document was removed, or false if there was no document with that key
-     * @throws DocumentStoreException if there is a problem removing the document
-     * @throws org.infinispan.util.concurrent.TimeoutException if {@code aquireLock} is true and 
-     * the lock cannot be acquired within the configured lock acquisition time.
-     */
-    public EditableDocument edit( String key,
-                                  boolean createIfMissing,
-                                  boolean acquireLock );
+    public EditableDocument edit( String key, boolean createIfMissing );
 
     /**
      * Remove the existing document at the given key.
+     *
+     * <p>
+     *     NOTE: This method does not perform any locking on that key. As such, the caller code should make sure 
+     *     {@link #lockDocuments} is called first on all the keys that are about to be changed if the operation
+     *     can be performed from a concurrent context.
+     * </p>
      *
      * @param key the key or identifier for the document
      * @return true if a document was removed, or false if there was no document with that key
@@ -146,13 +157,6 @@ public interface DocumentStore {
      * @return a {@code non-null} string
      */
     public String getLocalSourceKey();
-
-    /**
-     * Returns a transaction manager instance which can be used to manage transactions for this document store.
-     *
-     * @return a {@link TransactionManager} instance, never null.
-     */
-    public TransactionManager transactionManager();
 
     /**
      * Returns a local store instance which will use the local Infinispan cache to store/retrieve information.

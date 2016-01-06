@@ -22,7 +22,6 @@ import static org.junit.Assert.assertThat;
 import java.io.InputStream;
 import org.infinispan.schematic.SchemaLibrary;
 import org.infinispan.schematic.SchemaLibrary.Results;
-import org.infinispan.schematic.SchemaValidationTest;
 import org.infinispan.schematic.Schematic;
 import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.document.Json;

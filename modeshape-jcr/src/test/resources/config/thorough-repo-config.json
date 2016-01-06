@@ -3,6 +3,7 @@
     "monitoring" : {
         "enabled" : true,
     },
+    "lockTimeoutMillis" : 100,
     "eventBusSize" : 2048,
     "workspaces" : {
         "predefined" : ["otherWorkspace"],

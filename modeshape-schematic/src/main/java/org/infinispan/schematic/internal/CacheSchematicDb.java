@@ -16,7 +16,8 @@
 
 package org.infinispan.schematic.internal;
 
-import java.util.Collection;
+import java.util.stream.Stream;
+import javax.transaction.TransactionManager;
 import org.infinispan.AdvancedCache;
 import org.infinispan.Cache;
 import org.infinispan.context.Flag;
@@ -27,29 +28,18 @@ import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.document.EditableDocument;
 import org.infinispan.schematic.internal.document.DocumentEditor;
 import org.infinispan.schematic.internal.document.MutableDocument;
-import org.infinispan.transaction.LockingMode;
 
 public class CacheSchematicDb implements SchematicDb {
 
     private final String name;
     private final AdvancedCache<String, SchematicEntry> store;
     private final AdvancedCache<String, SchematicEntry> storeForWriting;
-    private final AdvancedCache<String, SchematicEntry> lockingStore;
-    private final boolean explicitLocking;
 
     public CacheSchematicDb( AdvancedCache<String, SchematicEntry> store ) {
         assert store != null;
         this.store = store;
         this.storeForWriting = store.withFlags(Flag.SKIP_CACHE_LOAD, Flag.SKIP_REMOTE_LOOKUP);
         this.name = store.getName();
-        this.explicitLocking = store.getCacheConfiguration().transaction().lockingMode() == LockingMode.PESSIMISTIC;
-        if (this.explicitLocking) {
-            // the FAIL SILENTLY flag is required here because without it ISPN will rollback the active transaction on the first
-            // TimeoutException, while ModeShape has built-in logic for retrying....
-            this.lockingStore = store.withFlags(Flag.FAIL_SILENTLY).getAdvancedCache();
-        } else {
-            this.lockingStore = store;
-        }
     }
 
     @Override
@@ -70,6 +60,11 @@ public class CacheSchematicDb implements SchematicDb {
     @Override
     public Cache<String, SchematicEntry> getCache() {
         return store;
+    }
+
+    @Override
+    public Stream<String> keys() {
+        return store.keySet().stream();
     }
 
     @Override
@@ -126,13 +121,6 @@ public class CacheSchematicDb implements SchematicDb {
     @Override
     public EditableDocument editContent( String key,
                                          boolean createIfMissing ) {
-        return editContent(key, createIfMissing, true);
-    }
-
-    @Override
-    public EditableDocument editContent( String key,
-                                         boolean createIfMissing,
-                                         boolean acquireLock ) {
         // Get the literal ...
         SchematicEntryLiteral literal = (SchematicEntryLiteral)store.get(key);
         if (literal == null) {
@@ -144,20 +132,11 @@ public class CacheSchematicDb implements SchematicDb {
             return new DocumentEditor(content);
         }
         // this makes a copy and puts the new copy into the store ...
-        return literal.edit(key, storeForWriting, shouldAcquireLock(acquireLock));
-    }
-
-    private AdvancedCache<String, SchematicEntry> shouldAcquireLock( boolean acquireLockRequested ) {
-        return explicitLocking && acquireLockRequested ? lockingStore : null;
+        return literal.edit(key, storeForWriting);
     }
 
     @Override
-    public boolean lock( Collection<String> keys ) {
-        return !explicitLocking ? true : lockingStore.lock(keys);
-    }
-
-    @Override
-    public boolean lock( String key ) {
-        return !explicitLocking ? true : lockingStore.lock(key);
+    public TransactionManager transactionManager() {
+        return storeForWriting.getTransactionManager();
     }
 }

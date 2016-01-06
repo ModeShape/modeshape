@@ -24,7 +24,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import javax.transaction.TransactionManager;
 import org.infinispan.schematic.SchematicEntry;
 import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.document.EditableDocument;
@@ -321,17 +320,15 @@ public class FederatedDocumentStore implements DocumentStore {
     }
 
     @Override
-    public EditableDocument edit( String key,
-                                  boolean createIfMissing ) {
-        return edit(key, createIfMissing, true);
+    public boolean lockDocuments(String... keys) {
+        return localDocumentStore.lockDocuments(keys);
     }
 
     @Override
     public EditableDocument edit( String key,
-                                  boolean createIfMissing,
-                                  boolean acquireLock ) {
+                                  boolean createIfMissing ) {
         if (isLocalSource(key)) {
-            return localStore().edit(key, createIfMissing, acquireLock);
+            return localStore().edit(key, createIfMissing);
         }
         // It's federated, so we have to use the federated logic ...
         FederatedSchematicEntry entry = (FederatedSchematicEntry)get(key);
@@ -339,11 +336,6 @@ public class FederatedDocumentStore implements DocumentStore {
             return entry.edit();
         }
         return null;
-    }
-
-    @Override
-    public TransactionManager transactionManager() {
-        return localStore().transactionManager();
     }
 
     @Override

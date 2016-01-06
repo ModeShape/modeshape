@@ -18,9 +18,7 @@ package org.modeshape.jcr.cache.document;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import org.infinispan.Cache;
 import org.infinispan.schematic.Schematic;
-import org.infinispan.schematic.SchematicDb;
 import org.infinispan.schematic.SchematicEntry;
 import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.document.EditableArray;
@@ -32,21 +30,13 @@ import org.modeshape.jcr.cache.NodeKey;
  */
 public class DocumentOptimizer implements DocumentConstants {
 
-    private final SchematicDb storeDb;
     private final DocumentStore documentStore;
 
     public DocumentOptimizer( DocumentStore documentStore ) {
         this.documentStore = documentStore;
-        this.storeDb = null;
-        assert this.storeDb != null || this.documentStore != null;
+        assert this.documentStore != null;
     }
-
-    public DocumentOptimizer( Cache<String, SchematicEntry> cache ) {
-        this.documentStore = null;
-        this.storeDb = Schematic.get(cache);
-        assert this.storeDb != null || this.documentStore != null;
-    }
-
+    
     /**
      * Optimize the children in the supplied node document
      * <p>
@@ -140,13 +130,7 @@ public class DocumentOptimizer implements DocumentConstants {
     }
 
     protected EditableDocument edit( String key ) {
-        if (documentStore != null) {
-            return documentStore.edit(key, false);
-        }
-        if (storeDb != null) {
-            return storeDb.editContent(key, false);
-        }
-        return null;
+        return documentStore.lockDocuments(key) ? documentStore.edit(key, false) : null;
     }
 
     /**

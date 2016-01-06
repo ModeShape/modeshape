@@ -406,6 +406,17 @@ public class ModelAttributes {
                                                     .setFieldPathInRepositoryConfiguration(
                                                             FieldName.EVENT_BUS_SIZE)
                                                     .build();
+    
+    public static final SimpleAttributeDefinition LOCK_TIMEOUT_MILLIS = new MappedAttributeDefinitionBuilder(
+            ModelKeys.LOCK_TIMEOUT_MILLIS, ModelType.INT).setXmlName(
+            Attribute.LOCK_TIMEOUT_MILLIS.getLocalName())
+                                                    .setAllowExpression(false)
+                                                    .setAllowNull(true)
+                                                    .setMeasurementUnit(MeasurementUnit.NONE)
+                                                    .setFlags(AttributeAccess.Flag.RESTART_NONE)
+                                                    .setFieldPathInRepositoryConfiguration(
+                                                            FieldName.LOCK_TIMEOUT_MILLIS)
+                                                    .build();
 
     public static final SimpleAttributeDefinition REINDEXING_ASYNC = new MappedAttributeDefinitionBuilder(
             ModelKeys.REINDEXING_ASYNC, ModelType.BOOLEAN).setXmlName(
@@ -881,7 +892,8 @@ public class ModelAttributes {
         DOCUMENT_OPTIMIZATION_INITIAL_TIME, DOCUMENT_OPTIMIZATION_INTERVAL, DOCUMENT_OPTIMIZATION_CHILD_COUNT_TARGET,
         DOCUMENT_OPTIMIZATION_CHILD_COUNT_TOLERANCE, JOURNAL_PATH, JOURNAL_RELATIVE_TO, MAX_DAYS_TO_KEEP_RECORDS,
         JOURNAL_GC_INITIAL_TIME, JOURNAL_GC_THREAD_POOL, ASYNC_WRITES, JOURNALING, SEQUENCER_THREAD_POOL_NAME, SEQUENCER_MAX_POOL_SIZE, 
-        TEXT_EXTRACTOR_THREAD_POOL_NAME, TEXT_EXTRACTOR_MAX_POOL_SIZE, EVENT_BUS_SIZE, REINDEXING_ASYNC, REINDEXING_MODE};
+        TEXT_EXTRACTOR_THREAD_POOL_NAME, TEXT_EXTRACTOR_MAX_POOL_SIZE, EVENT_BUS_SIZE, REINDEXING_ASYNC, REINDEXING_MODE,
+        LOCK_TIMEOUT_MILLIS};
 
     public static final AttributeDefinition[] TRANSIENT_BINARY_STORAGE_ATTRIBUTES = {MINIMUM_BINARY_SIZE, MINIMUM_STRING_SIZE, 
                                                                                      MIME_TYPE_DETECTION}; 

@@ -15,7 +15,8 @@
  */
 package org.infinispan.schematic;
 
-import java.util.Collection;
+import java.util.stream.Stream;
+import javax.transaction.TransactionManager;
 import org.infinispan.Cache;
 import org.infinispan.commons.api.Lifecycle;
 import org.infinispan.schematic.document.Document;
@@ -45,6 +46,13 @@ public interface SchematicDb extends Lifecycle {
     Cache<String, SchematicEntry> getCache();
 
     /**
+     * Returns a stream over all the keys present in the DB
+     * 
+     * @return a {@link Stream} instance, never {@code null}
+     */
+    Stream<String> keys();
+    
+    /**
      * Get the entry with the supplied key.
      *
      * @param key the key or identifier for the document
@@ -53,36 +61,15 @@ public interface SchematicDb extends Lifecycle {
     SchematicEntry get( String key );
 
     /**
-     * Get an editor for the entry with the supplied key. This method will automatically try to acquire the lock for this entry.
-     * The resulting editor will operate upon a copy of the entry and the database will be updated as part of the transaction. See
-     * also {@link #editContent(String, boolean, boolean)} if the lock is known to have already been acquired.
+     * Get an editor for the entry with the supplied key. 
+     * The resulting editor will operate upon a copy of the entry and the database will be updated as part of the transaction. 
      *
      * @param key the key or identifier for the document
      * @param createIfMissing true if a new entry should be created and added to the database if an existing entry does not exist
      * @return the entry, or null if there was no document with the supplied key
-     * @throws org.infinispan.util.concurrent.TimeoutException if a lock cannot be obtained on the requested document
-     * @see #editContent(String, boolean, boolean)
      */
     EditableDocument editContent( String key,
                                   boolean createIfMissing );
-
-    /**
-     * Get an editor for the entry with the supplied key and say whether the entry should be locked. If {@code acquireLock} is
-     * false, then the entry should have been explicitly {@link #lock(Collection) locked} as part of a transaction before this
-     * method is called. The resulting editor will operate upon a copy of the entry and the database will be updated as part of
-     * the transaction.
-     *
-     * @param key the key or identifier for the document
-     * @param createIfMissing true if a new entry should be created and added to the database if an existing entry does not exist
-     * @param acquireLock true if the lock should be acquired for this entry, or false if the lock is known to have already been
-     *        acquired for the current transaction
-     * @return the entry, or null if there was no document with the supplied key
-     * @throws org.infinispan.util.concurrent.TimeoutException if {@code aquireLock} is {@code true}
-     * and the lock cannot be acquired within the configured lock acquisition time.
-     */
-    EditableDocument editContent( String key,
-                                  boolean createIfMissing,
-                                  boolean acquireLock );
 
     /**
      * Determine whether the database contains an entry with the supplied key.
@@ -127,24 +114,6 @@ public interface SchematicDb extends Lifecycle {
      * @return the entry that was removed, or null if there was no document with the supplied key
      */
     SchematicEntry remove( String key );
-
-    /**
-     * Lock all of the documents with the given keys. This must be called within the context of an existing transaction, and all
-     * locks will be held until the completion of the transaction.
-     *
-     * @param key the key for the document that is to be locked
-     * @return true if the documents were locked (or if locking is not required), or false if not all of the documents could be
-     *         locked
-     */
-    boolean lock( String key );
-
-    /**
-     * Lock all of the documents with the given keys. This must be called within the context of an existing transaction, and all
-     * locks will be held until the completion of the transaction.
-     *
-     * @param keys the set of keys identifying the documents that are to be locked
-     * @return true if the documents were locked (or if locking is not required), or false if not all of the documents could be
-     *         locked
-     */
-    boolean lock( Collection<String> keys );
+    
+    TransactionManager transactionManager();
 }

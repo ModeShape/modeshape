@@ -13,23 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.infinispan.schematic;
+package org.modeshape.jcr.cache.document;
 
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
 import java.io.InputStream;
-import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import org.infinispan.schematic.FixFor;
+import org.infinispan.schematic.Schematic;
+import org.infinispan.schematic.SchematicEntry;
 import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.document.EditableDocument;
+import org.infinispan.schematic.internal.schema.SchemaValidationTest;
 import org.junit.Before;
 import org.junit.Test;
 
-public class SchematicDbTest extends AbstractSchematicDbTest {
+public class LocalDocumentStoreTest extends AbstractDocumentStoreTest {
 
     private volatile boolean print = false;
 
@@ -48,8 +51,8 @@ public class SchematicDbTest extends AbstractSchematicDbTest {
     public void shouldStoreDocumentWithUnusedKeyAndWithNullMetadata() {
         Document doc = Schematic.newDocument("k1", "value1", "k2", 2);
         String key = "can be anything"; 
-        db.put(key, doc);
-        SchematicEntry entry = db.get(key);
+        localStore.put(key, doc);
+        SchematicEntry entry = localStore.get(key);
         assertThat("Should have found the entry", entry, is(notNullValue()));
 
         // Verify the content ...
@@ -70,10 +73,10 @@ public class SchematicDbTest extends AbstractSchematicDbTest {
     public void shouldStoreDocumentWithUnusedKeyAndWithNonNullMetadata() {
         Document doc = Schematic.newDocument("k1", "value1", "k2", 2);
         String key = "can be anything";
-        db.put(key, doc);
+        localStore.put(key, doc);
 
         // Read back from the database ...
-        SchematicEntry entry = db.get(key);
+        SchematicEntry entry = localStore.get(key);
         assertThat("Should have found the entry", entry, is(notNullValue()));
 
         // Verify the content ...
@@ -95,10 +98,10 @@ public class SchematicDbTest extends AbstractSchematicDbTest {
         // Store the document ...
         Document doc = Schematic.newDocument("k1", "value1", "k2", 2);
         String key = "can be anything";
-        db.put(key, doc);
+        localStore.put(key, doc);
         
         // Read back from the database ...
-        SchematicEntry entry = db.get(key);
+        SchematicEntry entry = localStore.get(key);
         assertThat("Should have found the entry", entry, is(notNullValue()));
 
         // Verify the content ...
@@ -111,17 +114,17 @@ public class SchematicDbTest extends AbstractSchematicDbTest {
 
         // Modify using an editor ...
         try {
-            tm.begin();
-            db.lock(key);
-            EditableDocument editable = db.editContent(key, true);
+            transactions().begin();
+            localStore.lockDocuments(key);
+            EditableDocument editable = localStore.edit(key, true);
             editable.setBoolean("k3", true);
             editable.setNumber("k4", 3.5d);
         } finally {
-            tm.commit();
+            transactions().commit();
         }
 
         // Now re-read ...
-        SchematicEntry entry2 = db.get(key);
+        SchematicEntry entry2 = localStore.get(key);
         Document read2 = entry2.getContent();
         assertThat(read2, is(notNullValue()));
         assertThat(read2.getString("k1"), is("value1"));
@@ -135,10 +138,10 @@ public class SchematicDbTest extends AbstractSchematicDbTest {
         // Store the document ...
         Document doc = Schematic.newDocument("k1", "value1", "k2", 2);
         String key = "can be anything";
-        db.put(key, doc);
+        localStore.put(key, doc);
         
         // Read back from the database ...
-        SchematicEntry entry = db.get(key);
+        SchematicEntry entry = localStore.get(key);
         assertThat("Should have found the entry", entry, is(notNullValue()));
 
         // Verify the content ...
@@ -151,17 +154,17 @@ public class SchematicDbTest extends AbstractSchematicDbTest {
 
         // Modify using an editor ...
         try {
-            tm.begin();
-            db.lock(key);
-            EditableDocument editable = db.editContent(key, true);
+            transactions().begin();
+            localStore.lockDocuments(key);
+            EditableDocument editable = localStore.edit(key, true);
             editable.setBoolean("k3", true);
             editable.setNumber("k4", 3.5d);
         } finally {
-            tm.commit();
+            transactions().commit();
         }
 
         // Now re-read ...
-        SchematicEntry entry2 = db.get(key);
+        SchematicEntry entry2 = localStore.get(key);
         Document read2 = entry2.getContent();
         assertThat(read2, is(notNullValue()));
         assertThat(read2.getString("k1"), is("value1"));
@@ -175,43 +178,35 @@ public class SchematicDbTest extends AbstractSchematicDbTest {
     public void shouldAllowMultipleConcurrentWritersToUpdateEntryInSerialFashion() throws Exception {
         Document doc = Schematic.newDocument("k1", "value1", "k2", 2);
         final String key = "can be anything";
-        db.put(key, doc);
-        SchematicEntry entry = db.get(key);
+        localStore.put(key, doc);
+        SchematicEntry entry = localStore.get(key);
         assertThat("Should have found the entry", entry, is(notNullValue()));
         // Start two threads that each attempt to edit the document ...
         ExecutorService executors = Executors.newCachedThreadPool();
         final CountDownLatch latch = new CountDownLatch(1);
-        Future f1 = executors.submit(new Callable<Void>() {
-            @SuppressWarnings( "synthetic-access" )
-            @Override
-            public Void call() throws Exception {
-                latch.await(); // synchronize ...
-                tm().begin();
-                print("Began txn1");
-                db.lock(key);
-                EditableDocument editor = db.editContent(key, true);
-                editor.setNumber("k2", 3); // update an existing field
-                print(editor);
-                print("Committing txn1");
-                tm().commit();
-                return null;
-            }
+        Future<Void> f1 = executors.submit(() -> {
+            latch.await(); // synchronize ...
+            transactions().begin();
+            print("Began txn1");
+            localStore.lockDocuments(key);
+            EditableDocument editor = localStore.edit(key, true);
+            editor.setNumber("k2", 3); // update an existing field
+            print(editor);
+            print("Committing txn1");
+            transactions().commit();
+            return null;
         });
-        Future f2 = executors.submit(new Callable<Void>() {
-            @SuppressWarnings( "synthetic-access" )
-            @Override
-            public Void call() throws Exception {
-                latch.await(); // synchronize ...
-                tm().begin();
-                print("Began txn2");
-                db.lock(key);
-                EditableDocument editor = db.editContent(key, true);
-                editor.setNumber("k3", 3); // add a new field
-                print(editor);
-                print("Committing txn2");
-                tm().commit();
-                return null;
-            }
+        Future<Void> f2 = executors.submit(() -> {
+            latch.await(); // synchronize ...
+            transactions().begin();
+            print("Began txn2");
+            localStore.lockDocuments(key);
+            EditableDocument editor = localStore.edit(key, true);
+            editor.setNumber("k3", 3); // add a new field
+            print(editor);
+            print("Committing txn2");
+            transactions().commit();
+            return null;
         });
         // print = true;
         // Start the threads ...
@@ -221,13 +216,13 @@ public class SchematicDbTest extends AbstractSchematicDbTest {
         f2.get();
         // System.out.println("Completed all threads");
         // Now re-read ...
-        tm().begin();
-        Document read = db.get(key).getContent();
+        transactions().begin();
+        Document read = localStore.get(key).getContent();
         assertThat(read, is(notNullValue()));
         assertThat(read.getString("k1"), is("value1"));
         assertThat(read.getInteger("k3"), is(3)); // Thread 2 is last, so this should definitely be there
         assertThat(read.getInteger("k2"), is(3)); // Thread 1 is first, but still shouldn't have been overwritten
-        tm().commit();
+        transactions().commit();
     }
 
     protected void print( Object obj ) {

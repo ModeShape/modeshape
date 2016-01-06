@@ -406,7 +406,7 @@ public class WritableSessionCache extends AbstractSessionCache {
                 // function *only after* ISPN has committed its transaction & updated the cache
                 // if there isn't an active ModeShape transaction, one will become active later during "save"
                 // otherwise, "save" is never called meaning this cache should be discarded
-                Transactions.Transaction modeshapeTx = transactions.currentModeShapeTransaction();
+                Transactions.Transaction modeshapeTx = transactions.currentTransaction();
                 if (modeshapeTx != null) {
                     // we can use the identity hash code as a tx id, because we essentially want a different tx function for each
                     // different transaction and as long as a tx is active, it should not be garbage collected, hence we should
@@ -554,7 +554,7 @@ public class WritableSessionCache extends AbstractSessionCache {
 
                     clearState();
 
-                } catch (org.infinispan.util.concurrent.TimeoutException e) {
+                } catch (TimeoutException e) {
                     txn.rollback();
                     if (repeat <= 0) {
                         throw new TimeoutException(e.getMessage(), e);
@@ -731,7 +731,7 @@ public class WritableSessionCache extends AbstractSessionCache {
                         if (events2.hasBinaryChanges()) {
                             txn.uponCommit(binaryUsageUpdateFunction(events2.usedBinaries(), events2.unusedBinaries()));
                         }
-                    } catch (org.infinispan.util.concurrent.TimeoutException e) {
+                    } catch (TimeoutException e) {
                         txn.rollback();
                         if (repeat <= 0) throw new TimeoutException(e.getMessage(), e);
                         --repeat;
@@ -886,7 +886,7 @@ public class WritableSessionCache extends AbstractSessionCache {
                         if (events2.hasBinaryChanges()) {
                             txn.uponCommit(binaryUsageUpdateFunction(events2.usedBinaries(), events2.unusedBinaries()));
                         }
-                    } catch (org.infinispan.util.concurrent.TimeoutException e) {
+                    } catch (TimeoutException e) {
                         txn.rollback();
                         if (repeat <= 0) throw new TimeoutException(e.getMessage(), e);
                         --repeat;
@@ -972,7 +972,6 @@ public class WritableSessionCache extends AbstractSessionCache {
         ExecutionContext context = context();
         String userId = context.getSecurityContext().getUserName();
         Map<String, String> userData = context.getData();
-        final boolean acquireLock = false; // we already pre-locked all of the existing documents that we'll edit ...
         DateTime timestamp = context.getValueFactories().getDateFactory().create();
         String workspaceName = persistedCache.getWorkspaceName();
         String repositoryKey = persistedCache.getRepositoryKey();
@@ -1037,7 +1036,7 @@ public class WritableSessionCache extends AbstractSessionCache {
                     // if there were any referrer changes for the removed nodes, we need to process them
                     ReferrerChanges referrerChanges = referrerChangesForRemovedNodes.get(key);
                     if (referrerChanges != null) {
-                        EditableDocument doc = documentStore.edit(keyStr, false, acquireLock);
+                        EditableDocument doc = documentStore.edit(keyStr, false);
                         if (doc != null) translator.changeReferrers(doc, referrerChanges);
                     }
 
@@ -1101,7 +1100,7 @@ public class WritableSessionCache extends AbstractSessionCache {
                     // Create an event ...
                     changes.nodeCreated(key, newParent, newPath, primaryType, mixinTypes, node.changedProperties());
                 } else {
-                    doc = documentStore.edit(keyStr, true, acquireLock);
+                    doc = documentStore.edit(keyStr, true);
                     if (doc == null) {
                         if (isExternal && renamedExternalNodes.contains(key)) {
                             // this is a renamed external node which has been processed in the parent, so we can skip it
@@ -1558,7 +1557,7 @@ public class WritableSessionCache extends AbstractSessionCache {
                 }
             }
             if (!locksAquired) {
-                throw new org.infinispan.util.concurrent.TimeoutException("Timeout while attempting to lock the keys " + keysToLock + " after " + retryCountOnLockTimeout + " retry attempts.");
+                throw new TimeoutException("Timeout while attempting to lock the keys " + keysToLock + " after 2 retry attempts.");
             }
         }
         //return a transient workspace cache, which contains the latest view of the nodes which will be changed
@@ -1568,35 +1567,32 @@ public class WritableSessionCache extends AbstractSessionCache {
     private Transactions.TransactionFunction binaryUsageUpdateFunction( final Set<BinaryKey> usedBinaries,
                                                                         final Set<BinaryKey> unusedBinaries ) {
         final BinaryStore binaryStore = getContext().getBinaryStore();
-        return new Transactions.TransactionFunction() {
-            @Override
-            public void execute() {
-                if (!usedBinaries.isEmpty()) {
-                    if (LOGGER.isDebugEnabled()) {
-                        LOGGER.debug("Marking binary values as used: {0}", usedBinaries);
-                    }
-                    try {
-                        binaryStore.markAsUsed(usedBinaries);
-                        if (LOGGER.isDebugEnabled()) {
-                            LOGGER.debug("Finished marking binary values as used: {0}", usedBinaries);
-                        }
-                    } catch (BinaryStoreException e) {
-                        LOGGER.error(e, JcrI18n.errorMarkingBinaryValuesUsed, e.getMessage());
-                    }
+        return () -> {
+            if (!usedBinaries.isEmpty()) {
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debug("Marking binary values as used: {0}", usedBinaries);
                 }
-
-                if (!unusedBinaries.isEmpty()) {
+                try {
+                    binaryStore.markAsUsed(usedBinaries);
                     if (LOGGER.isDebugEnabled()) {
-                        LOGGER.debug("Marking binary values as unused: {0}", unusedBinaries);
+                        LOGGER.debug("Finished marking binary values as used: {0}", usedBinaries);
                     }
-                    try {
-                        binaryStore.markAsUnused(unusedBinaries);
-                        if (LOGGER.isDebugEnabled()) {
-                            LOGGER.debug("Finished marking binary values as unused: {0}", unusedBinaries);
-                        }
-                    } catch (BinaryStoreException e) {
-                        LOGGER.error(e, JcrI18n.errorMarkingBinaryValuesUnused, e.getMessage());
+                } catch (BinaryStoreException e) {
+                    LOGGER.error(e, JcrI18n.errorMarkingBinaryValuesUsed, e.getMessage());
+                }
+            }
+
+            if (!unusedBinaries.isEmpty()) {
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debug("Marking binary values as unused: {0}", unusedBinaries);
+                }
+                try {
+                    binaryStore.markAsUnused(unusedBinaries);
+                    if (LOGGER.isDebugEnabled()) {
+                        LOGGER.debug("Finished marking binary values as unused: {0}", unusedBinaries);
                     }
+                } catch (BinaryStoreException e) {
+                    LOGGER.error(e, JcrI18n.errorMarkingBinaryValuesUnused, e.getMessage());
                 }
             }
         };

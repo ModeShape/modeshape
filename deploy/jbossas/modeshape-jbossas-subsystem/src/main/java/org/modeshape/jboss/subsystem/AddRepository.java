@@ -102,6 +102,17 @@ public class AddRepository extends AbstractAddStepHandler {
         return value.asInt();
     }
 
+    private Long longAttribute(OperationContext context,
+                               ModelNode model,
+                               AttributeDefinition defn,
+                               Long defaultValue) throws OperationFailedException {
+        ModelNode value = defn.resolveModelAttribute(context, model);
+        if (value == null || !value.isDefined()) {
+            return defaultValue;
+        }
+        return value.asLong();
+    }
+
     @Override
     protected void performRuntime( final OperationContext context,
                                    final ModelNode operation,
@@ -125,10 +136,10 @@ public class AddRepository extends AbstractAddStepHandler {
         final int optIntervalInHours = attribute(context, model, ModelAttributes.DOCUMENT_OPTIMIZATION_INTERVAL).asInt();
         final Integer optTarget = intAttribute(context, model, ModelAttributes.DOCUMENT_OPTIMIZATION_CHILD_COUNT_TARGET, null);
         final Integer eventBusSize = intAttribute(context, model, ModelAttributes.EVENT_BUS_SIZE, null);
-        final Integer optTolerance = intAttribute(context,
-                                                  model,
+        final Integer optTolerance = intAttribute(context, model,
                                                   ModelAttributes.DOCUMENT_OPTIMIZATION_CHILD_COUNT_TOLERANCE,
                                                   null);
+        final Long lockTimeoutMillis = longAttribute(context, model, ModelAttributes.LOCK_TIMEOUT_MILLIS, null);
 
         // Create a document for the repository configuration ...
         EditableDocument configDoc = Schematic.newDocument();
@@ -144,6 +155,9 @@ public class AddRepository extends AbstractAddStepHandler {
         
         if (eventBusSize != null) {
             configDoc.setNumber(FieldName.EVENT_BUS_SIZE, eventBusSize);
+        }    
+        if (lockTimeoutMillis != null) {
+            configDoc.setNumber(FieldName.LOCK_TIMEOUT_MILLIS, lockTimeoutMillis);
         }
 
         // Parse the cache configuration

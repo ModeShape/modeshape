@@ -173,9 +173,9 @@ public class WritableSessionCacheTest extends AbstractSessionCacheTest {
         Stopwatch total = new Stopwatch();
         Stopwatch save = new Stopwatch();
         Stopwatch opt = new Stopwatch();
-        txnManager().begin();
+        transactions().begin();
         optimizer.optimizeChildrenBlocks(key, null, 1000, 500); // will merge two into a single block ...
-        txnManager().commit();
+        transactions().commit();
         print(true);
         print("Creating nodes ...");
         total.start();
@@ -196,9 +196,9 @@ public class WritableSessionCacheTest extends AbstractSessionCacheTest {
                 print("Optimizing...");
                 print(false);
                 opt.start();
-                txnManager().begin();
+                transactions().begin();
                 optimizer.optimizeChildrenBlocks(key, null, 1000, 500); // will split into blocks ...
-                txnManager().commit();
+                transactions().commit();
                 opt.stop();
                 // Find node B again after the save ...
                 nodeB = check(session1).mutableNode("/childB");

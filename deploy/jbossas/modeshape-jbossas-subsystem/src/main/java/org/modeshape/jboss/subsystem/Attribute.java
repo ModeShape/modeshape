@@ -44,6 +44,7 @@ public enum Attribute {
     DOCUMENT_OPTIMIZATION_CHILD_COUNT_TARGET("document-optimization-child-count-target"),
     DOCUMENT_OPTIMIZATION_CHILD_COUNT_TOLERANCE("document-optimization-child-count-tolerance"),
     EVENT_BUS_SIZE("event-bus-size"),
+    LOCK_TIMEOUT_MILLIS("lock-timeout-millis"),
     ENABLE_MONITORING("enable-monitoring"),
     CLUSTER_NAME("cluster-name"),
     CLUSTER_STACK("cluster-stack"),

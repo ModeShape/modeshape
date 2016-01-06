@@ -46,6 +46,7 @@ import javax.transaction.RollbackException;
 import javax.transaction.SystemException;
 import javax.transaction.Transaction;
 import javax.transaction.TransactionManager;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
 import org.modeshape.common.util.FileUtil;
@@ -477,6 +478,7 @@ public class TransactionsTest extends SingleUseAbstractTest {
 
     @Test
     @FixFor( "MODE-2495" )
+    @Ignore("ModeShape 5 requires thread confinement, otherwise locking will not work correctly")
     public void shouldSupportMultipleThreadsChangingTheSameUserTransaction() throws Exception {
         // Start the repository using the JBoss Transactions transaction manager ...
         InputStream config = getClass().getClassLoader().getResourceAsStream("config/repo-config-inmemory-jbosstxn.json");
