@@ -352,15 +352,16 @@ public class JcrServiceImpl extends RemoteServiceServlet implements JcrService {
             String name = def.getName();
             String type = PropertyType.nameFromValue(def.getRequiredType());
             
-            Property p;
+            Property p = null;
             try {
                 p = node.getProperty(def.getName());
-                String display = values(def, p);
-                String value = p.isMultiple() ? multiValue(p)
-                        : singleValue(p, def, repository, workspace, path);
-                list.add(new JcrProperty(name, type, value, display));
             } catch (PathNotFoundException e) {
             }
+
+            String display = values(def, p);
+            String value = def.isMultiple() ? multiValue(p)
+                    : singleValue(p, def, repository, workspace, path);
+            list.add(new JcrProperty(name, type, value, display));
             
         }
         return list;
@@ -380,6 +381,10 @@ public class JcrServiceImpl extends RemoteServiceServlet implements JcrService {
     }
     
     private String multiValue(Property p) throws RepositoryException {
+        if (p == null) {
+            return "";
+        }
+        
         Value[] values = p.getValues();
 
         if (values == null || values.length == 0) {
