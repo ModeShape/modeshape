@@ -17,10 +17,13 @@ package org.modeshape.sequencer.ddl.dialect.teiid;
 
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
 import static org.modeshape.jcr.api.JcrConstants.NT_UNSTRUCTURED;
 import static org.modeshape.sequencer.ddl.StandardDdlLexicon.PARSER_ID;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
+import javax.jcr.Property;
+import javax.jcr.Value;
 import org.junit.After;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
@@ -695,6 +698,51 @@ public class TeiidDdlSequencerTest extends AbstractDdlSequencerTest {
         verifyReference(fk,
                         fk.getProperty(TeiidDdlLexicon.Constraint.TABLE_REFERENCE_REFERENCES).getValues()[0].getString(),
                         "/ddl/sfddl.ddl/ddl:statements/CDH_Party__c/Id");
+    }
+
+    @Test
+    @FixFor( "MODE-2534" )
+    public void shouldSequenceForeignTemporaryTable() throws Exception {
+        this.statementsNode = sequenceDdl("ddl/dialect/teiid/foreignTemporaryTable.ddl");
+        assertThat(this.statementsNode.getNodes().getSize(), is(1L));
+
+        final Node tempTableNode = this.statementsNode.getNode("x");
+        verifyMixinType(tempTableNode, TeiidDdlLexicon.CreateTable.FOREIGN_TEMP_TABLE_STATEMENT);
+        verifyProperty(tempTableNode, TeiidDdlLexicon.CreateTable.SCHEMA_REFERENCE, "pm1");
+        assertThat(tempTableNode.getNodes().getSize(), is(6L)); // 3 columns, pk, 2 options
+    }
+
+    @Test
+    @FixFor( "MODE-2534" )
+    public void shouldSequenceLocalTemporaryTable() throws Exception {
+        this.statementsNode = sequenceDdl("ddl/dialect/teiid/localTemporaryTable.ddl");
+        assertThat(this.statementsNode.getNodes().getSize(), is(2L)); // create table, create temp table
+
+        final Node tempTableNode = this.statementsNode.getNode("x");
+        verifyMixinType(tempTableNode, TeiidDdlLexicon.CreateTable.LOCAL_TEMP_TABLE_STATEMENT);
+        assertThat(tempTableNode.getNodes().getSize(), is(3L)); // 3 columns
+
+        // two columns are involved in the primary key
+        final Property prop = tempTableNode.getProperty(TeiidDdlLexicon.CreateTable.PRIMARY_KEY_COLUMNS);
+        final Value[] pkColRefs = prop.getValues();
+        assertThat(pkColRefs.length, is(2));
+
+        final String ref1Id = pkColRefs[0].getString();
+        final String ref2Id = pkColRefs[1].getString();
+
+        final Node c2 = tempTableNode.getNode("c2");
+        final String c2Id = c2.getIdentifier();
+
+        final Node c3 = tempTableNode.getNode("c3");
+        final String c3Id = c3.getIdentifier();
+
+        if (ref1Id.equals(c2Id)) {
+            assertThat(ref2Id, is(c3Id));
+        } else if (ref1Id.equals(c3Id)) {
+            assertThat(ref2Id, is(c2Id));
+        } else {
+            fail();
+        }
     }
 
 }

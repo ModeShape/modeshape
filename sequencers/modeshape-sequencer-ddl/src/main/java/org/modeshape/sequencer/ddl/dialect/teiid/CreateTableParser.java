@@ -28,6 +28,7 @@ import org.modeshape.sequencer.ddl.StandardDdlLexicon;
 import org.modeshape.sequencer.ddl.datatype.DataType;
 import org.modeshape.sequencer.ddl.dialect.teiid.TeiidDdlConstants.DdlStatement;
 import org.modeshape.sequencer.ddl.dialect.teiid.TeiidDdlConstants.SchemaElementType;
+import org.modeshape.sequencer.ddl.dialect.teiid.TeiidDdlConstants.TeiidFutureReserveWord;
 import org.modeshape.sequencer.ddl.dialect.teiid.TeiidDdlConstants.TeiidNonReservedWord;
 import org.modeshape.sequencer.ddl.dialect.teiid.TeiidDdlConstants.TeiidReservedWord;
 import org.modeshape.sequencer.ddl.node.AstNode;
@@ -133,7 +134,7 @@ final class CreateTableParser extends StatementParser {
 
     /**
      * {@inheritDoc}
-     * 
+     *
      * @see org.modeshape.sequencer.ddl.dialect.teiid.StatementParser#matches(org.modeshape.sequencer.ddl.DdlTokenStream)
      */
     @Override
@@ -141,12 +142,16 @@ final class CreateTableParser extends StatementParser {
         return tokens.matches(DdlStatement.CREATE_FOREIGN_TABLE.tokens())
                || tokens.matches(DdlStatement.CREATE_VIRTUAL_VIEW.tokens())
                || tokens.matches(DdlStatement.CREATE_VIEW.tokens())
-               || tokens.matches(DdlStatement.CREATE_GLOBAL_TEMPORARY_TABLE.tokens());
+               || tokens.matches(DdlStatement.CREATE_GLOBAL_TEMPORARY_TABLE.tokens())
+               || tokens.matches(DdlStatement.CREATE_LOCAL_FOREIGN_TEMPORARY_TABLE.tokens())
+               || tokens.matches(DdlStatement.CREATE_FOREIGN_TEMPORARY_TABLE.tokens())
+               || tokens.matches(DdlStatement.CREATE_LOCAL_TEMPORARY_TABLE.tokens())
+               || tokens.matches(DdlStatement.CREATE_TEMPORARY_TABLE.tokens());
     }
 
     /**
      * {@inheritDoc}
-     * 
+     *
      * @see org.modeshape.sequencer.ddl.dialect.teiid.StatementParser#parse(org.modeshape.sequencer.ddl.DdlTokenStream,
      *      org.modeshape.sequencer.ddl.node.AstNode)
      */
@@ -161,46 +166,83 @@ final class CreateTableParser extends StatementParser {
         // CREATE VIRTUAL VIEW <identifier> <create table body> AS <query expression>
         // CREATE VIEW <identifier> <create table body>
         // CREATE VIEW <identifier> <create table body> AS <query expression>
+        // CREATE LOCAL FOREIGN TEMPORARY TABLE ...
+        // CREATE FOREIGN TEMPORARY TABLE ...
+        // CREATE LOCAL TEMPORARY TABLE ...
+        // CREATE TEMPORARY TABLE ...
 
-        boolean view = true;
+        boolean includeLocalKeyword = false;
+
         DdlStatement stmt = null;
+        String nodeType = null;
         SchemaElementType schemaElementType = null;
 
         if (tokens.canConsume(DdlStatement.CREATE_FOREIGN_TABLE.tokens())) {
             stmt = DdlStatement.CREATE_FOREIGN_TABLE;
-            view = false;
+            nodeType = TeiidDdlLexicon.CreateTable.TABLE_STATEMENT;
             schemaElementType = SchemaElementType.FOREIGN;
         } else if (tokens.canConsume(DdlStatement.CREATE_GLOBAL_TEMPORARY_TABLE.tokens())) {
             stmt = DdlStatement.CREATE_GLOBAL_TEMPORARY_TABLE;
-            view = false;
+            nodeType = TeiidDdlLexicon.CreateTable.GLOBAL_TEMP_TABLE_STATEMENT;
             schemaElementType = SchemaElementType.VIRTUAL;
         } else if (tokens.canConsume(DdlStatement.CREATE_VIEW.tokens()) ||
                         tokens.canConsume(DdlStatement.CREATE_VIRTUAL_VIEW.tokens())) {
             stmt = DdlStatement.CREATE_VIEW;
+            nodeType = TeiidDdlLexicon.CreateTable.VIEW_STATEMENT;
             schemaElementType = SchemaElementType.VIRTUAL;
+        } else if (tokens.matches(DdlStatement.CREATE_LOCAL_TEMPORARY_TABLE.tokens())
+                   || tokens.matches(DdlStatement.CREATE_TEMPORARY_TABLE.tokens())) {
+            stmt = DdlStatement.CREATE_TEMPORARY_TABLE;
+            nodeType = TeiidDdlLexicon.CreateTable.LOCAL_TEMP_TABLE_STATEMENT;
+            schemaElementType = SchemaElementType.VIRTUAL;
+
+            if (tokens.canConsume(DdlStatement.CREATE_LOCAL_TEMPORARY_TABLE.tokens())) {
+                includeLocalKeyword = true;
+            } else {
+                tokens.consume(DdlStatement.CREATE_TEMPORARY_TABLE.tokens());
+                assert !includeLocalKeyword;
+            }
+        } else if (tokens.matches(DdlStatement.CREATE_LOCAL_FOREIGN_TEMPORARY_TABLE.tokens())
+                   || tokens.matches(DdlStatement.CREATE_FOREIGN_TEMPORARY_TABLE.tokens())) {
+            stmt = DdlStatement.CREATE_FOREIGN_TEMPORARY_TABLE;
+            nodeType = TeiidDdlLexicon.CreateTable.FOREIGN_TEMP_TABLE_STATEMENT;
+            schemaElementType = SchemaElementType.VIRTUAL;
+
+            if (tokens.canConsume(DdlStatement.CREATE_LOCAL_FOREIGN_TEMPORARY_TABLE.tokens())) {
+                includeLocalKeyword = true;
+            } else {
+                tokens.consume(DdlStatement.CREATE_FOREIGN_TEMPORARY_TABLE.tokens());
+                assert !includeLocalKeyword;
+            }
         } else {
             throw new TeiidDdlParsingException(tokens, "Unparsable create table or view statement");
         }
 
         assert (stmt != null) : "Create table or view statement is null";
+        assert (nodeType != null) : "nodeType is null";
+        assert (schemaElementType != null) : "schemaElementType is null";
 
-        // parse identifier
+        // parse identifier and create node
         final String id = parseIdentifier(tokens);
-        final AstNode tableNode = getNodeFactory().node(id,
-                                                        parentNode,
-                                                        (view ? TeiidDdlLexicon.CreateTable.VIEW_STATEMENT : TeiidDdlLexicon.CreateTable.TABLE_STATEMENT));
+        final AstNode tableNode = getNodeFactory().node(id, parentNode, nodeType);
         tableNode.setProperty(TeiidDdlLexicon.SchemaElement.TYPE, schemaElementType.toDdl());
 
-        // must have a table body
-        parseTableBody(tokens, tableNode);
+        if (stmt == DdlStatement.CREATE_TEMPORARY_TABLE) {
+            parseLocalTemporaryTable(tokens, tableNode, includeLocalKeyword);
+        } else if (stmt == DdlStatement.CREATE_FOREIGN_TEMPORARY_TABLE) {
+            parseForeignTemporaryTable(tokens, tableNode, includeLocalKeyword);
+        } else {
+            // must have a table body
+            parseTableBody(tokens, tableNode);
 
-        // may have an AS clause
-        if (tokens.hasNext() && tokens.canConsume(TeiidReservedWord.AS.toDdl())) {
-            if (DdlStatement.CREATE_GLOBAL_TEMPORARY_TABLE.equals(stmt))
-                throw new TeiidDdlParsingException(tokens, "Unparsable create table statement: CREATE GLOBAL TEMPORARY TABLES do not have AS statements");
-            // must have a query expression
-            if (!parseQueryExpression(tokens, tableNode)) {
-                throw new TeiidDdlParsingException(tokens, "Unparsable create table statement");
+            // may have an AS clause if not a global temp table
+            if (tokens.hasNext() && tokens.canConsume(TeiidReservedWord.AS.toDdl())) {
+                if (DdlStatement.CREATE_GLOBAL_TEMPORARY_TABLE.equals(stmt))
+                    throw new TeiidDdlParsingException(tokens, "Unparsable create table statement: CREATE GLOBAL TEMPORARY TABLES do not have AS statements");
+                // must have a query expression
+                if (!parseQueryExpression(tokens, tableNode)) {
+                    throw new TeiidDdlParsingException(tokens, "Unparsable create table statement");
+                }
             }
         }
 
@@ -208,9 +250,139 @@ final class CreateTableParser extends StatementParser {
     }
 
     /**
+     * Precondition: everything up to and including the table identifier has been consumed.
+     * <pre>
+     * <code>
+     * CREATE ( LOCAL )? FOREIGN TEMPORARY TABLE &lt;identifier&gt; &lt;create table body&gt; ON &lt;identifier&gt;
+     * </code>
+     * </pre>
+     * @param tokens the tokens being processed (never <code>null</code>)
+     * @param tableNode the temporary table node (never <code>null</code>)
+     * @param includeLocalKeyword <code>true</code> if the <i>LOCAL</i> keyword should be persisted
+     * @throws ParsingException if the tokens cannot be parsed
+     */
+    private void parseForeignTemporaryTable( final DdlTokenStream tokens,
+                                             final AstNode tableNode,
+                                             final boolean includeLocalKeyword ) throws ParsingException {
+        tableNode.setProperty(TeiidDdlLexicon.CreateTable.INCLUDE_LOCAL_KEYWORD, includeLocalKeyword);
+
+        parseTableBody(tokens, tableNode);
+
+        // must have ON keyword and the referenced schema/model name
+        if (!tokens.canConsume(ON)) {
+            throw new TeiidDdlParsingException(tokens, "Missing ON keyword parsing foreign temporary table");
+        }
+
+        final String schemaName = parseIdentifier(tokens);
+        tableNode.setProperty(TeiidDdlLexicon.CreateTable.SCHEMA_REFERENCE, schemaName);
+    }
+
+    /**
+     * Precondition: PRIMARY KEY tokens have already been consumed
+     * <pre>
+     * <code>
+     * PRIMARY KEY &lt;column list&gt;
+     * </code>
+     * </pre>
+     * @param tokens the tokens being processed (never <code>null</code>)
+     * @param tableNode the temporary table node (never <code>null</code>)
+     * @throws ParsingException if the tokens cannot be parsed
+     */
+    private void parseTemporaryTablePrimaryKeyElement( final DdlTokenStream tokens,
+                                                       final AstNode tableNode ) throws ParsingException {
+        // get the actual referenced column nodes using the tokens
+        final List<AstNode> tempTableElements = parseReferenceList(tokens, tableNode, null);
+        tableNode.setProperty(TeiidDdlLexicon.CreateTable.PRIMARY_KEY_COLUMNS, tempTableElements.toArray(new Object[tempTableElements.size()]));
+    }
+
+    /**
+     * <pre>
+     * <code>
+     * &lt;identifier&gt; ( &lt;data type&gt; | SERIAL ) ( NOT NULL )?
+     * </code>
+     * </pre>
+     * @param tokens the tokens being processed (never <code>null</code>)
+     * @param tableNode the temporary table node (never <code>null</code>)
+     * @throws ParsingException if the tokens cannot be parsed
+     */
+    private void parseTemporaryTableElement( final DdlTokenStream tokens,
+                                             final AstNode tableNode ) throws ParsingException {
+        final String id = parseIdentifier(tokens);
+        final boolean includeSerialAlias = tokens.matches(TeiidDdlConstants.TeiidNonReservedWord.SERIAL.toDdl());
+
+        final DataType datatype = getDataTypeParser().parse(tokens);
+
+        // create temporary table element and set properties of datatype
+        final AstNode tempTableElement = getNodeFactory().node(id, tableNode, TeiidDdlLexicon.CreateTable.TEMP_TABLE_ELEMENT);
+        getDataTypeParser().setPropertiesOnNode(tempTableElement, datatype);
+        tempTableElement.setProperty(TeiidDdlLexicon.CreateTable.INCLUDE_SERIAL_ALIAS, includeSerialAlias);
+
+        // may have NOT NULL
+        final boolean nullable = !tokens.canConsume(NOT, NULL);
+        tempTableElement.setProperty(StandardDdlLexicon.NULLABLE, (nullable ? "NULL" : "NOT NULL"));
+    }
+
+    /**
+     * Precondition: everything up to and including the table identifier has been consumed.
+     * <pre>
+     * <code>
+     * CREATE ( LOCAL )? TEMPORARY TABLE &lt;identifier&gt;> &lt;lparen&gt; &lt;temporary table element&gt;
+     *     ( &lt;comma&gt; &lt;temporary table element&gt; )* ( &lt;comma&gt; PRIMARY KEY &lt;column list&gt; )? &lt;rparen&gt;
+     *     ( ON COMMIT PRESERVE ROWS )?
+     * </code>
+     * </pre>
+     * @param tokens the tokens being processed (never <code>null</code>)
+     * @param tableNode the temporary table node (never <code>null</code>)
+     * @param includeLocalKeyword <code>true</code> if the <i>LOCAL</i> keyword should be persisted
+     * @throws ParsingException if the tokens cannot be parsed
+     */
+    private void parseLocalTemporaryTable( final DdlTokenStream tokens,
+                                           final AstNode tableNode,
+                                           final boolean includeLocalKeyword ) throws ParsingException {
+        tableNode.setProperty(TeiidDdlLexicon.CreateTable.INCLUDE_LOCAL_KEYWORD, includeLocalKeyword);
+
+        // must have a left paren
+        if (!tokens.canConsume(L_PAREN)) {
+            throw new TeiidDdlParsingException(tokens,
+                                               "Missing table elements starting left paren parsing local temporary table");
+        }
+
+        // must have at least one temp table element
+        parseTemporaryTableElement(tokens, tableNode);
+
+        // process any remaining temp table elements and constraints
+        while (tokens.canConsume(COMMA)) {
+            // may have primary key and it must be last token
+            if (tokens.canConsume(PRIMARY, KEY)) {
+                parseTemporaryTablePrimaryKeyElement(tokens, tableNode);
+                break;
+            }
+
+            parseTemporaryTableElement(tokens, tableNode);
+        }
+
+        // must have a right paren
+        if (!tokens.canConsume(R_PAREN)) {
+            throw new TeiidDdlParsingException(tokens, "Missing table elements ending right paren parsing local temporary table");
+        }
+
+        // may have ON COMMIT clause
+        boolean includeOnCommitClause = false;
+
+        if (tokens.canConsume(new String[] {ON,
+                                            TeiidFutureReserveWord.COMMIT.name(),
+                                            TeiidNonReservedWord.PRESERVE.toDdl(),
+                                            TeiidReservedWord.ROWS.toDdl()})) {
+            includeOnCommitClause = true;
+        }
+
+        tableNode.setProperty(TeiidDdlLexicon.CreateTable.INCLUDE_ON_COMMIT_CLAUSE, includeOnCommitClause);
+    }
+
+    /**
      * The tokens must start with a left paren, end with a right paren, and have content between. Any parens in the content must
      * have matching parens.
-     * 
+     *
      * @param tokens the tokens being processed (cannot be <code>null</code> but or empty)
      * @return the expression (never <code>null</code> or empty.
      * @throws ParsingException if there is a problem parsing the query expression
@@ -264,10 +436,10 @@ final class CreateTableParser extends StatementParser {
      * Assumes tokens have a one set of parens with one or more identifiers separated by commas. All of these tokens are consumed.
      * <code>
      * <column list>
-     * 
+     *
      * <lparen> <identifier> ( <comma> <identifier> )* <rparen>
      * </code>
-     * 
+     *
      * @param tokens the tokens being processed (cannot be <code>null</code>)
      * @return the list of identifiers (never <code>null</code> and never empty)
      * @throws ParsingException if there is a problem parsing the identifier list
@@ -298,7 +470,7 @@ final class CreateTableParser extends StatementParser {
      * <with list element> == <identifier> ( <column list> )? AS <lparen> <query expression> <rparen>
      * <query expression body> == <query term> ( ( UNION | EXCEPT ) ( ALL | DISTINCT )? <query term> )* ( <order by clause> )? ( <limit clause> )? ( <option clause> )?
      * <code>
-     * 
+     *
      * @param tokens the tokens being processed (cannot be <code>null</code> but can be empty)
      * @param tableNode the table node owning this query expression (cannot be <code>null</code>)
      * @return <code>true</code> if a query expression was successfully parsed
@@ -317,7 +489,7 @@ final class CreateTableParser extends StatementParser {
 
     /**
      * Assumes tokens have a one set of parens with one or more identifiers separated by commas. All of these tokens are consumed.
-     * 
+     *
      * @param tokens the tokens being processed (cannot be <code>null</code> or empty)
      * @param tableNode the table node used to lookup referenced column nodes (cannot be <code>null</code>)
      * @param unresolvedReferencedTableNode the unresolved table references component; may be null
@@ -342,10 +514,13 @@ final class CreateTableParser extends StatementParser {
 
             // can't find referenced column
             if (referencedColumnNode == null) {
-                this.logger.debug("Create table statement node of column reference '{0}' was not found", columnName);
-            } else {
-                references.add(referencedColumnNode);
+                final String msg = String.format("Referenced column '%s' in table '%s' was not found",
+                                                 columnName,
+                                                 tableNode.getName());
+                throw new TeiidDdlParsingException(tokens, msg);
             }
+
+            references.add(referencedColumnNode);
         }
 
         return references;
@@ -354,10 +529,10 @@ final class CreateTableParser extends StatementParser {
     /**
      * <code>
      * <create table body>
-     * 
+     *
      * ( <lparen> <table element> ( <comma> <table element> )* ( <comma> ( CONSTRAINT <identifier> )? ( <primary key> | <other constraints> | <foreign key> ) ( <options clause> )? )* <rparen> )? ( <options clause> )?
      * </code>
-     * 
+     *
      * @param tokens the tokens being processed (cannot be <code>null</code>)
      * @param tableNode the table node whose body is being processed (cannot be <code>null</code>)
      */
@@ -388,7 +563,7 @@ final class CreateTableParser extends StatementParser {
      * <code>
      * ( CONSTRAINT <identifier> )? ( <primary key> | <other constraints> | <foreign key> ) ( <options clause> )
      * </code>
-     * 
+     *
      * @param tokens the tokens being processed (cannot be <code>null</code>)
      * @param tableNode the table node whose constraint is being processed (cannot be <code>null</code>)
      * @return <code>true</code> if a table body constraint was successfully parsed
@@ -519,10 +694,10 @@ final class CreateTableParser extends StatementParser {
     /**
      * <code>
      * <table element>
-     * 
+     *
      * <identifier> <data type> ( NOT NULL )? (  UNIQUE | ( INDEX | AUTO_INCREMENT )+ | ( PRIMARY KEY ) )? ( DEFAULT <string> )? ( <options clause> )?
      * </code>
-     * 
+     *
      * @param tokens the tokens being processed (cannot be <code>null</code>)
      * @param tableNode the table node whose body is being processed (cannot be <code>null</code>)
      * @return the table element node (never <code>null</code>)
