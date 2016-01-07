@@ -34,7 +34,7 @@
         </dependency>
         <dependency>
             <groupId>org.mockito</groupId>
-            <artifactId>mockito-all</artifactId>
+            <artifactId>mockito-core</artifactId>
         </dependency>
         <!--
              This is the only module that requires (or should ever require) SLF4j and LOG4j for compiling. All the logger by default
