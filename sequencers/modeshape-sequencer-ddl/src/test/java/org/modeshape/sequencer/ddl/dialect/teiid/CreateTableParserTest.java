@@ -18,6 +18,7 @@ package org.modeshape.sequencer.ddl.dialect.teiid;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.StringContains.containsString;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
+import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
@@ -202,7 +203,7 @@ public class CreateTableParserTest extends TeiidDdlTest {
                                 + "PRIMARY KEY(e1))";
         final AstNode tableNode = this.parser.parse(getTokens(content), this.rootNode);
         assertThat(tableNode.getName(), is("TEMP1"));
-        assertMixinType(tableNode, TeiidDdlLexicon.CreateTable.TABLE_STATEMENT);
+        assertMixinType(tableNode, TeiidDdlLexicon.CreateTable.GLOBAL_TEMP_TABLE_STATEMENT);
         assertProperty(tableNode, TeiidDdlLexicon.SchemaElement.TYPE, SchemaElementType.VIRTUAL.toDdl());
 
         // columns
@@ -642,18 +643,10 @@ public class CreateTableParserTest extends TeiidDdlTest {
         assertThat(tableNode.getChildren(TeiidDdlLexicon.Constraint.INDEX_CONSTRAINT).size(), is(0));
     }
 
-    /**
-     * See Teiid TestDDLParser#testWrongPrimarykey()
-     */
-    @Test
-    public void shouldParseUnresolvedColumnInPrimaryKey() {
+    @Test( expected = ParsingException.class )
+    public void shouldFailParsingUnresolvedColumnInPrimaryKey() {
         final String content = "CREATE FOREIGN TABLE G1( e1 integer, e2 varchar, PRIMARY KEY (missingColumn))";
-        final AstNode tableNode = this.parser.parse(getTokens(content), this.rootNode);
-        assertThat(tableNode.getName(), is("G1"));
-        assertMixinType(tableNode, TeiidDdlLexicon.CreateTable.TABLE_STATEMENT);
-        assertProperty(tableNode, TeiidDdlLexicon.SchemaElement.TYPE, SchemaElementType.FOREIGN.toDdl());
-        assertThat(tableNode.childrenWithName(CreateTableParser.PRIMARY_KEY_PREFIX + "1").size(), is(1)); // make sure primary key
-                                                                                                          // still created
+        this.parser.parse(getTokens(content), this.rootNode);
     }
 
     @Test
@@ -666,15 +659,11 @@ public class CreateTableParserTest extends TeiidDdlTest {
         assertThat(tableNode.childrenWithName("fk_1").size(), is(1)); // make sure foreign key still created
     }
 
-    @Test
-    public void shouldNotParseUnresolvedColumnReferenceInForeignKey() {
+    @Test( expected = ParsingException.class )
+    public void shouldFailParsingUnresolvedColumnReferenceInForeignKey() {
         this.parser.parse(getTokens("CREATE FOREIGN TABLE refTable( t1 integer, t2 varchar)"), this.rootNode);
         final String content = "CREATE FOREIGN TABLE G1 (e1 integer, e2 varchar, CONSTRAINT fk_1 FOREIGN KEY (e1, e2) REFERENCES refTable (t1, missingColumn))";
-        final AstNode tableNode = this.parser.parse(getTokens(content), this.rootNode);
-        assertThat(tableNode.getName(), is("G1"));
-        assertMixinType(tableNode, TeiidDdlLexicon.CreateTable.TABLE_STATEMENT);
-        assertProperty(tableNode, TeiidDdlLexicon.SchemaElement.TYPE, SchemaElementType.FOREIGN.toDdl());
-        assertThat(tableNode.childrenWithName("fk_1").size(), is(1)); // make sure foreign key still created
+        this.parser.parse(getTokens(content), this.rootNode);
     }
 
     /**
@@ -1310,5 +1299,200 @@ public class CreateTableParserTest extends TeiidDdlTest {
     // final Position prev = new Position(prevCol-1, prevLine, prevCol);
     // assertThat(getParser().getWhitespace(curr, prev, prevValue), is("\n   "));
     // }
+
+    // ********* parse temporary table tests ***********
+
+    @Test( expected = ParsingException.class )
+    public void shouldFailParsingLocalTemporaryTableWithUnknownPrimaryKeyColumn() {
+        final String content = "Create local TEMPORARY table x(c1 boolean, c2 byte, primary key (missingColumn))";
+        this.parser.parse(getTokens(content), this.rootNode);
+    }
+
+    @Test( expected = ParsingException.class )
+    public void shouldFailParsingForeignTemporaryTableWithoutOnClause() {
+        final String content = "create foreign temporary table x (id string)";
+        this.parser.parse(getTokens(content), this.rootNode);
+    }
+
+    @Test
+    public void shouldParseForeignTemporaryTable() {
+        final String content = "create foreign temporary table x (e1 string options (nameinsource 'a'), e2 integer, e3 string, primary key (e1)) options (cardinality 1000, updatable true) on pm1";
+        final AstNode tableNode = this.parser.parse(getTokens(content), this.rootNode);
+        assertThat(tableNode, is(notNullValue()));
+        assertThat(tableNode.getName(), is("x"));
+        assertMixinType(tableNode, TeiidDdlLexicon.CreateTable.FOREIGN_TEMP_TABLE_STATEMENT);
+        assertProperty(tableNode, TeiidDdlLexicon.SchemaElement.TYPE, SchemaElementType.VIRTUAL.toDdl());
+        assertProperty(tableNode, TeiidDdlLexicon.CreateTable.INCLUDE_LOCAL_KEYWORD, false);
+        assertProperty(tableNode, TeiidDdlLexicon.CreateTable.SCHEMA_REFERENCE, "pm1");
+
+        final List<AstNode> kids = tableNode.getChildren();
+        assertThat(kids.size(), is(6)); // 3 columns, primary key, 2 options
+    }
+
+    @Test
+    public void shouldParseForeignTemporaryTableWithLocalKeyword() {
+        final String content = "create local foreign temporary table tempTable (x string, y decimal) options (cardinality 10000) on source";
+        final AstNode tableNode = this.parser.parse(getTokens(content), this.rootNode);
+        assertThat(tableNode, is(notNullValue()));
+        assertThat(tableNode.getName(), is("tempTable"));
+        assertMixinType(tableNode, TeiidDdlLexicon.CreateTable.FOREIGN_TEMP_TABLE_STATEMENT);
+        assertProperty(tableNode, TeiidDdlLexicon.SchemaElement.TYPE, SchemaElementType.VIRTUAL.toDdl());
+        assertProperty(tableNode, TeiidDdlLexicon.CreateTable.INCLUDE_LOCAL_KEYWORD, true);
+        assertProperty(tableNode, TeiidDdlLexicon.CreateTable.SCHEMA_REFERENCE, "source");
+
+        final List<AstNode> kids = tableNode.getChildren();
+        assertThat(kids.size(), is(3)); // 2 columns, 1 option
+
+        final List<AstNode> temp = tableNode.childrenWithName("x");
+        assertThat(temp.size(), is(1));
+        assertMixinType(temp.get(0), TeiidDdlLexicon.CreateTable.TABLE_ELEMENT);
+    }
+
+    @Test
+    public void shouldParseLocalTemporaryTableWithLocalKeyword() {
+        final String content = "create local temporary table x (y string)";
+        final AstNode tableNode = this.parser.parse(getTokens(content), this.rootNode);
+        assertThat(tableNode, is(notNullValue()));
+        assertThat(tableNode.getName(), is("x"));
+        assertMixinType(tableNode, TeiidDdlLexicon.CreateTable.LOCAL_TEMP_TABLE_STATEMENT);
+        assertProperty(tableNode, TeiidDdlLexicon.SchemaElement.TYPE, SchemaElementType.VIRTUAL.toDdl());
+        assertProperty(tableNode, TeiidDdlLexicon.CreateTable.INCLUDE_LOCAL_KEYWORD, true);
+        assertProperty(tableNode, TeiidDdlLexicon.CreateTable.PRIMARY_KEY_COLUMNS, null);
+        assertProperty(tableNode, TeiidDdlLexicon.CreateTable.INCLUDE_ON_COMMIT_CLAUSE, false);
+
+        final List<AstNode> kids = tableNode.getChildren();
+        assertThat(kids.size(), is(1));
+
+        final AstNode tempTableElement = kids.get(0);
+        assertThat(tempTableElement.getName(), is("y"));
+        assertMixinType(tempTableElement, TeiidDdlLexicon.CreateTable.TEMP_TABLE_ELEMENT);
+        assertProperty(tempTableElement, StandardDdlLexicon.DATATYPE_NAME, TeiidDataType.STRING.toDdl());
+        assertProperty(tempTableElement, TeiidDdlLexicon.CreateTable.INCLUDE_SERIAL_ALIAS, false);
+        assertProperty(tempTableElement, StandardDdlLexicon.NULLABLE, "NULL");
+    }
+
+    @Test
+    public void shouldParseLocalTemporaryTableWithNotNullColumn() {
+        final String content = "Create local TEMPORARY table x(c1 boolean not null, c2 byte)";
+        final AstNode tableNode = this.parser.parse(getTokens(content), this.rootNode);
+        assertThat(tableNode, is(notNullValue()));
+        assertThat(tableNode.getName(), is("x"));
+        assertMixinType(tableNode, TeiidDdlLexicon.CreateTable.LOCAL_TEMP_TABLE_STATEMENT);
+        assertProperty(tableNode, TeiidDdlLexicon.SchemaElement.TYPE, SchemaElementType.VIRTUAL.toDdl());
+        assertProperty(tableNode, TeiidDdlLexicon.CreateTable.INCLUDE_LOCAL_KEYWORD, true);
+        assertProperty(tableNode, TeiidDdlLexicon.CreateTable.PRIMARY_KEY_COLUMNS, null);
+        assertProperty(tableNode, TeiidDdlLexicon.CreateTable.INCLUDE_ON_COMMIT_CLAUSE, false);
+
+        final List<AstNode> kids = tableNode.getChildren();
+        assertThat(kids.size(), is(2));
+
+        boolean foundC1 = false;
+        boolean foundC2 = false;
+
+        for (final AstNode tempTableElement : kids) {
+            assertMixinType(tempTableElement, TeiidDdlLexicon.CreateTable.TEMP_TABLE_ELEMENT);
+            assertProperty(tempTableElement, TeiidDdlLexicon.CreateTable.INCLUDE_SERIAL_ALIAS, false);
+
+            if (!foundC1 && tempTableElement.getName().equals("c1")) {
+                assertProperty(tempTableElement, StandardDdlLexicon.DATATYPE_NAME, TeiidDataType.BOOLEAN.toDdl());
+                assertProperty(tempTableElement, StandardDdlLexicon.NULLABLE, "NOT NULL");
+                foundC1 = true;
+            } else if (!foundC2 && tempTableElement.getName().equals("c2")) {
+                assertProperty(tempTableElement, StandardDdlLexicon.DATATYPE_NAME, TeiidDataType.BYTE.toDdl());
+                assertProperty(tempTableElement, StandardDdlLexicon.NULLABLE, "NULL");
+                foundC2 = true;
+            } else {
+                fail();
+            }
+        }
+    }
+
+    @Test
+    public void shouldParseLocalTemporaryTableWithOnCommitClause() {
+        final String content = "create local temporary table #temp (id integer, name string, bits integer) ON COMMIT PRESERVE ROWS";
+        final AstNode tableNode = this.parser.parse(getTokens(content), this.rootNode);
+        assertThat(tableNode, is(notNullValue()));
+        assertThat(tableNode.getName(), is("#temp"));
+        assertMixinType(tableNode, TeiidDdlLexicon.CreateTable.LOCAL_TEMP_TABLE_STATEMENT);
+        assertProperty(tableNode, TeiidDdlLexicon.SchemaElement.TYPE, SchemaElementType.VIRTUAL.toDdl());
+        assertProperty(tableNode, TeiidDdlLexicon.CreateTable.INCLUDE_LOCAL_KEYWORD, true);
+        assertProperty(tableNode, TeiidDdlLexicon.CreateTable.PRIMARY_KEY_COLUMNS, null);
+        assertProperty(tableNode, TeiidDdlLexicon.CreateTable.INCLUDE_ON_COMMIT_CLAUSE, true);
+
+        final List<AstNode> kids = tableNode.getChildren();
+        assertThat(kids.size(), is(3));
+    }
+
+    @SuppressWarnings( "unchecked" )
+    @Test
+    public void shouldParseLocalTemporaryTableWithPrimaryKey() {
+        final String content = "Create local TEMPORARY table x(c1 boolean, c2 byte, primary key (c2))";
+        final AstNode tableNode = this.parser.parse(getTokens(content), this.rootNode);
+        assertThat(tableNode, is(notNullValue()));
+        assertThat(tableNode.getName(), is("x"));
+        assertMixinType(tableNode, TeiidDdlLexicon.CreateTable.LOCAL_TEMP_TABLE_STATEMENT);
+        assertProperty(tableNode, TeiidDdlLexicon.SchemaElement.TYPE, SchemaElementType.VIRTUAL.toDdl());
+        assertProperty(tableNode, TeiidDdlLexicon.CreateTable.INCLUDE_LOCAL_KEYWORD, true);
+        assertProperty(tableNode, TeiidDdlLexicon.CreateTable.INCLUDE_ON_COMMIT_CLAUSE, false);
+
+        final List<AstNode> kids = tableNode.getChildren();
+        assertThat(kids.size(), is(2)); // 2 columns
+
+        final Object primaryKeyColumns = tableNode.getProperty(TeiidDdlLexicon.CreateTable.PRIMARY_KEY_COLUMNS);
+        assertThat(primaryKeyColumns, is(notNullValue()));
+        assertThat(primaryKeyColumns, is(instanceOf(List.class)));
+        assertThat(((List<AstNode>)primaryKeyColumns).size(), is(1));
+        assertThat(((List<AstNode>)primaryKeyColumns).get(0).getName(), is("c2"));
+    }
+
+    @Test
+    public void shouldParseLocalTemporaryTableWithSerialAlias() {
+        final String content = "create local temporary table x (c1 serial, c2 integer, primary key (c1)) ON COMMIT PRESERVE ROWS";
+        final AstNode tableNode = this.parser.parse(getTokens(content), this.rootNode);
+        assertThat(tableNode, is(notNullValue()));
+        assertThat(tableNode.getName(), is("x"));
+        assertMixinType(tableNode, TeiidDdlLexicon.CreateTable.LOCAL_TEMP_TABLE_STATEMENT);
+        assertProperty(tableNode, TeiidDdlLexicon.SchemaElement.TYPE, SchemaElementType.VIRTUAL.toDdl());
+        assertProperty(tableNode, TeiidDdlLexicon.CreateTable.INCLUDE_LOCAL_KEYWORD, true);
+        assertThat(tableNode.getProperty(TeiidDdlLexicon.CreateTable.PRIMARY_KEY_COLUMNS), is(notNullValue()));
+        assertProperty(tableNode, TeiidDdlLexicon.CreateTable.INCLUDE_ON_COMMIT_CLAUSE, true);
+
+        final List<AstNode> kids = tableNode.getChildren();
+        assertThat(kids.size(), is(2));
+
+        boolean foundC1 = false;
+        boolean foundC2 = false;
+
+        for (final AstNode tempTableElement : kids) {
+            assertMixinType(tempTableElement, TeiidDdlLexicon.CreateTable.TEMP_TABLE_ELEMENT);
+
+            if (!foundC1 && tempTableElement.getName().equals("c1")) {
+                assertProperty(tempTableElement, StandardDdlLexicon.DATATYPE_NAME, TeiidDataType.INTEGER.toDdl());
+                assertProperty(tempTableElement, StandardDdlLexicon.NULLABLE, "NULL");
+                assertProperty(tempTableElement, TeiidDdlLexicon.CreateTable.INCLUDE_SERIAL_ALIAS, true);
+                foundC1 = true;
+            } else if (!foundC2 && tempTableElement.getName().equals("c2")) {
+                assertProperty(tempTableElement, StandardDdlLexicon.DATATYPE_NAME, TeiidDataType.INTEGER.toDdl());
+                assertProperty(tempTableElement, StandardDdlLexicon.NULLABLE, "NULL");
+                assertProperty(tempTableElement, TeiidDdlLexicon.CreateTable.INCLUDE_SERIAL_ALIAS, false);
+                foundC2 = true;
+            } else {
+                fail();
+            }
+        }
+    }
+
+    @Test
+    public void shouldParseLocalTemporaryTableWithouLocalKeyword() {
+        final String content = "Create TEMPORARY table x (c1.x boolean, c2 byte)";
+        final AstNode tableNode = this.parser.parse(getTokens(content), this.rootNode);
+        assertThat(tableNode, is(notNullValue()));
+        assertThat(tableNode.getName(), is("x"));
+        assertMixinType(tableNode, TeiidDdlLexicon.CreateTable.LOCAL_TEMP_TABLE_STATEMENT);
+        assertProperty(tableNode, TeiidDdlLexicon.SchemaElement.TYPE, SchemaElementType.VIRTUAL.toDdl());
+        assertProperty(tableNode, TeiidDdlLexicon.CreateTable.INCLUDE_LOCAL_KEYWORD, false);
+        assertProperty(tableNode, TeiidDdlLexicon.CreateTable.PRIMARY_KEY_COLUMNS, null);
+        assertProperty(tableNode, TeiidDdlLexicon.CreateTable.INCLUDE_ON_COMMIT_CLAUSE, false);
+    }
 
 }

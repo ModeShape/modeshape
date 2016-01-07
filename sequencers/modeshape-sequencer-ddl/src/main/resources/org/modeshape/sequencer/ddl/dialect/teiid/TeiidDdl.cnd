@@ -65,6 +65,30 @@
 [teiidddl:createView] > teiidddl:abstractCreateTable mixin
 
 // =============================================================================
+// CREATE TEMPORARY TABLE
+// =============================================================================
+
+[teiidddl:tempTableElement] > ddl:columnDefinition, mix:referenceable mixin
+- teiidddl:includeSerialAlias (boolean) = 'false' autocreated
+- ddl:nullable (string) = 'NULL' autocreated < 'NULL', 'NOT NULL'
+
+[teiidddl:tempTable] > ddl:creatable, ddl:statement, ddl:tableOperand, mix:referenceable, teiidddl:schemaElement abstract mixin
+- teiidddl:schemaElementType (string) = 'VIRTUAL' mandatory autocreated < 'VIRTUAL'
+
+[teiidddl:createGlobalTempTable] > teiidddl:createTable, teiidddl:tempTable mixin
+
+[teiidddl:createForeignTempTable] > teiidddl:tempTable mixin
+- teiidddl:includeLocalKeyword (boolean) = 'false' autocreated
+- teiidddl:schemaReference (string)
++ * (teiidddl:tempTableElement) = teiidddl:tempTableElement
+
+[teiidddl:createLocalTempTable] > teiidddl:tempTable mixin
+- teiidddl:includeLocalKeyword (boolean) = 'false' autocreated
+- teiidddl:includeOnCommitClause (boolean) = 'false' autocreated
+- teiidddl:primaryKeyColumnRefs (reference) multiple
++ * (teiidddl:tempTableElement) = teiidddl:tempTableElement
+
+// =============================================================================
 // CREATE PROCEDURE
 // =============================================================================
 
