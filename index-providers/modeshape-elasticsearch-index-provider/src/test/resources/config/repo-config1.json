@@ -1,0 +1,28 @@
+{
+    "name": "Persistent repo no indexes",
+    "storage": {
+        "cacheName": "persistentRepository",
+        "cacheConfiguration": "config/infinispan-persistent.xml", //this is picked up from the modeshape-jcr-tests.jar artifact....
+        "binaryStorage": {
+            "type": "file",
+            "directory": "target/persistent_repository/binaries",
+            "minimumBinarySizeInBytes": 40
+        }
+    },
+    "workspaces": {
+        "default": "default",
+        "allowCreation": true
+    },
+    "indexProviders" : {
+        "elasticsearch" : {
+            "classname" : "org.modeshape.jcr.index.elasticsearch.EsIndexProvider",
+            "host" : "localhost",
+            "port" : 9200
+        },        
+    },
+    "reindexing" : {
+        "async" : false //make sure this is sync to avoid waiting in tests after registering indexes
+    }, 
+
+  
+}

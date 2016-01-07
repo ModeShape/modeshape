@@ -248,6 +248,8 @@
         <!-- Make sure the version of the bundle plugin is at least this, otherwise it will fork like crazy...-->
         <version.bundle.plugin>3.0.0</version.bundle.plugin>
         <version.gwt.maven.plugin>2.5.1</version.gwt.maven.plugin>
+        <version.elasticsearch>2.1.0</version.elasticsearch>
+        <version.jna>4.1.0</version.jna>
         <!--The name of the modeshape-client artifact used by tools-->
         <client.artifactId>modeshape-client</client.artifactId>
 
@@ -1043,6 +1045,11 @@
             <dependency>
                 <groupId>org.modeshape</groupId>
                 <artifactId>modeshape-lucene-index-provider</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-elasticsearch-index-provider</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -2029,6 +2036,19 @@
                 <version>${version.org.apache.cassandra}</version>
                 <scope>test</scope>
             </dependency>
+
+            <dependency>
+               <groupId>org.elasticsearch</groupId>
+               <artifactId>elasticsearch</artifactId>
+               <version>${version.elasticsearch}</version>
+               <scope>test</scope>
+            </dependency>            
+            <dependency>
+                <groupId>net.java.dev.jna</groupId>
+                <artifactId>jna</artifactId>
+                <version>${version.jna}</version>
+                <scope>test</scope>
+            </dependency>                
 
             <!--Test dependency which allows custom JNDI bindings-->
             <dependency>
