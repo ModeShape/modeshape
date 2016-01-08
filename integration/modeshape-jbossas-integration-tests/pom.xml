@@ -164,12 +164,19 @@
             <groupId>org.elasticsearch</groupId>
             <artifactId>elasticsearch</artifactId>
         </dependency>  
+        <!-- override joda-time version instead of upgrade in parent pom.xml-->      
         <dependency>
             <!-- JNA library needed to start ES cluster -->
             <groupId>net.java.dev.jna</groupId>
             <artifactId>jna</artifactId>
             <scope>test</scope>
         </dependency>                
+        <dependency>
+            <groupId>joda-time</groupId>
+            <artifactId>joda-time</artifactId>
+            <version>2.8.2</version>
+            <scope>test</scope>
+        </dependency>       
         
         <dependency>
             <groupId>com.googlecode.sardine</groupId>
