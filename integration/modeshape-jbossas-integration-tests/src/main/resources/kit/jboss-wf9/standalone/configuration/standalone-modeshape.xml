@@ -537,6 +537,20 @@
                 <journaling max-days-to-keep-records="15" async-writes="false"/>
             </repository>
 
+            <repository name="repo-with-es-index" anonymous-roles="admin" cache-config="modeshape/infinispan-test-caches.xml">
+                <workspaces allow-workspace-creation="true" default-workspace="default">
+                    <workspace name="default"/>
+                    <initial-content>initial-content-default.xml</initial-content>
+                </workspaces>
+                <!-- Define some indexes -->
+                <index-providers>
+                    <index-provider name="elasticsearch" classname="org.modeshape.jcr.index.elasticsearch.EsIndexProvider" module="org.modeshape.index-provider.elasticsearch"/> 
+                </index-providers>
+                <indexes>
+                    <index name="mime-types" provider-name="elasticsearch" synchronous="true" kind="value" node-type="mix:mimeType" columns="jcr:mimeType(STRING)"/>
+                </indexes>
+            </repository>
+
             <!--These should be deployed after the repositories, because they use servlet context listeners to load all repositories-->
             <webapp name="modeshape-cmis.war"/>
             <webapp name="modeshape-explorer.war"/>
