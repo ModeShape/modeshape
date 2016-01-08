@@ -84,6 +84,7 @@
 
     <modules>
         <module>modeshape-lucene-index-provider</module>      
+        <module>modeshape-elasticsearch-index-provider</module>      
     </modules>
 
     <profiles>

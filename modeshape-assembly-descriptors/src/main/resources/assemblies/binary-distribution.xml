@@ -105,6 +105,10 @@
             <directory>../index-providers/modeshape-lucene-index-provider/target/${binary.dist.name}</directory>
             <outputDirectory>./modules/modeshape-lucene-index-provider</outputDirectory>
         </fileSet>   
+	<fileSet>
+            <directory>../index-providers/modeshape-elasticsearch-index-provider/target/${binary.dist.name}</directory>
+            <outputDirectory>./modules/modeshape-elasticsearch-index-provider</outputDirectory>
+        </fileSet>
         <fileSet>
             <directory>../modeshape-unit-test/target/${binary.dist.name}</directory>
             <outputDirectory>./modules/modeshape-unit-test</outputDirectory>
