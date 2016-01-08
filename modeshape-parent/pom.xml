@@ -302,6 +302,8 @@
         <tika.version>1.8</tika.version>
         <image.metadata.extractor>2.6.2</image.metadata.extractor>
         <version.org.apache.lucene>5.3.1</version.org.apache.lucene>
+        <version.elasticsearch>2.1.0</version.elasticsearch>
+        <version.jna>4.1.0</version.jna>
 
         <!-- Apache chemistry version -->
         <chemistry.version>0.11.0</chemistry.version>
@@ -345,8 +347,7 @@
         <version.bundle.plugin>2.3.7</version.bundle.plugin>
         <version.failsafe.plugin>2.13</version.failsafe.plugin>
         <version.gwt.maven.plugin>2.5.1</version.gwt.maven.plugin>
-        <version.elasticsearch>2.1.0</version.elasticsearch>
-        <version.jna>4.1.0</version.jna>
+        <version.checkstyle.maven.plugin>2.12.1</version.checkstyle.maven.plugin>
         <!--The name of the modeshape-client artifact used by tools-->
         <client.artifactId>modeshape-client</client.artifactId>
 
