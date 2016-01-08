@@ -54,13 +54,19 @@ public interface TeiidDdlConstants extends DdlConstants {
          * Create Table
          * <p>
          * <code>
-         * CREATE ( FOREIGN TABLE | ( VIRTUAL )? VIEW ) <identifier> <create table body> ( AS <query expression> )?
+         * CREATE ( ( FOREIGN TABLE ) | ( ( VIRTUAL )? VIEW ) | ( GLOBAL TEMPORARY TABLE ) ) <identifier> ( <create table body> | ( <options clause> )? ) ( AS <query expression> )?
+         * CREATE ( LOCAL )? FOREIGN TEMPORARY TABLE <identifier> <create table body> ON <identifier>
+         * CREATE ( LOCAL )? TEMPORARY TABLE <identifier> <lparen> <temporary table element> ( <comma> <temporary table element> )* ( <comma> PRIMARY KEY <column list> )? <rparen> ( ON COMMIT PRESERVE ROWS )?
          * </code>
          */
         CREATE_FOREIGN_TABLE(CREATE, FOREIGN, TABLE),
         CREATE_GLOBAL_TEMPORARY_TABLE(CREATE, GLOBAL, TEMPORARY, TABLE),
         CREATE_VIRTUAL_VIEW(CREATE, TeiidReservedWord.VIRTUAL.name(), VIEW),
         CREATE_VIEW(CREATE, VIEW),
+        CREATE_FOREIGN_TEMPORARY_TABLE(CREATE, FOREIGN, TEMPORARY, TABLE),
+        CREATE_LOCAL_FOREIGN_TEMPORARY_TABLE(CREATE, TeiidReservedWord.LOCAL.name(), FOREIGN, TEMPORARY, TABLE),
+        CREATE_LOCAL_TEMPORARY_TABLE(CREATE, TeiidReservedWord.LOCAL.name(), TEMPORARY, TABLE),
+        CREATE_TEMPORARY_TABLE(CREATE, TEMPORARY, TABLE),
 
         /**
          * Create Procedure
@@ -119,7 +125,7 @@ public interface TeiidDdlConstants extends DdlConstants {
 
         /**
          * {@inheritDoc}
-         * 
+         *
          * @see org.modeshape.sequencer.ddl.dialect.teiid.TeiidDdlConstants.DdlElement#toDdl()
          */
         @Override
@@ -197,7 +203,7 @@ public interface TeiidDdlConstants extends DdlConstants {
 
         /**
          * {@inheritDoc}
-         * 
+         *
          * @see org.modeshape.sequencer.ddl.dialect.teiid.TeiidDdlConstants.DdlElement#toDdl()
          */
         @Override
@@ -376,6 +382,7 @@ public interface TeiidDdlConstants extends DdlConstants {
         ORDINALITY,
         PASSING,
         PATH,
+        PRESERVE,
         QUERYSTRING,
         QUOTE,
         RAISE,
@@ -431,7 +438,7 @@ public interface TeiidDdlConstants extends DdlConstants {
 
         /**
          * {@inheritDoc}
-         * 
+         *
          * @see org.modeshape.sequencer.ddl.dialect.teiid.TeiidDdlConstants.DdlElement#toDdl()
          */
         @Override
@@ -607,7 +614,7 @@ public interface TeiidDdlConstants extends DdlConstants {
 
         /**
          * {@inheritDoc}
-         * 
+         *
          * @see org.modeshape.sequencer.ddl.dialect.teiid.TeiidDdlConstants.DdlElement#toDdl()
          */
         @Override
@@ -626,7 +633,7 @@ public interface TeiidDdlConstants extends DdlConstants {
 
         /**
          * {@inheritDoc}
-         * 
+         *
          * @see org.modeshape.sequencer.ddl.dialect.teiid.TeiidDdlConstants.DdlElement#toDdl()
          */
         @Override

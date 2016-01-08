@@ -308,9 +308,50 @@ public class TeiidDdlLexicon extends StandardDdlLexicon implements TeiidDdlConst
         String AUTO_INCREMENT = Namespace.PREFIX + ":autoIncrement";
 
         /**
+         * The mixin name for a create foreign temporary table statement.
+         */
+        String FOREIGN_TEMP_TABLE_STATEMENT = Namespace.PREFIX + ":createForeignTempTable";
+
+        /**
+         * The mixin name for a create global temporary table statement.
+         */
+        String GLOBAL_TEMP_TABLE_STATEMENT = Namespace.PREFIX + ":createGlobalTempTable";
+
+        /**
+         * The name of the property that indicates if the <i>LOCAL</i> keyword was included in the temporary table DDL.
+         */
+        String INCLUDE_LOCAL_KEYWORD = Namespace.PREFIX + ":includeLocalKeyword";
+
+        /**
+         * The name of the property that indicates if the <i>ON COMMIT PRESERVE ROWS</i> clause was included in the local
+         * temporary table DDL.
+         */
+        String INCLUDE_ON_COMMIT_CLAUSE = Namespace.PREFIX + ":includeOnCommitClause";
+
+        /**
+         * The name of the property that indicates if the <i>SERIAL</i> alias was used as a temporary table element data type.
+         */
+        String INCLUDE_SERIAL_ALIAS = Namespace.PREFIX + ":includeSerialAlias";
+
+        /**
+         * The mixin name for a create local temporary table statement.
+         */
+        String LOCAL_TEMP_TABLE_STATEMENT = Namespace.PREFIX + ":createLocalTempTable";
+
+        /**
+         * The name of the multi-value property containing the names of the primary key columns.
+         */
+        String PRIMARY_KEY_COLUMNS = Namespace.PREFIX + ":primaryKeyColumns";
+
+        /**
          * The property name for the query expression.
          */
         String QUERY_EXPRESSION = Namespace.PREFIX + ":queryExpression";
+
+        /**
+         * The property name for the schema/model name referenced by the ON keyword in foreign temp tables.
+         */
+        String SCHEMA_REFERENCE = Namespace.PREFIX + ":schemaReference";
 
         /**
          * The mixin name for a table element.
@@ -321,6 +362,16 @@ public class TeiidDdlLexicon extends StandardDdlLexicon implements TeiidDdlConst
          * The mixin name for a create table statement.
          */
         String TABLE_STATEMENT = Namespace.PREFIX + ":createTable";
+
+        /**
+         * The name of the abstract mixin for temporary tables.
+         */
+        String TEMP_TABLE = Namespace.PREFIX + ":tempTable";
+
+        /**
+         * The name of the temporary table element mixin.
+         */
+        String TEMP_TABLE_ELEMENT = Namespace.PREFIX + ":tempTableElement";
 
         /**
          * The mixin name for a create view statement.
