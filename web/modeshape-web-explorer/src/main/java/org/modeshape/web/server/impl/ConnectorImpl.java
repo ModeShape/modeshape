@@ -52,7 +52,7 @@ public class ConnectorImpl implements Connector {
     private transient String userName;
     
     private transient ModeShapeEngine engine;
-    private RepositoryList repoList;
+    private transient RepositoryList repoList;
     
     //reference to the server's env
     private transient ServletContext context;
