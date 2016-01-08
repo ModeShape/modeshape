@@ -158,6 +158,26 @@
             <scope>test</scope>
             <type>test-jar</type>
         </dependency>
+        
+        <!-- Needed by the Elasticsearch test -->
+        <dependency>
+            <groupId>org.elasticsearch</groupId>
+            <artifactId>elasticsearch</artifactId>
+        </dependency>  
+        <!-- override joda-time version instead of upgrade in parent pom.xml-->      
+        <dependency>
+            <!-- JNA library needed to start ES cluster -->
+            <groupId>net.java.dev.jna</groupId>
+            <artifactId>jna</artifactId>
+            <scope>test</scope>
+        </dependency>                
+        <dependency>
+            <groupId>joda-time</groupId>
+            <artifactId>joda-time</artifactId>
+            <version>2.8.2</version>
+            <scope>test</scope>
+        </dependency>       
+        
         <dependency>
             <groupId>com.googlecode.sardine</groupId>
             <artifactId>sardine</artifactId>
@@ -231,6 +251,20 @@
                             </artifactItems>
                         </configuration>
                     </execution>
+                    
+                    <execution>
+                        <id>copy-dependencies</id>
+                        <phase>process-test-classes</phase>
+                        <goals>
+                            <goal>copy-dependencies</goal>
+                        </goals>                        
+                        <configuration>
+                            <outputDirectory>${project.build.directory}/eslibs</outputDirectory>
+                            <overWriteReleases>false</overWriteReleases>
+                            <overWriteSnapshots>false</overWriteSnapshots>
+                            <overWriteIfNewer>true</overWriteIfNewer>
+                        </configuration>
+                    </execution>                    
                 </executions>
             </plugin>
             <!--Copy & overwrite if necessary any test-specific files, including the configuration -->
@@ -254,6 +288,45 @@
                                     <excludes>
                                         <exclude>standalone/**</exclude>
                                     </excludes>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>deploy-es-test</id>
+                        <phase>process-test-classes</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${project.build.directory}/${jboss.server.root.folder}/modules/org/es-test/2.1.0</outputDirectory>
+                            <overwrite>true</overwrite>
+                            <resources>
+                                <resource>
+                                    <directory>src/test/resources/modules/es-test</directory>
+                                    <include>module.xml</include>
+                                </resource>
+                                <resource>
+                                    <directory>${project.build.directory}/eslibs</directory>
+                                    <include>lucene*.jar</include>
+                                    <include>elasticsearch-*.jar</include>
+                                    <include>HdrHistogram-*.jar</include>
+                                    <include>commons-cli-*.jar</include>
+                                    <include>compress-lzf-*.jar</include>
+                                    <include>guava-*.jar</include>
+                                    <include>hppc-*.jar</include>
+                                    <include>joda-convert-*.jar</include>
+                                    <include>joda-time-*.jar</include>
+                                    <include>jsr166e-*.jar</include>
+                                    <include>netty-*.jar</include>
+                                    <include>snakeyaml-*.jar</include>
+                                    <include>spatial4j-*.jar</include>
+                                    <include>t-digest-*.jar</include>
+                                    <include>jackson-core-*.jar</include>
+                                    <include>jackson-dataformat-cbor-*.jar</include>
+                                    <include>jackson-dataformat-yaml-*.jar</include>
+                                    <include>jackson-dataformat-smile-*.jar</include>
+                                    <include>jna-*.jar</include>
                                 </resource>
                             </resources>
                         </configuration>
