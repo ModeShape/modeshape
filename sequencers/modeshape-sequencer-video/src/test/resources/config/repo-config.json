@@ -1,0 +1,11 @@
+{
+    "name" : "Video Format Sequencer Test Repository",
+    "sequencing" : {
+        "sequencers" : {
+            "Video Format sequencer" :  {
+                "classname" : "org.modeshape.sequencer.video.VideoMetadataSequencer",
+                "pathExpressions" : ["default://(*.(mp4|3gp|mkv|avi|flv|wmv|mov|webm|ogv))/jcr:content[@jcr:data] => default:/sequenced/video" ]
+            }
+        }
+    }
+}
