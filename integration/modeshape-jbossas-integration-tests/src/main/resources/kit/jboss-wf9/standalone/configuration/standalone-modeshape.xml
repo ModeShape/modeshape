@@ -531,10 +531,20 @@
                                    username="arquillian"/>
                 </authenticators>
             </repository>
-
             <repository name="reindexingRepository" anonymous-roles="admin" cache-config="modeshape/infinispan-test-caches.xml" cache-name="sample">
                 <reindexing mode="incremental" async="false"/>
                 <journaling max-days-to-keep-records="15" async-writes="false"/>
+            </repository>    
+            <repository name="externalDependenciesRepository" anonymous-roles="admin" cache-config="modeshape/infinispan-test-caches.xml" 
+                        cache-name="sample" depends-on="deployment.external-dependencies.war">
+                <workspaces default-workspace="default" allow-workspace-creation="false">
+                    <workspace name="default">
+                        <initial-content>config/initial-content-cars.xml</initial-content>
+                    </workspace>
+                </workspaces>
+                <node-types>
+                    <node-type>config/cars.cnd</node-type>
+                </node-types>
             </repository>
 
             <repository name="repo-with-es-index" anonymous-roles="admin" cache-config="modeshape/infinispan-test-caches.xml">

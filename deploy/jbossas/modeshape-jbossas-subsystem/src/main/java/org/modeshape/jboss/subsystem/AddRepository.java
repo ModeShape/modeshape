@@ -15,6 +15,7 @@
  */
 package org.modeshape.jboss.subsystem;
 
+import java.util.ArrayList;
 import java.util.List;
 import org.infinispan.schematic.Schematic;
 import org.infinispan.schematic.document.EditableArray;
@@ -154,6 +155,9 @@ public class AddRepository extends AbstractAddStepHandler {
                 infinispanConfig = infinispanConfigSystemProperty;
             }
         }
+        
+        List<String> additionalClasspathEntries = new ArrayList<>();
+        
         // Set the storage information (that was set on the repository ModelNode) ...
         setRepositoryStorageConfiguration(infinispanConfig, cacheName, configDoc);
 
@@ -161,10 +165,10 @@ public class AddRepository extends AbstractAddStepHandler {
         enableMonitoring(enableMonitoring, configDoc);
 
         // Initial node-types if configured
-        parseCustomNodeTypes(model, configDoc);
+        parseCustomNodeTypes(model, configDoc, additionalClasspathEntries);
 
         // Workspace information is on the repository model node (unlike the XML) ...
-        EditableDocument workspacesDoc = parseWorkspaces(context, model, configDoc);
+        EditableDocument workspacesDoc = parseWorkspaces(context, model, configDoc, additionalClasspathEntries);
         
         // security
         parseSecurity(context, model, configDoc);
@@ -178,7 +182,10 @@ public class AddRepository extends AbstractAddStepHandler {
         if (!configRelativeTo.endsWith("/")) {
             configRelativeTo = configRelativeTo  + "/";
         }
-        RepositoryService repositoryService = new RepositoryService(repositoryConfig, infinispanConfig, configRelativeTo);
+        
+        String additionalModuleDependencies = attribute(context, model, ModelAttributes.REPOSITORY_MODULE_DEPENDENCIES, null);
+        RepositoryService repositoryService = new RepositoryService(repositoryConfig, infinispanConfig, configRelativeTo,
+                                                                    additionalModuleDependencies);
         ServiceName repositoryServiceName = ModeShapeServiceNames.repositoryServiceName(repositoryName);
 
         // Sequencing
@@ -394,9 +401,9 @@ public class AddRepository extends AbstractAddStepHandler {
     }
 
 
-    private EditableDocument parseWorkspaces( OperationContext context,
-                                              ModelNode model,
-                                              EditableDocument configDoc ) throws OperationFailedException {
+    private EditableDocument parseWorkspaces(OperationContext context,
+                                             ModelNode model,
+                                             EditableDocument configDoc, List<String> additionalClasspathEntries) throws OperationFailedException {
         EditableDocument workspacesDoc = configDoc.getOrCreateDocument(FieldName.WORKSPACES);
         boolean allowWorkspaceCreation = attribute(context, model, ModelAttributes.ALLOW_WORKSPACE_CREATION).asBoolean();
         String defaultWorkspaceName = attribute(context, model, ModelAttributes.DEFAULT_WORKSPACE).asString();
@@ -461,8 +468,8 @@ public class AddRepository extends AbstractAddStepHandler {
         }
     }
 
-    private void parseCustomNodeTypes( ModelNode model,
-                                       EditableDocument configDoc ) {
+    private void parseCustomNodeTypes(ModelNode model,
+                                      EditableDocument configDoc, List<String> additionalClasspathEntries) {
         if (model.hasDefined(ModelKeys.NODE_TYPES)) {
             EditableArray nodeTypesArray = configDoc.getOrCreateArray(FieldName.NODE_TYPES);
             for (ModelNode nodeType : model.get(ModelKeys.NODE_TYPES).asList()) {

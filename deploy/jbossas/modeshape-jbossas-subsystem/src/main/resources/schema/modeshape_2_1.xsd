@@ -328,6 +328,15 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
+        <xs:attribute name="depends-on" type="xs:string" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    A comma-separated list of module names on which the repository depends. These modules, if present in the
+                    configuration,will be added to the classpath whenever the repository attempts to resolve external files like
+                    node type definitions or initial content files
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
     </xs:complexType>
 
     <xs:complexType name="workspaces">
