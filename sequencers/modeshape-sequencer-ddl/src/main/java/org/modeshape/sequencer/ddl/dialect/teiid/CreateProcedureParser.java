@@ -20,6 +20,8 @@ import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DATATYPE_LENGTH;
 import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DATATYPE_NAME;
 import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DATATYPE_PRECISION;
 import static org.modeshape.sequencer.ddl.StandardDdlLexicon.DATATYPE_SCALE;
+import java.util.HashMap;
+import java.util.Map;
 import org.modeshape.common.text.ParsingException;
 import org.modeshape.common.text.Position;
 import org.modeshape.common.util.StringUtil;
@@ -47,7 +49,7 @@ final class CreateProcedureParser extends StatementParser {
 
     /**
      * {@inheritDoc}
-     * 
+     *
      * @see org.modeshape.sequencer.ddl.dialect.teiid.StatementParser#matches(org.modeshape.sequencer.ddl.DdlTokenStream)
      */
     @Override
@@ -61,7 +63,7 @@ final class CreateProcedureParser extends StatementParser {
 
     /**
      * {@inheritDoc}
-     * 
+     *
      * @see org.modeshape.sequencer.ddl.dialect.teiid.StatementParser#parse(org.modeshape.sequencer.ddl.DdlTokenStream,
      *      org.modeshape.sequencer.ddl.node.AstNode)
      */
@@ -142,7 +144,7 @@ final class CreateProcedureParser extends StatementParser {
      * <procedure parameter> <code>
      * ( IN | OUT | INOUT | VARIADIC )? <identifier> <data type> ( NOT NULL )? ( RESULT )? ( DEFAULT <string> )? ( <options clause> )?
      * <code>
-     * 
+     *
      * @param tokens the tokens being processed (cannot be <code>null</code> or empty)
      * @param procedureNode the create procedure node owning this parameter (cannot be <code>null</code>)
      */
@@ -192,7 +194,7 @@ final class CreateProcedureParser extends StatementParser {
      * <procedure parameters> <code>
      * <lparen> ( <procedure parameter> ( <comma> <procedure parameter> )* )? <rparen>
      * <code>
-     * 
+     *
      * @param tokens the tokens being processed (cannot be <code>null</code> or empty)
      * @param procedureNode the create procedure node owning these parameters (cannot be <code>null</code>)
      */
@@ -223,7 +225,7 @@ final class CreateProcedureParser extends StatementParser {
      * <code>
      * <identifier> <data type> ( NOT NULL )? ( <options clause> )?
      * <code>
-     * 
+     *
      * @param tokens the tokens being processed (cannot be <code>null</code> or empty)
      * @param resultSetNode the result set node owning this result column (cannot be <code>null</code>)
      */
@@ -245,13 +247,13 @@ final class CreateProcedureParser extends StatementParser {
      * <procedure result columns> <code>
      * ( TABLE )? <lparen> <procedure result column> ( <comma> <procedure result column> )* <rparen> )
      * <code>
-     * 
+     *
      * @param tokens the tokens being processed (cannot be <code>null</code> or empty)
      * @param procedureNode the create procedure node owning these result columns (cannot be <code>null</code>)
-     * @return <code>true</code> if procedure results columns were successfully parsed
+     * @return the node of the tabular result set or null if tabular result set was not found
      * @throws ParsingException if there is a problem parsing the procedure result columns
      */
-    boolean parseProcedureResultColumns( final DdlTokenStream tokens,
+    AstNode parseProcedureResultColumns( final DdlTokenStream tokens,
                                          final AstNode procedureNode ) throws ParsingException {
         if (tokens.matches(TABLE, L_PAREN) || tokens.matches(L_PAREN)) {
             boolean table = tokens.canConsume(TABLE);
@@ -274,22 +276,22 @@ final class CreateProcedureParser extends StatementParser {
                     throw new TeiidDdlParsingException(tokens, "Unparsable procedure result columns (right paren not found)");
                 }
 
-                return true;
+                return resultSetNode;
             }
 
             throw new TeiidDdlParsingException(tokens, "Unparsable procedure result columns (left paren not found)");
         }
 
-        return false;
+        return null; // no tabular result set found
     }
 
     /**
-     * And optional clause of the create procedure statement.
+     * The RETURNS clause is optional for the create procedure statement.
      * <p>
      * <code>
-     * ( RETURNS ( ( ( TABLE )? <lparen> <procedure result column> ( <comma> <procedure result column> )* <rparen> ) | <data type> ) )?
+     * ( RETURNS ( &lt;options clause&gt; )? ( ( ( TABLE )? &lt;lparen&gt; &lt;procedure result column&gt; ( &lt;comma&gt; &lt;procedure result column&gt; )* &lt;rparen&gt; ) | &lt;data type&gt; ) )?
      * </code>
-     * 
+     *
      * @param tokens the tokens being processed (cannot be <code>null</code>)
      * @param procedureNode the procedure node of of the returns clause (cannot be <code>null</code>)
      * @return <code>true</code> if the returns clause was successfully parsed
@@ -297,14 +299,21 @@ final class CreateProcedureParser extends StatementParser {
     boolean parseReturnsClause( final DdlTokenStream tokens,
                                 final AstNode procedureNode ) {
         if (tokens.canConsume(TeiidReservedWord.RETURNS.toDdl())) {
-            // must have either one or more result columns or a data type
-            if (!parseProcedureResultColumns(tokens, procedureNode)) {
+            // may have options associated with the result set
+            final Map<String, String> options = new HashMap<>();
+            final boolean optionsExist = parseOptionsClause(tokens, options);
+
+            // result set must have either one or more result columns or be a data type
+            AstNode resultNode = parseProcedureResultColumns(tokens, procedureNode);
+
+            // if null must be a data type result set
+            if (resultNode == null) {
                 final DataType dataType = getDataTypeParser().parse(tokens);
 
-                // create result node
-                final AstNode resultNode = getNodeFactory().node(TeiidDdlLexicon.CreateProcedure.RESULT_SET,
-                                                                 procedureNode,
-                                                                 TeiidDdlLexicon.CreateProcedure.RESULT_DATA_TYPE);
+                // create data type result set node
+                resultNode = getNodeFactory().node(TeiidDdlLexicon.CreateProcedure.RESULT_SET,
+                                                   procedureNode,
+                                                   TeiidDdlLexicon.CreateProcedure.RESULT_DATA_TYPE);
                 resultNode.setProperty(DATATYPE_NAME, dataType.getName());
 
                 if (dataType.getLength() != DataType.DEFAULT_LENGTH) {
@@ -322,6 +331,13 @@ final class CreateProcedureParser extends StatementParser {
                 if (dataType.getArrayDimensions() != DataType.DEFAULT_ARRAY_DIMENSIONS) {
                     resultNode.setProperty(DATATYPE_ARRAY_DIMENSIONS, dataType.getArrayDimensions());
                 }
+            }
+
+            assert (resultNode != null);
+
+            // now that we have a result set node we can add in the options as children
+            if (optionsExist) {
+                createOptionNodes(options, resultNode);
             }
 
             return true;

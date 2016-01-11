@@ -16,6 +16,8 @@
 package org.modeshape.sequencer.ddl.dialect.teiid;
 
 import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNull.notNullValue;
+import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 import java.util.AbstractMap;
@@ -126,6 +128,7 @@ public class CreateProcedureParserTest extends TeiidDdlTest {
     /**
      * See Teiid TestDDLParser#testPushdownFunctionNoArgs()
      */
+    @SuppressWarnings( "null" )
     @Test
     public void shouldParsePushdownFunctionNoArgs() {
         final String content = "CREATE FOREIGN FUNCTION SourceFunc() RETURNS integer OPTIONS (UUID 'hello world')";
@@ -986,7 +989,7 @@ public class CreateProcedureParserTest extends TeiidDdlTest {
     @Test
     public void shouldParseOneResultColumn() {
         final String content = "(r1 string)";
-        assertThat(this.parser.parseProcedureResultColumns(getTokens(content), this.rootNode), is(true));
+        assertThat(this.parser.parseProcedureResultColumns(getTokens(content), this.rootNode), is(notNullValue()));
         assertThat(this.rootNode.getChildCount(), is(1));
 
         final AstNode resultColumnsNode = this.rootNode.getChild(0);
@@ -1000,7 +1003,7 @@ public class CreateProcedureParserTest extends TeiidDdlTest {
     @Test
     public void shouldParseOneResultColumnWithTable() {
         final String content = "table (r1 string)";
-        assertThat(this.parser.parseProcedureResultColumns(getTokens(content), this.rootNode), is(true));
+        assertThat(this.parser.parseProcedureResultColumns(getTokens(content), this.rootNode), is(notNullValue()));
         assertThat(this.rootNode.getChildCount(), is(1));
 
         final AstNode resultColumnsNode = this.rootNode.getChild(0);
@@ -1014,7 +1017,7 @@ public class CreateProcedureParserTest extends TeiidDdlTest {
     @Test
     public void shouldParseMultipleResultColumns() {
         final String content = "(r1 string, r2 boolean, r3 integer, r4 blob, r5 bigdecimal)";
-        assertThat(this.parser.parseProcedureResultColumns(getTokens(content), this.rootNode), is(true));
+        assertThat(this.parser.parseProcedureResultColumns(getTokens(content), this.rootNode), is(notNullValue()));
         assertThat(this.rootNode.getChildCount(), is(1));
 
         final AstNode resultColumnsNode = this.rootNode.getChild(0);
@@ -1030,7 +1033,7 @@ public class CreateProcedureParserTest extends TeiidDdlTest {
     @Test
     public void shouldParseMultipleResultColumnsWithTable() {
         final String content = "TABLE (r1 string, r2 boolean, r3 integer, r4 blob, r5 bigdecimal)";
-        assertThat(this.parser.parseProcedureResultColumns(getTokens(content), this.rootNode), is(true));
+        assertThat(this.parser.parseProcedureResultColumns(getTokens(content), this.rootNode), is(notNullValue()));
         assertThat(this.rootNode.getChildCount(), is(1));
 
         final AstNode resultColumnsNode = this.rootNode.getChild(0);
@@ -1046,7 +1049,7 @@ public class CreateProcedureParserTest extends TeiidDdlTest {
     @Test
     public void shouldNotParseDataTypeWithParseResultColumns() {
         final String content = "r1 string";
-        assertThat(this.parser.parseProcedureResultColumns(getTokens(content), this.rootNode), is(false));
+        assertThat(this.parser.parseProcedureResultColumns(getTokens(content), this.rootNode), is(nullValue()));
     }
 
     // ********* AS clause tests ***********
@@ -1089,6 +1092,24 @@ public class CreateProcedureParserTest extends TeiidDdlTest {
     }
 
     @Test
+    public void shouldParseDataTypeReturnsClauseWithOptions() {
+        final String content = "returns OPTIONS(NAMEINSOURCE 'result', ANNOTATION 'desc') string";
+        assertThat(this.parser.parseReturnsClause(getTokens(content), this.rootNode), is(true));
+        assertThat(this.rootNode.getChildCount(), is(1));
+
+        final AstNode resultSetNode = this.rootNode.getChild(0);
+        assertThat(resultSetNode.getName(), is(TeiidDdlLexicon.CreateProcedure.RESULT_SET));
+        assertMixinType(resultSetNode, TeiidDdlLexicon.CreateProcedure.RESULT_DATA_TYPE);
+        assertProperty(resultSetNode, StandardDdlLexicon.DATATYPE_NAME, TeiidDataType.STRING.toDdl());
+
+        // check options
+        assertProperty(resultSetNode.childrenWithName("NAMEINSOURCE").get(0), StandardDdlLexicon.VALUE, "result");
+        assertMixinType(resultSetNode.childrenWithName("NAMEINSOURCE").get(0), StandardDdlLexicon.TYPE_STATEMENT_OPTION);
+        assertProperty(resultSetNode.childrenWithName("ANNOTATION").get(0), StandardDdlLexicon.VALUE, "desc");
+        assertMixinType(resultSetNode.childrenWithName("ANNOTATION").get(0), StandardDdlLexicon.TYPE_STATEMENT_OPTION);
+    }
+
+    @Test
     public void shouldParseResultColumnsReturnsClause() {
         final String content = "returns (created_on varchar(25), from_user varchar(25), to_user varchar(25), profile_image_url varchar(25), source varchar(25), text varchar(140))";
         assertThat(this.parser.parseReturnsClause(getTokens(content), this.rootNode), is(true));
@@ -1097,6 +1118,23 @@ public class CreateProcedureParserTest extends TeiidDdlTest {
         final AstNode resultSetNode = this.rootNode.getChild(0);
         assertThat(resultSetNode.getName(), is(TeiidDdlLexicon.CreateProcedure.RESULT_SET));
         assertMixinType(resultSetNode, TeiidDdlLexicon.CreateProcedure.RESULT_COLUMNS);
+    }
+
+    @Test
+    public void shouldParseResultColumnsReturnsClauseWithOptions() {
+        final String content = "returns OPTIONS(NAMEINSOURCE 'result', ANNOTATION 'desc') (created_on varchar(25), from_user varchar(25), to_user varchar(25), profile_image_url varchar(25), source varchar(25), text varchar(140))";
+        assertThat(this.parser.parseReturnsClause(getTokens(content), this.rootNode), is(true));
+        assertThat(this.rootNode.getChildCount(), is(1));
+
+        final AstNode resultSetNode = this.rootNode.getChild(0);
+        assertThat(resultSetNode.getName(), is(TeiidDdlLexicon.CreateProcedure.RESULT_SET));
+        assertMixinType(resultSetNode, TeiidDdlLexicon.CreateProcedure.RESULT_COLUMNS);
+
+        // check options
+        assertProperty(resultSetNode.childrenWithName("NAMEINSOURCE").get(0), StandardDdlLexicon.VALUE, "result");
+        assertMixinType(resultSetNode.childrenWithName("NAMEINSOURCE").get(0), StandardDdlLexicon.TYPE_STATEMENT_OPTION);
+        assertProperty(resultSetNode.childrenWithName("ANNOTATION").get(0), StandardDdlLexicon.VALUE, "desc");
+        assertMixinType(resultSetNode.childrenWithName("ANNOTATION").get(0), StandardDdlLexicon.TYPE_STATEMENT_OPTION);
     }
 
 }

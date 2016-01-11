@@ -745,4 +745,37 @@ public class TeiidDdlSequencerTest extends AbstractDdlSequencerTest {
         }
     }
 
+    @Test
+    @FixFor( "MODE-2508" )
+    public void shouldSequenceResultSetWithOptions() throws Exception {
+        this.statementsNode = sequenceDdl("ddl/dialect/teiid/resultSetOptions.ddl");
+        assertThat(this.statementsNode.getNodes().getSize(), is(2L)); // create procedure, create function
+
+        // make sure the result set options have been sequenced
+
+        { // procedure
+            final Node procedure = this.statementsNode.getNode("SourceProc");
+            final Node resultSet = procedure.getNode(TeiidDdlLexicon.CreateProcedure.RESULT_SET);
+
+            // check options
+            Node option = resultSet.getNode("ANNOTATION");
+            verifyMixinType(option, StandardDdlLexicon.TYPE_STATEMENT_OPTION);
+            verifyProperty(option, StandardDdlLexicon.VALUE, "procedure result desc");
+
+            option = resultSet.getNode("UPDATECOUNT");
+            verifyMixinType(option, StandardDdlLexicon.TYPE_STATEMENT_OPTION);
+            verifyProperty(option, StandardDdlLexicon.VALUE, "2");
+        }
+
+        { // function
+            final Node function = this.statementsNode.getNode("SourceFunc");
+            final Node resultSet = function.getNode(TeiidDdlLexicon.CreateProcedure.RESULT_SET);
+
+            // check options
+            final Node option = resultSet.getNode("ANNOTATION");
+            verifyMixinType(option, StandardDdlLexicon.TYPE_STATEMENT_OPTION);
+            verifyProperty(option, StandardDdlLexicon.VALUE, "function result desc");
+        }
+    }
+
 }
