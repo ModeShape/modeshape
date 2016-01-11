@@ -35,6 +35,7 @@ public enum Attribute {
     CONFIG_RELATIVE_TO("config-relative-to"),
     CACHE_NAME("cache-name"),
     CLASSNAME("classname"),
+    REPOSITORY_MODULE_DEPENDENCIES("depends-on"),
     DATA_CACHE_NAME("data-cache-name"),
     DATA_SOURCE_JNDI_NAME("data-source-jndi-name"),
     DEFAULT_WORKSPACE("default-workspace"),

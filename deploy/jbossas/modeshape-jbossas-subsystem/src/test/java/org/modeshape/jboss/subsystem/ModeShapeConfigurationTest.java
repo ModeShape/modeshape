@@ -175,6 +175,11 @@ public class ModeShapeConfigurationTest extends AbstractSubsystemBaseTest {
     @Test
     public void testOutputPersistenceOfConfigurationWithReindexing() throws Exception {
         parse(readResource("modeshape-reindexing.xml"));
+    }  
+    
+    @Test
+    public void testOutputPersistenceOfConfigurationWithCustomDependencies() throws Exception {
+        parse(readResource("modeshape-repository-dependencies-config.xml"));
     }
 
     @Test

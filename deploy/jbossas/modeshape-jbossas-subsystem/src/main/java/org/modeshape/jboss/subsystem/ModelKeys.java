@@ -37,6 +37,7 @@ public class ModelKeys {
     static final String CONFIG_RELATIVE_TO = "config-relative-to";
     static final String CACHE_NAME = "cache-name";
     static final String CLASSNAME = "classname";
+    static final String REPOSITORY_MODULE_DEPENDENCIES = "depends-on";
     static final String DATA_CACHE_NAME = "data-cache-name";
     static final String DATA_SOURCE_JNDI_NAME = "data-source-jndi-name";
     static final String DEFAULT_WORKSPACE = "default-workspace";

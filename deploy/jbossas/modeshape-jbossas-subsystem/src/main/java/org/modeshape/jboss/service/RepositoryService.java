@@ -20,7 +20,10 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import javax.jcr.RepositoryException;
 import org.infinispan.manager.CacheContainer;
@@ -60,8 +63,6 @@ import org.modeshape.jcr.RepositoryStatistics;
  */
 public class RepositoryService implements Service<JcrRepository>, Environment {
 
-    public static final String BINARY_STORAGE_CONTAINER_NAME = "binaries";
-    
     private static final Logger LOG = Logger.getLogger(RepositoryService.class.getPackage().getName());
 
     private final InjectedValue<ModeShapeEngine> engineInjector = new InjectedValue<ModeShapeEngine>();
@@ -75,15 +76,25 @@ public class RepositoryService implements Service<JcrRepository>, Environment {
     private final String cacheConfigRelativeTo;
     private final String cacheConfig;
     private final RepositoryConfiguration repositoryConfiguration;
-
+    private final Set<ModuleIdentifier> additionalModuleDependencies = new LinkedHashSet<>();
+    
     private String journalPath;
     private String journalRelativeTo;
 
-    public RepositoryService( RepositoryConfiguration repositoryConfiguration, String cacheConfig, String cacheConfigRelativeTo ) {
+    public RepositoryService( RepositoryConfiguration repositoryConfiguration, String cacheConfig, String cacheConfigRelativeTo,
+                              String additionalModuleDependencies) {
         this.repositoryConfiguration = repositoryConfiguration;
         this.containers = new ConcurrentHashMap<>();
         this.cacheConfig = cacheConfig;
         this.cacheConfigRelativeTo = cacheConfigRelativeTo;
+        if (!StringUtil.isBlank(additionalModuleDependencies)) {
+            for (String moduleName : additionalModuleDependencies.split(",")) {
+                ModuleIdentifier moduleId = moduleIdentifierFromName(moduleName);
+                if (moduleId != null) {
+                    this.additionalModuleDependencies.add(moduleId);
+                }
+            }
+        }
     }
 
     @Override
@@ -140,19 +151,25 @@ public class RepositoryService implements Service<JcrRepository>, Environment {
     @Override
     public ClassLoader getClassLoader( ClassLoader fallbackLoader,
                                        String... classpathEntries ) {
-        List<ClassLoader> delegatingLoaders = new ArrayList<ClassLoader>();
-        if (classpathEntries != null) {
+        Set<ModuleIdentifier> moduleIds = new HashSet<>();
+        if (classpathEntries != null && classpathEntries.length > 0) {
             // each classpath entry is interpreted as a module identifier
-            for (String moduleIdString : classpathEntries) {
-                if (!StringUtil.isBlank(moduleIdString)) {
-                    try {
-                        ModuleIdentifier moduleIdentifier = ModuleIdentifier.fromString(moduleIdString);
-                        delegatingLoaders.add(moduleLoader().loadModule(moduleIdentifier).getClassLoader());
-                    } catch (IllegalArgumentException e) {
-                        LOG.warnv("The string (classpath entry) is not a valid module identifier: {0}", moduleIdString);
-                    } catch (ModuleLoadException e) {
-                        LOG.warnv("Cannot load module from (from classpath entry) with identifier: {0}", moduleIdString);
-                    }
+            for (String moduleId : classpathEntries) {
+                ModuleIdentifier moduleIdentifier = moduleIdentifierFromName(moduleId);
+                if (moduleIdentifier != null) {
+                    moduleIds.add(moduleIdentifier);
+                }
+                
+            }
+        } 
+        moduleIds.addAll(this.additionalModuleDependencies);
+        List<ClassLoader> delegatingLoaders = new ArrayList<>();
+        if (!moduleIds.isEmpty()) {
+            for (ModuleIdentifier moduleIdentifier : moduleIds) {
+                try {
+                    delegatingLoaders.add(moduleLoader().loadModule(moduleIdentifier).getClassLoader());
+                } catch (ModuleLoadException e) {
+                    LOG.warnv("Cannot load module from (from classpath entry) with identifier: {0}", moduleIdentifier);
                 }
             }
         }
@@ -167,6 +184,18 @@ public class RepositoryService implements Service<JcrRepository>, Environment {
         }
 
         return delegatingLoaders.isEmpty() ? currentLoader : new DelegatingClassLoader(currentLoader, delegatingLoaders);
+    }
+    
+    private ModuleIdentifier moduleIdentifierFromName(String moduleName) {
+        if (StringUtil.isBlank(moduleName)) {
+            return null;
+        }
+        try {
+            return ModuleIdentifier.fromString(moduleName.trim());
+        } catch (IllegalArgumentException e) {
+            LOG.warnv("{0} is not a valid module identifier", moduleName);
+            return null;
+        } 
     }
 
     @Override
