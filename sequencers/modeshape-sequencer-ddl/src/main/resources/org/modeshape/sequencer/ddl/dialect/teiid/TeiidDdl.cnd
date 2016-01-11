@@ -120,6 +120,7 @@
 [teiidddl:resultColumns] > teiidddl:resultSet mixin
 - teiidddl:table (boolean) = 'false' autocreated
 + * (teiidddl:resultColumn) = teiidddl:resultColumn
++ * (ddl:statementOption) = ddl:statementOption
 
 [teiidddl:abstractCreateProcedure] > ddl:creatable, ddl:statement, teiidddl:schemaElement abstract mixin
 + * (teiidddl:procedureParameter) = teiidddl:procedureParameter

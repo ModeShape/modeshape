@@ -157,7 +157,7 @@ abstract class StatementParser implements DdlConstants {
      * <code>
      * <quoted_id> (<period> <quoted_id>)*
      * </code>
-     * 
+     *
      * @param tokens the tokens being process (cannot be <code>null</code>)
      * @return the identifier (never <code>null</code> or empty)
      */
@@ -204,29 +204,20 @@ abstract class StatementParser implements DdlConstants {
     }
 
     /**
-     * <code>
-     * OPTIONS <lparen> <option pair> ( <comma> <option pair> )* <rparen>
-     * 
-     * <option pair> == <identifier> ( <non numeric literal> | ( <plus or minus> )? <unsigned numeric literal> )
-     * </code>
-     * 
-     * @param tokens the tokens being processed (cannot be <code>null</code>)
-     * @param parentNode the parent node (cannot be <code>null</code> if the tokens are processed)
-     * @return <code>true</code> if an options clause was successfully parsed
-     * @throws ParsingException if there is a problem parsing an options clause
+     * @param tokens the tokens being processed to see if an OPTIONS clause can be consumed (cannot be <code>null</code>)
+     * @param optionsMap the map where the parsed options will be stored (cannot be <code>null</code>)
+     * @return <code>true</code> if a well-formed options clause was parsed
      */
     boolean parseOptionsClause( final DdlTokenStream tokens,
-                                final AstNode parentNode ) throws ParsingException {
+                                final Map<String, String> optionsMap ) {
         if (tokens.canConsume(TeiidReservedWord.OPTIONS.toDdl())) {
             if (tokens.canConsume(L_PAREN)) {
-                final Map<String, String> options = new HashMap<String, String>();
-
                 { // first option
                     final String key = parseIdentifier(tokens);
                     final String value = parseValue(tokens);
 
                     if (!StringUtil.isBlank(value)) {
-                        options.put(key, value);
+                        optionsMap.put(key, value);
                     }
                 }
 
@@ -236,25 +227,58 @@ abstract class StatementParser implements DdlConstants {
                     final String nextValue = parseValue(tokens);
 
                     if (!StringUtil.isBlank(nextValue)) {
-                        options.put(nextKey, nextValue);
+                        optionsMap.put(nextKey, nextValue);
                     }
                 }
 
                 if (tokens.canConsume(R_PAREN)) {
-                    if (!options.isEmpty()) {
-                        for (final Entry<String, String> optionEntry : options.entrySet()) {
-                            final AstNode optionNode = getNodeFactory().node(optionEntry.getKey(),
-                                                                             parentNode,
-                                                                             StandardDdlLexicon.TYPE_STATEMENT_OPTION);
-                            optionNode.setProperty(StandardDdlLexicon.VALUE, optionEntry.getValue());
-                        }
-                    }
-
                     return true; // well formed options clause
                 }
 
                 throw new TeiidDdlParsingException(tokens, "Unparsable options clause");
             }
+        }
+
+        return false;
+    }
+
+    /**
+     * @param options the options being used to create option {@link AstNode nodes} (can be <code>null</code> or empty)
+     * @param parentNode the options parent node (can be <code>null</code> only if there are no options)
+     */
+    void createOptionNodes( final Map<String, String> options,
+                            final AstNode parentNode ) {
+        assert (parentNode != null);
+
+        if ((options != null) && !options.isEmpty()) {
+            for (final Entry<String, String> optionEntry : options.entrySet()) {
+                final AstNode optionNode = getNodeFactory().node(optionEntry.getKey(),
+                                                                 parentNode,
+                                                                 StandardDdlLexicon.TYPE_STATEMENT_OPTION);
+                optionNode.setProperty(StandardDdlLexicon.VALUE, optionEntry.getValue());
+            }
+        }
+    }
+
+    /**
+     * <code>
+     * OPTIONS <lparen> <option pair> ( <comma> <option pair> )* <rparen>
+     *
+     * <option pair> == <identifier> ( <non numeric literal> | ( <plus or minus> )? <unsigned numeric literal> )
+     * </code>
+     *
+     * @param tokens the tokens being processed (cannot be <code>null</code>)
+     * @param parentNode the parent node (cannot be <code>null</code> if the tokens are processed)
+     * @return <code>true</code> if an options clause was successfully parsed
+     * @throws ParsingException if there is a problem parsing an options clause
+     */
+    boolean parseOptionsClause( final DdlTokenStream tokens,
+                                final AstNode parentNode ) throws ParsingException {
+        final Map<String, String> options = new HashMap<>();
+
+        if (parseOptionsClause(tokens, options)) {
+            createOptionNodes(options, parentNode);
+            return true;
         }
 
         return false;
@@ -272,7 +296,7 @@ abstract class StatementParser implements DdlConstants {
      * <code>
      * ( <non numeric literal> | ( <plus or minus> )? <unsigned numeric literal> )
      * </code>
-     * 
+     *
      * @param tokens the tokens being process (cannot be <code>null</code>)
      * @return the value (never <code>null</code> or empty)
      */
