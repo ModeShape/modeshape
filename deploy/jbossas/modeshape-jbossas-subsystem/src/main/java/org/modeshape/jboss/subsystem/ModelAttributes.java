@@ -46,8 +46,8 @@ public class ModelAttributes {
                                                                                          ModeShapeRoles.READWRITE);
     private static final ParameterValidator WORKSPACE_NAME_VALIDATOR = new ModelTypeValidator(ModelType.STRING, false, false,
                                                                                               true);
-    private static final ParameterValidator NODE_TYPE_VALIDATOR = new ModelTypeValidator(ModelType.STRING, false, false, true);
-    private static final ParameterValidator INITIAL_CONTENT_VALIDATOR = new ModelTypeValidator(ModelType.PROPERTY, false, false,
+    private static final ParameterValidator NODE_TYPE_VALIDATOR = new ModelTypeValidator(ModelType.STRING, false, true, true);
+    private static final ParameterValidator INITIAL_CONTENT_VALIDATOR = new ModelTypeValidator(ModelType.PROPERTY, false, true,
                                                                                                true);
     private static final ParameterValidator DEFAULT_INITIAL_CONTENT_VALIDATOR = new ModelTypeValidator(ModelType.STRING, true,
                                                                                                        false, true);
@@ -191,6 +191,14 @@ public class ModelAttributes {
                                                                                                                             true)
                                                                                                                     .setFlags(
                                                                                                                             AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+                                                                                                                    .build();
+    
+    public static final SimpleAttributeDefinition REPOSITORY_MODULE_DEPENDENCIES = new MappedAttributeDefinitionBuilder(ModelKeys.REPOSITORY_MODULE_DEPENDENCIES,
+                                                                                                                        ModelType.STRING).setXmlName(Attribute.REPOSITORY_MODULE_DEPENDENCIES.getLocalName())
+                                                                                                                    .setAllowExpression(false)
+                                                                                                                    .setAllowNull(
+                                                                                                                            true)
+                                                                                                                    .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                                                                                                                     .build();
 
     public static final SimpleAttributeDefinition DATA_SOURCE_JNDI_NAME = new MappedAttributeDefinitionBuilder(
@@ -653,7 +661,7 @@ public class ModelAttributes {
 
     public static final SimpleAttributeDefinition DEFAULT_INITIAL_CONTENT = new MappedAttributeDefinitionBuilder(
                                                                                                                  ModelKeys.DEFAULT_INITIAL_CONTENT,
-                                                                                                                 ModelType.STRING).setAllowExpression(false)
+                                                                                                                 ModelType.STRING).setAllowExpression(true)
                                                                                                                                   .setAllowNull(true)
                                                                                                                                   .setValidator(DEFAULT_INITIAL_CONTENT_VALIDATOR)
                                                                                                                                   .setFlags(AttributeAccess.Flag.RESTART_NONE)
@@ -891,14 +899,14 @@ public class ModelAttributes {
     public static final AttributeDefinition[] WEBAPP_ATTRIBUTES = {EXPLODED};
 
     public static final AttributeDefinition[] REPOSITORY_ATTRIBUTES = {CACHE_NAME, CACHE_CONFIG, CONFIG_RELATIVE_TO, JNDI_NAME, ENABLE_MONITORING,
-        CLUSTER_NAME, CLUSTER_STACK, CLUSTER_CONFIG,
+        CLUSTER_NAME, CLUSTER_STACK, CLUSTER_CONFIG, REPOSITORY_MODULE_DEPENDENCIES,
         SECURITY_DOMAIN, ANONYMOUS_ROLES, ANONYMOUS_USERNAME, USE_ANONYMOUS_IF_AUTH_FAILED, NODE_TYPES, DEFAULT_WORKSPACE,
         PREDEFINED_WORKSPACE_NAMES, ALLOW_WORKSPACE_CREATION, WORKSPACES_CACHE_SIZE, DEFAULT_INITIAL_CONTENT,
         WORKSPACES_INITIAL_CONTENT, GARBAGE_COLLECTION_THREAD_POOL,
         GARBAGE_COLLECTION_INITIAL_TIME, GARBAGE_COLLECTION_INTERVAL, DOCUMENT_OPTIMIZATION_THREAD_POOL,
         DOCUMENT_OPTIMIZATION_INITIAL_TIME, DOCUMENT_OPTIMIZATION_INTERVAL, DOCUMENT_OPTIMIZATION_CHILD_COUNT_TARGET,
         DOCUMENT_OPTIMIZATION_CHILD_COUNT_TOLERANCE, JOURNAL_PATH, JOURNAL_RELATIVE_TO, MAX_DAYS_TO_KEEP_RECORDS,
-        JOURNAL_GC_INITIAL_TIME, JOURNAL_GC_THREAD_POOL, ASYNC_WRITES, JOURNALING, SEQUENCER_THREAD_POOL_NAME, SEQUENCER_MAX_POOL_SIZE, 
+        JOURNAL_GC_INITIAL_TIME, JOURNAL_GC_THREAD_POOL, ASYNC_WRITES, JOURNALING, JOURNAL_ENABLED, SEQUENCER_THREAD_POOL_NAME, SEQUENCER_MAX_POOL_SIZE, 
         TEXT_EXTRACTOR_THREAD_POOL_NAME, TEXT_EXTRACTOR_MAX_POOL_SIZE, EVENT_BUS_SIZE, REINDEXING_ASYNC, REINDEXING_MODE,
         LOCK_TIMEOUT_MILLIS};
 

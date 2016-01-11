@@ -98,6 +98,7 @@ public class ModeShapeSubsystemXMLWriter implements XMLStreamConstants, XMLEleme
         ModelAttributes.DOCUMENT_OPTIMIZATION_CHILD_COUNT_TOLERANCE.marshallAsAttribute(repository, false, writer);
         ModelAttributes.EVENT_BUS_SIZE.marshallAsAttribute(repository, false, writer);
         ModelAttributes.LOCK_TIMEOUT_MILLIS.marshallAsAttribute(repository, false, writer);
+        ModelAttributes.REPOSITORY_MODULE_DEPENDENCIES.marshallAsAttribute(repository, false, writer);
 
         // Nested elements ...
         writeNodeTypes(writer, repository);
