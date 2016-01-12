@@ -137,6 +137,11 @@ public class TeiidDataTypeParserTest {
     }
 
     @Test
+    public void shouldParseGeometry() {
+        assertNameAndDefaults(TeiidDataType.GEOMETRY);
+    }
+
+    @Test
     public void shouldParseInteger() {
         assertNameAndDefaults(TeiidDataType.INTEGER);
     }

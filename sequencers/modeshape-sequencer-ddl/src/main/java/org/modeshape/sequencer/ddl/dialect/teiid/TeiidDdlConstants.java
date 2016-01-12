@@ -172,6 +172,7 @@ public interface TeiidDdlConstants extends DdlConstants {
         DECIMAL,
         DOUBLE,
         FLOAT,
+        GEOMETRY,
         INTEGER,
         LONG,
         OBJECT,
