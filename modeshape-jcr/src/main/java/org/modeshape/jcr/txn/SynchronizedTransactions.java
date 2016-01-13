@@ -225,7 +225,7 @@ public final class SynchronizedTransactions extends Transactions {
         }
     }
 
-    protected final class SynchronizedTransaction extends BaseTransaction {
+    public final class SynchronizedTransaction extends BaseTransaction {
         private final GlobalTransaction ispnTransaction;
 
         protected SynchronizedTransaction( TransactionManager txnMgr, GlobalTransaction  ispnTransaction) {
@@ -257,7 +257,7 @@ public final class SynchronizedTransactions extends Transactions {
             return sb.toString();
         }
 
-        protected GlobalTransaction ispnTransaction() {
+        public GlobalTransaction ispnTransaction() {
             return ispnTransaction;
         }
     }
@@ -301,11 +301,17 @@ public final class SynchronizedTransactions extends Transactions {
                 // ISPN reports the transaction as completed, so remove our mapping
                 SynchronizedTransaction synchronizedTransaction = clearActiveTx(ispnTxId);
                 if (synchronizedTransaction != null) {
+                    if (logger.isTraceEnabled()) {
+                        logger.trace("ISPN transaction {0} has been committed by ISPN. Running " +
+                                     "ModeShape-specific post-commit functions...", eventIspnTransaction);
+                    }
                     // and invoke the functions
                     if (event.isTransactionSuccessful()) {
                         synchronizedTransaction.executeFunctionsUponCommit();
                     }
                     synchronizedTransaction.executeFunctionsUponCompletion();
+                } else if (logger.isTraceEnabled()) {
+                    logger.trace("Unable to locate ModeShape transaction corresponding to ISPN transaction {0}", eventIspnTransaction);
                 }
             } else {
                 if (logger.isTraceEnabled()) {

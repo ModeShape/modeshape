@@ -29,6 +29,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.infinispan.schematic.document.Document;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.annotation.ThreadSafe;
+import org.modeshape.common.logging.Logger;
 import org.modeshape.jcr.JcrLexicon;
 import org.modeshape.jcr.ModeShapeLexicon;
 import org.modeshape.jcr.cache.CachedNode;
@@ -76,6 +77,7 @@ import org.modeshape.jcr.value.Property;
 public class LazyCachedNode implements CachedNode, Serializable {
 
     private static final long serialVersionUID = 1L;
+    private static final Logger LOGGER = Logger.getLogger(LazyCachedNode.class);
 
     // There are two 'final' fields that are always set during construction. The 'document' is the snapshot of node's state
     // (except for the node's name or SNS index, which are stored in the parent's document).
@@ -246,6 +248,12 @@ public class LazyCachedNode implements CachedNode, Serializable {
         // This node references a parent, but that parent no longer has a child reference to this node. Perhaps this node is
         // in the midst of being moved or removed. Either way, we don't have much choice but to throw an exception about
         // us not being found...
+        if (LOGGER.isDebugEnabled()) {
+            currentParent = parent(cache);
+            ChildReferences childReferences = currentParent.getChildReferences(cache);
+            LOGGER.debug("Cannot locate the child '{0}' within the parent '{1}' which has the following persisted child references: {2}",
+                         key, parentKey, childReferences);
+        }
         throw new NodeNotFoundInParentException(key, parentKey);
     }
 

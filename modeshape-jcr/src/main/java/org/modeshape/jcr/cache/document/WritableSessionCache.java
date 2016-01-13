@@ -82,6 +82,7 @@ import org.modeshape.jcr.cache.document.SessionNode.ChangedChildren;
 import org.modeshape.jcr.cache.document.SessionNode.LockChange;
 import org.modeshape.jcr.cache.document.SessionNode.MixinChanges;
 import org.modeshape.jcr.cache.document.SessionNode.ReferrerChanges;
+import org.modeshape.jcr.txn.SynchronizedTransactions;
 import org.modeshape.jcr.txn.Transactions;
 import org.modeshape.jcr.txn.Transactions.Transaction;
 import org.modeshape.jcr.value.BinaryKey;
@@ -377,15 +378,20 @@ public class WritableSessionCache extends AbstractSessionCache {
     }
 
     protected final void logChangesBeingSaved( Iterable<NodeKey> firstNodesInOrder,
-                                               Map<NodeKey, SessionNode> firstNodes,
                                                Iterable<NodeKey> secondNodesInOrder,
-                                               Map<NodeKey, SessionNode> secondNodes ) {
+                                               WritableSessionCache secondSession ) {
         if (SAVE_LOGGER.isTraceEnabled()) {
             String txn = txns.currentTransactionId();
+            
+            Transaction currentModeShapeTransaction = txns.currentTransaction();
+            String ispnTxn = null;
+            if (currentModeShapeTransaction != null && currentModeShapeTransaction instanceof SynchronizedTransactions.SynchronizedTransaction) {
+                ispnTxn = ((SynchronizedTransactions.SynchronizedTransaction) currentModeShapeTransaction).ispnTransaction().toString();
+            }
 
-            // // Determine if there are any changes to be made. Note that this number is generally between 1 and 100,
-            // // though for high concurrency some numbers may go above 100. However, the 100th save will always reset
-            // // the counter back down to 1. (Any thread that got a save number above 100 will simply use it.)
+            // Determine if there are any changes to be made. Note that this number is generally between 1 and 100,
+            // though for high concurrency some numbers may go above 100. However, the 100th save will always reset
+            // the counter back down to 1. (Any thread that got a save number above 100 will simply use it.)
             final int s = SAVE_NUMBER.getAndIncrement();
             if (s == MAX_SAVE_NUMBER) SAVE_NUMBER.set(1); // only the 100th
             int changes = 0;
@@ -396,8 +402,15 @@ public class WritableSessionCache extends AbstractSessionCache {
             String username = context.getSecurityContext().getUserName();
             NamespaceRegistry registry = context.getNamespaceRegistry();
             if (username == null) username = "<anonymous>";
-            SAVE_LOGGER.trace("Save #{0} (part of transaction '{1}') by session {2}({3}) is persisting the following changes:",
-                              s, txn, username, id);
+            if (ispnTxn == null) {
+                SAVE_LOGGER.trace(
+                        "Save #{0} (part of transaction '{1}') by session {2}({3}) is persisting the following changes:",
+                        s, txn, username, id);
+            } else {
+                SAVE_LOGGER.trace(
+                        "Save #{0} (part of transaction '{1}' and ISPN transaction '{2}') by session {3}({4}) is persisting the following changes:",
+                        s, txn, ispnTxn, username, id);
+            }
             for (NodeKey key : firstNodesInOrder) {
                 SessionNode node = changedNodes.get(key);
                 if (node != null && node.hasChanges()) {
@@ -407,15 +420,13 @@ public class WritableSessionCache extends AbstractSessionCache {
             }
             if (secondNodesInOrder != null) {
                 for (NodeKey key : secondNodesInOrder) {
-                    SessionNode node = changedNodes.get(key);
+                    SessionNode node = secondSession.changedNodes.get(key);
                     if (node != null && node.hasChanges()) {
                         SAVE_LOGGER.trace(" #{0} {1}", s, node.getString(registry));
                         ++changes;
                     }
                 }
             }
-            SAVE_LOGGER.trace("Save #{0} (part of transaction '{1}') by session {2}({3}) completed persisting changes to {4} nodes",
-                              s, txn, username, id, changes);
         }
     }
 
@@ -473,7 +484,7 @@ public class WritableSessionCache extends AbstractSessionCache {
                     runAfterLocking(preSaveOperation, persistedCache);
 
                     // Now persist the changes ...
-                    logChangesBeingSaved(this.changedNodesInOrder, this.changedNodes, null, null);
+                    logChangesBeingSaved(this.changedNodesInOrder, null, null);
                     events = persistChanges(this.changedNodesInOrder, persistedCache);
 
                     // If there are any binary changes, add a function which will update the binary store
@@ -654,8 +665,7 @@ public class WritableSessionCache extends AbstractSessionCache {
                         runAfterLocking(preSaveOperation, thisPersistedCache);
 
                         // Now persist the changes ...
-                        logChangesBeingSaved(this.changedNodesInOrder, this.changedNodes, that.changedNodesInOrder,
-                                             that.changedNodes);
+                        logChangesBeingSaved(this.changedNodesInOrder,that.changedNodesInOrder, that);
                         events1 = persistChanges(this.changedNodesInOrder, thisPersistedCache);
                         // If there are any binary changes, add a function which will update the binary store
                         if (events1.hasBinaryChanges()) {
@@ -810,7 +820,7 @@ public class WritableSessionCache extends AbstractSessionCache {
                         runAfterLocking(preSaveOperation, thisPersistedCache, toBeSaved);
 
                         // Now persist the changes ...
-                        logChangesBeingSaved(savedNodesInOrder, this.changedNodes, that.changedNodesInOrder, that.changedNodes);
+                        logChangesBeingSaved(savedNodesInOrder, that.changedNodesInOrder, that);
                         events1 = persistChanges(savedNodesInOrder, thisPersistedCache);
                         // If there are any binary changes, add a function which will update the binary store
                         if (events1.hasBinaryChanges()) {
@@ -1211,7 +1221,7 @@ public class WritableSessionCache extends AbstractSessionCache {
                             // child later on while not having any more information
                             // 2. after all the changed nodes have been processed, make the actual changes to the bucket documents
                             // see below
-                            Map<BucketId, Set<NodeKey>> removalsPerBucket = translator.preRemoveChildrenFromBuckets(workspaceCache(),
+                            Map<BucketId, Set<NodeKey>> removalsPerBucket = translator.preRemoveChildrenFromBuckets(persistedCache,
                                                                                                                     doc,
                                                                                                                     changedChildren.getRemovals());
                             if (!removalsPerBucket.isEmpty()) {
@@ -1451,21 +1461,12 @@ public class WritableSessionCache extends AbstractSessionCache {
             return workspaceCache();
         }
         DocumentStore documentStore = workspaceCache().documentStore();
-
-        if (LOGGER.isDebugEnabled()) {
-            if (!this.changedNodes.isEmpty()) {
-                LOGGER.debug("Attempting to lock nodes in Infinispan: {0}", changedNodes.keySet());
-            }
-        }
+        
         // Try to acquire from the DocumentStore locks for all the nodes that we're going to change ...
         Set<String> keysToLock = new TreeSet<String>();
 
         for (NodeKey key : changedNodesInOrder) {
-            SessionNode node = changedNodes.get(key);
-            if (!node.isNew()) {
-                String keyStr = key.toString();
-                keysToLock.add(keyStr);
-            }
+            keysToLock.add(key.toString());
             // collect all binary reference document keys since they have to be locked as well
             Set<BinaryKey> binaryReferencesForNode = binaryReferencesByNodeKey.get(key);
             if (binaryReferencesForNode != null) {
@@ -1476,11 +1477,14 @@ public class WritableSessionCache extends AbstractSessionCache {
         }
         
         if (!keysToLock.isEmpty()) {
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("Attempting to lock keys in Infinispan: {0}", keysToLock);
+            }
             int retryCountOnLockTimeout = 2;
-            boolean locksAquired = false;
-            while (!locksAquired && retryCountOnLockTimeout > 0) {
-                locksAquired = documentStore.lockDocuments(keysToLock);
-                if (locksAquired) {
+            boolean locksAcquired = false;
+            while (!locksAcquired && retryCountOnLockTimeout > 0) {
+                locksAcquired = documentStore.lockDocuments(keysToLock);
+                if (locksAcquired) {
                     if (LOGGER.isDebugEnabled()) {
                         LOGGER.debug("Locked the nodes: {0}", keysToLock);
                     }
@@ -1491,7 +1495,7 @@ public class WritableSessionCache extends AbstractSessionCache {
                     --retryCountOnLockTimeout;
                 }
             }
-            if (!locksAquired) {
+            if (!locksAcquired) {
                 throw new org.infinispan.util.concurrent.TimeoutException("Timeout while attempting to lock the keys " + keysToLock + " after " + retryCountOnLockTimeout + " retry attempts.");
             }
         }
