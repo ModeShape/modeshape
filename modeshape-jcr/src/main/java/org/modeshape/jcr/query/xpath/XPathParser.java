@@ -84,7 +84,18 @@ public class XPathParser {
     public Component parseXPath( String xpath ) {
         Tokenizer tokenizer = new XPathTokenizer(false); // skip comments
         TokenStream tokens = new TokenStream(xpath, tokenizer, true).start(); // case sensitive!!
-        return parseXPath(tokens);
+        //do parsing
+        Component component = parseXPath(tokens);
+        
+        //no more tokens should remain, other wise this is not valid statement
+        if (tokens.hasNext()) {
+            throw new ParsingException(tokens.nextPosition(), 
+                    "Unexpected token: " + tokens.consume() + 
+                    " at line " + tokens.nextPosition().getLine() +
+                    ", column " + tokens.nextPosition().getColumn());
+        }
+        
+        return component;
     }
 
     protected Component parseXPath( TokenStream tokens ) {
