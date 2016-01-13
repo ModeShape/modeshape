@@ -703,6 +703,17 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
         validateQuery().rowCount(4).validate(query, query.execute());
     }
 
+    @FixFor("MODE-2499")
+    @Test
+    public void shouldThrowExceptionWhenXPathSyntaxNotValid() throws RepositoryException {
+        String sql = "select node.[jcr:name] from [nt:unstructured] as node";
+        try {
+            Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.XPATH);
+            fail("Should throw InvalidQueryException");
+        } catch (InvalidQueryException e) {
+        }
+    }
+    
     @FixFor("MODE-2490")
     @Test
     public void shouldOrderByTwoColumnsEvenIfNullable() throws RepositoryException {
