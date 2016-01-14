@@ -15,7 +15,7 @@
  */
 package org.modeshape.jcr.cache;
 
-import java.util.Collections;
+import java.util.Map;
 import java.util.Set;
 import org.modeshape.jcr.JcrI18n;
 
@@ -27,43 +27,15 @@ public class ReferentialIntegrityException extends RuntimeException {
 
     private static final long serialVersionUID = 1L;
 
-    private final Set<NodeKey> referrers;
-    private final Set<NodeKey> removedNodes;
+    private final Map<String, Set<String>> referrersByRemovedNode;
 
-    /**
-     * @param removedNodes the nodes that are being removed; may not be null or empty
-     * @param referrers the set of node keys that refer to nodes being removed; may not be null or empty
-     */
-    public ReferentialIntegrityException( Set<NodeKey> removedNodes,
-                                          Set<NodeKey> referrers ) {
-        this.referrers = Collections.unmodifiableSet(referrers);
-        this.removedNodes = Collections.unmodifiableSet(removedNodes);
-        assert this.removedNodes != null;
-        assert this.referrers != null;
-        assert !this.referrers.isEmpty();
-        assert !this.removedNodes.isEmpty();
-    }
-
-    /**
-     * Get the set of node keys that contain REFERENCE properties to nodes being deleted, and therefore prevent the removal.
-     * 
-     * @return the immutable set of node keys to the referring nodes; never null and never empty
-     */
-    public Set<NodeKey> getReferrers() {
-        return referrers;
-    }
-
-    /**
-     * Get the set of keys to the nodes that were removed.
-     * 
-     * @return the immutable set of keys to the removed nodes; never null and never empty
-     */
-    public Set<NodeKey> getRemovedNodes() {
-        return removedNodes;
+    public ReferentialIntegrityException(Map<String, Set<String>> referrersByRemovedNode) {
+        assert referrersByRemovedNode != null && !referrersByRemovedNode.isEmpty();
+        this.referrersByRemovedNode = referrersByRemovedNode;
     }
 
     @Override
     public String getMessage() {
-        return JcrI18n.referentialIntegrityException.text(removedNodes, referrers);
+        return JcrI18n.referentialIntegrityException.text(referrersByRemovedNode);
     }
 }

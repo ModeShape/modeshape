@@ -100,6 +100,7 @@ public class SystemContent {
     private final ValueFactory<String> strings;
     private final NameFactory names;
     private final ReferenceFactory referenceFactory;
+    private final ReferenceFactory weakReferenceFactory;
     private final javax.jcr.ValueFactory jcrValues;
 
     SystemContent( SessionCache systemCache ) {
@@ -111,6 +112,7 @@ public class SystemContent {
         this.strings = factories.getStringFactory();
         this.names = factories.getNameFactory();
         this.referenceFactory = factories.getReferenceFactory();
+        this.weakReferenceFactory = factories.getWeakReferenceFactory();
         this.jcrValues = new JcrValueFactory(context);
     }
 
@@ -1222,8 +1224,8 @@ public class SystemContent {
         historyProps.add(propertyFactory.create(JcrLexicon.UUID, versionHistoryKey.getIdentifier()));
         if (originalVersionKey != null) {
             // the tck expects this to be a reference, so that getNode works on it
-            historyProps.add(propertyFactory.create(JcrLexicon.COPIED_FROM, org.modeshape.jcr.value.PropertyType.WEAKREFERENCE,
-                                                    referenceFactory.create(originalVersionKey, true)));
+            Reference copiedFrom = weakReferenceFactory.create(originalVersionKey, true);
+            historyProps.add(propertyFactory.create(JcrLexicon.COPIED_FROM, copiedFrom));
         }
         Name historyName = versionHistoryPath.getLastSegment().getName();
         MutableCachedNode history = historyParent.createChild(system, versionHistoryKey, historyName, historyProps);

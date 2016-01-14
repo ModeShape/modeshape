@@ -2727,7 +2727,7 @@ public class SessionNode implements MutableCachedNode {
             sourceToTargetKeys.put(sourceKey, targetKey);
 
             if (shouldProcessSourceKey(sourceKey)) {
-                copyProperties(targetNode, sourceNode);
+                copyProperties(targetNode, sourceNode, false);
             }
 
             for (ChildReference sourceChildReference : sourceNode.getChildReferences(sourceCache)) {
@@ -2954,10 +2954,20 @@ public class SessionNode implements MutableCachedNode {
         }
 
         protected void copyProperties( MutableCachedNode targetNode,
-                                       CachedNode sourceNode ) {
+                                       CachedNode sourceNode,
+                                       boolean includeVersionProperties) {
             NodeKey sourceNodeKey = sourceNode.getKey();
             for (Iterator<Property> propertyIterator = sourceNode.getProperties(sourceCache); propertyIterator.hasNext();) {
                 Property property = propertyIterator.next();
+                Name propertyName = property.getName();
+                boolean isVersionProperty = JcrLexicon.BASE_VERSION.equals(propertyName) || 
+                                            JcrLexicon.VERSION_HISTORY.equals(propertyName) ||
+                                            JcrLexicon.PREDECESSORS.equals(propertyName) || 
+                                            JcrLexicon.SUCCESSORS.equals(propertyName) || 
+                                            JcrLexicon.IS_CHECKED_OUT.equals(propertyName);
+                if (isVersionProperty && !includeVersionProperties) {
+                    continue;
+                }
                 if (property.isReference() || property.isSimpleReference()) {
                     // reference properties are not copied directly because that would cause incorrect back-pointers
                     // they are processed at the end of the clone/copy operation.
@@ -3047,12 +3057,13 @@ public class SessionNode implements MutableCachedNode {
 
         @Override
         protected void copyProperties( MutableCachedNode targetNode,
-                                       CachedNode sourceNode ) {
+                                       CachedNode sourceNode,
+                                       boolean includeVersionProperties) {
             // First remove all the existing properties ...
             targetNode.removeAllProperties(targetCache);
 
             // Then perform the normal copyProperties step ...
-            super.copyProperties(targetNode, sourceNode);
+            super.copyProperties(targetNode, sourceNode, true);
         }
 
         @Override

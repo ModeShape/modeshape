@@ -20,10 +20,12 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import java.io.ByteArrayInputStream;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -32,10 +34,12 @@ import javax.jcr.ItemNotFoundException;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.PathNotFoundException;
+import javax.jcr.Property;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.UnsupportedRepositoryOperationException;
 import javax.jcr.nodetype.ConstraintViolationException;
+import javax.jcr.nodetype.NodeType;
 import javax.jcr.version.Version;
 import javax.jcr.version.VersionException;
 import javax.jcr.version.VersionHistory;
@@ -44,6 +48,7 @@ import javax.jcr.version.VersionManager;
 import org.junit.Before;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
+import org.modeshape.jcr.api.JcrConstants;
 import org.modeshape.jcr.api.nodetype.NodeTypeManager;
 
 /**
@@ -1140,6 +1145,62 @@ public class JcrVersioningTest extends SingleUseAbstractTest {
         } catch (UnsupportedRepositoryOperationException e) {
             //expected
         }
+    }
+
+    @Test
+    @FixFor( "MODE-2560" )
+    public void shouldCreateSeparateVersionHistoryForCopiedNode() throws Exception {
+        VersionManager versionManager = session.getWorkspace().getVersionManager();
+        // create original node  
+        Node node = session.getNode("/").addNode("uploads");
+        Node originalNode = node.addNode("originalNode", NodeType.NT_FILE);
+        originalNode.addMixin(NodeType.MIX_VERSIONABLE);
+        originalNode.addMixin(NodeType.MIX_TITLE);
+        Node contentNode = originalNode.addNode(JcrConstants.JCR_CONTENT, JcrConstants.NT_RESOURCE);
+        contentNode.setProperty(JcrConstants.JCR_DATA,
+                                session.getValueFactory().createBinary(new ByteArrayInputStream("test".getBytes())));
+        session.save();
+        // update original node  
+        versionManager.checkout(originalNode.getPath());
+        originalNode.setProperty(Property.JCR_TITLE, "originalNode");
+        session.save();
+        versionManager.checkin(originalNode.getPath());
+        
+        VersionHistory originalHistory = versionManager.getVersionHistory(originalNode.getPath());
+        Version originalBaseVersion = versionManager.getBaseVersion(originalNode.getPath());
+        
+        // copy original node  
+        session.getWorkspace().copy(originalNode.getPath(), "/uploads/copiedNode");
+        
+        // check that the copied node is checked out and has its own version history
+        Node copiedNode = session.getNode("/uploads/copiedNode");
+        assertTrue(versionManager.isCheckedOut(copiedNode.getPath()));
+        VersionHistory copiedHistory = versionManager.getVersionHistory(copiedNode.getPath());
+        assertNotEquals(originalHistory.getVersionableIdentifier(), copiedHistory.getVersionableIdentifier());
+        Version copiedBaseVersion = versionManager.getBaseVersion(copiedNode.getPath());
+        assertNotEquals(originalBaseVersion.getPath(), copiedBaseVersion.getPath());
+        
+        // delete all versions for the original node
+        VersionIterator it = originalHistory.getAllVersions();
+        while (it.hasNext()) {
+            Version version = it.nextVersion();
+            originalHistory.removeVersion(version.getName());
+        }
+        
+        // delete all versions for the copied node
+        it = copiedHistory.getAllVersions();
+        while (it.hasNext()) {
+            Version version = it.nextVersion();
+            copiedHistory.removeVersion(version.getName());
+        }
+  
+        // delete original node  
+        originalNode.remove();
+        session.save();
+        
+        // delete the copied node
+        copiedNode.remove();
+        session.save();
     }
 
     private List<String> allChildrenPaths( Node root ) throws Exception {
