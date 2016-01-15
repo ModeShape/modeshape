@@ -559,7 +559,10 @@ public class WritableSessionCache extends AbstractSessionCache {
         List<NodeKey> nodeKeys = new ArrayList<>();
         if (preSaveOperation != null) {
             SaveContext saveContext = new BasicSaveContext(context());
-            for (MutableCachedNode node : this.changedNodes.values()) {
+            // create a copy of the nodes to be processed because the processing function might change the underlying map
+            // and bring in more nodes...
+            List<SessionNode> nodesToProcess = new ArrayList<>(this.changedNodes.values());            
+            for (MutableCachedNode node : nodesToProcess) {
                 if (node == REMOVED || !filter.contains(node.getKey())) {
                     continue;
                 }
@@ -1412,21 +1415,34 @@ public class WritableSessionCache extends AbstractSessionCache {
         if (removedNodes != null) {
             assert !removedNodes.isEmpty();
             // we need to collect the referrers at the end only, so that other potential changes in references have been computed
-            Set<NodeKey> referrers = new HashSet<NodeKey>();
+            Map<NodeKey, Set<NodeKey>> referrersByRemovedNodes = new HashMap<>();
+         
             for (NodeKey removedKey : removedNodes) {
                 // we need the current document from the documentStore, because this differs from what's persisted
                 SchematicEntry entry = documentStore.get(removedKey.toString());
                 if (entry != null) {
                     // The entry hasn't yet been removed by another (concurrent) session ...
                     Document doc = documentStore.get(removedKey.toString()).getContent();
-                    referrers.addAll(translator.getReferrers(doc, ReferenceType.STRONG));
+                    Set<NodeKey> strongReferrers = translator.getReferrers(doc, ReferenceType.STRONG);
+                    strongReferrers.removeAll(removedNodes);
+                    if (!strongReferrers.isEmpty()) {
+                        referrersByRemovedNodes.put(removedKey, strongReferrers);
+                    }
                 }
             }
-            // check referential integrity ...
-            referrers.removeAll(removedNodes);
 
-            if (!referrers.isEmpty()) {
-                throw new ReferentialIntegrityException(removedNodes, referrers);
+            if (!referrersByRemovedNodes.isEmpty()) {
+                Map<String, Set<String>> referrerPathsByRemovedNode = new HashMap<>();
+                for (Map.Entry<NodeKey, Set<NodeKey>> entry : referrersByRemovedNodes.entrySet()) {
+                    String removedNodePath = workspacePaths.getPath(persistedCache.getNode(entry.getKey())).toString();
+                    Set<NodeKey> referrerKeys = entry.getValue();
+                    Set<String> referrerPaths = new HashSet<>(referrerKeys.size());
+                    for (NodeKey referrerKey : referrerKeys) {
+                        referrerPaths.add(sessionPaths.getPath(getNode(referrerKey)).toString());
+                    }
+                    referrerPathsByRemovedNode.put(removedNodePath, referrerPaths);
+                }
+                throw new ReferentialIntegrityException(referrerPathsByRemovedNode);
             }
 
             // Now remove all of the nodes from the documentStore.

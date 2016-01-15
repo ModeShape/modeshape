@@ -261,7 +261,7 @@ final class JcrVersionHistoryNode extends JcrSystemNode implements VersionHistor
             system.save();
         } catch (org.modeshape.jcr.cache.ReferentialIntegrityException e) {
             // expected by the tck
-            throw new ReferentialIntegrityException(e);
+            throw new ReferentialIntegrityException(e.getMessage());
         }
     }
 
