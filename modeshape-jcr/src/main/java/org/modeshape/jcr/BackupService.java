@@ -15,11 +15,12 @@
  */
 package org.modeshape.jcr;
 
+import static org.modeshape.jcr.BackupDocumentWriter.GZIP_EXTENSION;
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.concurrent.BlockingQueue;
@@ -32,6 +33,8 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
 import javax.jcr.RepositoryException;
 import javax.transaction.SystemException;
 import org.infinispan.Cache;
@@ -47,6 +50,7 @@ import org.modeshape.common.collection.SimpleProblems;
 import org.modeshape.common.i18n.I18n;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.CheckArg;
+import org.modeshape.common.util.FileUtil;
 import org.modeshape.common.util.IoUtil;
 import org.modeshape.common.util.NamedThreadFactory;
 import org.modeshape.jcr.InfinispanUtil.Sequence;
@@ -309,16 +313,20 @@ public class BackupService {
             File second = new File(first, sha1.substring(2, 4));
             File third = new File(second, sha1.substring(4, 6));
             third.mkdirs();
-            File file = new File(third, sha1 + BINARY_EXTENSION);
+
+            String filename = sha1 + BINARY_EXTENSION;
+            if (options.compress()) {
+                filename = filename + GZIP_EXTENSION;
+            }
+            File file = new File(third, filename);
 
             try {
-                FileOutputStream outputStream = new FileOutputStream(file);
-                try {
-                    IoUtil.write(binaryContent, outputStream);
-                    outputStream.flush();
-                } finally {
-                    outputStream.close();
+                OutputStream outputStream = new FileOutputStream(file);
+                if (options.compress()) {
+                    outputStream = new GZIPOutputStream(outputStream);
                 }
+                outputStream = new BufferedOutputStream(outputStream);
+                IoUtil.write(binaryContent, outputStream);
             } catch (Throwable t) {
                 problems.addError(JcrI18n.problemsWritingDocumentToBackup, file.getAbsolutePath(), t.getMessage());
             }
@@ -606,36 +614,36 @@ public class BackupService {
             if (!binaryFile.exists()) return;
             if (!binaryFile.canRead()) {
                 I18n msg = JcrI18n.problemsReadingBinaryFromBackup;
-                BinaryKey key = binaryKeyFor(binaryFile);
+                BinaryKey key = binaryKeyFor(binaryFile, false);
                 problems.addError(msg, key.toString(), repositoryName(), backupLocation());
             }
+            boolean isCompressed = FileUtil.getExtension(binaryFile.getAbsolutePath()).equals(GZIP_EXTENSION);
             try {
                 InputStream stream = new FileInputStream(binaryFile);
+                if(isCompressed){
+                    stream = new GZIPInputStream(stream);
+                }
+                stream = new BufferedInputStream(stream);
                 try {
-                    BinaryValue stored = binaryStore.storeValue(stream, false);
-                    assert stored.getKey().equals(binaryKeyFor(binaryFile));
+                    BinaryValue stored = binaryStore.storeValue(stream, isCompressed);
+                    assert stored.getKey().equals(binaryKeyFor(binaryFile, isCompressed));
                 } finally {
                     stream.close();
                 }
-            } catch (FileNotFoundException e) {
+            } catch (Exception e) {
                 // We already checked that it exists and is readable, so this shouldn't happen. But ...
                 I18n msg = JcrI18n.problemsReadingBinaryFromBackup;
-                BinaryKey key = binaryKeyFor(binaryFile);
+                BinaryKey key = binaryKeyFor(binaryFile, isCompressed);
                 problems.addError(e, msg, key.toString(), repositoryName(), backupLocation());
-            } catch (BinaryStoreException e) {
-                I18n msg = JcrI18n.problemsRestoringBinaryFromBackup;
-                BinaryKey key = binaryKeyFor(binaryFile);
-                problems.addError(e, msg, key.toString(), repositoryName(), backupLocation(), e.getMessage());
-            } catch (IOException e) {
-                I18n msg = JcrI18n.problemsRestoringBinaryFromBackup;
-                BinaryKey key = binaryKeyFor(binaryFile);
-                problems.addError(e, msg, key.toString(), repositoryName(), backupLocation(), e.getMessage());
-            }
+            } 
         }
 
-        protected BinaryKey binaryKeyFor( File binaryFile ) {
+        protected BinaryKey binaryKeyFor(File binaryFile, boolean isCompressed) {
             String filename = binaryFile.getName();
             String sha1 = filename.replace(BINARY_EXTENSION, "");
+            if (isCompressed) {
+                sha1 = sha1.replace(GZIP_EXTENSION, "");
+            }
             return new BinaryKey(sha1);
         }
 

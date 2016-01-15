@@ -105,11 +105,26 @@ public class RepositoryBackupAndRestoreTest extends SingleUseAbstractTest {
     
     @Test
     @FixFor( "MODE-2440" )
-    public void shouldBackupRepositoryWhichIncludesBinaryValues() throws Exception {
+    public void shouldBackupRepositoryWhichIncludesBinaryValuesCompressed() throws Exception {
+        verifyBackupRestoreWithBinaries(BackupOptions.DEFAULT);
+    }
+    
+    @Test
+    @FixFor( "MODE-2559" )
+    public void shouldBackupRepositoryWhichIncludesBinaryValuesUncompressed() throws Exception {
+        verifyBackupRestoreWithBinaries(new BackupOptions() {
+            @Override
+            public boolean compress() {
+                return false;
+            }
+        });
+    }
+
+    private void verifyBackupRestoreWithBinaries(BackupOptions backupOptions) throws Exception {
         loadBinaryContent();
-        
+
         // Make the backup, and check that there are no problems ...
-        Problems problems = session().getWorkspace().getRepositoryManager().backupRepository(backupDirectory);
+        Problems problems = session().getWorkspace().getRepositoryManager().backupRepository(backupDirectory, backupOptions);
         assertNoProblems(problems);
 
         // shutdown the repo and remove all repo data (stored on disk)
@@ -120,7 +135,7 @@ public class RepositoryBackupAndRestoreTest extends SingleUseAbstractTest {
         startRepositoryWithConfiguration(resourceStream("config/backup-repo-config.json"));
         problems = session().getWorkspace().getRepositoryManager().restoreRepository(backupDirectory);
         assertNoProblems(problems);
-        
+
         assertFilesInWorkspcae("default");
         assertFilesInWorkspcae("ws2");
         assertFilesInWorkspcae("ws3");
