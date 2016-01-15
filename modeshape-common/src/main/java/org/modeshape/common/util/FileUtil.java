@@ -32,6 +32,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -317,6 +318,18 @@ public class FileUtil {
                 }
             }
         }
+    }
+
+    /**
+     * Returns the extension of a file, including the dot.
+     * 
+     * @param filename the name of a file, may be not be null
+     * @return the file extension or an empty string if the extension cannot be determined.
+     */
+    public static String getExtension(final String filename) {
+        Objects.requireNonNull(filename, "filename cannot be null");
+        int lastDotIdx = filename.lastIndexOf(".");
+        return lastDotIdx >= 0 ? filename.substring(lastDotIdx) : "";
     }
     
     private FileUtil() {
