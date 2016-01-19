@@ -44,7 +44,7 @@ public final class JcrLocalTransaction implements LocalTransaction {
     public void begin() throws ResourceException {
         try {
             transactions.begin();
-        } catch (NotSupportedException | SystemException e) {
+        } catch (NotSupportedException | SystemException | RollbackException e) {
             throw new LocalTransactionException(e);
         } 
     }

@@ -66,7 +66,7 @@ public class DefaultTransactionManagerLookup implements TransactionManagerLookup
     private static final Logger LOGGER = Logger.getLogger(DefaultTransactionManagerLookup.class); 
     
     @Override
-    public TransactionManager getTransactionManager() throws Exception {
+    public TransactionManager getTransactionManager() {
         return Stream.of((Supplier<Optional<TransactionManager>>) this::lookInJNDI,
                          this::lookForStandaloneJBossJTA,
                          this::lookForAtomikosJTA)

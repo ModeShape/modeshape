@@ -1405,7 +1405,7 @@ public final class Connectors {
                     translator.setProperty(doc, property, null, null);
                 }
             }
-            localStore.storeDocument(key, doc);
+            localStore.storeIfAbsent(key, doc);
         }
 
         @Override
@@ -1422,7 +1422,7 @@ public final class Connectors {
                     translator.removeProperty(doc, propertyEntry.getKey(), null, null);
                 }
             }
-            localStore.storeDocument(key, doc);
+            localStore.storeIfAbsent(key, doc);
         }
 
         @Override

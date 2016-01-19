@@ -150,9 +150,8 @@ public abstract class AbstractNodeCacheTest extends AbstractSchematicDbTest {
                     if (info != null) {
                         String nextBlockKey = info.getString(DocumentTranslator.NEXT_BLOCK);
                         if (nextBlockKey != null) {
-                            SchematicEntry nextEntry = schematicDb.get(nextBlockKey);
-                            if (nextEntry != null) {
-                                Document next = nextEntry.getContent();
+                            Document next = schematicDb.get(nextBlockKey);
+                            if (next != null) {
                                 print(next, true);
                             }
                         }

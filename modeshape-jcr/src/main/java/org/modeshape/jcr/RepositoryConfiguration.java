@@ -2458,7 +2458,7 @@ public class RepositoryConfiguration {
      * @see #validate(Changes)
      */
     public Editor edit() {
-        return Schematic.editDocument(this.doc, true);
+        return this.doc.edit(true);
     }
 
     /***

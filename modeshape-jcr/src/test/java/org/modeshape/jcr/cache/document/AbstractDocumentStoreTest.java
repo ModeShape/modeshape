@@ -15,46 +15,32 @@
  */
 package org.modeshape.jcr.cache.document;
 
+import static org.junit.Assert.assertNotNull;
 import javax.transaction.TransactionManager;
-import org.infinispan.configuration.cache.ConfigurationBuilder;
-import org.infinispan.configuration.global.GlobalConfigurationBuilder;
-import org.infinispan.manager.DefaultCacheManager;
-import org.infinispan.manager.EmbeddedCacheManager;
 import org.infinispan.schematic.Schematic;
 import org.infinispan.schematic.SchematicDb;
 import org.infinispan.schematic.TestUtil;
-import org.infinispan.transaction.LockingMode;
-import org.infinispan.transaction.TransactionMode;
-import org.infinispan.transaction.lookup.DummyTransactionManagerLookup;
-import org.infinispan.util.concurrent.IsolationLevel;
 import org.junit.After;
 import org.junit.Before;
 import org.modeshape.jcr.RepositoryEnvironment;
+import org.modeshape.jcr.api.txn.TransactionManagerLookup;
+import org.modeshape.jcr.txn.DefaultTransactionManagerLookup;
 import org.modeshape.jcr.txn.Transactions;
 
 public abstract class AbstractDocumentStoreTest {
 
-    protected EmbeddedCacheManager cm;
     protected RepositoryEnvironment repoEnv;
     protected LocalDocumentStore localStore;
+    protected SchematicDb db;
 
     @Before
-    public void beforeTest() {
-        ConfigurationBuilder configurationBuilder = new ConfigurationBuilder();
-        configurationBuilder.invocationBatching()
-                            .enable()
-                            .transaction()
-                            .transactionManagerLookup(new DummyTransactionManagerLookup())
-                            .transactionMode(TransactionMode.TRANSACTIONAL)
-                            .lockingMode(LockingMode.PESSIMISTIC)
-                            .locking()
-                            .isolationLevel(IsolationLevel.READ_COMMITTED);
-        GlobalConfigurationBuilder globalConfigurationBuilder = new GlobalConfigurationBuilder();
-        globalConfigurationBuilder.globalJmxStatistics().allowDuplicateDomains(true);
-        cm = new DefaultCacheManager(globalConfigurationBuilder.build(), configurationBuilder.build());
+    public void beforeTest() throws Exception {
         // Now create the SchematicDb ...
-        SchematicDb db = Schematic.get(cm, "documents");
-        TransactionManager tm = db.getCache().getAdvancedCache().getTransactionManager();
+        db = Schematic.getDb("mem");
+        db.start();
+        TransactionManagerLookup txLookup = new DefaultTransactionManagerLookup();
+        TransactionManager tm = txLookup.getTransactionManager();
+        assertNotNull("Cannot find a transaction manager", tm);        
         repoEnv = new TestRepositoryEnvironment(tm);
         localStore = new LocalDocumentStore(db, repoEnv);
     }
@@ -62,9 +48,8 @@ public abstract class AbstractDocumentStoreTest {
     @After
     public void afterTest() {
         try {
-            TestUtil.killCacheContainers(cm);
+            db.stop();
         } finally {
-            cm = null;
             try {
                 TestUtil.killTransaction(transactions().getTransactionManager());
             } finally {

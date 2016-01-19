@@ -15,71 +15,98 @@
  */
 package org.infinispan.schematic;
 
-import org.infinispan.schematic.Schematic.ContentTypes;
+import java.util.Objects;
 import org.infinispan.schematic.document.Binary;
 import org.infinispan.schematic.document.Document;
+import org.infinispan.schematic.internal.document.BasicDocument;
 
 /**
- * A value used to store user's content (often a JSON document or a binary value) and metadata as an entry in a SchematicDb. These
- * values also offer fine-grained locking and serialization of the value.
- *
+ * A wrapper over a conventional {@link Document} which exposes a predefined structure of documents usually stored inside
+ * a {@link SchematicDb}.
+ * 
  * @author Randall Hauch <rhauch@redhat.com> (C) 2011 Red Hat Inc.
- * @since 5.1
+ * @author Horia Chiorean <hchiorea@redhat.com>
+ * 
+ * @since 5.0
  */
-public interface SchematicEntry extends Cloneable {
+@FunctionalInterface
+public interface SchematicEntry {
 
-    public static interface FieldName {
+    interface FieldName {
         /**
          * The name of the field used internally to store an entry's metadata.
          */
-        public static final String METADATA = "metadata";
+        String METADATA = "metadata";
         /**
          * The name of the field used internally to store an entry's content, which is either a {@link Document} or a
          * {@link Binary} value.
          */
-        public static final String CONTENT = "content";
+        String CONTENT = "content";
 
         /**
          * The name of the metadata field used to store the document key. Note that {@value} is also the field name used by <a
          * href="http://tools.ietf.org/html/draft-zyp-json-schema-03#section-5.27">JSON Schema</a>.
          */
-        public static final String ID = "id";
-
-        /**
-         * The name of the metadata field used to store the reference to the JSON Schema to which the document should conform.
-         * Note that {@value} is the field name used by <a
-         * href="http://tools.ietf.org/html/draft-zyp-json-schema-03#section-5.29">JSON Schema</a>.
-         */
-        public static final String SCHEMA_URI = "$schema";
+        String ID = "id";
     }
 
     /**
-     * Get the metadata associated with this value.
+     * Returns the original document which is wrapped by this entry.
      *
-     * @return the metadata document; never null
+     * @return a {@link Document} instance, never {@code null}
      */
-    Document getMetadata();
+    Document source();
 
     /**
-     * Return this value's content. The result will either be a {@link Document}.
+     * Get the metadata associated with this document.
+     *
+     * @return the metadata document or null if there is no metadata document
+     */
+    default Document getMetadata() {
+        return source().getDocument(FieldName.METADATA);
+    }
+
+    /**
+     * Return this document's content. The result will either be a {@link Document} or null.
      *
      * @return the content, or null if there is no content
      */
-    Document getContent();
+    default Document getContent() {
+        return source().getDocument(FieldName.CONTENT);
+    }
 
     /**
-     * Set the content for this value to be the supplied Document and set the content type to be " {@link ContentTypes#JSON
-     * application/json}".
+     * Returns this document's id.
      *
-     * @param content the Document representing the JSON content; may not be null
+     * @return the ID, or null if no ID field is present
+     * @throws NullPointerException if this document does not have a metadata section
      */
-    void setContent( Document content );
+    default String getId() {
+        return Objects.requireNonNull(getMetadata(), "Metadata document is null").getString(FieldName.ID);
+    }
 
     /**
-     * Get the representation of this entry as a document, which will include the {@link #getMetadata() metadata} and
-     * {@link #getContent() content} as nested documents.
-     *
-     * @return the entry's representation as a document
+     * Creates a new empty entry with the given id.
+     * 
+     * @param id the id of the document, may not be null. 
+     * @return a new {@link SchematicEntry}, never {@code null}
      */
-    Document asDocument();
+    static SchematicEntry create(String id) {
+        return create(id, new BasicDocument());    
+    }
+
+    /**
+     * Creates a new entry with the given content.
+     *
+     * @param id the id of the document, may not be null.
+     * @param content the id of the document, may not be null.
+     * @return a new {@link SchematicEntry}, never {@code null}
+     */
+    static SchematicEntry create(String id, Document content) {
+        id = Objects.requireNonNull(id, "id cannot be null");
+        content = Objects.requireNonNull(content, "content cannot be null");
+        final Document source = new BasicDocument(FieldName.METADATA, new BasicDocument(FieldName.ID, id), 
+                                                  FieldName.CONTENT, content);
+        return () -> source;
+    }
 }

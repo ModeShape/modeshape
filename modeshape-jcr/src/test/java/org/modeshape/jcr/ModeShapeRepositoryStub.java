@@ -24,8 +24,6 @@ import javax.jcr.ImportUUIDBehavior;
 import javax.jcr.NamespaceRegistry;
 import javax.jcr.Session;
 import org.apache.jackrabbit.test.RepositoryStub;
-import org.infinispan.manager.CacheContainer;
-import org.infinispan.schematic.TestUtil;
 import org.modeshape.jcr.api.nodetype.NodeTypeManager;
 import org.modeshape.jcr.security.SimplePrincipal;
 
@@ -68,22 +66,11 @@ public class ModeShapeRepositoryStub extends RepositoryStub {
 
         // Clean up from a previous invocation ...
         if (engine != null) {
-            CacheContainer container = null;
-            if (repository != null) {
-                container = repository.documentStore().localStore().localCache().getCacheManager();
-            }
             try {
                 // Terminate any existing engine and destroy any content used by the repositories ...
                 TestingUtil.killEngine(engine);
             } finally {
                 engine = null;
-                if (container != null) {
-                    try {
-                        TestUtil.killCacheContainers(container);
-                    } finally {
-                        container = null;
-                    }
-                }
             }
         }
         // Read the configuration file and setup the engine ...

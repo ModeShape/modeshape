@@ -297,14 +297,6 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
         }
     }
 
-    protected SchematicEntry entryForNode( NodeKey nodeKey ) throws RepositoryException {
-        SchematicEntry entry = repository.documentStore().get(nodeKey.toString());
-        if (entry == null) {
-            throw new PathNotFoundException(nodeKey.toString());
-        }
-        return entry;
-    }
-
     final String workspaceName() {
         return workspace.getName();
     }

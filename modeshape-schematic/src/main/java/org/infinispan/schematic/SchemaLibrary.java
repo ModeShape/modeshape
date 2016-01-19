@@ -23,7 +23,6 @@ import org.infinispan.schematic.document.Path;
  * A library of JSON Schema documents. Because JSON Schemas are in fact JSON documents, this library is also a DocumentLibrary.
  * 
  * @author Randall Hauch <rhauch@redhat.com> (C) 2011 Red Hat Inc.
- * @since 5.1
  */
 public interface SchemaLibrary extends DocumentLibrary {
 

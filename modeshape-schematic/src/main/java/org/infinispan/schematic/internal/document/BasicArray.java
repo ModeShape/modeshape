@@ -829,7 +829,7 @@ public class BasicArray implements MutableArray {
     }
 
     @Override
-    public Array clone() {
+    public MutableArray clone() {
         BasicArray clone = new BasicArray();
         for (Object value : this) {
             value = unwrap(value);

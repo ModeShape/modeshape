@@ -1848,4 +1848,6 @@ public interface EditableArray extends EditableDocument, Array {
     EditableDocument addCodeIfAbsent( String code,
                                       Document scope );
 
+    @Override
+    EditableArray clone();
 }

@@ -15,8 +15,11 @@
  */
 package org.modeshape.jcr.txn;
 
+import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.LinkedHashSet;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import javax.transaction.HeuristicMixedException;
 import javax.transaction.HeuristicRollbackException;
@@ -28,8 +31,10 @@ import javax.transaction.Synchronization;
 import javax.transaction.SystemException;
 import javax.transaction.TransactionManager;
 import javax.transaction.xa.XAResource;
+import org.infinispan.schematic.TransactionListener;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.jcr.cache.change.ChangeSet;
+import org.modeshape.jcr.cache.document.TransactionalWorkspaceCache;
 import org.modeshape.jcr.cache.document.WorkspaceCache;
 
 /**
@@ -60,21 +65,34 @@ import org.modeshape.jcr.cache.document.WorkspaceCache;
  * </p>
  * <p>
  * Note that when distributed (XA) transactions are used, ModeShape properly integrates and uses the XA transaction but does not
- * register itself as an {@link XAResource}. (Note that the Infinispan cache <i>is</i> enlisted as a resource in the transaction.)
- * Therefore, even when XA transactions only involve the JCR repository as the single resource, ModeShape enlists only a single
- * resource, allowing the transaction manager to optimize the 2PC with a single resource as a 1PC transaction. (Rather than
- * enlisting the repository as an XAResource, ModeShape registers a {@link Synchronization} with the transaction to be notified
- * when the transaction commits successfully, and it uses this to dictate when the events and session's changes are made visible
- * to other sessions.
+ * register itself as an {@link XAResource}. Therefore, even when XA transactions only involve the JCR repository as 
+ * the single resource, ModeShape enlists only a single resource, allowing the transaction manager to optimize the 2PC with a 
+ * single resource as a 1PC transaction. (Rather than enlisting the repository as an XAResource, ModeShape registers 
+ * a {@link Synchronization} with the transaction to be notified when the transaction commits successfully, and it uses this to 
+ * dictate when the events and session's changes are made visible to other sessions.
  * </p>
  */
-public abstract class Transactions {
+public class Transactions {
+
+    private static final ThreadLocal<NestableThreadLocalTransaction> LOCAL_TRANSACTION = new ThreadLocal<>();
+    private static final Set<String> ACTIVE_TRACE_SYNCHRONIZATIONS = new HashSet<>();
 
     protected final TransactionManager txnMgr;
     protected final Logger logger = Logger.getLogger(Transactions.class);
+    
+    private final TransactionListener listener;
+    private final IdentityHashMap<javax.transaction.Transaction, SynchronizedTransaction> transactionTable;
 
-    protected Transactions( TransactionManager txnMgr ) {
+    /**
+     * Creates a new instance wrapping an existing transaction manager and a transaction listener.
+     * 
+     * @param txnMgr a {@link TransactionManager} instance; may not be null
+     * @param listener a {@link TransactionListener} instance; may not be null
+     */
+    public Transactions(TransactionManager txnMgr, TransactionListener listener) {
         this.txnMgr = txnMgr;
+        this.listener = listener;
+        this.transactionTable = new IdentityHashMap<>();
     }
 
     /**
@@ -115,11 +133,77 @@ public abstract class Transactions {
      *
      * @return the ModeShape transaction
      * @throws NotSupportedException If the calling thread is already associated with a transaction, and nested transactions are
-     *         not supported.
+     * not supported.
      * @throws SystemException If the transaction service fails in an unexpected way.
      */
-    public abstract Transaction begin() throws NotSupportedException, SystemException;
+    public Transaction begin() throws NotSupportedException, SystemException, RollbackException {
+        // check if there isn't an active transaction already
+        NestableThreadLocalTransaction localTx = LOCAL_TRANSACTION.get();
+        if (localTx != null) {
+            // we have an existing local transaction so we need to be aware of nesting by calling 'begin'
+            if (logger.isTraceEnabled()) {
+                logger.trace("Found active ModeShape transaction '{0}' ", localTx);
+            }
+            return localTx.begin();
+        }
 
+        // Get the transaction currently associated with this thread (if there is one) ...
+        javax.transaction.Transaction txn = txnMgr.getTransaction();
+        if (txn == null) {
+            // There is no transaction, so start a local one ...
+            txnMgr.begin();
+            // create our wrapper ...
+            localTx = new NestableThreadLocalTransaction(txnMgr).begin();
+            // and notify the listener
+            listener.txStarted(localTx.id);
+            return logTransactionInformation(localTx);
+        }
+
+        // There's an existing tx, meaning user transactions are being used
+        SynchronizedTransaction synchronizedTransaction = transactionTable.get(txn);
+        if (synchronizedTransaction != null) {
+            // we've already started our own transaction so just return it as is
+            return logTransactionInformation(synchronizedTransaction);
+        } else {
+            synchronizedTransaction = new SynchronizedTransaction(txnMgr, txn);
+            // transactions should be thread-bound, so the following should work even if the map is not concurrent....
+            transactionTable.put(txn, synchronizedTransaction);
+            // this is the first time ModeShape has seen this user transaction, so notify the listener
+            listener.txStarted(synchronizedTransaction.id);
+            // and register a synchronization
+            txn.registerSynchronization(synchronizedTransaction);
+            return logTransactionInformation(synchronizedTransaction);
+        }
+    }
+
+    private Transaction logTransactionInformation( Transaction transaction ) throws SystemException {
+        if (!logger.isTraceEnabled()) {
+            return transaction;
+        }
+
+        logger.trace("Created & stored new ModeShape synchronized transaction '{0}' ", transaction);
+        javax.transaction.Transaction txn = txnMgr.getTransaction();
+        assert txn != null;
+        final String id = txn.toString();
+        // Register a synchronization for this transaction ...
+        if (!ACTIVE_TRACE_SYNCHRONIZATIONS.contains(id)) {
+            if (transaction instanceof SynchronizedTransaction) {
+                logger.trace("Found user transaction {0}", txn);
+            } else {
+                logger.trace("Begin transaction {0}", id);
+            }
+            // Only if we don't already have one ...
+            try {
+                txn.registerSynchronization(new TransactionTracer(id));
+            } catch (RollbackException e) {
+                // This transaction has been marked for rollback only ...
+                return new RollbackOnlyTransaction();
+            }
+        } else {
+            logger.trace("Tracer already registered for transaction {0}", id);
+        }
+        return transaction;
+    }
     /**
      * Returns a the current ModeShape transaction, if one exists. 
      * <p>
@@ -128,9 +212,27 @@ public abstract class Transactions {
      * {@link org.modeshape.jcr.JcrSession} is saved.
      * </p>
      *
-     * @return either a {@link org.modeshape.jcr.txn.Transactions.Transaction instance} or {@code null}
+     * @return either a {@link org.modeshape.jcr.txn.Transactions.Transaction instance} or {@code null} if no ModeShape transaction
+     * exists
      */
-    public abstract Transaction currentTransaction();
+    public Transaction currentTransaction() {
+        Transaction localTx = LOCAL_TRANSACTION.get();
+        if (localTx != null) {
+            return localTx;
+        }
+        try {
+            javax.transaction.Transaction txn = txnMgr.getTransaction();
+            if (txn == null) {
+                // no active transaction
+                return null;
+            }
+            return transactionTable.get(txn);
+        } catch (SystemException e) {
+            logger.debug(e, "Cannot determine if there is an active transaction or not");
+            return null;
+        }
+
+    }
 
     /**
      * Commits the current transaction, if one exists.
@@ -173,12 +275,21 @@ public abstract class Transactions {
      * @param changes the changes; may be null if there are no changes
      * @param transaction the transaction with which the changes were made; may not be null
      */
-    public void updateCache( WorkspaceCache workspace,
-                             ChangeSet changes,
-                             Transaction transaction ) {
-        // Notify the workspaces of the changes made. This is done outside of our lock but still before the save returns ...
-        if (changes != null && !changes.isEmpty()) {
-            // Notify the workspace (outside of the lock, but still before the save returns) ...
+    public void updateCache( final WorkspaceCache workspace, final ChangeSet changes, Transaction transaction ) {
+        if (changes == null || changes.isEmpty()) {
+            return;
+        }
+        if (transaction instanceof SynchronizedTransaction) {
+            // only issue the changes when the transaction is successfully committed
+            transaction.uponCommit(() -> workspace.changed(changes));
+            if (workspace instanceof TransactionalWorkspaceCache) {
+                ((TransactionalWorkspaceCache) workspace).changedWithinTransaction(changes);
+            }
+        } else if (transaction instanceof RollbackOnlyTransaction) {
+            // The transaction has been marked for rollback only, so no need to even capture these changes because
+            // no changes will ever escape the Session ...
+        } else {
+            // in all other cases we want to dispatch the changes immediately
             workspace.changed(changes);
         }
     }
@@ -219,7 +330,7 @@ public abstract class Transactions {
      * transaction for the current thread. In either case, the caller still {@link #commit() commits} or {@link #rollback()
      * rollsback} the transaction as normal when it's work is done.
      */
-    public static interface Transaction {
+    public interface Transaction {
 
         /**
          * Returns the status associated with the current transaction
@@ -278,32 +389,29 @@ public abstract class Transactions {
     /**
      * A function that should be executed in relation to a transaction.
      */
-    public static interface TransactionFunction {
+    public interface TransactionFunction {
         void execute();
     }
 
     protected abstract class BaseTransaction implements Transaction {
         protected final TransactionManager txnMgr;
-        private Set<TransactionFunction> uponCompletionFunctions;
-        private Set<TransactionFunction> uponCommitFunctions;
+        protected final String id;
+        
+        private final LinkedHashSet<TransactionFunction> uponCompletionFunctions = new LinkedHashSet<>();
+        private final LinkedHashSet<TransactionFunction> uponCommitFunctions = new LinkedHashSet<>();
 
         protected BaseTransaction( TransactionManager txnMgr ) {
             this.txnMgr = txnMgr;
+            this.id = UUID.randomUUID().toString();
         }
 
         @Override
         public void uponCompletion( TransactionFunction function ) {
-            if (uponCompletionFunctions == null) {
-                uponCompletionFunctions = new LinkedHashSet<>();
-            }
             uponCompletionFunctions.add(function);
         }
 
         @Override
-        public void uponCommit( TransactionFunction function ) {
-            if (uponCommitFunctions == null) {
-                uponCommitFunctions = new LinkedHashSet<>();
-            }
+        public void uponCommit(TransactionFunction function) {
             uponCommitFunctions.add(function);
         }
 
@@ -312,26 +420,28 @@ public abstract class Transactions {
             return txnMgr.getStatus();
         }
 
+        @Override
+        public String toString() {
+            final StringBuilder sb = new StringBuilder(getClass().getSimpleName()).append("[");
+            sb.append("id='").append(id).append('\'');
+            sb.append(']');
+            return sb.toString();
+        }
+
         protected void executeFunctionsUponCompletion() {
-            if (uponCompletionFunctions != null) {
-                executeFunctions(uponCompletionFunctions);
-                uponCompletionFunctions = null;
+            try {
+                uponCompletionFunctions.forEach(TransactionFunction::execute);
+            } finally {
+                uponCompletionFunctions.clear();
             }
         }
 
         protected void executeFunctionsUponCommit() {
-            if (uponCommitFunctions != null) {
-                executeFunctions(uponCommitFunctions);
-                uponCommitFunctions = null;
+            try {
+                uponCommitFunctions.forEach(TransactionFunction::execute);
+            } finally {
+                uponCommitFunctions.clear();
             }
-        }
-
-        private void executeFunctions( Set<TransactionFunction> functions ) {
-            // Execute the functions immediately ...
-            for (TransactionFunction function : functions) {
-                function.execute();
-            }
-            functions.clear();
         }
     }
 
@@ -347,6 +457,8 @@ public abstract class Transactions {
                 if (canRollback()) {
                     // rollback first
                     txnMgr.rollback();
+                    // notify the listener
+                    listener.txRolledback(id);
                 }
             } finally {
                 // even if rollback fails, we want to execute the complete functions to try and leave the repository into a consistent state
@@ -362,7 +474,9 @@ public abstract class Transactions {
             try {
                 // commit first
                 txnMgr.commit();
-                // if the above succeeded, ISPN should have been updated so execute the functions
+                // notify the listener
+                listener.txCommitted(id);
+                // run the ModeShape commit functions
                 executeFunctionsUponCommit();
             } finally {
                 // even if commit fails, we want to execute the complete functions to try and leave the repository into a consistent state
@@ -398,7 +512,7 @@ public abstract class Transactions {
         @Override
         public void rollback() throws IllegalStateException, SecurityException, SystemException {
             if (logger.isTraceEnabled()) {
-                logger.trace("Rolling back transaction '{0}'", currentTransactionId());
+                logger.trace("Rolling back transaction '{0}'", id);
             }
             super.rollback();
         }
@@ -408,7 +522,6 @@ public abstract class Transactions {
                 throws RollbackException, HeuristicMixedException, HeuristicRollbackException, SecurityException,
                        IllegalStateException, SystemException {
             if (logger.isTraceEnabled()) {
-                String id = currentTransactionId();
                 super.commit();
                 logger.trace("Committed transaction '{0}'", id);
             } else {
@@ -419,12 +532,10 @@ public abstract class Transactions {
 
     protected class NestableThreadLocalTransaction extends TraceableSimpleTransaction {
         private AtomicInteger nestedLevel = new AtomicInteger(0);
-        private ThreadLocal<NestableThreadLocalTransaction> txHolder;
-
-        protected NestableThreadLocalTransaction( TransactionManager txnMgr, ThreadLocal<NestableThreadLocalTransaction> txHolder ) {
+        
+        protected NestableThreadLocalTransaction( TransactionManager txnMgr ) {
             super(txnMgr);
-            this.txHolder = txHolder;
-            this.txHolder.set(this);
+            LOCAL_TRANSACTION.set(this);
         }
 
         @Override
@@ -437,7 +548,8 @@ public abstract class Transactions {
         }
 
         @Override
-        public void commit() throws RollbackException, HeuristicMixedException, HeuristicRollbackException, SecurityException, IllegalStateException, SystemException {
+        public void commit() throws RollbackException, HeuristicMixedException, HeuristicRollbackException, SecurityException, 
+                                    IllegalStateException, SystemException {
             if (nestedLevel.getAndDecrement() == 1) {
                 try {
                     super.commit();
@@ -450,17 +562,125 @@ public abstract class Transactions {
         }
 
         protected void cleanup() {
-            // this can be null if commit failed and then rollback is called in which case cleanup had already been done
-            if (txHolder != null) {
-                txHolder.remove();
-                txHolder = null;
-            }
+            LOCAL_TRANSACTION.remove();
             nestedLevel = null;
         }
 
         protected NestableThreadLocalTransaction begin() {
             nestedLevel.incrementAndGet();
             return this;
+        }
+    }
+
+    protected final class SynchronizedTransaction extends BaseTransaction implements Synchronization {
+        private final javax.transaction.Transaction transaction;
+        
+        protected SynchronizedTransaction( TransactionManager txnMgr, javax.transaction.Transaction transaction ) {
+            super(txnMgr);
+            this.transaction = transaction;
+        }
+
+        @Override
+        public void commit()  {
+            if (logger.isTraceEnabled()) {
+                logger.trace("'{0}' ignoring commit call coming from ModeShape.", id);
+            }
+            //nothing by default
+        }
+
+        @Override
+        public void rollback() {
+            if (logger.isTraceEnabled()) {
+                logger.trace("'{0}' ignoring rollback call coming from ModeShape.", id);
+            }
+            // nothing by default
+        }
+
+        @Override
+        public void beforeCompletion() {
+            // nothing before completion...
+        }
+
+        @Override
+        public void afterCompletion(int status) {
+            if (logger.isTraceEnabled()) {
+                logger.trace("Synchronization for '{0}' notified after completion with status '{1}'", id, status);
+            }
+            try {
+                if (Status.STATUS_COMMITTED == status) {
+                    listener.txCommitted(id);
+                    executeFunctionsUponCommit();
+                } else if (Status.STATUS_ROLLEDBACK == status){
+                    listener.txRolledback(id);
+                }
+            } finally {
+                try {
+                    executeFunctionsUponCompletion();
+                } finally {
+                    transactionTable.remove(this.transaction);
+                }
+            }
+        }
+    }
+
+    protected class RollbackOnlyTransaction implements Transaction {
+
+        public RollbackOnlyTransaction() {
+        }
+
+        @Override
+        public int status() {
+            return Status.STATUS_MARKED_ROLLBACK;
+        }
+
+        @Override
+        public void commit() {
+            // do nothing
+        }
+
+        @Override
+        public void rollback() {
+            // do nothing
+        }
+
+        @Override
+        public void uponCompletion(TransactionFunction function) {
+            // do nothing
+        }
+
+        @Override
+        public void uponCommit(TransactionFunction function) {
+            // do nothing
+        }
+    }
+    
+    protected final class TransactionTracer implements Synchronization {
+        private String txnId;
+
+        protected TransactionTracer( String id ) {
+            txnId = id;
+            ACTIVE_TRACE_SYNCHRONIZATIONS.add(id);
+        }
+
+        @Override
+        public void beforeCompletion() {
+            // do nothing else ...
+        }
+
+        @Override
+        public void afterCompletion( int status ) {
+            ACTIVE_TRACE_SYNCHRONIZATIONS.remove(txnId);
+            switch (status) {
+                case Status.STATUS_COMMITTED:
+                    logger.trace("Commit transaction '{0}'", txnId);
+                    break;
+                case Status.STATUS_ROLLEDBACK:
+                    logger.trace("Roll back transaction '{0}'", txnId);
+                    break;
+                default:
+                    // Don't do anything ...
+                    break;
+            }
         }
     }
 }

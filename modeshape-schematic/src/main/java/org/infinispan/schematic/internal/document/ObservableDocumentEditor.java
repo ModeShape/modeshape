@@ -34,11 +34,11 @@ public class ObservableDocumentEditor extends DocumentEditor {
 
     public ObservableDocumentEditor( MutableDocument document,
                                      Path path,
-                                     DocumentObserver delta,
+                                     DocumentObserver observer,
                                      DocumentValueFactory factory ) {
         super(document, factory);
         this.path = path;
-        this.observer = delta;
+        this.observer = observer;
     }
 
     @Override

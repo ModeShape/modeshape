@@ -113,10 +113,10 @@ public class FederatedDocumentStore implements DocumentStore {
     }
 
     @Override
-    public SchematicEntry storeDocument( String key,
-                                         Document document ) {
+    public SchematicEntry storeIfAbsent(String key,
+                                        Document document) {
         if (isLocalSource(key)) {
-            return localStore().storeDocument(key, document);
+            return localStore().storeIfAbsent(key, document);
         }
         Connector connector = connectors.getConnectorForSourceKey(sourceKey(key));
         if (connector != null) {
@@ -263,7 +263,8 @@ public class FederatedDocumentStore implements DocumentStore {
                 EditableDocument editableDocument = replaceConnectorIdsWithNodeKeys(document, connector.getSourceName());
                 editableDocument = updateCaching(connector, editableDocument);
                 editableDocument = updateQueryable(connector, editableDocument);
-                return new FederatedSchematicEntry(editableDocument);
+                final EditableDocument result = editableDocument;
+                return () -> result;
             }
         }
         return null;
@@ -331,11 +332,8 @@ public class FederatedDocumentStore implements DocumentStore {
             return localStore().edit(key, createIfMissing);
         }
         // It's federated, so we have to use the federated logic ...
-        FederatedSchematicEntry entry = (FederatedSchematicEntry)get(key);
-        if (entry != null) {
-            return entry.edit();
-        }
-        return null;
+        SchematicEntry entry = get(key);
+        return entry != null ? entry.source().editable() : null;
     }
 
     @Override

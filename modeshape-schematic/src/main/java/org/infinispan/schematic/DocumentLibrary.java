@@ -21,7 +21,6 @@ import org.infinispan.schematic.document.Document;
  * A library of JSON documents.
  * 
  * @author Randall Hauch <rhauch@redhat.com> (C) 2011 Red Hat Inc.
- * @since 5.1
  */
 public interface DocumentLibrary {
 

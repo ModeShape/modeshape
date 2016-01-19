@@ -299,7 +299,7 @@ public interface Document extends Serializable {
      * 
      * @return the map
      */
-    Map<String, ? extends Object> toMap();
+    Map<String, ?> toMap();
 
     /**
      * Obtain an iterator over the {@link Field}s in this object.
@@ -449,10 +449,25 @@ public interface Document extends Serializable {
     Document withVariablesReplacedWithSystemProperties();
 
     /**
+     * Obtains an editor for the supplied document. The editor allows the caller to make changes to the document and to obtain
+     * these changes as a {@link Changes serializable memento} that can be applied to another document.
+     * 
+     * @return an {@link Editor} instance which can used to change the document; never {@code null} 
+     */
+    Editor edit(boolean clone);
+
+    /**
+     * Returns an editable view of the given document. Any changes will be reflected directly in the underlying document
+     * 
+     * @return a {@link EditableDocument} instance, never {@code null}
+     */
+    EditableDocument editable();
+
+    /**
      * A component that can transform field values, via {@link Document#with(ValueTransformer)}. Implementations do not need to
      * worry about {@link Document} values, since the transformer is never called on such values.
      */
-    static interface ValueTransformer {
+    interface ValueTransformer {
         /**
          * Transform the supplied field value.
          * 
@@ -465,7 +480,7 @@ public interface Document extends Serializable {
                           Object value );
     }
 
-    static interface Field extends Comparable<Field> {
+    interface Field extends Comparable<Field> {
 
         /**
          * Get the name of the field
@@ -499,5 +514,4 @@ public interface Document extends Serializable {
 
         Document getValueAsDocument();
     }
-
 }

@@ -15,8 +15,11 @@
  */
 package org.infinispan.schematic.internal.document;
 
+import java.util.ArrayList;
 import java.util.Map;
 import org.infinispan.schematic.document.Document;
+import org.infinispan.schematic.document.EditableDocument;
+import org.infinispan.schematic.document.Editor;
 
 /**
  * A mutable {@link Document} used when building a MutableBsonObject.
@@ -64,4 +67,16 @@ public interface MutableDocument extends Document {
      */
     public void removeAll();
 
+    @Override
+    MutableDocument clone();
+
+    @Override
+    default Editor edit(boolean clone) {
+        return clone ? new IncrementalDocumentEditor(this.clone(), new ArrayList<>()) : new IncrementalDocumentEditor(this, new ArrayList<>());
+    }
+
+    @Override
+    default EditableDocument editable() {
+        return new DocumentEditor(this);
+    }
 }

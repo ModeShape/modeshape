@@ -16,11 +16,14 @@
 package org.infinispan.schematic.document;
 
 import java.text.ParseException;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.Map;
 import java.util.UUID;
 import java.util.regex.Pattern;
 import org.infinispan.schematic.document.Bson.BinaryType;
+import org.infinispan.schematic.internal.document.IncrementalDocumentEditor;
+import org.infinispan.schematic.internal.document.MutableDocument;
 
 public interface EditableDocument extends Document {
 
@@ -38,6 +41,13 @@ public interface EditableDocument extends Document {
      * @return the value that was removed, or null if there was no such value
      */
     Object remove( String name );
+
+    /**
+     * Returns the underlying mutable document. 
+     * 
+     * @return a {@link MutableDocument} instance; never null
+     */
+    MutableDocument asMutableDocument();
 
     /**
      * Remove all fields from this document.
@@ -604,4 +614,18 @@ public interface EditableDocument extends Document {
                               String code,
                               Document scope );
 
+    @Override
+    EditableDocument clone();
+
+    @Override
+    default Editor edit(boolean clone) {
+        return clone ?
+               new IncrementalDocumentEditor(this.clone().asMutableDocument(), new ArrayList<>()) :
+               new IncrementalDocumentEditor(this.asMutableDocument(), new ArrayList<>());
+    }
+
+    @Override
+    default EditableDocument editable() {
+        return this;
+    }
 }

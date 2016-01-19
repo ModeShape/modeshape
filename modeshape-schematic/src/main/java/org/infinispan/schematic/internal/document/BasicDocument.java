@@ -429,7 +429,7 @@ public class BasicDocument extends LinkedHashMap<String, Object> implements Muta
     }
 
     @Override
-    public Document clone() {
+    public MutableDocument clone() {
         BasicDocument clone = new BasicDocument();
         for (Field field : this.fields()) {
             Object value = unwrap(field.getValue());

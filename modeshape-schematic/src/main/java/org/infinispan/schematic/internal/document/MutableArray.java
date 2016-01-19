@@ -118,4 +118,6 @@ public interface MutableArray extends Array, MutableDocument {
      */
     List<Entry> retainAllValues( Collection<?> values );
 
+    @Override
+    MutableArray clone();
 }

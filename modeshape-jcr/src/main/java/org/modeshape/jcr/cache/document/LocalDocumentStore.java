@@ -19,15 +19,16 @@ package org.modeshape.jcr.cache.document;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.function.BiFunction;
+import java.util.stream.Stream;
 import javax.transaction.HeuristicMixedException;
 import javax.transaction.HeuristicRollbackException;
 import javax.transaction.RollbackException;
 import javax.transaction.SystemException;
-import org.infinispan.Cache;
 import org.infinispan.schematic.SchematicDb;
 import org.infinispan.schematic.SchematicEntry;
 import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.document.EditableDocument;
+import org.modeshape.common.annotation.RequiresTransaction;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.jcr.RepositoryEnvironment;
 import org.modeshape.jcr.locking.LockingService;
@@ -65,15 +66,24 @@ public class LocalDocumentStore implements DocumentStore {
         return database.containsKey(key);
     }
 
-    @Override
-    public SchematicEntry get( String key ) {
-        return database.get(key);
+    /**
+     * Returns all the keys which are held by this store.
+     * 
+     * @return a {@link Stream} of keys, never {@code null}
+     */
+    public Stream<String> keys() {
+        return database.keys();    
     }
 
     @Override
-    public SchematicEntry storeDocument( String key,
-                                         Document document ) {
-        return database.putIfAbsent(key, document);
+    public SchematicEntry get( String key ) {
+        return database.getEntry(key);
+    }
+
+    @Override
+    public SchematicEntry storeIfAbsent(String key,
+                                        Document document) {
+        return () -> database.putIfAbsent(key, document);
     }
 
     @Override
@@ -98,6 +108,7 @@ public class LocalDocumentStore implements DocumentStore {
      * @param document the document that is to be stored
      * @see SchematicDb#put(String, org.infinispan.schematic.document.Document)
      */
+    @RequiresTransaction
     public void put( String key,
                      Document document ) {
         database.put(key, document);
@@ -108,13 +119,24 @@ public class LocalDocumentStore implements DocumentStore {
      * 
      * @param entryDocument the document that contains the metadata document, content document, and key
      */
+    @RequiresTransaction
     public void put( Document entryDocument ) {
-        database.put(entryDocument);
+        database.putEntry(entryDocument);
     }
 
     @Override
     public boolean remove( String key ) {
         return database.remove(key) != null;
+    }
+
+    /**
+     * Removes all the contents of the document store (i.e. all the documents), after locking them first.
+     * Note that for this to work, it is expected that the caller will've already started a transaction.
+     */
+    @RequiresTransaction    
+    public void removeAll() {
+        lockDocuments(database.keys().toArray(String[]::new));
+        database.removeAll();
     }
 
     @Override
@@ -186,15 +208,6 @@ public class LocalDocumentStore implements DocumentStore {
     public Document getChildReference( String parentKey,
                                        String childKey ) {
         return null; // don't support this
-    }
-
-    /**
-     * Returns the local Infinispan cache.
-     * 
-     * @return a {@code non-null} {@link Cache} instance.
-     */
-    public Cache<String, SchematicEntry> localCache() {
-        return database.getCache();
     }
 
     @Override

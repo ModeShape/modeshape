@@ -20,12 +20,13 @@ import java.util.Collection;
 import org.infinispan.schematic.SchematicEntry;
 import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.document.EditableDocument;
+import org.modeshape.common.annotation.RequiresTransaction;
 import org.modeshape.jcr.cache.DocumentStoreException;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.binary.ExternalBinaryValue;
 
 /**
- * A store which persists/retrieves documents.
+ * A store which persists/retrieves documents in a JCR context.
  *
  * @author Horia Chiorean (hchiorea@redhat.com)
  */
@@ -48,8 +49,8 @@ public interface DocumentStore {
      * @return the existing entry for the supplied key, or null if there was no entry and the put was successful
      * @throws DocumentStoreException if there is a problem storing the document
      */
-    public SchematicEntry storeDocument( String key,
-                                         Document document );
+    @RequiresTransaction
+    public SchematicEntry storeIfAbsent(String key, Document document);
 
     /**
      * Updates the content of the document at the given key with the given document.
@@ -59,6 +60,7 @@ public interface DocumentStore {
      * @param sessionNode the {@link SessionNode} instance which contains the changes that caused the update
      * @throws DocumentStoreException if there is a problem updating the document
      */
+    @RequiresTransaction
     public void updateDocument( String key,
                                 Document document,
                                 SessionNode sessionNode );
@@ -90,6 +92,7 @@ public interface DocumentStore {
      * @return true if the documents were locked, or false if not all of the documents could be locked
      * @throws IllegalStateException if no active transaction can be detected when the locking is attempted
 |    */
+    @RequiresTransaction
     public boolean lockDocuments( Collection<String> keys );   
     
     /**
@@ -104,6 +107,7 @@ public interface DocumentStore {
      * @return true if the documents were locked, or false if not all of the documents could be locked
      * @throws IllegalStateException if no active transaction can be detected when the locking is attempted
     */
+    @RequiresTransaction
     public boolean lockDocuments( String... keys );
 
     /**
@@ -116,9 +120,10 @@ public interface DocumentStore {
      *
      * @param key the key or identifier for the document
      * @param createIfMissing true if a new entry should be created and added to the database if an existing entry does not exist
-     * @return true if a document was removed, or false if there was no document with that key
-     * @throws DocumentStoreException if there is a problem removing the document
+     * @return a {@link EditableDocument} instance if either a document exists at the given key or a new one was created and added
+     * successfully. If a document does not already exist and cannot be created, then this will return {@code null} 
      */
+    @RequiresTransaction
     public EditableDocument edit( String key, boolean createIfMissing );
 
     /**
@@ -134,6 +139,7 @@ public interface DocumentStore {
      * @return true if a document was removed, or false if there was no document with that key
      * @throws DocumentStoreException if there is a problem removing the document
      */
+    @RequiresTransaction
     public boolean remove( String key );
 
     /**
@@ -179,7 +185,6 @@ public interface DocumentStore {
                                             String sourceName,
                                             String externalPath,
                                             String alias );
-
     /**
      * Returns a document representing a block of children, that has the given key.
      *

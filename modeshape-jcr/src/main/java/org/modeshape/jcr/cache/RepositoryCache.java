@@ -190,7 +190,7 @@ public class RepositoryCache {
             doc.setNumber(REPOSITORY_UPGRADE_ID_FIELD_NAME, upgrades.getLatestAvailableUpgradeId());
 
             // store the repository info
-            if (this.documentStore.storeDocument(REPOSITORY_INFO_KEY, doc) != null) {
+            if (this.documentStore.storeIfAbsent(REPOSITORY_INFO_KEY, doc) != null) {
                 // if clustered, we should be holding a cluster-wide lock, so if some other process managed to write under this
                 // key,
                 // smth is seriously wrong. If not clustered, only 1 thread will always perform repository initialization.
@@ -356,13 +356,16 @@ public class RepositoryCache {
         try {
             SchematicEntry repositoryInfoEntry = this.documentStore.localStore().get(REPOSITORY_INFO_KEY);
             if (repositoryInfoEntry != null) {
-                Document repoInfoDoc = repositoryInfoEntry.getContent();
-                // we should only remove the repository info if it wasn't initialized successfully previously
-                // in a cluster, it may happen that another node finished initialization while this node crashed (in which case we
-                // should not remove the entry)
-                if (!repoInfoDoc.containsField(REPOSITORY_INITIALIZED_AT_FIELD_NAME)) {
-                    this.documentStore.localStore().remove(REPOSITORY_INFO_KEY);
-                }
+                runInTransaction(() -> {
+                    Document repoInfoDoc = repositoryInfoEntry.getContent();
+                    // we should only remove the repository info if it wasn't initialized successfully previously
+                    // in a cluster, it may happen that another node finished initialization while this node crashed (in which case we
+                    // should not remove the entry)
+                    if (!repoInfoDoc.containsField(REPOSITORY_INITIALIZED_AT_FIELD_NAME)) {
+                        this.documentStore.localStore().remove(REPOSITORY_INFO_KEY);
+                    }
+                    return null;
+                }, 0,REPOSITORY_INFO_KEY); 
             }
         } finally {
             // if we have a global cluster-wide lock, make sure its released
@@ -615,7 +618,7 @@ public class RepositoryCache {
                     // We need to create a new entry ...
                     EditableDocument newDoc = Schematic.newDocument();
                     translator.setKey(newDoc, systemMetadataKey);
-                    systemEntry = documentStore.storeDocument(systemMetadataKeyStr, newDoc);
+                    systemEntry = documentStore.storeIfAbsent(systemMetadataKeyStr, newDoc);
                     if (systemEntry == null) {
                         // Read-read the entry that we just put, so we can populate it with the same code that edits it ...
                         systemEntry = documentStore.get(systemMetadataKeyStr);
@@ -845,7 +848,7 @@ public class RepositoryCache {
                                                                        documentStore, translator, rootKey, nodeCache,
                                                                        changeBus, repositoryEnvironment());
 
-                    if (documentStore.storeDocument(rootKey.toString(), rootDoc) == null) {
+                    if (documentStore.storeIfAbsent(rootKey.toString(), rootDoc) == null) {
                         // we are the first node to perform the initialization, so we need to link the system node
                         if (!RepositoryCache.this.systemWorkspaceName.equals(name)) {
                             logger.debug("Creating '{0}' workspace in repository '{1}'", name, getName());

@@ -15,23 +15,13 @@
  */
 package org.modeshape.jcr;
 
-import java.io.File;
 import java.net.URL;
 import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
 import javax.jcr.Repository;
-import org.infinispan.Cache;
-import org.infinispan.manager.CacheContainer;
 import org.infinispan.schematic.TestUtil;
 import org.modeshape.common.SystemFailureException;
 import org.modeshape.common.logging.Logger;
-import org.modeshape.common.util.FileUtil;
 import org.modeshape.jcr.ModeShapeEngine.State;
-import org.modeshape.jcr.value.binary.TransientBinaryStore;
 
 /**
  * 
@@ -39,11 +29,6 @@ import org.modeshape.jcr.value.binary.TransientBinaryStore;
 public class TestingUtil {
 
     private static final Logger log = Logger.getLogger(TestingUtil.class);
-
-    public static void killTransientBinaryStore() {
-        File directory = TransientBinaryStore.get().getDirectory();
-        FileUtil.delete(directory);
-    }
 
     public static void killRepositories( Repository... repositories ) {
         killRepositories(Arrays.asList(repositories));
@@ -67,64 +52,31 @@ public class TestingUtil {
             }
         }
     }
-
-    public static void killRepositoryAndContainer( JcrRepository repository ) {
-        Collection<CacheContainer> containers = killRepository(repository);
-        // Now kill all the cache managers ...
-        for (CacheContainer container : containers) {
-            TestUtil.killCacheContainers(container);
-        }
-    }
-
-    public static Collection<CacheContainer> killRepository( JcrRepository repository ) {
-        if (repository == null) return Collections.emptySet();
+    
+    public static void killRepository( JcrRepository repository ) {
+        if (repository == null || repository.getState() != State.RUNNING) return;
         try {
-            if (repository.getState() != State.RUNNING) return Collections.emptySet();
             // Rollback any open transactions ...
             TestUtil.killTransaction(repository.runningState().txnManager());
 
-            // Then get the caches (which we'll kill after we shutdown the repository) ...
-            Collection<Cache<?, ?>> caches = repository.caches();
-
             // First shut down the repository ...
             repository.shutdown().get();
-
-            // Get the caches and kill them ...
-            Set<CacheContainer> cacheContainers = new HashSet<CacheContainer>();
-            for (Cache<?, ?> cache : caches) {
-                if (cache != null) {
-                    cacheContainers.add(cache.getCacheManager());
-                    TestUtil.killCache(cache);
-                }
-            }
-
-            return cacheContainers;
         } catch (Throwable t) {
             log.error(t, JcrI18n.errorKillingRepository, repository.getName(), t.getMessage());
         }
-        return Collections.emptySet();
     }
 
     public static void killEngine( ModeShapeEngine engine ) {
         if (engine == null) return;
         try {
             if (engine.getState() != State.RUNNING) return;
-
-            // First shutdown and destroy the repositories ...
-            Set<CacheContainer> cacheContainers = new HashSet<CacheContainer>();
-
-            for (String key : engine.getRepositoryKeys()) {
-                JcrRepository repository = engine.getRepository(key);
-                cacheContainers.addAll(killRepository(repository));
-            }
-            // Then shutdown the engine ...
-            engine.shutdown().get(20, TimeUnit.SECONDS);
-
-            // Now kill all the cache managers ...
-            for (CacheContainer container : cacheContainers) {
-                TestUtil.killCacheContainers(container);
-            }
-
+            engine.getRepositoryKeys().forEach(key -> {
+                try {
+                    TestingUtil.killRepository(engine.getRepository(key));
+                } catch (NoSuchRepositoryException e) {
+                    //ignore
+                }
+            });
         } catch (Throwable t) {
             log.error(t, JcrI18n.errorKillingEngine, t.getMessage());
         }

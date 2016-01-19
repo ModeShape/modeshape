@@ -403,7 +403,7 @@ public class WritableSessionCache extends AbstractSessionCache {
                 // There is an active transaction, so we need a transaction-specific workspace cache ...
                 setWorkspaceCache(txWorkspaceCaches.getTransactionalCache(getWorkspace()));
                 // only register the function if there's an active ModeShape transaction because we need to run the
-                // function *only after* ISPN has committed its transaction & updated the cache
+                // function *only after* the persistent storage has been updated
                 // if there isn't an active ModeShape transaction, one will become active later during "save"
                 // otherwise, "save" is never called meaning this cache should be discarded
                 Transactions.Transaction modeshapeTx = transactions.currentTransaction();
@@ -1385,7 +1385,7 @@ public class WritableSessionCache extends AbstractSessionCache {
 
                 if (node.isNew()) {
                     // We need to create the schematic entry for the new node ...
-                    if (documentStore.storeDocument(keyStr, doc) != null) {
+                    if (documentStore.storeIfAbsent(keyStr, doc) != null) {
                         if (replacedNodes != null && replacedNodes.contains(key)) {
                             // Then a node is being removed and recreated with the same key ...
                             documentStore.localStore().put(keyStr, doc);

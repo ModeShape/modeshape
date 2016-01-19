@@ -16,12 +16,12 @@
 package org.modeshape.jcr.cache.document;
 
 import javax.transaction.TransactionManager;
+import org.infinispan.schematic.TransactionListener;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.jcr.NodeTypes;
 import org.modeshape.jcr.RepositoryEnvironment;
 import org.modeshape.jcr.locking.LockingService;
 import org.modeshape.jcr.locking.StandaloneLockingService;
-import org.modeshape.jcr.txn.NoClientTransactions;
 import org.modeshape.jcr.txn.Transactions;
 
 /**
@@ -36,7 +36,19 @@ public class TestRepositoryEnvironment implements RepositoryEnvironment {
     
     public TestRepositoryEnvironment(TransactionManager txMgr) {
         CheckArg.isNotNull(txMgr, "txMgr");
-        this.transactions = new NoClientTransactions(txMgr);
+        this.transactions = new Transactions(txMgr, new TransactionListener() {
+            @Override
+            public void txStarted(String id) {
+            }
+
+            @Override
+            public void txCommitted(String id) {
+            }
+
+            @Override
+            public void txRolledback(String id) {
+            }
+        });
         this.lockingService = new StandaloneLockingService();
     }
     

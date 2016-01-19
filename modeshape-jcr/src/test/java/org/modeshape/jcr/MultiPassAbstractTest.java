@@ -61,7 +61,7 @@ public abstract class MultiPassAbstractTest {
             throw new RuntimeException(e);
         } finally {
             if (repository != null) {
-                TestingUtil.killRepositoryAndContainer(repository);
+                TestingUtil.killRepository(repository);
             }
         }
     }

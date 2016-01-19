@@ -15,280 +15,76 @@
  */
 package org.infinispan.schematic;
 
-import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectOutput;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.Set;
-import org.infinispan.AdvancedCache;
-import org.infinispan.Cache;
-import org.infinispan.commons.marshall.AbstractExternalizer;
-import org.infinispan.commons.marshall.AdvancedExternalizer;
-import org.infinispan.configuration.global.GlobalConfiguration;
-import org.infinispan.manager.CacheContainer;
-import org.infinispan.schematic.document.Array;
-import org.infinispan.schematic.document.Binary;
-import org.infinispan.schematic.document.Changes;
-import org.infinispan.schematic.document.Code;
-import org.infinispan.schematic.document.Document;
-import org.infinispan.schematic.document.Editor;
-import org.infinispan.schematic.document.MaxKey;
-import org.infinispan.schematic.document.MinKey;
-import org.infinispan.schematic.document.Null;
-import org.infinispan.schematic.document.ObjectId;
-import org.infinispan.schematic.document.Symbol;
-import org.infinispan.schematic.document.Timestamp;
-import org.infinispan.schematic.internal.CacheSchematicDb;
+import java.util.Map;
+import java.util.Objects;
+import java.util.ServiceLoader;
+import java.util.stream.StreamSupport;
 import org.infinispan.schematic.internal.InMemorySchemaLibrary;
-import org.infinispan.schematic.internal.SchematicEntryLiteral;
-import org.infinispan.schematic.internal.SchematicExternalizer;
-import org.infinispan.schematic.internal.delta.AddValueIfAbsentOperation;
-import org.infinispan.schematic.internal.delta.AddValueOperation;
-import org.infinispan.schematic.internal.delta.ClearOperation;
-import org.infinispan.schematic.internal.delta.DocumentObserver;
-import org.infinispan.schematic.internal.delta.Operation;
-import org.infinispan.schematic.internal.delta.PutIfAbsentOperation;
-import org.infinispan.schematic.internal.delta.PutOperation;
-import org.infinispan.schematic.internal.delta.RemoveAllValuesOperation;
-import org.infinispan.schematic.internal.delta.RemoveAtIndexOperation;
-import org.infinispan.schematic.internal.delta.RemoveOperation;
-import org.infinispan.schematic.internal.delta.RemoveValueOperation;
-import org.infinispan.schematic.internal.delta.RetainAllValuesOperation;
-import org.infinispan.schematic.internal.delta.SetValueOperation;
-import org.infinispan.schematic.internal.document.BasicArray;
-import org.infinispan.schematic.internal.document.DocumentEditor;
-import org.infinispan.schematic.internal.document.DocumentExternalizer;
-import org.infinispan.schematic.internal.document.MutableDocument;
-import org.infinispan.schematic.internal.document.ObservableDocumentEditor;
-import org.infinispan.schematic.internal.document.Paths;
-import org.infinispan.schematic.internal.marshall.Ids;
 
 public class Schematic extends DocumentFactory {
 
-    public static interface ContentTypes {
-        public static final String BINARY = "application/octet-stream";
-        public static final String JSON = "application/json";
-        public static final String BSON = "application/bson";
-        public static final String JSON_SCHEMA = "application/schema+json";
+    /**
+     * Returns a DB with the given alias and list of parameters, by delegating to all the available {@link SchematicDbProvider} 
+     * services using the default CL of this class.
+     * 
+     * @see #getDb(String, Map, ClassLoader) 
+     */
+    public static SchematicDb getDb(String alias, Map<String, ?> parameters) throws RuntimeException {
+        return getDb(alias, parameters, SchematicDb.class.getClassLoader());
+    }
+    
+    /**
+     * Returns a DB with the given alias and list of parameters, by delegating to all the available {@link SchematicDbProvider} 
+     * services.
+     *
+     * @param alias a {@link String} the DB alias; may not be null
+     * @param parameters a {@link Map} of optional parameters use for initializing a particular provider; may not be null
+     * @param cl a {@link ClassLoader} instance to be used when searching for available DB provider.
+     * @return a {@link SchematicDb} instance with the given alias, never {@code null}
+     * @throws RuntimeException if a DB with the given alias cannot be found or it fails during initialization 
+     */
+    public static SchematicDb getDb(String alias, Map<String, ?> parameters, ClassLoader cl) throws RuntimeException {
+        ServiceLoader<SchematicDbProvider> providers = ServiceLoader.load(SchematicDbProvider.class, cl);
+        List<RuntimeException> raisedExceptions = new ArrayList<>();
+        return StreamSupport.stream(providers.spliterator(), false)
+                            .map(provider -> getDbFromProvider(alias, parameters, raisedExceptions, provider))
+                            .filter(Objects::nonNull)
+                            .findFirst()
+                            .orElseThrow(() -> {
+                                if (!raisedExceptions.isEmpty()) {
+                                    return raisedExceptions.get(0);
+                                } else {
+                                    return new RuntimeException(
+                                            "None of the existing DB providers could return a DB with alias '" + alias + "' and parameters " + parameters);
+                                }
+                            });
+    }
+
+    private static SchematicDb getDbFromProvider(String alias, Map<String, ?> parameters,
+                                                 List<RuntimeException> raisedExceptions, SchematicDbProvider provider) {
+        try {
+            return provider.getDB(alias, parameters);
+        } catch (RuntimeException re) {
+            raisedExceptions.add(re);
+            return null;
+        } catch (Exception e) {
+            raisedExceptions.add(new RuntimeException(e));
+            return null;
+        }
     }
 
     /**
-     * Get the {@link SchematicDb} instance given the container that can obtain the appropriately-configured cache with the given
-     * name.
+     * Returns a DB with the given alias.
      *
-     * @param cacheContainer the container for the named cache; may not be null
-     * @param cacheName the name of the cache; may not be null
-     * @return the schematic database instance; never null
+     * @param alias a {@link String} the DB alias; may not be null
+     * @return a {@link SchematicDb} instance with the given alias, never {@code null}
+     * @throws RuntimeException if a DB with the given alias cannot be found or it fails during initialization 
      */
-    public static SchematicDb get( CacheContainer cacheContainer,
-                                   String cacheName ) {
-        Cache<String, SchematicEntry> rawCache = cacheContainer.getCache(cacheName);
-        AdvancedCache<String, SchematicEntry> cache = rawCache.getAdvancedCache();
-        return new CacheSchematicDb(cache);
-    }
-
-    /**
-     * Get the {@link SchematicDb} instance given the appropriately-configured cache.
-     *
-     * @param cache the cache to be used for storage; may not be null
-     * @return the schematic database instance; never null
-     */
-    public static SchematicDb get( Cache<String, SchematicEntry> cache ) {
-        return new CacheSchematicDb(cache.getAdvancedCache());
-    }
-
-    /**
-     * Obtain an editor for the supplied document. The editor allows the caller to make changes to the document and to obtain
-     * these changes as a {@link Changes serializable memento} that can be applied to another document.
-     *
-     * @param document the document to be edited
-     * @param clone true if the editor should operate against a clone of the document, or false if it should operate against the
-     *        supplied document
-     * @return the editor for the document
-     */
-    public static Editor editDocument( Document document,
-                                       boolean clone ) {
-        if (clone) {
-            document = document.clone();
-        }
-        final List<Operation> operations = new LinkedList<Operation>();
-        final DocumentObserver observer = new DocumentObserver() {
-            @Override
-            public void addOperation( Operation o ) {
-                if (o != null) {
-                    operations.add(o);
-                }
-            }
-        };
-        MutableDocument mutable = null;
-        if (document instanceof MutableDocument) mutable = (MutableDocument)document;
-        else if (document instanceof DocumentEditor) mutable = ((DocumentEditor)document).asMutableDocument();
-        return new EditorImpl(mutable, observer, operations);
-    }
-
-    protected static class EditorImpl extends ObservableDocumentEditor implements Editor {
-        private static final long serialVersionUID = 1L;
-        private final List<Operation> operations;
-
-        public EditorImpl( MutableDocument document,
-                           DocumentObserver observer,
-                           List<Operation> operations ) {
-            super(document, Paths.rootPath(), observer, null);
-            this.operations = operations;
-        }
-
-        @Override
-        public Changes getChanges() {
-            return new DocumentChanges(operations);
-        }
-
-        @Override
-        public void apply( Changes changes ) {
-            apply(changes.clone(), null);
-        }
-
-        private final static Array.Entry newEntry( int index,
-                                                   Object value ) {
-            return new BasicArray.BasicEntry(index, value);
-        }
-
-        @Override
-        public void apply( Changes changes,
-                           Observer observer ) {
-            if (changes.isEmpty()) {
-                return;
-            }
-            MutableDocument mutable = asMutableDocument();
-            for (Operation operation : (DocumentChanges)changes) {
-                operation.replay(mutable);
-                if (observer != null) {
-                    if (operation instanceof SetValueOperation) {
-                        SetValueOperation op = (SetValueOperation)operation;
-                        observer.setArrayValue(op.getParentPath(), newEntry(op.getIndex(), op.getValue()));
-                    } else if (operation instanceof AddValueOperation) {
-                        AddValueOperation op = (AddValueOperation)operation;
-                        if (op.getActualIndex() != -1) {
-                            observer.addArrayValue(op.getParentPath(), newEntry(op.getActualIndex(), op.getValue()));
-                        }
-                    } else if (operation instanceof AddValueIfAbsentOperation) {
-                        AddValueIfAbsentOperation op = (AddValueIfAbsentOperation)operation;
-                        if (op.isAdded()) {
-                            observer.addArrayValue(op.getParentPath(), newEntry(op.getIndex(), op.getValue()));
-                        }
-                    } else if (operation instanceof RemoveValueOperation) {
-                        RemoveValueOperation op = (RemoveValueOperation)operation;
-                        if (op.getActualIndex() != -1) {
-                            observer.removeArrayValue(op.getParentPath(), newEntry(op.getActualIndex(), op.getRemovedValue()));
-                        }
-                    } else if (operation instanceof RemoveAtIndexOperation) {
-                        RemoveAtIndexOperation op = (RemoveAtIndexOperation)operation;
-                        observer.removeArrayValue(op.getParentPath(), newEntry(op.getIndex(), op.getRemovedValue()));
-                    } else if (operation instanceof RetainAllValuesOperation) {
-                        RetainAllValuesOperation op = (RetainAllValuesOperation)operation;
-                        for (Array.Entry entry : op.getRemovedEntries()) {
-                            observer.removeArrayValue(op.getParentPath(), entry);
-                        }
-                    } else if (operation instanceof RemoveAllValuesOperation) {
-                        RemoveAllValuesOperation op = (RemoveAllValuesOperation)operation;
-                        for (Array.Entry entry : op.getRemovedEntries()) {
-                            observer.removeArrayValue(op.getParentPath(), entry);
-                        }
-                    } else if (operation instanceof ClearOperation) {
-                        ClearOperation op = (ClearOperation)operation;
-                        observer.clear(op.getParentPath());
-                    } else if (operation instanceof PutOperation) {
-                        PutOperation op = (PutOperation)operation;
-                        observer.put(op.getParentPath(), op.getFieldName(), op.getNewValue());
-                    } else if (operation instanceof PutIfAbsentOperation) {
-                        PutIfAbsentOperation op = (PutIfAbsentOperation)operation;
-                        if (op.isApplied()) {
-                            observer.put(op.getParentPath(), op.getFieldName(), op.getNewValue());
-                        }
-                    } else if (operation instanceof RemoveOperation) {
-                        RemoveOperation op = (RemoveOperation)operation;
-                        if (op.isRemoved()) {
-                            observer.remove(op.getParentPath(), op.getFieldName());
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    protected static class DocumentChanges implements Changes, Iterable<Operation> {
-
-        private final List<Operation> operations;
-
-        protected DocumentChanges( List<Operation> operations ) {
-            this.operations = operations;
-        }
-
-        @Override
-        public DocumentChanges clone() {
-            List<Operation> newOps = new ArrayList<Operation>(operations.size());
-            for (Operation operation : operations) {
-                newOps.add(operation.clone());
-            }
-            return new DocumentChanges(newOps);
-        }
-
-        @Override
-        public Iterator<Operation> iterator() {
-            return operations.iterator();
-        }
-
-        @Override
-        public boolean isEmpty() {
-            return operations.isEmpty();
-        }
-
-        @Override
-        public String toString() {
-            StringBuilder sb = new StringBuilder();
-            Iterator<Operation> iter = operations.iterator();
-            if (iter.hasNext()) {
-                sb.append(iter.next());
-                while (iter.hasNext()) {
-                    sb.append("\n").append(iter.next());
-                }
-            }
-            return sb.toString();
-        }
-
-        public static class Externalizer extends AbstractExternalizer<DocumentChanges> {
-            /** The serialVersionUID */
-            private static final long serialVersionUID = 1L;
-
-            @SuppressWarnings( "synthetic-access" )
-            @Override
-            public void writeObject( ObjectOutput output,
-                                     DocumentChanges changes ) throws IOException {
-                output.writeObject(changes.operations);
-            }
-
-            @Override
-            public DocumentChanges readObject( ObjectInput input ) throws IOException, ClassNotFoundException {
-                @SuppressWarnings( "unchecked" )
-                List<Operation> operations = (List<Operation>)input.readObject();
-                return new DocumentChanges(operations);
-            }
-
-            @Override
-            public Integer getId() {
-                return Ids.SCHEMATIC_DOCUMENT_CHANGES;
-            }
-
-            @SuppressWarnings( "unchecked" )
-            @Override
-            public Set<Class<? extends DocumentChanges>> getTypeClasses() {
-                return Collections.<Class<? extends DocumentChanges>>singleton(DocumentChanges.class);
-            }
-        }
+    public static SchematicDb getDb(String alias) throws RuntimeException {
+        return getDb(alias, Collections.emptyMap());
     }
 
     /**
@@ -308,69 +104,5 @@ public class Schematic extends DocumentFactory {
      */
     public static SchemaLibrary createSchemaLibrary( String name ) {
         return new InMemorySchemaLibrary(name != null ? name : "In-memory schema library");
-    }
-
-    /**
-     * Get the set of {@link org.infinispan.commons.marshall.Externalizer} implementations that are used by Schematic. These need
-     * to be registered with the {@link GlobalConfiguration}:
-     *
-     * @return the list of externalizer
-     */
-    @SuppressWarnings( "unchecked" )
-    public static AdvancedExternalizer<Object>[] externalizers() {
-        return EXTERNALIZERS.toArray(new AdvancedExternalizer[EXTERNALIZERS.size()]);
-    }
-
-    /**
-     * Get the complete set of {@link AdvancedExternalizer} implementations. Note that this does not include
-     * {@link org.infinispan.commons.marshall.Externalizer} implementations that are not {@link AdvancedExternalizer}s.
-     *
-     * @return immutable set of {@link AdvancedExternalizer} implementations.
-     */
-    public static Set<? extends AdvancedExternalizer<?>> externalizerSet() {
-        return EXTERNALIZERS;
-    }
-
-    private static final Set<AdvancedExternalizer<?>> EXTERNALIZERS;
-
-    static {
-        Set<SchematicExternalizer<?>> externalizers = new HashSet<SchematicExternalizer<?>>();
-
-        // SchematicDb values ...
-        externalizers.add(new SchematicEntryLiteral.Externalizer());
-
-        // Documents ...
-        externalizers.add(new DocumentExternalizer()); // BasicDocument and BasicArray
-        externalizers.add(new Binary.Externalizer());
-        externalizers.add(new Code.Externalizer()); // both Code and CodeWithScope
-        externalizers.add(new MaxKey.Externalizer());
-        externalizers.add(new MinKey.Externalizer());
-        externalizers.add(new Null.Externalizer());
-        externalizers.add(new ObjectId.Externalizer());
-        externalizers.add(new Symbol.Externalizer());
-        externalizers.add(new Timestamp.Externalizer());
-        externalizers.add(new Paths.Externalizer());
-
-        // Operations ...
-        externalizers.add(new AddValueIfAbsentOperation.Externalizer());
-        externalizers.add(new AddValueOperation.Externalizer());
-        externalizers.add(new ClearOperation.Externalizer());
-        externalizers.add(new PutOperation.Externalizer());
-        externalizers.add(new PutIfAbsentOperation.Externalizer());
-        externalizers.add(new RemoveAllValuesOperation.Externalizer());
-        externalizers.add(new RemoveAtIndexOperation.Externalizer());
-        externalizers.add(new RemoveOperation.Externalizer());
-        externalizers.add(new RemoveValueOperation.Externalizer());
-        externalizers.add(new RetainAllValuesOperation.Externalizer());
-        externalizers.add(new SetValueOperation.Externalizer());
-
-        // Add only those that are advanced ...
-        Set<AdvancedExternalizer<?>> advancedExternalizers = new HashSet<AdvancedExternalizer<?>>();
-        for (SchematicExternalizer<?> externalizer : externalizers) {
-            if (externalizer instanceof AdvancedExternalizer) {
-                advancedExternalizers.add((AdvancedExternalizer<?>)externalizer);
-            }
-        }
-        EXTERNALIZERS = Collections.unmodifiableSet(advancedExternalizers);
     }
 }

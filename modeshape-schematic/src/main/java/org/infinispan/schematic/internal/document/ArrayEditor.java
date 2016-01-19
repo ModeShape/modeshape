@@ -55,7 +55,7 @@ public class ArrayEditor implements EditableArray {
 
     @Override
     public ArrayEditor clone() {
-        return new ArrayEditor((MutableArray)this.array.clone(), factory);
+        return new ArrayEditor(this.array.clone(), factory);
     }
 
     @Override
@@ -89,12 +89,8 @@ public class ArrayEditor implements EditableArray {
         return array;
     }
 
-    /**
-     * Return the array that was edited.
-     * 
-     * @return the edited array; never null
-     */
-    public MutableArray asMutableArray() {
+    @Override
+    public MutableDocument asMutableDocument() {
         return array;
     }
 

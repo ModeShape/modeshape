@@ -70,7 +70,7 @@ public class DocumentEditor implements EditableDocument {
 
     @Override
     public DocumentEditor clone() {
-        return new DocumentEditor((MutableDocument)this.document.clone(), factory);
+        return new DocumentEditor(this.document.clone(), factory);
     }
 
     @Override
@@ -104,6 +104,7 @@ public class DocumentEditor implements EditableDocument {
         return document;
     }
 
+    @Override
     public MutableDocument asMutableDocument() {
         return document;
     }

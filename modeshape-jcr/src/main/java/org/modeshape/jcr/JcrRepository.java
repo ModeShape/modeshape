@@ -24,7 +24,6 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -64,7 +63,6 @@ import javax.security.auth.login.LoginContext;
 import javax.transaction.SystemException;
 import javax.transaction.Transaction;
 import javax.transaction.TransactionManager;
-import org.infinispan.Cache;
 import org.infinispan.manager.CacheContainer;
 import org.infinispan.schematic.Schematic;
 import org.infinispan.schematic.SchematicDb;
@@ -128,7 +126,6 @@ import org.modeshape.jcr.security.AuthenticationProviders;
 import org.modeshape.jcr.security.EnvironmentAuthenticationProvider;
 import org.modeshape.jcr.security.JaasProvider;
 import org.modeshape.jcr.security.SecurityContext;
-import org.modeshape.jcr.txn.SynchronizedTransactions;
 import org.modeshape.jcr.txn.Transactions;
 import org.modeshape.jcr.value.NamespaceRegistry;
 import org.modeshape.jcr.value.ValueFactories;
@@ -895,16 +892,6 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         descriptors.put(Repository.REPOSITORY_NAME, repositoryName());
     }
 
-    Collection<Cache<?, ?>> caches() {
-        RunningState running = runningState.get();
-        if (running == null) return Collections.emptyList();
-
-        List<Cache<?, ?>> caches = new ArrayList<Cache<?, ?>>();
-        LocalDocumentStore localDocumentStore = running.documentStore().localStore();
-        caches.add(localDocumentStore.localCache());
-        return caches;
-    }
-
     @Immutable
     protected class RunningState {
 
@@ -1051,15 +1038,12 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                     this.lockingService = other.lockingService;
                 } else {
                     // find the Schematic database and Infinispan Cache ...
-                    CacheContainer container = config.getContentCacheContainer();
-                    String cacheName = config.getCacheName();
                     List<Component> connectorComponents = config.getFederation().getConnectors(this.problems);
                     Map<String, List<RepositoryConfiguration.ProjectionConfiguration>> preconfiguredProjectionsByWorkspace = config.getFederation()
                                                                                                                                    .getProjectionsByWorkspace();
                     Set<String> extSources = config.getFederation().getExternalSources();
                     this.connectors = new Connectors(this, connectorComponents, extSources, preconfiguredProjectionsByWorkspace);                    
-                    logger.debug("Loading cache '{0}' from cache container {1}", cacheName, container);
-                    SchematicDb database = Schematic.get(container, cacheName);
+                    SchematicDb database = Schematic.getDb("mem", null, environment().getClassLoader(JcrRepository.class.getClassLoader()));
 
                     RepositoryConfiguration.Clustering clustering = config.getClustering();
                     if (clustering.isEnabled()) {
@@ -1075,9 +1059,9 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                     }
                     this.lockingService = this.clusteringService != null ? this.clusteringService : new StandaloneLockingService();
                     this.lockingService.setLockTimeout(config.getLockTimeoutMillis());
-                    this.txnMgr = database.transactionManager();
-                    this.txMgrLookup = config.getTransactionManagerLookup(); 
-                    this.transactions = createTransactions(cacheName, this.txnMgr, database);
+                    this.txMgrLookup = config.getTransactionManagerLookup();
+                    this.txnMgr = this.txMgrLookup.getTransactionManager();
+                    this.transactions = createTransactions(this.txnMgr, database);
 
                     suspendExistingUserTransaction();
 
@@ -1239,14 +1223,12 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
             }
         }
         
-        protected Transactions createTransactions(String cacheName,
-                                                  TransactionManager txnMgr,
+        protected Transactions createTransactions(TransactionManager txnMgr,
                                                   SchematicDb db) {
             if (txnMgr == null) {
-                throw new ConfigurationException(JcrI18n.repositoryCannotBeStartedWithoutTransactionalSupport.text(getName(),
-                                                                                                                   cacheName));
+                throw new ConfigurationException(JcrI18n.repositoryCannotBeStartedWithoutTransactionalSupport.text(getName()));
             }
-            return new SynchronizedTransactions(txnMgr, db.getCache());
+            return new Transactions(txnMgr, db);
         }
 
         /**

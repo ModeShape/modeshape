@@ -17,6 +17,7 @@ package org.modeshape.jcr;
 
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 import java.io.File;
@@ -25,21 +26,16 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 import javax.transaction.TransactionManager;
-import org.infinispan.configuration.cache.ConfigurationBuilder;
-import org.infinispan.configuration.global.GlobalConfigurationBuilder;
-import org.infinispan.manager.DefaultCacheManager;
-import org.infinispan.manager.EmbeddedCacheManager;
 import org.infinispan.schematic.Schematic;
 import org.infinispan.schematic.SchematicDb;
-import org.infinispan.schematic.TestUtil;
 import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.document.Json;
-import org.infinispan.transaction.LockingMode;
-import org.infinispan.transaction.lookup.DummyTransactionManagerLookup;
 import org.junit.After;
 import org.junit.Before;
 import org.modeshape.common.logging.Logger;
+import org.modeshape.jcr.api.txn.TransactionManagerLookup;
 import org.modeshape.jcr.cache.document.TestRepositoryEnvironment;
+import org.modeshape.jcr.txn.DefaultTransactionManagerLookup;
 import org.modeshape.jcr.txn.Transactions;
 
 /**
@@ -50,29 +46,23 @@ public abstract class AbstractSchematicDbTest {
     protected SchematicDb schematicDb;
     protected RepositoryEnvironment repoEnv;
 
-    private EmbeddedCacheManager cm;
     private Logger logger;
 
     @Before
     public void beforeEach() {
         logger = Logger.getLogger(getClass());
-        GlobalConfigurationBuilder globalConfigurationBuilder = new GlobalConfigurationBuilder();
-        globalConfigurationBuilder.globalJmxStatistics().disable().allowDuplicateDomains(true);
-        ConfigurationBuilder configurationBuilder = new ConfigurationBuilder();
-        configurationBuilder.invocationBatching().enable().transaction()
-                            .transactionManagerLookup(new DummyTransactionManagerLookup()).lockingMode(LockingMode.PESSIMISTIC);
-
-        cm = new DefaultCacheManager(globalConfigurationBuilder.build(), configurationBuilder.build(), true);
-        // Now create the SchematicDb ...
-        schematicDb = Schematic.get(cm, "documents");
-        TransactionManager tm = schematicDb.getCache().getAdvancedCache().getTransactionManager();
-        repoEnv = new TestRepositoryEnvironment(tm);
+        schematicDb = Schematic.getDb("mem");
+        schematicDb.start();
+        TransactionManagerLookup txManagerLookup = new DefaultTransactionManagerLookup();
+        TransactionManager transactionManager = txManagerLookup.getTransactionManager();
+        assertNotNull("Was not able to locate a transaction manager in the test classpath", transactionManager);
+        repoEnv = new TestRepositoryEnvironment(transactionManager);
     }
 
     @After
     public void afterEach() {
         try {
-            TestUtil.killCacheContainers(cm);
+            schematicDb.stop();
         } finally {
             schematicDb = null;
             repoEnv = null;
@@ -81,11 +71,6 @@ public abstract class AbstractSchematicDbTest {
 
     protected Transactions transactions() {
         return repoEnv.getTransactions();
-    }
-    
-    
-    protected EmbeddedCacheManager cacheManager() {
-        return cm;
     }
 
     protected Logger logger() {
