@@ -46,7 +46,7 @@ import java.util.concurrent.Future;
 import java.util.regex.Pattern;
 import javax.jcr.NamespaceRegistry;
 import javax.jcr.RepositoryException;
-import org.infinispan.schematic.document.Document;
+import org.modeshape.schematic.document.Document;
 import org.modeshape.common.util.FileUtil;
 import org.modeshape.common.util.IoUtil;
 import org.modeshape.common.util.NamedThreadFactory;

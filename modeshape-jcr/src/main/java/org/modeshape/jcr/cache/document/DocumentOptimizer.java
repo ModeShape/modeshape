@@ -18,11 +18,11 @@ package org.modeshape.jcr.cache.document;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import org.infinispan.schematic.Schematic;
-import org.infinispan.schematic.SchematicEntry;
-import org.infinispan.schematic.document.Document;
-import org.infinispan.schematic.document.EditableArray;
-import org.infinispan.schematic.document.EditableDocument;
+import org.modeshape.schematic.Schematic;
+import org.modeshape.schematic.SchematicEntry;
+import org.modeshape.schematic.document.Document;
+import org.modeshape.schematic.document.EditableArray;
+import org.modeshape.schematic.document.EditableDocument;
 import org.modeshape.jcr.cache.NodeKey;
 
 /**

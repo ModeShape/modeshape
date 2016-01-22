@@ -23,12 +23,12 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import org.infinispan.schematic.FixFor;
-import org.infinispan.schematic.Schematic;
-import org.infinispan.schematic.SchematicEntry;
-import org.infinispan.schematic.document.Document;
-import org.infinispan.schematic.document.EditableDocument;
-import org.infinispan.schematic.internal.schema.SchemaValidationTest;
+import org.modeshape.schematic.internal.annotation.FixFor;
+import org.modeshape.schematic.Schematic;
+import org.modeshape.schematic.SchematicEntry;
+import org.modeshape.schematic.document.Document;
+import org.modeshape.schematic.document.EditableDocument;
+import org.modeshape.schematic.internal.schema.SchemaValidationTest;
 import org.junit.Before;
 import org.junit.Test;
 

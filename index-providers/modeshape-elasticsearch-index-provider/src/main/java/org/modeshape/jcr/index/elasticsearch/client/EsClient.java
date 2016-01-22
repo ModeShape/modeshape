@@ -18,7 +18,7 @@ package org.modeshape.jcr.index.elasticsearch.client;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import org.infinispan.schematic.document.Document;
+import org.modeshape.schematic.document.Document;
 import org.modeshape.jcr.index.elasticsearch.query.MatchAllQuery;
 
 /**

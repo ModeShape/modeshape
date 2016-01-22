@@ -16,7 +16,7 @@
 package org.modeshape.jcr;
 
 import java.net.URL;
-import org.infinispan.schematic.document.ParsingException;
+import org.modeshape.schematic.document.ParsingException;
 import org.junit.Rule;
 import org.junit.rules.TestRule;
 import org.modeshape.common.junit.SkipTestRule;

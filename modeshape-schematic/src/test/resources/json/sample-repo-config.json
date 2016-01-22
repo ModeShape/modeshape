@@ -34,50 +34,30 @@
             }
         ]
     },
-    "query" : {
-        "enabled" : true,
-        "rebuildUponStartup" : "if_missing",
-        "textExtracting": {
-            "threadPool" : "test",
-            "extractors" : {
-                "customExtractor": {
-                    "name" : "MyFileType extractor",
-                    "classname" : "com.example.myfile.MyExtractor",
-                 },
-                "tikaExtractor":{
-                    "name" : "General content-based extractor",
-                    "classname" : "tika",
-                 }
-            }
+    "indexes": {
+        "primaryTypes" : {
+            "provider" : "files",
+            "kind" : "ENUMERATED",
+            "nodeType" : "nt:base",
+            "description" : "Index for quickly identifying nodes by node type",
+            "columns" : "jcr:primaryType(STRING)"
         },
-        "indexStorage" : {
-            "type" : "filesystem",
-            "location" : "Thorough/indexes",
-            "lockingStrategy" : "native",
-            "fileSystemAccessType" : "auto"
-        },
-        "indexing" : {
-            "threadPool" : "modeshape-workers",
-            "analyzer" : "org.apache.lucene.analysis.standard.StandardAnalyzer",
-            "similarity" : "org.apache.lucene.search.DefaultSimilarity",
-            "batchSize" : -1,
-            "indexFormat" : "LUCENE_35",
-            "readerStrategy" : "shared",
-            "mode" : "sync",
-            "systemContentMode" : "async",
-            "asyncThreadPoolSize" : 1,
-            "asyncMaxQueueSize" : 0,
-            "rebuildOnStartup" : {
-                "when" : "always",
-                "includeSystemContent" : true,
-                "mode" : "async"
-            },
-            "backend" : {
-                "type" : "lucene",
-                
-            },
-            "hibernate.search.custom.overridden.property" : "value",
+        "fileMimeTypes" : {
+            "provider" : "files",
+            "nodeType" : "nt:resource",
+            "columns" : "jcr:mimeType(STRING)"
         }
+    },
+    "indexProviders" : {
+        "files" : {
+            "description" : "More descriptions",
+            "classname" : "org.modeshape.index.provider.FileBasedIndexProvider",
+            "directory" : "/a/b/c/foo"
+        }
+    },
+    "reindexing" : {
+        "async" : false,
+        "mode" : "if_missing"
     },
     "sequencing" : {
         "threadPool" : "modeshape-workers",

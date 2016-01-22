@@ -31,7 +31,7 @@ import javax.transaction.Synchronization;
 import javax.transaction.SystemException;
 import javax.transaction.TransactionManager;
 import javax.transaction.xa.XAResource;
-import org.infinispan.schematic.TransactionListener;
+import org.modeshape.schematic.TransactionListener;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.jcr.cache.change.ChangeSet;
 import org.modeshape.jcr.cache.document.TransactionalWorkspaceCache;

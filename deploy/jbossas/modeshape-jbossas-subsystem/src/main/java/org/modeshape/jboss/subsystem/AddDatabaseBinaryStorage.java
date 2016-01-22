@@ -15,7 +15,7 @@
  */
 package org.modeshape.jboss.subsystem;
 
-import org.infinispan.schematic.document.EditableDocument;
+import org.modeshape.schematic.document.EditableDocument;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.dmr.ModelNode;

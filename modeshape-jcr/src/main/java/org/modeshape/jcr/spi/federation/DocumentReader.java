@@ -20,7 +20,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import org.infinispan.schematic.document.Document;
+import org.modeshape.schematic.document.Document;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.Property;
 

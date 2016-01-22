@@ -26,7 +26,7 @@ import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.revwalk.RevWalk;
 import org.eclipse.jgit.treewalk.TreeWalk;
 import org.eclipse.jgit.treewalk.filter.PathFilter;
-import org.infinispan.schematic.document.Document;
+import org.modeshape.schematic.document.Document;
 import org.modeshape.jcr.JcrLexicon;
 import org.modeshape.jcr.api.value.DateTime;
 import org.modeshape.jcr.spi.federation.DocumentWriter;

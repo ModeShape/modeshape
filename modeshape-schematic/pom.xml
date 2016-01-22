@@ -13,18 +13,8 @@
     <artifactId>modeshape-schematic</artifactId>
     <packaging>jar</packaging>
     <name>Schematic API</name>
-    <description>Module for storing JSON/BSON documents and JSON Schemas in Infinispan</description>
+    <description>API for storing JSON/BSON documents and JSON Schemas support</description>
     <dependencies>
-
-        <dependency>
-            <groupId>org.infinispan</groupId>
-            <artifactId>infinispan-core</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.infinispan</groupId>
-            <artifactId>infinispan-commons</artifactId>
-        </dependency>
-      
 
         <!-- We use a number of libraries to test the JSON and BSON readers and writers -->
         <dependency>
@@ -76,7 +66,7 @@
                 <configuration>
                     <instructions>
                         <Export-Package>
-                            org.infinispan.schematic*;version=${project.version};-split-package:=error
+                            org.modeshape.schematic*;version=${project.version};-split-package:=error
                         </Export-Package>
                     </instructions>
                 </configuration>

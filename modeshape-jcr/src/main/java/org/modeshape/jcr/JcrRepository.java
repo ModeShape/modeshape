@@ -63,14 +63,13 @@ import javax.security.auth.login.LoginContext;
 import javax.transaction.SystemException;
 import javax.transaction.Transaction;
 import javax.transaction.TransactionManager;
-import org.infinispan.manager.CacheContainer;
-import org.infinispan.schematic.Schematic;
-import org.infinispan.schematic.SchematicDb;
-import org.infinispan.schematic.document.Array;
-import org.infinispan.schematic.document.Changes;
-import org.infinispan.schematic.document.Editor;
-import org.infinispan.schematic.document.Path;
-import org.infinispan.schematic.internal.document.Paths;
+import org.modeshape.schematic.Schematic;
+import org.modeshape.schematic.SchematicDb;
+import org.modeshape.schematic.document.Array;
+import org.modeshape.schematic.document.Changes;
+import org.modeshape.schematic.document.Editor;
+import org.modeshape.schematic.document.Path;
+import org.modeshape.schematic.internal.document.Paths;
 import org.jgroups.Channel;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.collection.Problems;
@@ -705,7 +704,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         return workspaceName;
     }
 
-    protected static class ConfigurationChange implements org.infinispan.schematic.document.Editor.Observer {
+    protected static class ConfigurationChange implements Editor.Observer {
 
         private final Path SECURITY_PATH = Paths.path(FieldName.SECURITY);
         private final Path SEQUENCING_PATH = Paths.path(FieldName.SEQUENCING);

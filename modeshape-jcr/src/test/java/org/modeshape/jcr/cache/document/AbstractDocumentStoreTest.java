@@ -17,15 +17,15 @@ package org.modeshape.jcr.cache.document;
 
 import static org.junit.Assert.assertNotNull;
 import javax.transaction.TransactionManager;
-import org.infinispan.schematic.Schematic;
-import org.infinispan.schematic.SchematicDb;
-import org.infinispan.schematic.TestUtil;
 import org.junit.After;
 import org.junit.Before;
 import org.modeshape.jcr.RepositoryEnvironment;
+import org.modeshape.jcr.TestingUtil;
 import org.modeshape.jcr.api.txn.TransactionManagerLookup;
 import org.modeshape.jcr.txn.DefaultTransactionManagerLookup;
 import org.modeshape.jcr.txn.Transactions;
+import org.modeshape.schematic.Schematic;
+import org.modeshape.schematic.SchematicDb;
 
 public abstract class AbstractDocumentStoreTest {
 
@@ -51,7 +51,7 @@ public abstract class AbstractDocumentStoreTest {
             db.stop();
         } finally {
             try {
-                TestUtil.killTransaction(transactions().getTransactionManager());
+                TestingUtil.killTransaction(transactions().getTransactionManager());
             } finally {
                 repoEnv = null;
             }

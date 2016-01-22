@@ -24,10 +24,10 @@ import javax.transaction.HeuristicMixedException;
 import javax.transaction.HeuristicRollbackException;
 import javax.transaction.RollbackException;
 import javax.transaction.SystemException;
-import org.infinispan.schematic.SchematicDb;
-import org.infinispan.schematic.SchematicEntry;
-import org.infinispan.schematic.document.Document;
-import org.infinispan.schematic.document.EditableDocument;
+import org.modeshape.schematic.SchematicDb;
+import org.modeshape.schematic.SchematicEntry;
+import org.modeshape.schematic.document.Document;
+import org.modeshape.schematic.document.EditableDocument;
 import org.modeshape.common.annotation.RequiresTransaction;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.jcr.RepositoryEnvironment;
@@ -106,7 +106,7 @@ public class LocalDocumentStore implements DocumentStore {
      * 
      * @param key the key or identifier for the document
      * @param document the document that is to be stored
-     * @see SchematicDb#put(String, org.infinispan.schematic.document.Document)
+     * @see SchematicDb#put(String, Document)
      */
     @RequiresTransaction
     public void put( String key,

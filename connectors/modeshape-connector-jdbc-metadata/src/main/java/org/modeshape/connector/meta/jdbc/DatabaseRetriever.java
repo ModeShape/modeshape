@@ -18,7 +18,7 @@ package org.modeshape.connector.meta.jdbc;
 import java.sql.Connection;
 import java.util.List;
 import java.util.regex.Pattern;
-import org.infinispan.schematic.document.Document;
+import org.modeshape.schematic.document.Document;
 import org.modeshape.jcr.JcrNtLexicon;
 import org.modeshape.jcr.spi.federation.DocumentWriter;
 

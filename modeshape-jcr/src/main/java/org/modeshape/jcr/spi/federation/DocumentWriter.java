@@ -19,8 +19,8 @@ package org.modeshape.jcr.spi.federation;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import org.infinispan.schematic.document.Document;
-import org.infinispan.schematic.document.EditableDocument;
+import org.modeshape.schematic.document.Document;
+import org.modeshape.schematic.document.EditableDocument;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.Property;
 

@@ -17,10 +17,10 @@ package org.modeshape.jboss.service;
 
 import java.util.List;
 import java.util.Properties;
-import org.infinispan.schematic.Schematic;
-import org.infinispan.schematic.document.Changes;
-import org.infinispan.schematic.document.EditableDocument;
-import org.infinispan.schematic.document.Editor;
+import org.modeshape.schematic.Schematic;
+import org.modeshape.schematic.document.Changes;
+import org.modeshape.schematic.document.EditableDocument;
+import org.modeshape.schematic.document.Editor;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;

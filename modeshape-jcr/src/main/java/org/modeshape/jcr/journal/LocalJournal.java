@@ -27,7 +27,7 @@ import java.util.NoSuchElementException;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import javax.jcr.RepositoryException;
-import org.infinispan.schematic.document.ThreadSafe;
+import org.modeshape.schematic.annotation.ThreadSafe;
 import org.mapdb.Atomic;
 import org.mapdb.BTreeKeySerializer;
 import org.mapdb.BTreeMap;

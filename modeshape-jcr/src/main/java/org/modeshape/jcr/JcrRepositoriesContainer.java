@@ -29,7 +29,7 @@ import java.util.concurrent.TimeoutException;
 import javax.jcr.RepositoryException;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
-import org.infinispan.schematic.document.ParsingException;
+import org.modeshape.schematic.document.ParsingException;
 import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.StringUtil;

@@ -16,7 +16,7 @@
 package org.modeshape.jcr.cache.document;
 
 import javax.transaction.TransactionManager;
-import org.infinispan.schematic.TransactionListener;
+import org.modeshape.schematic.TransactionListener;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.jcr.NodeTypes;
 import org.modeshape.jcr.RepositoryEnvironment;

@@ -21,7 +21,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.infinispan.schematic.document.Document;
+import org.modeshape.schematic.document.Document;
 import org.modeshape.jcr.JcrNtLexicon;
 import org.modeshape.jcr.spi.federation.ConnectorChangeSet;
 import org.modeshape.jcr.spi.federation.DocumentReader;

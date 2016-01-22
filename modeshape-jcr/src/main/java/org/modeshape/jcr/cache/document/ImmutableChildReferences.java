@@ -26,7 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
-import org.infinispan.schematic.document.Document;
+import org.modeshape.schematic.document.Document;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.collection.EmptyIterator;
 import org.modeshape.jcr.cache.ChildReference;

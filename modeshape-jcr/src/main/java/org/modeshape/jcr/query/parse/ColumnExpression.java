@@ -15,7 +15,7 @@
  */
 package org.modeshape.jcr.query.parse;
 
-import org.infinispan.schematic.internal.HashCode;
+import org.modeshape.schematic.internal.HashCode;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.text.Position;
 import org.modeshape.common.util.CheckArg;

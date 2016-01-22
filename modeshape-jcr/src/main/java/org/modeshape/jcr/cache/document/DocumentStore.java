@@ -17,9 +17,9 @@
 package org.modeshape.jcr.cache.document;
 
 import java.util.Collection;
-import org.infinispan.schematic.SchematicEntry;
-import org.infinispan.schematic.document.Document;
-import org.infinispan.schematic.document.EditableDocument;
+import org.modeshape.schematic.SchematicEntry;
+import org.modeshape.schematic.document.Document;
+import org.modeshape.schematic.document.EditableDocument;
 import org.modeshape.common.annotation.RequiresTransaction;
 import org.modeshape.jcr.cache.DocumentStoreException;
 import org.modeshape.jcr.value.Name;

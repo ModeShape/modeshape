@@ -17,9 +17,9 @@ package org.modeshape.jboss.subsystem;
 
 import java.util.ArrayList;
 import java.util.List;
-import org.infinispan.schematic.Schematic;
-import org.infinispan.schematic.document.EditableArray;
-import org.infinispan.schematic.document.EditableDocument;
+import org.modeshape.schematic.Schematic;
+import org.modeshape.schematic.document.EditableArray;
+import org.modeshape.schematic.document.EditableDocument;
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;

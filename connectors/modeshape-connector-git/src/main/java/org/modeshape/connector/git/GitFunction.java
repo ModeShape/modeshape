@@ -33,7 +33,7 @@ import org.eclipse.jgit.lib.Ref;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.revwalk.RevWalk;
-import org.infinispan.schematic.document.Document;
+import org.modeshape.schematic.document.Document;
 import org.modeshape.jcr.spi.federation.DocumentWriter;
 import org.modeshape.jcr.spi.federation.PageKey;
 import org.modeshape.jcr.spi.federation.PageWriter;

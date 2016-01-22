@@ -23,8 +23,8 @@ import java.util.Map;
 import javax.jcr.NamespaceRegistry;
 import javax.jcr.RepositoryException;
 import javax.transaction.TransactionManager;
-import org.infinispan.schematic.DocumentFactory;
-import org.infinispan.schematic.document.Document;
+import org.modeshape.schematic.DocumentFactory;
+import org.modeshape.schematic.document.Document;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.common.text.TextDecoder;
 import org.modeshape.common.util.CheckArg;
@@ -473,7 +473,7 @@ public abstract class Connector {
     /**
      * Stores the given document.
      *
-     * @param document a {@code non-null} {@link org.infinispan.schematic.document.Document} instance.
+     * @param document a {@code non-null} {@link Document} instance.
      * @throws DocumentAlreadyExistsException if there is already a new document with the same identifier
      * @throws DocumentNotFoundException if one of the modified documents was removed by another session
      */

@@ -19,7 +19,6 @@ import org.infinispan.configuration.cache.ConfigurationBuilder;
 import org.infinispan.configuration.global.GlobalConfigurationBuilder;
 import org.infinispan.manager.CacheContainer;
 import org.infinispan.manager.DefaultCacheManager;
-import org.infinispan.schematic.TestUtil;
 import org.infinispan.transaction.lookup.DummyTransactionManagerLookup;
 import org.infinispan.transaction.lookup.TransactionManagerLookup;
 
@@ -28,25 +27,18 @@ import org.infinispan.transaction.lookup.TransactionManagerLookup;
  */
 public class TestingEnvironment extends LocalEnvironment {
 
-    private final CustomLoaderTest customLoaderTest;
-
     public TestingEnvironment() {
         this(null, DummyTransactionManagerLookup.class);
-    }
-
-    public TestingEnvironment( CustomLoaderTest customLoaderTest ) {
-        this(customLoaderTest, DummyTransactionManagerLookup.class);
     }
 
     public TestingEnvironment( CustomLoaderTest customLoaderTest,
                                Class<? extends TransactionManagerLookup> transactionManagerLookup ) {
         super(transactionManagerLookup);
-        this.customLoaderTest = customLoaderTest;
     }
 
     @Override
     protected void shutdown( CacheContainer container ) {
-        TestUtil.killCacheContainers(container);
+        //TestUtil.killCacheContainers(container);
     }
 
     @Override

@@ -60,7 +60,6 @@ import javax.jcr.security.AccessControlManager;
 import javax.jcr.version.Version;
 import javax.jcr.version.VersionException;
 import javax.jcr.version.VersionIterator;
-import org.infinispan.schematic.SchematicEntry;
 import org.modeshape.common.i18n.I18n;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.common.text.TextDecoder;

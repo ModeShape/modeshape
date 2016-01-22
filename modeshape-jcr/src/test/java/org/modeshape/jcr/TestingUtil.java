@@ -18,7 +18,7 @@ package org.modeshape.jcr;
 import java.net.URL;
 import java.util.Arrays;
 import javax.jcr.Repository;
-import org.infinispan.schematic.TestUtil;
+import javax.transaction.TransactionManager;
 import org.modeshape.common.SystemFailureException;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.jcr.ModeShapeEngine.State;
@@ -57,12 +57,27 @@ public class TestingUtil {
         if (repository == null || repository.getState() != State.RUNNING) return;
         try {
             // Rollback any open transactions ...
-            TestUtil.killTransaction(repository.runningState().txnManager());
+            killTransaction(repository.runningState().txnManager());
 
             // First shut down the repository ...
             repository.shutdown().get();
         } catch (Throwable t) {
             log.error(t, JcrI18n.errorKillingRepository, repository.getName(), t.getMessage());
+        }
+    }
+    
+    /**
+     * Clears transaction with the current thread in the given transaction manager.
+     *
+     * @param txManager a TransactionManager to be cleared
+     */
+    public static void killTransaction( TransactionManager txManager ) {
+        if (txManager != null) {
+            try {
+                txManager.rollback();
+            } catch (Exception e) {
+                // ignore
+            }
         }
     }
 

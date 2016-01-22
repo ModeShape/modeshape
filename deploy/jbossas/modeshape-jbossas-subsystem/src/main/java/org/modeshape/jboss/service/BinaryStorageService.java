@@ -15,7 +15,7 @@
  */
 package org.modeshape.jboss.service;
 
-import org.infinispan.schematic.document.EditableDocument;
+import org.modeshape.schematic.document.EditableDocument;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StopContext;

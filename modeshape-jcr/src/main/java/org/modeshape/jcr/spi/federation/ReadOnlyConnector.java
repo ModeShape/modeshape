@@ -15,7 +15,7 @@
  */
 package org.modeshape.jcr.spi.federation;
 
-import org.infinispan.schematic.document.Document;
+import org.modeshape.schematic.document.Document;
 import org.modeshape.jcr.cache.DocumentStoreException;
 import org.modeshape.jcr.value.Name;
 

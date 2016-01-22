@@ -1,6 +1,6 @@
 {
 	"$schema" : "http://json-schema.org/draft-03/schema#",
-	"id" : "http://infinispan.org/schematic/databaseDocument#",
+	"id" : "http://modeshape.org/schematic/databaseDocument#",
 	"type" : "object",
 	
 	"properties" : {
