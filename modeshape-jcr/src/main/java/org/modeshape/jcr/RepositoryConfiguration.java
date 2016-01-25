@@ -617,8 +617,6 @@ public class RepositoryConfiguration {
         String ddlSequencer = "org.modeshape.sequencer.ddl.DdlSequencer";
         String imageSequencer = "org.modeshape.sequencer.image.ImageMetadataSequencer";
         String javaSequencer = "org.modeshape.sequencer.javafile.JavaFileSequencer";
-        String modelSequencer = "org.modeshape.sequencer.teiid.model.ModelSequencer";
-        String vdbSequencer = "org.modeshape.sequencer.teiid.VdbSequencer";
         String msofficeSequencer = "org.modeshape.sequencer.msoffice.MSOfficeMetadataSequencer";
         String wsdlSequencer = "org.modeshape.sequencer.wsdl.WsdlSequencer";
         String xsdSequencer = "org.modeshape.sequencer.xsd.XsdSequencer";
@@ -643,10 +641,6 @@ public class RepositoryConfiguration {
         aliases.put("javasource", javaSequencer);
         aliases.put("javasequencer", javaSequencer);
         aliases.put("javasourcesequencer", javaSequencer);
-        aliases.put("model", modelSequencer);
-        aliases.put("modelsequencer", modelSequencer);
-        aliases.put("vdb", vdbSequencer);
-        aliases.put("vdbsequencer", vdbSequencer);
         aliases.put("msoffice", msofficeSequencer);
         aliases.put("msofficesequencer", msofficeSequencer);
         aliases.put("wsdl", wsdlSequencer);
@@ -689,15 +683,11 @@ public class RepositoryConfiguration {
         CONNECTOR_ALIASES = Collections.unmodifiableMap(aliases);
 
         String tikaExtractor = "org.modeshape.extractor.tika.TikaTextExtractor";
-        String vdbExtractor = "org.modeshape.extractor.teiid.TeiidVdbTextExtractor";
 
         aliases = new HashMap<String, String>();
         aliases.put("tika", tikaExtractor);
         aliases.put("tikaextractor", tikaExtractor);
         aliases.put("tikatextextractor", tikaExtractor);
-        aliases.put("vdb", vdbExtractor);
-        aliases.put("vdbextractor", vdbExtractor);
-        aliases.put("vdbtextextractor", vdbExtractor);
         EXTRACTOR_ALIASES = Collections.unmodifiableMap(aliases);
 
         SCHEMA_LIBRARY = Schematic.createSchemaLibrary("ModeShape Repository Configuration Schemas");

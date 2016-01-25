@@ -1672,12 +1672,6 @@
                 <artifactId>poi-scratchpad</artifactId>
                 <version>${version.org.apache.poi}</version>
             </dependency>
-            <!--Teiid sequencer-->
-            <dependency>
-                <groupId>com.beust</groupId>
-                <artifactId>jcommander</artifactId>
-                <version>${version.com.beust.jcommander}</version>
-            </dependency>
             <!--WSDL sequencer-->
             <dependency>
                 <groupId>wsdl4j</groupId>
