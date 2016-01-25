@@ -78,10 +78,6 @@
             <outputDirectory>./modules/modeshape-sequencer-sramp</outputDirectory>
         </fileSet>
         <fileSet>
-            <directory>../sequencers/modeshape-sequencer-teiid/target/${binary.dist.name}</directory>
-            <outputDirectory>./modules/modeshape-sequencer-teiid</outputDirectory>
-        </fileSet>
-        <fileSet>
             <directory>../sequencers/modeshape-sequencer-text/target/${binary.dist.name}</directory>
             <outputDirectory>./modules/modeshape-sequencer-text</outputDirectory>
         </fileSet>
