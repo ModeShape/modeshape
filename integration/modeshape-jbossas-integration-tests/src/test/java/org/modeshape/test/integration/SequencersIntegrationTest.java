@@ -147,19 +147,7 @@ public class SequencersIntegrationTest {
     public void shouldSequenceXSDFile() throws Exception {
         uploadFileAndAssertSequenced("/xsd_file.xsd", "/derived/xsd", "org.modeshape.sequencer.xsd.XsdSequencer");
     }
-
-    @Test
-    public void shouldSequenceVDBFile() throws Exception {
-        uploadFileAndAssertSequenced("/BooksVDB.vdb", "/derived/teiid/vdbs", "org.modeshape.sequencer.teiid.VdbSequencer");
-    }
-
-    @Test
-    public void shouldSequenceModelXMIFile() throws Exception {
-        uploadFileAndAssertSequenced("/MyBooksView.xmi",
-                                     "/derived/teiid/models",
-                                     "org.modeshape.sequencer.teiid.model.ModelSequencer");
-    }
-
+    
     @Test
     @FixFor( "MODE-2288" )
     public void shouldManuallySequenceZip() throws Exception {

@@ -1148,11 +1148,6 @@
             </dependency>
             <dependency>
                 <groupId>org.modeshape</groupId>
-                <artifactId>modeshape-sequencer-teiid</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.modeshape</groupId>
                 <artifactId>modeshape-sequencer-text</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -1817,12 +1812,6 @@
                 <groupId>org.apache.poi</groupId>
                 <artifactId>poi-scratchpad</artifactId>
                 <version>${poi.version}</version>
-            </dependency>
-            <!--Teiid sequencer-->
-            <dependency>
-                <groupId>com.beust</groupId>
-                <artifactId>jcommander</artifactId>
-                <version>${jcommander.version}</version>
             </dependency>
             <!--WSDL sequencer-->
             <dependency>

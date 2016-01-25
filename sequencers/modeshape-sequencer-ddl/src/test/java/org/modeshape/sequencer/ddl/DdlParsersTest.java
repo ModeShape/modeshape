@@ -15,10 +15,10 @@
  */
 package org.modeshape.sequencer.ddl;
 
+import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
-import static org.hamcrest.CoreMatchers.hasItems;
 import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_ALTER_TABLE_STATEMENT;
 import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_CREATE_SCHEMA_STATEMENT;
 import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_DROP_SCHEMA_STATEMENT;
@@ -30,9 +30,9 @@ import org.junit.Before;
 import org.junit.Test;
 import org.modeshape.common.text.ParsingException;
 import org.modeshape.sequencer.ddl.DdlParsers.ParsingResult;
+import org.modeshape.sequencer.ddl.dialect.derby.DerbyDdlParser;
 import org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlParser;
 import org.modeshape.sequencer.ddl.dialect.postgres.PostgresDdlParser;
-import org.modeshape.sequencer.ddl.dialect.teiid.TeiidDdlParser;
 import org.modeshape.sequencer.ddl.node.AstNode;
 import org.modeshape.sequencer.ddl.node.AstNodeFactory;
 
@@ -155,21 +155,9 @@ public class DdlParsersTest extends DdlParserTestHelper {
         assertThat(unknownNodes.size(), is(1));
     }
 
-    @Test
-    public void shouldParseFileUsingTeiidParser() {
-        printTest("shouldParseTeiidFile()");
-
-        final String content = getFileContent(DDL_TEST_FILE_PATH + "dialect/teiid/mySqlBqt.ddl");
-        this.rootNode = this.parsers.parseUsing(content, TeiidDdlParser.ID);
-
-        assertThat(TeiidDdlParser.ID, is((String)this.rootNode.getProperty(StandardDdlLexicon.PARSER_ID)));
-    }
-
     @Test( expected = ParsingException.class )
     public void shouldErrorWhenInvalidParserId() {
-        printTest("shouldParseTeiidFile()");
-
-        final String content = getFileContent(DDL_TEST_FILE_PATH + "dialect/teiid/mySqlBqt.ddl");
+        final String content = getFileContent(DDL_TEST_FILE_PATH + "dialect/oracle/oracle_test_statements_3.ddl");
         this.parsers.parseUsing(content, "BOGUS");
     }
 
@@ -193,10 +181,8 @@ public class DdlParsersTest extends DdlParserTestHelper {
 
     @Test
     public void shouldReturnParsersConstructedWith() {
-        printTest("shouldReturnParsersConstructedWith()");
-
         final List<DdlParser> myParsers = new ArrayList<DdlParser>();
-        myParsers.add(new TeiidDdlParser());
+        myParsers.add(new OracleDdlParser());
 
         final DdlParsers ddlParsers = new DdlParsers(myParsers);
         assertThat(ddlParsers.getParsers(), hasItems(myParsers.toArray(new DdlParser[myParsers.size()])));
@@ -214,12 +200,12 @@ public class DdlParsersTest extends DdlParserTestHelper {
             assertThat(results.get(0).getParserId(), is(OracleDdlParser.ID)); // first element should be Oracle result
         }
 
-        { // teiid
-            final String ddl = getFileContent(DDL_TEST_FILE_PATH + "dialect/teiid/mySqlBqt.ddl");
+        { // derby
+            final String ddl = getFileContent(DDL_TEST_FILE_PATH + "dialect/derby/derby_test_statements.ddl");
             final List<ParsingResult> results = this.parsers.parseUsingAll(ddl);
 
             assertThat(results.size(), is(DdlParsers.BUILTIN_PARSERS.size()));
-            assertThat(results.get(0).getParserId(), is(TeiidDdlParser.ID)); // first element should be Teiid result
+            assertThat(results.get(0).getParserId(), is(DerbyDdlParser.ID)); // first element should be Derby result
         }
     }
 

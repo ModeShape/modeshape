@@ -256,16 +256,7 @@
                 <include>org.modeshape:modeshape-sequencer-sramp:jar</include>
             </includes>
         </dependencySet>
-
-        <dependencySet>
-            <useProjectArtifact>false</useProjectArtifact>
-            <outputDirectory>${jboss.kit.modules.location}/org/modeshape/sequencer/teiid/main</outputDirectory>
-            <includes>
-                <include>org.modeshape:modeshape-sequencer-teiid:jar</include>
-                <include>com.beust:jcommander:jar</include>
-            </includes>
-        </dependencySet>
-
+        
         <dependencySet>
             <useProjectArtifact>false</useProjectArtifact>
             <outputDirectory>${jboss.kit.modules.location}/org/modeshape/sequencer/text/main</outputDirectory>
