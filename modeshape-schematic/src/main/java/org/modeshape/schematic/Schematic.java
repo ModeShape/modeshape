@@ -15,58 +15,82 @@
  */
 package org.modeshape.schematic;
 
+import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.ServiceLoader;
 import java.util.stream.StreamSupport;
+import org.modeshape.schematic.document.Document;
+import org.modeshape.schematic.document.Json;
+import org.modeshape.schematic.document.ParsingException;
 import org.modeshape.schematic.internal.InMemorySchemaLibrary;
+import org.modeshape.schematic.internal.document.BasicDocument;
 
 public class Schematic extends DocumentFactory {
+    
+    public static final String TYPE_FIELD = "type";
 
     /**
-     * Returns a DB with the given alias and list of parameters, by delegating to all the available {@link SchematicDbProvider} 
+     * Returns a DB with the given type and configuration document, by delegating to all the available {@link SchematicDbProvider} 
      * services using the default CL of this class.
      * 
-     * @see #getDb(String, Map, ClassLoader) 
+     * @see #getDb(String, Document, ClassLoader)  
      */
-    public static SchematicDb getDb(String alias, Map<String, ?> parameters) throws RuntimeException {
-        return getDb(alias, parameters, SchematicDb.class.getClassLoader());
+    public static <T extends SchematicDb> T getDb(String type, Document document) throws RuntimeException {
+        return getDb(type, document, SchematicDb.class.getClassLoader());
+    }   
+    
+    /**
+     * Returns a DB with reads the given input stream as a configuration document {@code Document}. This document is 
+     * expected to contain a {@link Schematic#TYPE_FIELD type field} to indicate the type
+     * of DB.
+     * 
+     * @see #getDb(String, Document, ClassLoader)
+     * @throws ParsingException if the given input stream is not a valid JSON document
+     */
+    public static <T extends SchematicDb> T getDb(InputStream configInputStream) throws ParsingException, RuntimeException {
+        Document document = Json.read(configInputStream);
+        String type = document.getString(TYPE_FIELD);
+        if (type == null) {
+            throw new IllegalArgumentException("The configuration document '" + document + "' does not contain a '" + TYPE_FIELD + "' field");
+        }
+        return getDb(type, document);
     }
     
     /**
-     * Returns a DB with the given alias and list of parameters, by delegating to all the available {@link SchematicDbProvider} 
+     * Returns a DB with the given type and configuration document, by delegating to all the available {@link SchematicDbProvider} 
      * services.
      *
-     * @param alias a {@link String} the DB alias; may not be null
-     * @param parameters a {@link Map} of optional parameters use for initializing a particular provider; may not be null
+     * @param document a {@link Document} containing the configuration of a particular DB type; may not be null
+     * @param type a {@link String} the DB alias; may not be null
      * @param cl a {@link ClassLoader} instance to be used when searching for available DB provider.
      * @return a {@link SchematicDb} instance with the given alias, never {@code null}
      * @throws RuntimeException if a DB with the given alias cannot be found or it fails during initialization 
      */
-    public static SchematicDb getDb(String alias, Map<String, ?> parameters, ClassLoader cl) throws RuntimeException {
+    @SuppressWarnings( { "unchecked", "rawtypes" } )
+    public static <T extends SchematicDb> T getDb(String type, Document document, ClassLoader cl) throws RuntimeException {
         ServiceLoader<SchematicDbProvider> providers = ServiceLoader.load(SchematicDbProvider.class, cl);
         List<RuntimeException> raisedExceptions = new ArrayList<>();
-        return StreamSupport.stream(providers.spliterator(), false)
-                            .map(provider -> getDbFromProvider(alias, parameters, raisedExceptions, provider))
-                            .filter(Objects::nonNull)
-                            .findFirst()
-                            .orElseThrow(() -> {
-                                if (!raisedExceptions.isEmpty()) {
-                                    return raisedExceptions.get(0);
-                                } else {
-                                    return new RuntimeException(
-                                            "None of the existing DB providers could return a DB with alias '" + alias + "' and parameters " + parameters);
-                                }
-                            });
+        return (T) StreamSupport.stream(providers.spliterator(), false)
+                                .map(provider -> getDbFromProvider(type, document, raisedExceptions, provider))
+                                .filter(Objects::nonNull)
+                                .findFirst()
+                                .orElseThrow(() -> {
+                                    if (!raisedExceptions.isEmpty()) {
+                                        return raisedExceptions.get(0);
+                                    } else {
+                                        return new RuntimeException(
+                                                "None of the existing DB providers could return a DB with alias '" + type + "' and configuration " + document);
+                                    }
+                                });
     }
 
-    private static SchematicDb getDbFromProvider(String alias, Map<String, ?> parameters,
-                                                 List<RuntimeException> raisedExceptions, SchematicDbProvider provider) {
+    private static SchematicDb getDbFromProvider(String alias, Document document,
+                                                               List<RuntimeException> raisedExceptions,
+                                                               SchematicDbProvider<?> provider) {
         try {
-            return provider.getDB(alias, parameters);
+            return provider.getDB(alias, document);
         } catch (RuntimeException re) {
             raisedExceptions.add(re);
             return null;
@@ -77,14 +101,14 @@ public class Schematic extends DocumentFactory {
     }
 
     /**
-     * Returns a DB with the given alias.
+     * Returns a DB with the given type and no additional configuration options.
      *
-     * @param alias a {@link String} the DB alias; may not be null
+     * @param type a {@link String} the DB alias; may not be null
      * @return a {@link SchematicDb} instance with the given alias, never {@code null}
      * @throws RuntimeException if a DB with the given alias cannot be found or it fails during initialization 
      */
-    public static SchematicDb getDb(String alias) throws RuntimeException {
-        return getDb(alias, Collections.emptyMap());
+    public static SchematicDb getDb(String type) throws RuntimeException {
+        return getDb(type, new BasicDocument());
     }
 
     /**

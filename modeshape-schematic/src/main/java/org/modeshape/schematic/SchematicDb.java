@@ -58,9 +58,9 @@ public interface SchematicDb extends TransactionListener, Lifecycle {
      * Remove the existing document at the given key.
      *
      * @param key the key or identifier for the document
-     * @return the document that was removed, or null if there was no document with the supplied key
+     * @return {@code true} if the removal was successful, {@code false} otherwise
      */
-    Document remove(String key);
+    boolean remove(String key);
 
     /**
      * Removes all the entries from this DB.
@@ -75,7 +75,7 @@ public interface SchematicDb extends TransactionListener, Lifecycle {
      */
     default SchematicEntry getEntry( String key) {
         Document doc = get(key);
-        return doc != null ? () -> get(key) : null;    
+        return doc != null ? () -> doc : null;    
     }
 
     /**
@@ -118,7 +118,7 @@ public interface SchematicDb extends TransactionListener, Lifecycle {
      */
     default void putEntry(Document entryDocument) {
         SchematicEntry entry = () -> entryDocument;
-        put(entry.getId(), entry.getContent());
+        put(entry.getId(), entryDocument);
     }
 
     /**

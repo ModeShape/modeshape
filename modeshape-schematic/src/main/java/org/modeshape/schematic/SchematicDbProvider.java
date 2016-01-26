@@ -15,7 +15,7 @@
  */
 package org.modeshape.schematic;
 
-import java.util.Map;
+import org.modeshape.schematic.document.Document;
 
 /**
  * Service interface for {@link SchematicDb} providers. A particular provider is expected to implement this interface
@@ -24,14 +24,17 @@ import java.util.Map;
  * @author Horia Chiorean (hchiorea@redhat.com)
  * @since 5.0
  */
-public interface SchematicDbProvider {
+public interface SchematicDbProvider<T extends SchematicDb> {
 
     /**
-     * Returns a schematic DB instance for a given alias and list of parameters
+     * Returns a schematic DB instance for a given db type and configuration document
      * 
-     * @param alias an alias for the DB; may not be {@code null}
-     * @param parameters a {@code Map} of parameters which will be passed down to a particular provider implementation.
-     * @return a {@link SchematicDb} instance or {@code null} if a particular provider does not recognize the alias
+     * @param type the type of DB; may not be {@code null}
+     * @param configuration a {@code Document} instance which contains the configuration of a particular DB.
+     * @return a {@link SchematicDb} instance or {@code null} if a particular provider does not recognize the type.
+     * 
+     * @throws RuntimeException if a DB provider recognizes the type, but fails in an expected way to provide a valid DB 
+     * instance.
      */
-    SchematicDb getDB(String alias, Map<String, ?> parameters);
+    T getDB(String type, Document configuration);
 }

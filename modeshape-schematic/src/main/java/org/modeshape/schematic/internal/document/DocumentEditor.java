@@ -19,6 +19,7 @@ import java.text.ParseException;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
 import java.util.UUID;
@@ -645,5 +646,27 @@ public class DocumentEditor implements EditableDocument {
     @Override
     public String toString() {
         return document.toString();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof MutableDocument) && ! (o instanceof DocumentEditor)) {
+            return false;
+        }
+        
+        if (o instanceof MutableDocument) {
+            return Objects.equals(document, o); 
+        } else {
+            DocumentEditor that = (DocumentEditor) o;
+            return Objects.equals(this.document, that.document);
+        }
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(document);
     }
 }

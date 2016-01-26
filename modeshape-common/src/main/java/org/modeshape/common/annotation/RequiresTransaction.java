@@ -24,7 +24,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
 /**
- * Annotation that indicates that a certain method or constructor should only be performed during an existing transaction.
+ * Annotation that indicates that a certain method or constructor should only be called during an existing transaction.
  * Failure to do so might result in unexpected errors or inconsistent data.
  */
 @Documented

@@ -1,0 +1,14 @@
+{
+    // Used only to test the configuration parameters...    
+    "type" : "db",
+    "connectionUrl" : "jdbc:h2:mem:modeshape",
+    "driver" : "org.h2.Driver",
+    "username" : "sa",
+    "password" : "",
+    "tableName" : "REPO",
+    "createOnStart" : false,
+    "dropOnExit" : true,
+    "compress" : false,
+    "fetchSize" : 100,
+    "cacheSize" : 100
+}

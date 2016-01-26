@@ -1,0 +1,34 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>org.modeshape</groupId>
+        <artifactId>modeshape-persistence</artifactId>
+        <version>5.0-SNAPSHOT</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+    <!-- The groupId and version values are inherited from parent -->
+    <artifactId>modeshape-persistence-relational</artifactId>
+    <packaging>jar</packaging>
+    <name>ModeShape Relational Persistence Provider</name>
+    <description>ModeShape Persistence Provider which stores content in relational databases</description>
+    <url>http://www.modeshape.org</url>
+    <dependencies>
+        <!-- Used when no JNDI datasource is available -->
+        <dependency>
+            <groupId>com.mchange</groupId>
+            <artifactId>c3p0</artifactId>
+            <version>${version.com.mchange.c3p0}</version>
+        </dependency>
+        <!-- Used for transactional ws caches -->
+        <dependency>
+            <groupId>com.googlecode.concurrentlinkedhashmap</groupId>
+            <artifactId>concurrentlinkedhashmap-lru</artifactId>
+        </dependency>
+        <!-- Force the use of H2 because as a default database -->
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+        </dependency>
+    </dependencies>
+</project>

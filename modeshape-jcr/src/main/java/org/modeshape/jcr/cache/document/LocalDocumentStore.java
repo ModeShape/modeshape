@@ -126,7 +126,7 @@ public class LocalDocumentStore implements DocumentStore {
 
     @Override
     public boolean remove( String key ) {
-        return database.remove(key) != null;
+        return database.remove(key);
     }
 
     /**
