@@ -16,10 +16,11 @@
 package org.modeshape.jcr;
 
 import java.net.URL;
-import org.modeshape.schematic.document.ParsingException;
+import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.rules.TestRule;
 import org.modeshape.common.junit.SkipTestRule;
+import org.modeshape.schematic.document.ParsingException;
 
 /**
  * Abstract test class for tests that repeatedly starting/stopping repositories.
@@ -35,26 +36,22 @@ public abstract class MultiPassAbstractTest {
     @Rule
     public TestRule skipTestRule = new SkipTestRule();
 
-    protected void startRunStop( RepositoryOperation operation,
-                                 String repositoryConfigFile ) {
+    protected RepositoryConfiguration startRunStop(RepositoryOperation operation, String repositoryConfigFile) {
         URL configUrl = getClass().getClassLoader().getResource(repositoryConfigFile);
+        Assert.assertNotNull(repositoryConfigFile + " not found", configUrl);
         RepositoryConfiguration config = null;
         try {
             config = RepositoryConfiguration.read(configUrl);
         } catch (ParsingException e) {
             throw new RuntimeException(e);
         }
-        startRunStop(operation, config);
-    }
-
-    protected void startRunStop( RepositoryOperation operation,
-                                 RepositoryConfiguration config )  {
         JcrRepository repository = null;
 
         try {
             repository = new JcrRepository(config);
             repository.start();
             operation.execute(repository);
+            return config;
         } catch (RuntimeException re) {
             throw re;
         } catch (Exception e) {

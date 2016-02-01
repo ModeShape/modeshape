@@ -37,12 +37,6 @@ import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 import javax.jcr.RepositoryException;
 import javax.transaction.SystemException;
-import org.modeshape.schematic.Schematic;
-import org.modeshape.schematic.SchematicEntry;
-import org.modeshape.schematic.document.Document;
-import org.modeshape.schematic.document.EditableArray;
-import org.modeshape.schematic.document.EditableDocument;
-import org.modeshape.schematic.document.Json;
 import org.modeshape.common.annotation.NotThreadSafe;
 import org.modeshape.common.collection.Problems;
 import org.modeshape.common.collection.SimpleProblems;
@@ -62,6 +56,12 @@ import org.modeshape.jcr.value.BinaryKey;
 import org.modeshape.jcr.value.BinaryValue;
 import org.modeshape.jcr.value.binary.BinaryStore;
 import org.modeshape.jcr.value.binary.BinaryStoreException;
+import org.modeshape.schematic.Schematic;
+import org.modeshape.schematic.SchematicEntry;
+import org.modeshape.schematic.document.Document;
+import org.modeshape.schematic.document.EditableArray;
+import org.modeshape.schematic.document.EditableDocument;
+import org.modeshape.schematic.document.Json;
 
 /**
  * A service used to generate backups from content and restore repository content from backups.
@@ -210,13 +210,13 @@ public class BackupService {
         protected final File backupDirectory;
         protected final File changeDirectory;
         protected final File binaryDirectory;
-        protected final org.modeshape.jcr.cache.document.LocalDocumentStore documentStore;
+        protected final LocalDocumentStore documentStore;
         protected final BinaryStore binaryStore;
         protected final SimpleProblems problems;
         private final String backupLocation;
 
         protected Activity( File backupDirectory,
-                            org.modeshape.jcr.cache.document.LocalDocumentStore documentStore,
+                            LocalDocumentStore documentStore,
                             BinaryStore binaryStore,
                             RepositoryCache repositoryCache ) {
             this.backupDirectory = backupDirectory;
@@ -257,7 +257,7 @@ public class BackupService {
         protected final BackupOptions options;
 
         protected BackupActivity( File backupDirectory,
-                                  org.modeshape.jcr.cache.document.LocalDocumentStore documentStore,
+                                  LocalDocumentStore documentStore,
                                   BinaryStore binaryStore,
                                   RepositoryCache repositoryCache,
                                   BackupOptions options) {
@@ -533,7 +533,7 @@ public class BackupService {
         @Override
         public Problems execute() {
             // run the restore as a transactional unit so that if anything fails the entire changes are rolled back...            
-            repositoryCache.runInTransaction(this::restore, 0);
+            documentStore.runInTransaction(this::restore, 0, RepositoryCache.REPOSITORY_INFO_KEY);
             return problems;
         }
 

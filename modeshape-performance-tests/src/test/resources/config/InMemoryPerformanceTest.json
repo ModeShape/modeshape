@@ -1,8 +1,11 @@
 {
     "name" : "In Memory Repository",
     "storage" : {
-        "cacheName" : "inmemoryRepository",
-        "cacheConfiguration" : "config/infinispan-inmemory-jbosstxn.xml",
+        "persistence" : {
+            "type" : "db",
+            "connectionUrl" : "jdbc:h2:mem:perf_test;DB_CLOSE_DELAY=0",
+            "dropOnExit" : true
+        }
     },
     "workspaces" : {
         "default" : "default",

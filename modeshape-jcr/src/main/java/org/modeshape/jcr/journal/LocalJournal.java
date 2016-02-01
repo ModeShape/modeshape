@@ -27,7 +27,6 @@ import java.util.NoSuchElementException;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import javax.jcr.RepositoryException;
-import org.modeshape.schematic.annotation.ThreadSafe;
 import org.mapdb.Atomic;
 import org.mapdb.BTreeKeySerializer;
 import org.mapdb.BTreeMap;
@@ -41,6 +40,7 @@ import org.modeshape.jcr.JcrI18n;
 import org.modeshape.jcr.RepositoryConfiguration;
 import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.cache.change.ChangeSet;
+import org.modeshape.schematic.annotation.ThreadSafe;
 
 /**
  * An append only journal implementation which stores each {@link ChangeSet} (either local or remove) on the local FS.
@@ -153,7 +153,7 @@ public class LocalJournal implements ChangeJournal {
 
     @Override
     public synchronized void shutdown() {
-        if (this.stopped) {
+        if (this.stopped || this.journalDB.isClosed()) {
             return;
         }
         

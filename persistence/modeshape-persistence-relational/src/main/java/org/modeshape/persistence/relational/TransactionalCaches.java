@@ -16,12 +16,13 @@
 package org.modeshape.persistence.relational;
 
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.stream.Collectors;
 import org.modeshape.common.annotation.ThreadSafe;
-import org.modeshape.common.util.CheckArg;
 import org.modeshape.schematic.document.Document;
-import com.googlecode.concurrentlinkedhashmap.ConcurrentLinkedHashMap;
+import org.modeshape.schematic.internal.document.BasicDocument;
 
 /**
  * Class which provides a set of in-memory caches for each ongoing transaction, attempting to relieve some of the "read pressure"
@@ -32,56 +33,120 @@ import com.googlecode.concurrentlinkedhashmap.ConcurrentLinkedHashMap;
  */
 @ThreadSafe
 public final class TransactionalCaches {
-    
   
-    private static final Map<String, ConcurrentMap<String, Document>> READ_CACHES_BY_TX_ID = new ConcurrentHashMap<>();
-    private static final Map<String, ConcurrentMap<String, Document>> EDIT_CACHES_BY_TX_ID = new ConcurrentHashMap<>();
+    protected static final Document REMOVED = new BasicDocument();
     
-    private final int size;
+    private final Map<String, ReadWriteCache> cachesByTxId;
+    
+    protected TransactionalCaches() {
+        this.cachesByTxId = new ConcurrentHashMap<>();
+    }    
 
-    protected TransactionalCaches(int size) {
-        CheckArg.isPositive(size, "cacheSize");
-        this.size = size;
-    }
-
-    protected ConcurrentMap<String, Document> readCacheForTransaction(String txId, boolean createIfAbsent) {
-        return READ_CACHES_BY_TX_ID.computeIfAbsent(txId, id -> createIfAbsent ? new ConcurrentLinkedHashMap.Builder<String, Document>()
-                .maximumWeightedCapacity(size).build() : null);
+    protected ReadWriteCache cacheForTransaction() {
+        return cachesByTxId.computeIfAbsent(TransactionsHolder.requireActiveTransaction(), ReadWriteCache::new);
     }
     
-    protected ConcurrentMap<String, Document> editCacheForTransaction(String txId, boolean createIfAbsent) {
-        return EDIT_CACHES_BY_TX_ID.computeIfAbsent(txId, id -> createIfAbsent ? new ConcurrentHashMap<>() : null);
-    }
-
-    protected Document cachedDocument(String txId, String key) {
-        ConcurrentMap<String, Document> readingCache = readCacheForTransaction(txId, false);
-        return readingCache != null ? readingCache.get(key) : null;
-    }
-    
-    protected void storeForReading(String txId, String key, Document document) {
-        readCacheForTransaction(txId, true).put(key, document);
-    }
-      
-    protected void storeForEditing(String txId, String key, Document document) {
-        editCacheForTransaction(txId, true).put(key, document);
-    }
-    
-    protected void removeDocument(String txId, String key) {
-        ConcurrentMap<String, Document> readingCache = readCacheForTransaction(txId, false);
-        if (readingCache != null) {
-            readingCache.remove(key);
+    protected Document search(String key) {
+        ReadWriteCache cache = cacheForTransaction();
+        Document doc = cache.getFromWriteCache(key);
+        if (doc != null) {
+            return doc;
         }
-        ConcurrentMap<String, Document> editCache = editCacheForTransaction(txId, false);
-        if (editCache != null) {
-            editCache.remove(key);
-        }
-    }
-    
-    protected void clearReadCache(String txId) {
-        READ_CACHES_BY_TX_ID.remove(txId);
+        return cache.getFromReadCache(key); 
     }
 
-    protected void clearEditCache(String txId) {
-        READ_CACHES_BY_TX_ID.remove(txId);
+    protected Document getForWriting(String key) {
+        return cacheForTransaction().getFromWriteCache(key);                     
+    }
+    
+    protected void putForReading(String key, Document doc) {
+        cacheForTransaction().putForReading(key, doc);    
+    }
+
+    protected Document putForWriting(String key, Document doc) {
+        ReadWriteCache readWriteCache = cacheForTransaction();
+        return readWriteCache.putForWriting(key, doc);
+    }
+    
+    protected Set<String> documentKeys() {
+        ReadWriteCache readWriteCache = cacheForTransaction();
+        return readWriteCache.readCache().entrySet()
+                             .stream()
+                             .filter(entry -> !readWriteCache.isRemoved(entry.getKey()))
+                             .map(Map.Entry::getKey)
+                             .collect(Collectors.toSet());
+    }
+    
+    protected ConcurrentMap<String, Document> writeCache() {
+        return cacheForTransaction().writeCache();
+    }
+    
+    protected  boolean isRemoved(String key) {
+        return cacheForTransaction().isRemoved(key);
+    }
+
+    protected void remove(String key) {
+        ReadWriteCache readWriteCache = cacheForTransaction();
+        readWriteCache.remove(key);
+    }
+    
+    protected void clearCache() {
+        cachesByTxId.computeIfPresent(TransactionsHolder.requireActiveTransaction(), (id, readWriteCache) -> {
+            readWriteCache.clear();
+            return null;
+        });
+    }
+    
+    private static class ReadWriteCache {
+        private final ConcurrentMap<String, Document> read;
+        private final ConcurrentMap<String, Document> write;
+
+        protected ReadWriteCache(String txId) {
+            read = new ConcurrentHashMap<>();
+            write = new ConcurrentHashMap<>();
+        }
+
+        protected Document getFromReadCache(String id) {
+            return read.get(id);
+        }
+
+        protected Document getFromWriteCache(String id) {
+           return write.get(id);
+        }
+        
+        protected void putForReading(String id, Document doc) {
+            read.putIfAbsent(id, doc);
+        }
+        
+        protected Document putForWriting(String id, Document doc) {
+            if (write.replace(id, doc) == null) {
+                // when storing a value for the first time, clone it for the write cache 
+                write.putIfAbsent(id, doc.clone());
+                // and store it as-is for the read cache
+                read.putIfAbsent(id, doc);
+            }
+            return write.get(id);
+        }
+        
+        protected boolean isRemoved(String id) {
+            return write.get(id) == REMOVED;
+        }
+        
+        protected void remove(String id) {
+            write.put(id, REMOVED);
+        }
+        
+        protected ConcurrentMap<String, Document> writeCache() {
+            return write;
+        }
+         
+        protected ConcurrentMap<String, Document> readCache() {
+            return read;
+        }
+        
+        protected void clear() {
+            read.clear();
+            write.clear();
+        }
     }
 }

@@ -8,6 +8,13 @@
             "default" : "initial-content.xml"
         }
     },
+    "storage" : {
+        "persistence" : {
+            "type" : "db",
+            "connectionUrl" : "jdbc:h2:mem:test;DB_CLOSE_DELAY=0",
+            "dropOnExit" : true
+        }
+    },
     "security" : {
         "anonymous" : {
             "roles" : ["readonly","readwrite","admin"],

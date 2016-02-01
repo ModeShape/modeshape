@@ -31,6 +31,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.CyclicBarrier;
@@ -53,11 +54,10 @@ import javax.jcr.query.Query;
 import javax.jcr.query.QueryManager;
 import javax.jcr.version.VersionHistory;
 import org.junit.AfterClass;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
-import org.modeshape.common.logging.Logger;
-import org.modeshape.common.util.FileUtil;
 import org.modeshape.common.util.IoUtil;
 import org.modeshape.common.util.StringUtil;
 import org.modeshape.jcr.api.JcrTools;
@@ -72,6 +72,9 @@ public class ClusteredRepositoryTest {
 
     private static final Random RANDOM = new Random();
 
+    private String node1Id = "cnode_" + UUID.randomUUID().toString();
+    private String node2Id = "cnode_" + UUID.randomUUID().toString();
+    
     @BeforeClass
     public static void beforeClass() throws Exception {
         ClusteringHelper.bindJGroupsToLocalAddress();
@@ -81,14 +84,22 @@ public class ClusteredRepositoryTest {
     public static void afterClass() throws Exception {
         ClusteringHelper.removeJGroupsBindings();
     }
+    
+    @Before
+    public void before() throws Exception {
+        // c3p0 is async, so it might take a bit until we can do this....
+        TestingUtil.waitUntilFolderCleanedUp("target/clustered");
+    }
 
     @Test
     @FixFor( "MODE-2409" )
     public void shouldPropagateVersionableNodeInCluster() throws Exception {
-        JcrRepository repository1 = TestingUtil.startRepositoryWithConfig("config/cluster/clustered-repo-config.json");
+        JcrRepository repository1 = TestingUtil.startClusteredRepositoryWithConfig("config/cluster/repo-config-clustered.json",
+                                                                                   node1Id);
         JcrSession session1 = repository1.login();
 
-        JcrRepository repository2 = TestingUtil.startRepositoryWithConfig("config/cluster/clustered-repo-config.json");
+        JcrRepository repository2 = TestingUtil.startClusteredRepositoryWithConfig("config/cluster/repo-config-clustered.json",
+                                                                                   node2Id);
         JcrSession session2 = repository2.login();
 
         try {
@@ -133,77 +144,53 @@ public class ClusteredRepositoryTest {
     }
 
     @Test
-    @FixFor( {"MODE-1618", "MODE-2830"} )
+    @FixFor( {"MODE-1618", "MODE-2830", "MODE-1733", "MODE-1943", "MODE-2051", "MODE-2369"} )
     public void shouldPropagateNodeChangesInCluster() throws Exception {
-        JcrRepository repository1 = TestingUtil.startRepositoryWithConfig("config/cluster/clustered-repo-config.json");
+        JcrRepository repository1 = TestingUtil.startClusteredRepositoryWithConfig("config/cluster/repo-config-clustered.json",
+                                                                                   node1Id);
         JcrSession session1 = repository1.login();
+        assertInitialContentPersisted(session1);
 
-        JcrRepository repository2 = TestingUtil.startRepositoryWithConfig("config/cluster/clustered-repo-config.json");
+        JcrRepository repository2 = TestingUtil.startClusteredRepositoryWithConfig("config/cluster/repo-config-clustered.json",
+                                                                                   node2Id);
         JcrSession session2 = repository2.login();
+        assertInitialContentPersisted(session2);
 
         try {
-            int eventTypes = Event.NODE_ADDED | Event.PROPERTY_ADDED;
-            ClusteringEventListener listener = new ClusteringEventListener(3);
-            session2.getWorkspace().getObservationManager().addEventListener(listener, eventTypes, null, true, null, null, true);
-
-            Node testNode = session1.getRootNode().addNode("testNode");
-            String binary = "test string";
-            testNode.setProperty("binaryProperty", session1.getValueFactory().createBinary(binary.getBytes()));
-            session1.save();
-            final String testNodePath = testNode.getPath();
-
-            listener.waitForEvents();
-            List<String> paths = listener.getPaths();
-            assertEquals(3, paths.size());
-            assertTrue(paths.contains("/testNode"));
-            assertTrue(paths.contains("/testNode/binaryProperty"));
-            assertTrue(paths.contains("/testNode/jcr:primaryType"));
-
-            // check whether the node can be found in the second repository ...
-            try {
-                session2.refresh(false);
-                session2.getNode(testNodePath);
-            } catch (PathNotFoundException e) {
-                fail("Should have found the '/testNode' created in other repository in this repository: ");
-            }
+            assertChangesVisibleViaListener(session1, session2);
+            assertChangesArePropagatedInCluster(session1, session2, "node1");
+            assertChangesArePropagatedInCluster(session2, session1, "node2");
         } finally {
             TestingUtil.killRepositories(repository1, repository2);
         }
     }
 
-    /*
-     * Each Infinispan configuration persists data in a separate location, and we use replication mode.
-     */
-    @Test
-    @FixFor( {"MODE-1733", "MODE-1943", "MODE-2051", "MODE-2369"} )
-    public void shouldClusterWithReplicatedCachePersistedToSeparateAreasForEachProcess() throws Exception {
-        FileUtil.delete("target/clustered");
-        JcrRepository repository1 = null;
-        JcrRepository repository2 = null;
+    private void assertChangesVisibleViaListener(JcrSession session1,
+                                                JcrSession session2) throws RepositoryException, InterruptedException {
+        int eventTypes = Event.NODE_ADDED | Event.PROPERTY_ADDED;
+        ClusteringEventListener listener = new ClusteringEventListener(3);
+        session2.getWorkspace().getObservationManager().addEventListener(listener, eventTypes, null, true, null, null, true);
+
+        Node testNode = session1.getRootNode().addNode("testNode");
+        String binary = "test string";
+        testNode.setProperty("binaryProperty", session1.getValueFactory().createBinary(binary.getBytes()));
+        session1.save();
+        final String testNodePath = testNode.getPath();
+
+        listener.waitForEvents();
+        List<String> paths = listener.getPaths();
+        assertEquals(3, paths.size());
+        assertTrue(paths.contains("/testNode"));
+        assertTrue(paths.contains("/testNode/binaryProperty"));
+        assertTrue(paths.contains("/testNode/jcr:primaryType"));
+
+        // check whether the node can be found in the second repository ...
         try {
-            // Start the first process completely ...
-            repository1 = TestingUtil.startRepositoryWithConfig("config/cluster/repo-config-clustered-persistent-1.json");
-            Session session1 = repository1.login();
-            assertInitialContentPersisted(session1);
-
-            // Start the second process completely ...
-            repository2 = TestingUtil.startRepositoryWithConfig("config/cluster/repo-config-clustered-persistent-2.json");
-            Session session2 = repository2.login();
-            assertInitialContentPersisted(session2);
-
-            // in this setup, index changes are local but we are in clustered mode, so changes should also be indexed
-            assertChangesArePropagatedInCluster(session1, session2, "node1");
-            assertChangesArePropagatedInCluster(session2, session1, "node2");
-
-            session1.logout();
-            session2.logout();
-        } finally {
-            Logger.getLogger(getClass())
-                  .debug("Killing repositories in shouldStartClusterWithReplicatedCachePersistedToSeparateAreasForEachProcess");
-            TestingUtil.killRepositories(repository1, repository2);
-            FileUtil.delete("target/clustered");
+            session2.refresh(false);
+            session2.getNode(testNodePath);
+        } catch (PathNotFoundException e) {
+            fail("Should have found the '/testNode' created in other repository in this repository: ");
         }
-
     }
 
     private void assertInitialContentPersisted( Session session ) throws RepositoryException {
@@ -218,17 +205,16 @@ public class ClusteredRepositoryTest {
     @Test
     @FixFor("MODE-1683")
     public void shouldClusterJournals() throws Exception {
-        FileUtil.delete("target/clustered");
         JcrRepository repository1 = null;
         JcrRepository repository2 = null;
         try {
             // Start the first process completely ...
-            repository1 = TestingUtil.startRepositoryWithConfig("config/cluster/clustered-repo-with-journaling-config-1.json");
-            Thread.sleep(300);
-
+            repository1 = TestingUtil.startClusteredRepositoryWithConfig(
+                    "config/cluster/repo-config-clustered-journal-indexes.json", node1Id);
+            
             // Start the second process completely ...
-            repository2 = TestingUtil.startRepositoryWithConfig("config/cluster/clustered-repo-with-journaling-config-2.json");
-            Thread.sleep(300);
+            repository2 = TestingUtil.startClusteredRepositoryWithConfig(
+                    "config/cluster/repo-config-clustered-journal-indexes.json", node2Id);
 
             assertEquals(repository1.runningState().journal().allRecords(false).size(),
                          repository2.runningState().journal().allRecords(false).size());
@@ -264,17 +250,16 @@ public class ClusteredRepositoryTest {
     @Test
     @FixFor( "MODE-1903" )
     public void shouldReindexContentInClusterBasedOnTimestsamp() throws Exception {
-        FileUtil.delete("target/clustered");
         JcrRepository repository1 = null;
         JcrRepository repository2 = null;
         try {
-            // Start the first process completely ...
-            repository1 = TestingUtil.startRepositoryWithConfig("config/cluster/clustered-repo-with-journaling-config-1.json");
-            Thread.sleep(300);
+            repository1 = TestingUtil.startClusteredRepositoryWithConfig(
+                    "config/cluster/repo-config-clustered-journal-indexes.json", node1Id);
 
             // Start the second process completely ...
-            repository2 = TestingUtil.startRepositoryWithConfig("config/cluster/clustered-repo-with-journaling-config-2.json");
-            Thread.sleep(300);
+            repository2 = TestingUtil.startClusteredRepositoryWithConfig(
+                    "config/cluster/repo-config-clustered-journal-indexes.json", node2Id);
+            RepositoryConfiguration repository2Config = repository2.getConfiguration();
 
             // make 1 change which should be propagated in the cluster
             Session session1 = repository1.login();
@@ -294,8 +279,8 @@ public class ClusteredRepositoryTest {
             
             // shut the second repo down
             long priorToShutdown = System.currentTimeMillis();
-            assertTrue("Second repository has not shutdown in the expected amount of time", repository2.shutdown().get(5,
-                                                                                                                       TimeUnit.SECONDS));
+            assertTrue("Second repository has not shutdown in the expected amount of time",
+                       repository2.shutdown().get(5, TimeUnit.SECONDS));
             
             // add a new node in the first repo
             node = session1.getRootNode().addNode("repo1_node2");
@@ -303,9 +288,9 @@ public class ClusteredRepositoryTest {
             node.setProperty("jcr:title", "title2");
             session1.save();
             
-            // start the 2nd repo back up - at the end of this the journals should be up-to-date and ISPN should've done the state
-            // transfer
-            repository2 = TestingUtil.startRepositoryWithConfig("config/cluster/clustered-repo-with-journaling-config-2.json");
+            // start the 2nd repo back up - at the end of this the journals should be up-to-date
+            repository2 = new JcrRepository(repository2Config);
+            repository2.start();
             Thread.sleep(300);
 
             // run a query to check that the index are not yet up-to-date
@@ -334,19 +319,19 @@ public class ClusteredRepositoryTest {
     @Test
     @FixFor( "MODE-1903" )
     public void shouldReindexContentInClusterIncrementally() throws Exception {
-        FileUtil.delete("target/clustered");
         JcrRepository repository1 = null;
         JcrRepository repository2 = null;
         try {
             // Start the first process completely ...
-            repository1 = TestingUtil.startRepositoryWithConfig(
-                    "config/cluster/clustered-repo-with-incremental-indexes-config-1.json");
-            Thread.sleep(300);
+            repository1 = TestingUtil.startClusteredRepositoryWithConfig(
+                    "config/cluster/repo-config-clustered-journal-incremental-indexes.json",
+                    node1Id);
+            RepositoryConfiguration repository1Config = repository1.getConfiguration();
 
             // Start the second process completely ...
-            repository2 = TestingUtil.startRepositoryWithConfig(
-                    "config/cluster/clustered-repo-with-incremental-indexes-config-2.json");
-            Thread.sleep(300);
+            repository2 = TestingUtil.startClusteredRepositoryWithConfig(
+                    "config/cluster/repo-config-clustered-journal-incremental-indexes.json", node2Id);
+            RepositoryConfiguration repository2Config = repository2.getConfiguration();
 
             // make 1 change which should be propagated in the cluster
             Session session1 = repository1.login();
@@ -366,10 +351,9 @@ public class ClusteredRepositoryTest {
             node.setProperty("jcr:title", "title2");
             session1.save();
             
-            // start the 2nd repo back up - at the end of this the journals should be up-to-date and ISPN should've done the state
-            // transfer
-            repository2 = TestingUtil.startRepositoryWithConfig(
-                    "config/cluster/clustered-repo-with-incremental-indexes-config-2.json");
+            // start the 2nd repo back up - at the end of this the journals should be up-to-date
+            repository2 = new JcrRepository(repository2Config);
+            repository2.start();
             Thread.sleep(300);
 
             // run a query to check that the index are not yet up-to-date
@@ -391,10 +375,9 @@ public class ClusteredRepositoryTest {
             node.setProperty("jcr:title", "title3");
             session2.save();
 
-            // start the 1st repo back up - at the end of this the journals should be up-to-date and ISPN should've done the state
-            // transfer
-            repository1 = TestingUtil.startRepositoryWithConfig(
-                    "config/cluster/clustered-repo-with-incremental-indexes-config-1.json");
+            // start the 1st repo back up - at the end of this the journals should be up-to-date
+            repository1 = new JcrRepository(repository1Config);
+            repository1.start();
             Thread.sleep(300);
             
             session1 = repository1.login();
@@ -412,11 +395,9 @@ public class ClusteredRepositoryTest {
             session1.getNode("/repo1_node1").setProperty("jcr:title", "title1_edited");
             session1.save();
             
-            // bring the 2nd repo back up
-            // start the 2nd repo back up - at the end of this the journals should be up-to-date and ISPN should've done the state
-            // transfer
-            repository2 = TestingUtil.startRepositoryWithConfig(
-                    "config/cluster/clustered-repo-with-incremental-indexes-config-2.json");
+            // start the 2nd repo back up - at the end of this the journals should be up-to-date
+            repository2 = new JcrRepository(repository2Config);
+            repository2.start();
             Thread.sleep(300);
 
             // run a query to check that the indexes are synced
@@ -446,22 +427,24 @@ public class ClusteredRepositoryTest {
     @Test
     @FixFor("MODE-2517")
     public void shouldPersistReindexedContentInCluster() throws Exception {
-        FileUtil.delete("target/clustered");
         JcrRepository repository1 = null;
         JcrRepository repository2 = null;
         try {
             // Start the first process completely ...
-            repository1 = TestingUtil.startRepositoryWithConfig("config/cluster/clustered-repo-with-indexes-config-1.json");
-            Thread.sleep(300);
+            repository1 = TestingUtil.startClusteredRepositoryWithConfig(
+                    "config/cluster/repo-config-clustered-journal-indexes.json", node1Id);
             // Start the second process completely ...
-            repository2 = TestingUtil.startRepositoryWithConfig("config/cluster/clustered-repo-with-indexes-config-2.json");
-            Thread.sleep(300);
+            repository2 = TestingUtil.startClusteredRepositoryWithConfig(
+                    "config/cluster/repo-config-clustered-journal-indexes.json", node2Id);
+            RepositoryConfiguration repository2Config = repository2.getConfiguration();
+            
             // make 1 change which should be propagated in the cluster
             Session session1 = repository1.login();
             Node node = session1.getRootNode().addNode("repo1_node1");
             node.addMixin("mix:title");
             node.setProperty("jcr:title", "title1");
             session1.save();
+            Thread.sleep(300);
 
             // check the indexes have been updated on the 2nd node
             Session session2 = repository2.login();
@@ -480,7 +463,9 @@ public class ClusteredRepositoryTest {
             session1.save();
 
             // start the 2nd repo back up and force a reindexing
-            repository2 = TestingUtil.startRepositoryWithConfig("config/cluster/clustered-repo-with-indexes-config-2.json");
+            repository2 = new JcrRepository(repository2Config);
+            repository2.start();
+            Thread.sleep(300);
             
             // run a query to check that the index are not yet up-to-date
             session2 = repository2.login();
@@ -501,7 +486,10 @@ public class ClusteredRepositoryTest {
             TestingUtil.killRepository(repository2);
             
             // start the 2nd repo back up and check that reindexed data is still there
-            repository2 = TestingUtil.startRepositoryWithConfig("config/cluster/clustered-repo-with-indexes-config-2.json");
+            repository2 = new JcrRepository(repository2Config);
+            repository2.start();
+            Thread.sleep(300);
+            
             session2 = repository2.login();
             query = session2.getWorkspace().getQueryManager().createQuery(
                     "select node.[jcr:path] from [mix:title] as node where node.[jcr:title] = 'title2'",
@@ -514,21 +502,9 @@ public class ClusteredRepositoryTest {
 
     @Test
     @FixFor({"MODE-1701", "MODE-2542"})
-    public void shouldStartRepositoryWithJGroupsXMLConfigurationFile() throws Exception {
-        JcrRepository repository = null;
-        try {
-            repository = TestingUtil.startRepositoryWithConfig("config/cluster/clustered-repo-config-jgroups-file.json");
-            assertEquals(ModeShapeEngine.State.RUNNING, repository.getState());
-        } finally {
-            TestingUtil.killRepository(repository);
-        }
-    }
-
-    @Test
-    @FixFor({"MODE-1701", "MODE-2542"})
     public void shouldNotStartRepositoryWithInvalidJGroupsConfiguration() throws Exception {
         try {
-            TestingUtil.startRepositoryWithConfig("config/cluster/clustered-repo-config-invalid-jgroups-file.json");
+            TestingUtil.startRepositoryWithConfig("config/cluster/repo-config-invalid-clustering.json");
             fail("Should reject invalid JGroups file...");
         } catch (RuntimeException e) {
             //expected
@@ -537,15 +513,16 @@ public class ClusteredRepositoryTest {
 
     @Test
     public void shouldLockNodesCorrectlyInCluster() throws Exception {
-        JcrRepository repository1 = TestingUtil.startRepositoryWithConfig("config/cluster/clustered-repo-config.json");
+        JcrRepository repository1 = TestingUtil.startClusteredRepositoryWithConfig("config/cluster/repo-config-clustered.json",
+                                                                                   node1Id);
         JcrSession session1 = repository1.login();
 
-        JcrRepository repository2 = TestingUtil.startRepositoryWithConfig("config/cluster/clustered-repo-config.json");
+        JcrRepository repository2 = TestingUtil.startClusteredRepositoryWithConfig("config/cluster/repo-config-clustered.json",
+                                                                                   node2Id);
         JcrSession session2 = repository2.login();
 
         session1.getRootNode().addNode("folder", "nt:folder");
         session1.save();
-        Thread.sleep(100);
         
         assertNotNull(session2.getNode("/folder"));
         session1.logout();
@@ -633,8 +610,7 @@ public class ClusteredRepositoryTest {
         process1Session.save();
         queryAndExpectResults(process1Session, pathQuery, 1);
 
-        // wait a bit for state transfer to complete
-        Thread.sleep(1500);
+        Thread.sleep(300);
 
         // check that the custom jcr node created on the other process, was sent to this one
         assertNotNull(process2Session.getNode(nodeAbsPath));
@@ -658,7 +634,8 @@ public class ClusteredRepositoryTest {
         queryAndExpectResults(process1Session, propertyQuery, 1);
 
         // wait a bit for state transfer to complete
-        Thread.sleep(1500);
+        Thread.sleep(300);
+
         // check the property change was made in the indexes on the second node
         queryAndExpectResults(process2Session, propertyQuery, 1);
 
@@ -676,8 +653,8 @@ public class ClusteredRepositoryTest {
         nodeProcess1.remove();
         process1Session.save();
         queryAndExpectResults(process1Session, pathQuery, 0);
-        // wait a bit for state transfer to complete
-        Thread.sleep(1500);
+        Thread.sleep(300);
+
         // check the node was removed from the indexes in the second cluster node
         queryAndExpectResults(process2Session, pathQuery, 0);
         try {
@@ -705,7 +682,7 @@ public class ClusteredRepositoryTest {
         private final CountDownLatch eventsLatch;
 
         protected ClusteringEventListener( int expectedEventsCount ) {
-            this.paths = new ArrayList<String>();
+            this.paths = new ArrayList<>();
             this.eventsLatch = new CountDownLatch(expectedEventsCount);
         }
 

@@ -982,7 +982,7 @@ public class JcrSessionTest extends SingleUseAbstractTest {
     @Test
     @FixFor( "MODE-1613" )
     public void shouldMoveSNSAndNotCorruptThePathsOfRemainingSiblings() throws Exception {
-        startRepositoryWithConfiguration(getClass().getClassLoader().getResourceAsStream("config/simple-repo-config.json"));
+        startRepositoryWithConfigurationFrom("config/simple-repo-config.json");
         // /testRoot/parent0/child
         // /testRoot/parent0/child[2]
         // /testRoot/parent0/child[3]
@@ -1005,7 +1005,7 @@ public class JcrSessionTest extends SingleUseAbstractTest {
     public void shouldAutomaticallySetDefaultValueOnProperties() throws Exception {
         // Start the repository and register some node types ...
         ClassLoader cl = getClass().getClassLoader();
-        startRepositoryWithConfiguration(cl.getResourceAsStream("config/simple-repo-config.json"));
+        startRepositoryWithConfigurationFrom("config/simple-repo-config.json");
         session.getWorkspace().getNodeTypeManager().registerNodeTypes(cl.getResource("cnd/notionalTypes.cnd"), true);
 
         // Create a node using a type with property definitions that have default values ...
@@ -1037,8 +1037,7 @@ public class JcrSessionTest extends SingleUseAbstractTest {
     @Test
     public void shouldAutomaticallyAddMimeTypePropertyToNtResourceUponSave() throws Exception {
         // Start the repository ...
-        ClassLoader cl = getClass().getClassLoader();
-        startRepositoryWithConfiguration(cl.getResourceAsStream("config/simple-repo-config.json"));
+        startRepositoryWithConfigurationFrom("config/simple-repo-config.json");
 
         // Add a node under which we'll do our work ...
         Node node1 = session.getRootNode().addNode("node1");
@@ -1064,8 +1063,7 @@ public class JcrSessionTest extends SingleUseAbstractTest {
     @Test
     public void shouldAutomaticallyAddMimeTypePropertyToNtResourceSubtypeUponSave() throws Exception {
         // Start the repository ...
-        ClassLoader cl = getClass().getClassLoader();
-        startRepositoryWithConfiguration(cl.getResourceAsStream("config/simple-repo-config.json"));
+        startRepositoryWithConfigurationFrom("config/simple-repo-config.json");
 
         // Register a new node type that is a subtype of 'nt:resource'
         NodeTypeManager ntMgr = session.getWorkspace().getNodeTypeManager();
@@ -1100,8 +1098,7 @@ public class JcrSessionTest extends SingleUseAbstractTest {
     @Test
     public void shouldNotOverrideManuallyAddedMimeTypePropertyToNtResourceUponSave() throws Exception {
         // Start the repository ...
-        ClassLoader cl = getClass().getClassLoader();
-        startRepositoryWithConfiguration(cl.getResourceAsStream("config/simple-repo-config.json"));
+        startRepositoryWithConfigurationFrom("config/simple-repo-config.json");
 
         // Add a node under which we'll do our work ...
         Node node1 = session.getRootNode().addNode("node1");
@@ -1128,8 +1125,7 @@ public class JcrSessionTest extends SingleUseAbstractTest {
     @Test
     public void shouldNotAddMimeTypePropertyUnderNtFileIfContentNodeIsNotNtResource() throws Exception {
         // Start the repository ...
-        ClassLoader cl = getClass().getClassLoader();
-        startRepositoryWithConfiguration(cl.getResourceAsStream("config/simple-repo-config.json"));
+        startRepositoryWithConfigurationFrom("config/simple-repo-config.json");
 
         // Add a node under which we'll do our work ...
         Node node1 = session.getRootNode().addNode("node1");

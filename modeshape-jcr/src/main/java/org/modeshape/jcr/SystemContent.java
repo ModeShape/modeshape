@@ -621,8 +621,7 @@ public class SystemContent {
         }
     }
 
-    public void store( IndexDefinition indexDefn,
-                       boolean updateExisting ) {
+    protected void store( IndexDefinition indexDefn, boolean updateExisting ) {
         MutableCachedNode indexesNode = mutableIndexesNode();
         store(indexDefn, indexesNode, updateExisting);
     }
@@ -660,14 +659,14 @@ public class SystemContent {
             indexNode = system.mutable(key);
 
             // We'll need to delete any existing column that isn't there anymore ...
-            existingChildKeys = new HashSet<NodeKey>();
+            existingChildKeys = new HashSet<>();
             for (ChildReference childRef : indexNode.getChildReferences(system)) {
                 existingChildKeys.add(childRef.getKey());
             }
         }
 
         // Define the properties for this index definition ...
-        List<Property> properties = new ArrayList<Property>();
+        List<Property> properties = new ArrayList<>();
         // Add the extended properties first, in case the standard ones overwrite them ...
         for (Map.Entry<String, Object> entry : indexDefn.getIndexProperties().entrySet()) {
             Property prop = createProperty(entry.getKey(), entry.getValue());

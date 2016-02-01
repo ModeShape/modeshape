@@ -51,11 +51,11 @@ public class RelationalDbTest extends AbstractRelationalDbTest {
         dbEntries.forEach(dbEntry -> db.put(dbEntry.id(), dbEntry.content()));
         Set<String> expectedIds = dbEntries.stream().map(SchematicEntry::id).collect(Collectors.toCollection(TreeSet::new));
         // check that the same connection is used and the entries are still there
-        assertTrue(db.keys().collect(Collectors.toCollection(TreeSet::new)).containsAll(expectedIds));
+        assertTrue(db.keys().containsAll(expectedIds));
         // simulate a commit for the write
         db.txCommitted("0");
         // check that the entries are still there
-        assertTrue(db.keys().collect(Collectors.toCollection(TreeSet::new)).containsAll(expectedIds));
+        assertTrue(db.keys().containsAll(expectedIds));
         // check that for each entry the content is correctly stored
         dbEntries.stream().forEach(entry -> assertEquals(entry.content(), db.getEntry(entry.id()).content()));
         
@@ -119,7 +119,7 @@ public class RelationalDbTest extends AbstractRelationalDbTest {
         assertNotNull(updatedEntry);
         assertEquals(1, (int) updatedEntry.content().getInteger(VALUE_FIELD));
         
-        SchematicEntry newEntry = SchematicEntry.create(UUID.randomUUID().toString(), defaultContent);
+        SchematicEntry newEntry = SchematicEntry.create(UUID.randomUUID().toString(), DEFAULT_CONTENT);
         assertNull(simulateTransaction(() -> db.putIfAbsent(newEntry.id(), newEntry.content())));
         updatedEntry = db.getEntry(newEntry.id());
         assertNotNull(updatedEntry);
@@ -127,20 +127,17 @@ public class RelationalDbTest extends AbstractRelationalDbTest {
     
     @Test
     public void shouldPutSchematicEntry() throws Exception {
-        String id = UUID.randomUUID().toString();
-        BasicDocument metadata = new BasicDocument(SchematicEntry.FieldName.ID, id);
-        BasicDocument entryDocument = new BasicDocument(SchematicEntry.FieldName.METADATA, metadata,
-                                                        SchematicEntry.FieldName.CONTENT, defaultContent);
+        SchematicEntry originalEntry = super.randomEntries(1).get(0);
         simulateTransaction(() -> {
-            db.putEntry(entryDocument);
+            db.putEntry(originalEntry.source());
             return null;
         });
         
-        SchematicEntry entry = db.getEntry(id);
-        assertNotNull(entry);
-        assertEquals(id, entry.id());
-        assertEquals(metadata, entry.getMetadata());
-        assertEquals(defaultContent, entry.content());
+        SchematicEntry actualEntry = db.getEntry(originalEntry.id());
+        assertNotNull(actualEntry);
+        assertEquals(originalEntry.getMetadata(), actualEntry.getMetadata());
+        assertEquals(originalEntry.content(), actualEntry.content());
+        assertEquals(DEFAULT_CONTENT, actualEntry.content());
     }
     
     @Test
@@ -157,12 +154,12 @@ public class RelationalDbTest extends AbstractRelationalDbTest {
             randomEntries(count).forEach(entry -> db.put(entry.id(), entry.content()));
             return null;
         });
-        assertTrue(db.keys().count() > 0);
+        assertFalse(db.keys().isEmpty());
         simulateTransaction(() -> {
             db.removeAll();
             return null;
         });
-        assertEquals(0, db.keys().count());
+        assertTrue(db.keys().isEmpty());
     }
     
 }

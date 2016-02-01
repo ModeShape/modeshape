@@ -62,7 +62,11 @@ public abstract class AbstractSessionCacheTest extends AbstractNodeCacheTest {
     @Override
     protected void shutdownCache( NodeCache cache ) {
         super.shutdownCache(cache);
-        executor.shutdown();
+        try {
+            changeBus.shutdown();
+        } finally {
+            executor.shutdownNow();    
+        }
     }
 
     protected abstract SessionCache createSessionCache( ExecutionContext context,

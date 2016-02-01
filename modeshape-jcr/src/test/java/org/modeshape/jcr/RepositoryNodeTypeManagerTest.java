@@ -47,7 +47,7 @@ public class RepositoryNodeTypeManagerTest {
 
     @Before
     public void beforeEach() throws Exception {
-        config = new RepositoryConfiguration("repoName");
+        config = new RepositoryConfiguration("repoName").with(new TestingEnvironment());
         repository = new JcrRepository(config);
         repository.start();
         context = repository.runningState().context();

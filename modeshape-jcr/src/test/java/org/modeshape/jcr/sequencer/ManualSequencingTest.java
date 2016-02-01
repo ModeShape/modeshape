@@ -22,7 +22,6 @@ import java.net.URL;
 import javax.jcr.Node;
 import javax.jcr.Property;
 import org.junit.Test;
-import org.modeshape.jcr.Environment;
 import org.modeshape.jcr.RepositoryConfiguration;
 import org.modeshape.jcr.SingleUseAbstractTest;
 import org.modeshape.jcr.TestSequencersHolder;
@@ -32,8 +31,7 @@ import org.modeshape.jcr.api.Session;
 public class ManualSequencingTest extends SingleUseAbstractTest {
 
     @Override
-    protected RepositoryConfiguration createRepositoryConfiguration( String repositoryName,
-                                                                     Environment environment ) throws Exception {
+    protected RepositoryConfiguration createRepositoryConfiguration(String repositoryName) throws Exception {
         return RepositoryConfiguration.read("config/repo-config-manual-sequencing.json");
     }
 

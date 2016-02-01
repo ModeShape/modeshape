@@ -1,12 +1,18 @@
 {
-    "name" : "Journaling repository",
+    "name" : "Persistent journaling repository",
+    "storage" : {
+        "persistence" : {
+            "type" : "db",
+            "connectionUrl": "jdbc:h2:file:./target/persistent_repository/db"
+        }
+    },
     "workspaces" : {
         "predefined" : ["ws1", "ws2"],
         "default" : "default",
         "allowCreation" : true
     },
     "journaling" : {
-        "location" : "target/journal",
+        "location" : "target/persistent_repository/journal",
         "maxDaysToKeepRecords" : 15,
         "asyncWritesEnabled" : false,
         "threadPool" : "modeshape-journaling-gc",

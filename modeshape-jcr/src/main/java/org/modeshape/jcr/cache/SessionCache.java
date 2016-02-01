@@ -28,7 +28,7 @@ public interface SessionCache extends NodeCache {
     /**
      * The context of a save operation, created during each call to {@link #save} and passed to the
      * {@link PreSave#processBeforeLocking(MutableCachedNode, SaveContext)} or 
-     * {@link PreSave#processAfterLocking(MutableCachedNode, SaveContext, NodeCache)} 
+     * {@link PreSave#processAfterLocking(MutableCachedNode, SaveContext)} 
      * invocations.
      */
     public static interface SaveContext {
@@ -68,20 +68,15 @@ public interface SessionCache extends NodeCache {
 
         /**
          * Process the supplied existing node prior to saving the changes but only after the entry corresponding to the key of the
-         * node has been locked in Infinispan. Note that locking in Infinispan does not occur always, but only if the
-         * {@link org.infinispan.transaction.LockingMode#PESSIMISTIC} flag is enabled. This method should be implemented as
-         * optimal as possible and should only be needed in multi-threaded scenarios where concurrent modifications may break
-         * consistency.
+         * node has been exclusively locked. This method should be implemented as optimal as possible and should only be 
+         * needed in multi-threaded scenarios where concurrent modifications may break consistency.
          * 
          * @param modifiedNode the mutable node that was changed in this session; never null
          * @param context the context of the save operation; never null
-         * @param persistentNodeCache the node cache from which the persistent representation of the nodes can be obtained; never
-         *        null
          * @throws Exception if there is a problem during the processing
          */
-        void processAfterLocking( MutableCachedNode modifiedNode,
-                                  SaveContext context,
-                                  NodeCache persistentNodeCache ) throws Exception;
+        void processAfterLocking(MutableCachedNode modifiedNode,
+                                 SaveContext context) throws Exception;
     }
 
     /**

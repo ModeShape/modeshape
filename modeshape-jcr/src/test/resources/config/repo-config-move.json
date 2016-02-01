@@ -6,9 +6,5 @@
         "initialContent" : {
             "default" : "data/move-initial-data.xml"
         }
-    },
-    "storage": {
-        "cacheName": "persistentRepository",
-        "cacheConfiguration": "config/infinispan-persistent-move.xml"
     }
 }

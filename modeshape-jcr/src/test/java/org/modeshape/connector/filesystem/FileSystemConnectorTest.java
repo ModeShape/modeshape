@@ -121,8 +121,7 @@ public class FileSystemConnectorTest extends SingleUseAbstractTest {
             projection.initialize();
         }
 
-        startRepositoryWithConfiguration(getClass().getClassLoader()
-                                                   .getResourceAsStream("config/repo-config-filesystem-federation.json"));
+        startRepositoryWithConfigurationFrom("config/repo-config-filesystem-federation.json");
         registerNodeTypes("cnd/flex.cnd");
 
         Session session = (Session)jcrSession();
@@ -147,9 +146,6 @@ public class FileSystemConnectorTest extends SingleUseAbstractTest {
         assertTrue(session2 != null);
         
         Node node = session2.getNode("/");
-//        System.out.println("Root=" + node.getName());
-        
-//        System.out.println("Level1------------");
         NodeIterator it = node.getNodes();
         
         ArrayList<String> dirs = new ArrayList<>();

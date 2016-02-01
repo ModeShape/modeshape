@@ -1,8 +1,5 @@
 {
     "name": "Persistent repo no indexes",
-    "storage": {
-        "cacheName": "persistentRepository"
-    },
     "workspaces": {
         "default": "default",
         "predefined" : ["other"],

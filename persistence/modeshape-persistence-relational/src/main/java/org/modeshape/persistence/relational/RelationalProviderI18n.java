@@ -30,6 +30,7 @@ public final class RelationalProviderI18n {
     public static I18n insertOrUpdateFailed;
     public static I18n threadNotAssociatedWithTransaction;
     public static I18n threadAssociatedWithAnotherTransaction;
+    public static I18n warnConnectionsNeedCleanup;
 
     private RelationalProviderI18n() {
     }

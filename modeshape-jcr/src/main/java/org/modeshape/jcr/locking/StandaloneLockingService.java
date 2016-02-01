@@ -111,6 +111,7 @@ public class StandaloneLockingService implements LockingService {
                 lock.unlock();
             }
             unlocked.set(true);
+            LOGGER.debug("{0} unlocked...", name);
             if (lock.hasQueuedThreads()) {
                 LOGGER.debug("Lock '{0}' is not currently locked but will be", name);
                 return lock;

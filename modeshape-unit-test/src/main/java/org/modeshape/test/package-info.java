@@ -31,8 +31,7 @@
  * for many dozens or hundreds of tests.
  * </p>
  * <p>
- * This ModeShape module also brings in (as "compile" scope) all JARs that are required to run ModeShape and Infinispan,
- * including the more popular Infinispan Cache Loader libraries and the H2 (in-memory or file-based) database.
+ * This ModeShape module also brings in (as "compile" scope) all JARs that are required to run ModeShape
  * </p>
  */
 

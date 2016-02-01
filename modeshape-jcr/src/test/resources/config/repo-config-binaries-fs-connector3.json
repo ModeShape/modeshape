@@ -1,0 +1,27 @@
+{
+    "name" : "Persistent Repository",
+    "jndiName" : "java:jcr/local/PersistentRepository",
+    "monitoring" : {
+        "enabled" : true
+    },
+    "storage" : {
+        "binaryStorage" : {
+            "type"  : "file",
+            "directory" : "target/persistent_repository/binaries",
+            "minimumBinarySizeInBytes" : 1024
+        }
+    },
+    "workspaces" : {
+        "default" : "default",
+        "allowCreation" : true
+    },
+    "externalSources" : {
+        "fs2": {
+            "classname": "org.modeshape.connector.filesystem.FileSystemConnector",
+            "directoryPath": "target/federation_persistent_3",
+            "projections" : [
+                "default:/fs3 => /"
+            ]
+        }
+    }
+}

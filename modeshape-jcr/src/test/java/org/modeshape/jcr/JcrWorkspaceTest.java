@@ -53,8 +53,6 @@ import org.modeshape.common.junit.SkipLongRunning;
 import org.modeshape.jcr.api.JcrTools;
 import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.cache.change.Change;
-import org.modeshape.jcr.cache.change.ChangeSet;
-import org.modeshape.jcr.cache.change.ChangeSetListener;
 import org.modeshape.jcr.cache.change.WorkspaceRemoved;
 import org.modeshape.jcr.security.SimplePrincipal;
 
@@ -290,20 +288,15 @@ public class JcrWorkspaceTest extends SingleUseAbstractTest {
 
         // workspace deletion clears the cache asynchronously so we need to wait until that completes
         final CountDownLatch workspaceDeletedLatch = new CountDownLatch(1);
-        repository.changeBus().register(new ChangeSetListener() {
-            @Override
-            public void notify( ChangeSet changeSet ) {
-                for (Change change : changeSet) {
-                    if (change instanceof WorkspaceRemoved && ((WorkspaceRemoved)change).getWorkspaceName().equals(wsName)) {
-                        try {
-                            // we know the ws removed event has been issued, but we need to wait to make sure ISPN has finished
-                            // shutting down the ws cache
-                            Thread.sleep(300);
-                        } catch (InterruptedException e) {
-                            throw new RuntimeException(e);
-                        }
-                        workspaceDeletedLatch.countDown();
+        repository.changeBus().register(changeSet -> {
+            for (Change change : changeSet) {
+                if (change instanceof WorkspaceRemoved && ((WorkspaceRemoved)change).getWorkspaceName().equals(wsName)) {
+                    try {
+                        Thread.sleep(300);
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
                     }
+                    workspaceDeletedLatch.countDown();
                 }
             }
         });

@@ -17,24 +17,28 @@
 package org.modeshape.jcr.cache.document;
 
 import java.io.Serializable;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.Callable;
 import java.util.function.BiFunction;
 import java.util.stream.Stream;
-import javax.transaction.HeuristicMixedException;
-import javax.transaction.HeuristicRollbackException;
-import javax.transaction.RollbackException;
+import javax.transaction.NotSupportedException;
 import javax.transaction.SystemException;
-import org.modeshape.schematic.SchematicDb;
-import org.modeshape.schematic.SchematicEntry;
-import org.modeshape.schematic.document.Document;
-import org.modeshape.schematic.document.EditableDocument;
-import org.modeshape.common.annotation.RequiresTransaction;
+import org.modeshape.common.SystemFailureException;
+import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.jcr.RepositoryEnvironment;
 import org.modeshape.jcr.locking.LockingService;
 import org.modeshape.jcr.txn.Transactions;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.binary.ExternalBinaryValue;
+import org.modeshape.schematic.SchematicDb;
+import org.modeshape.schematic.SchematicEntry;
+import org.modeshape.schematic.annotation.RequiresTransaction;
+import org.modeshape.schematic.document.Document;
+import org.modeshape.schematic.document.EditableDocument;
 
 /**
  * An implementation of {@link DocumentStore} which always uses the local cache to store/retrieve data and which provides some
@@ -43,6 +47,8 @@ import org.modeshape.jcr.value.binary.ExternalBinaryValue;
  * @author Horia Chiorean (hchiorea@redhat.com)
  */
 public class LocalDocumentStore implements DocumentStore {
+    
+    private static final Logger LOGGER = Logger.getLogger(LocalDocumentStore.class);
 
     private final SchematicDb database;
     private final RepositoryEnvironment repoEnv;
@@ -71,7 +77,7 @@ public class LocalDocumentStore implements DocumentStore {
      * 
      * @return a {@link Stream} of keys, never {@code null}
      */
-    public Stream<String> keys() {
+    public Set<String> keys() {
         return database.keys();    
     }
 
@@ -83,7 +89,7 @@ public class LocalDocumentStore implements DocumentStore {
     @Override
     public SchematicEntry storeIfAbsent(String key,
                                         Document document) {
-        return () -> database.putIfAbsent(key, document);
+        return database.putIfAbsent(key, document);
     }
 
     @Override
@@ -130,12 +136,12 @@ public class LocalDocumentStore implements DocumentStore {
     }
 
     /**
-     * Removes all the contents of the document store (i.e. all the documents), after locking them first.
+     * Removes all the contents of the document store (i.e. all the documents)
+     * 
      * Note that for this to work, it is expected that the caller will've already started a transaction.
      */
     @RequiresTransaction    
     public void removeAll() {
-        lockDocuments(database.keys().toArray(String[]::new));
         database.removeAll();
     }
 
@@ -201,7 +207,7 @@ public class LocalDocumentStore implements DocumentStore {
             // There is no such node ...
             return null;
         }
-        return entry.getContent();
+        return entry.content();
     }
 
     @Override
@@ -214,6 +220,15 @@ public class LocalDocumentStore implements DocumentStore {
     public ExternalBinaryValue getExternalBinary( String sourceName,
                                                   String id ) {
         throw new UnsupportedOperationException("External binaries are only supported by the federated document store");
+    }
+
+    /**
+     * Returns the id of the database.
+     * 
+     * @return an identifier string, never {@code null}
+     */
+    public String databaseId() {
+        return database.id();
     }
 
     /**
@@ -230,35 +245,70 @@ public class LocalDocumentStore implements DocumentStore {
      */
     public DocumentOperationResults performOnEachDocument( BiFunction<String, EditableDocument, Boolean> operation ) {
         DocumentOperationResults results = new DocumentOperationResults();
-        Transactions transactions = repoEnv.getTransactions();
-        database.keys().forEach(key -> {
-            // We operate upon each document within a transaction ...
-            try {
-                transactions.begin();
-                lockDocuments(key);
-                EditableDocument doc = edit(key, false);
-                if (doc != null) {
-                    if (operation.apply(key, doc)) {
-                        results.recordModified();
-                    } else {
-                        results.recordUnmodified();
-                    }
-                }
-                transactions.commit();
-            } catch (RollbackException | HeuristicMixedException | HeuristicRollbackException err) {
-                // Couldn't be committed, but the txn is already rolled back ...
-                results.recordFailure();
-            } catch (Throwable t) {
-                results.recordFailure();
-                // any other exception/error we should rollback and just continue (skipping this key for now) ...
+        database.keys().forEach(key -> 
+            runInTransaction(() -> {
+                // We operate upon each document within a transaction ...
                 try {
-                    transactions.rollback();
-                } catch (SystemException e) {
-                    //ignore....
+                    EditableDocument doc = edit(key, false);
+                    if (doc != null) {
+                        if (operation.apply(key, doc)) {
+                            results.recordModified();
+                        } else {
+                            results.recordUnmodified();
+                        }
+                    }
+                } catch (Throwable t) {
+                    results.recordFailure();
+                }
+                return null;
+            }, 1, key));
+        return results;
+    }
+
+    /**
+     * Runs the given operation within a transaction, after optionally locking some keys.
+     *
+     * @param operation a {@link Callable} instance; may not be null
+     * @param retryCountOnLockTimeout the number of times the operation should be retried if a timeout occurs while trying
+     * to obtain the locks
+     * @param keysToLock an optional {@link String[]} representing the keys to lock before performing the operation
+     * @param <V> the return type of the operation
+     * @return the result of operation
+     */
+    public  <V> V runInTransaction( Callable<V> operation, int retryCountOnLockTimeout, String... keysToLock ) {
+        // Start a transaction ...
+        Transactions txns = repoEnv.getTransactions();
+        try {
+            Transactions.Transaction txn = txns.begin();
+            if (keysToLock.length > 0) {
+                List<String> keysList = Arrays.asList(keysToLock);
+                boolean locksAcquired = false;
+                while (!locksAcquired && retryCountOnLockTimeout-- >= 0) {
+                    locksAcquired = lockDocuments(keysList);
+                }
+                if (!locksAcquired) {
+                    txn.rollback();
+                    throw new org.modeshape.jcr.TimeoutException(
+                            "Cannot acquire locks on: " + Arrays.toString(keysToLock) + " after " + retryCountOnLockTimeout + " attempts");
                 }
             }
-        });
-        return results;
+            try {
+                V result = operation.call();
+                txn.commit();
+                return result;
+            } catch (Exception e) {
+                // always rollback
+                txn.rollback();
+                // throw as is (see below)
+                throw e;
+            }
+        } catch (IllegalStateException | SystemException | NotSupportedException err) {
+            throw new SystemFailureException(err);
+        }  catch (RuntimeException re) {
+            throw re;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public static class DocumentOperationResults implements Serializable {

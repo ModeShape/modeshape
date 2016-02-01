@@ -16,11 +16,7 @@
 package org.modeshape.jcr.cache.document;
 
 import java.util.Iterator;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import org.modeshape.schematic.SchematicDb;
-import org.modeshape.schematic.SchematicEntry;
-import org.modeshape.schematic.document.Document;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.jcr.ExecutionContext;
 import org.modeshape.jcr.JcrI18n;
@@ -36,10 +32,12 @@ import org.modeshape.jcr.cache.change.ChangeSetListener;
 import org.modeshape.jcr.value.NameFactory;
 import org.modeshape.jcr.value.Path;
 import org.modeshape.jcr.value.PathFactory;
+import org.modeshape.schematic.SchematicEntry;
+import org.modeshape.schematic.document.Document;
 
 /**
- * A {@link NodeCache} implementation that uses Infinispan's {@link SchematicDb} for storage, with each node represented as a
- * single {@link Document}. The nodes in this cache represent the actual, unmodified values.
+ * A {@link NodeCache} implementation that uses a concurrent LRU map to store nodes. The nodes in this cache represent the actual, 
+ * unmodified values.
  */
 public class WorkspaceCache implements DocumentCache {
 
@@ -188,7 +186,7 @@ public class WorkspaceCache implements DocumentCache {
             return null;
         }
         try {
-            return entry.getContent();
+            return entry.content();
         } catch (IllegalStateException e) {
             LOGGER.debug("The document '{0}' was concurrently removed; returning null.", key);
             // The document was already removed
@@ -331,6 +329,14 @@ public class WorkspaceCache implements DocumentCache {
             throw new WorkspaceNotFoundException(JcrI18n.workspaceHasBeenDeleted.text(getWorkspaceName()));
         }
     }
+    
+    protected void loadFromDocumentStore(String key) {
+        Document document = documentFor(key);
+        if (document != null) {
+            NodeKey nodeKey = new NodeKey(key);
+            this.nodesByKey.put(nodeKey, new LazyCachedNode(nodeKey, document));
+        }
+    }
 
     /**
      * Signal that the workspace for this workspace cache has been deleted/destroyed, so this cache is not needed anymore.
@@ -381,26 +387,6 @@ public class WorkspaceCache implements DocumentCache {
     @Override
     public String toString() {
         return workspaceName;
-    }
-
-    /**
-     * Returns a workspace cache which has the latest persisted information read from Infinispan for the given nodes.
-     * After reading each node from Infinispan, that node will also be updated/inserted into *this* workspace cache.
-     *
-     * @param nodeKeys an {@code Iterable} of {@code NodeKey}; may not be null
-     * @return a workspace cache instance which only contains the latest persisted information for the requested nodes.
-     */
-    protected WorkspaceCache persistedCache(Iterable<NodeKey> nodeKeys) {
-        ConcurrentHashMap<NodeKey, CachedNode> nodes = new ConcurrentHashMap<>();
-        for (NodeKey nodeKey : nodeKeys) {
-            Document nodeData = documentFor(nodeKey);
-            if (nodeData != null) {
-                CachedNode persistedNode = new LazyCachedNode(nodeKey, nodeData);
-                nodes.put(nodeKey, persistedNode);
-                this.nodesByKey.put(nodeKey, persistedNode);
-            }
-        }
-        return new WorkspaceCache(this, nodes);
     }
 
     protected final class SystemChangeNotifier implements ChangeSetListener {

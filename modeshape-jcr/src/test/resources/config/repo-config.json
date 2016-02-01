@@ -1,5 +1,11 @@
 {
     "name" : "CND Sequencer Test Repository",
+    "storage" : {
+        "persistence" : {
+            "type" : "db",
+            "dropOnExit" : true
+        }
+    },
     "sequencing" : {
         "sequencers" : {
             "CND sequencer" : {

@@ -17,7 +17,6 @@ package org.modeshape.connector.cmis;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -52,9 +51,6 @@ import org.apache.chemistry.opencmis.commons.enums.BindingType;
 import org.apache.chemistry.opencmis.commons.enums.VersioningState;
 import org.apache.chemistry.opencmis.commons.exceptions.CmisObjectNotFoundException;
 import org.apache.chemistry.opencmis.commons.impl.dataobjects.ContentStreamImpl;
-import org.modeshape.schematic.document.Binary;
-import org.modeshape.schematic.document.Document;
-import org.modeshape.schematic.document.Document.Field;
 import org.modeshape.jcr.JcrLexicon;
 import org.modeshape.jcr.api.JcrConstants;
 import org.modeshape.jcr.api.nodetype.NodeTypeManager;
@@ -66,6 +62,10 @@ import org.modeshape.jcr.spi.federation.DocumentWriter;
 import org.modeshape.jcr.value.BinaryValue;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.ValueFactories;
+import org.modeshape.jcr.value.binary.ExternalBinaryValue;
+import org.modeshape.schematic.document.Binary;
+import org.modeshape.schematic.document.Document;
+import org.modeshape.schematic.document.Document.Field;
 import org.w3c.dom.Element;
 
 /**
@@ -780,11 +780,11 @@ public class CmisConnector extends Connector {
         writer.setPrimaryType(NodeType.NT_RESOURCE);
         writer.setParent(id);
 
-        if (doc.getContentStream() != null) {
-            InputStream is = doc.getContentStream().getStream();
-            BinaryValue content = factories.getBinaryFactory().create(is);
+        ContentStream contentStream = doc.getContentStream();
+        if (contentStream != null) {
+            BinaryValue content = new CmisConnectorBinary(contentStream, getSourceName(), id, getMimeTypeDetector());
             writer.addProperty(JcrConstants.JCR_DATA, content);
-            writer.addProperty(JcrConstants.JCR_MIME_TYPE, doc.getContentStream().getMimeType());
+            writer.addProperty(JcrConstants.JCR_MIME_TYPE, contentStream.getMimeType());
         }
 
         Property<Object> lastModified = doc.getProperty(PropertyIds.LAST_MODIFICATION_DATE);
@@ -794,6 +794,19 @@ public class CmisConnector extends Connector {
         writer.addProperty(JcrLexicon.LAST_MODIFIED_BY, properties.jcrValues(lastModifiedBy));
 
         return writer.document();
+    }
+
+    @Override
+    public ExternalBinaryValue getBinaryValue(String id) {
+        org.apache.chemistry.opencmis.client.api.Document doc = (org.apache.chemistry.opencmis.client.api.Document)session.getObject(id);
+        if (doc == null) {
+            return null;
+        }
+        ContentStream contentStream = doc.getContentStream();
+        if (contentStream == null) {
+            return null;
+        }
+        return new CmisConnectorBinary(contentStream, getSourceName(), id, getMimeTypeDetector());
     }
 
     /**

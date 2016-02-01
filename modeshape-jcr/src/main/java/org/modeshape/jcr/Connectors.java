@@ -34,10 +34,6 @@ import javax.jcr.PathNotFoundException;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.nodetype.NodeTypeManager;
-import org.modeshape.schematic.Schematic;
-import org.modeshape.schematic.SchematicEntry;
-import org.modeshape.schematic.document.Document;
-import org.modeshape.schematic.document.EditableDocument;
 import org.modeshape.common.SystemFailureException;
 import org.modeshape.common.annotation.GuardedBy;
 import org.modeshape.common.annotation.Immutable;
@@ -72,6 +68,10 @@ import org.modeshape.jcr.value.PathFactory;
 import org.modeshape.jcr.value.Property;
 import org.modeshape.jcr.value.PropertyFactory;
 import org.modeshape.jcr.value.WorkspaceAndPath;
+import org.modeshape.schematic.Schematic;
+import org.modeshape.schematic.SchematicEntry;
+import org.modeshape.schematic.document.Document;
+import org.modeshape.schematic.document.EditableDocument;
 
 /**
  * Class which maintains (based on the configuration) the list of available connectors for a repository.
@@ -445,7 +445,7 @@ public final class Connectors {
     protected Connector instantiateConnector( Component component ) {
         try {
             // Instantiate the connector and set the 'name' field ...
-            Connector connector = component.createInstance(getClass().getClassLoader());
+            Connector connector = component.createInstance();
 
             // Set the repository name field ...
             Reflection.setValue(connector, "repositoryName", repository.name());
@@ -1382,7 +1382,7 @@ public final class Connectors {
             if (entry == null) {
                 return NO_PROPERTIES;
             }
-            Document doc = entry.getContent();
+            Document doc = entry.content();
             Map<Name, Property> props = new HashMap<>();
             translator.getProperties(doc, props);
             return props;
@@ -1422,14 +1422,12 @@ public final class Connectors {
                     translator.removeProperty(doc, propertyEntry.getKey(), null, null);
                 }
             }
-            localStore.storeIfAbsent(key, doc);
         }
 
         @Override
         public boolean contains( String id ) {
             String key = keyFor(id);
-            SchematicEntry entry = localStore.get(key);
-            return entry != null;
+            return localStore.containsKey(key);
         }
     }
 }

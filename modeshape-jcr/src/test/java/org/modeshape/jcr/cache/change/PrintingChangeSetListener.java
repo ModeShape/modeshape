@@ -21,12 +21,7 @@ package org.modeshape.jcr.cache.change;
 public class PrintingChangeSetListener implements ChangeSetListener {
 
     public boolean print = false;
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.modeshape.jcr.cache.change.ChangeSetListener#notify(org.modeshape.jcr.cache.change.ChangeSet)
-     */
+ 
     @Override
     public void notify( ChangeSet changeSet ) {
         if (print) System.out.println(changeSet);

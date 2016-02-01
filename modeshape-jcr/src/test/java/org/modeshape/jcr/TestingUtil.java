@@ -15,18 +15,27 @@
  */
 package org.modeshape.jcr;
 
+import java.io.File;
 import java.net.URL;
 import java.util.Arrays;
+import java.util.Properties;
 import javax.jcr.Repository;
 import javax.transaction.TransactionManager;
+import org.junit.Assert;
 import org.modeshape.common.SystemFailureException;
 import org.modeshape.common.logging.Logger;
+import org.modeshape.common.util.FileUtil;
 import org.modeshape.jcr.ModeShapeEngine.State;
+import org.modeshape.schematic.document.Document;
+import org.modeshape.schematic.document.Json;
 
 /**
- * 
+ * Utility class for testing. 
  */
 public class TestingUtil {
+
+    private TestingUtil() {
+    }
 
     private static final Logger log = Logger.getLogger(TestingUtil.class);
 
@@ -60,7 +69,7 @@ public class TestingUtil {
             killTransaction(repository.runningState().txnManager());
 
             // First shut down the repository ...
-            repository.shutdown().get();
+            repository.doShutdown(false);
         } catch (Throwable t) {
             log.error(t, JcrI18n.errorKillingRepository, repository.getName(), t.getMessage());
         }
@@ -99,10 +108,33 @@ public class TestingUtil {
 
     public static JcrRepository startRepositoryWithConfig( String configFile ) throws Exception {
         URL configUrl = TestingUtil.class.getClassLoader().getResource(configFile);
-        RepositoryConfiguration config = RepositoryConfiguration.read(configUrl);
+        RepositoryConfiguration config = RepositoryConfiguration.read(configUrl).with(new TestingEnvironment());
         JcrRepository repository = null;
         repository = new JcrRepository(config);
         repository.start();
         return repository;
+    }
+
+    public static JcrRepository startClusteredRepositoryWithConfig(String configFile, String clusterNodeId) throws Exception {
+        URL configUrl = TestingUtil.class.getClassLoader().getResource(configFile);
+        Assert.assertNotNull(configFile + " not found", configFile);
+        Properties properties = new Properties();
+        properties.put("clusterNode", clusterNodeId);
+        Document configDoc = Json.read(configUrl).withVariablesReplaced(properties);
+        JcrRepository repository = new JcrRepository(new RepositoryConfiguration(configDoc, configFile));
+        repository.start();
+        Thread.sleep(200);
+        return repository;
+    }
+    
+    public static void waitUntilFolderCleanedUp(String path) {
+        File folder = new File(path);
+        while (folder.exists() && !FileUtil.delete(folder)) {
+            try {
+                Thread.sleep(10);
+            } catch (InterruptedException e) {
+                Thread.interrupted();
+            }
+        }
     }
 }

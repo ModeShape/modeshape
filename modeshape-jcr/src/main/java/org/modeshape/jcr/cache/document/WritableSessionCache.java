@@ -35,16 +35,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.stream.Collectors;
 import javax.transaction.HeuristicMixedException;
 import javax.transaction.HeuristicRollbackException;
 import javax.transaction.NotSupportedException;
 import javax.transaction.RollbackException;
 import javax.transaction.Status;
 import javax.transaction.SystemException;
-import org.modeshape.schematic.Schematic;
-import org.modeshape.schematic.SchematicEntry;
-import org.modeshape.schematic.document.Document;
-import org.modeshape.schematic.document.EditableDocument;
 import org.modeshape.common.SystemFailureException;
 import org.modeshape.common.annotation.GuardedBy;
 import org.modeshape.common.annotation.ThreadSafe;
@@ -93,6 +90,10 @@ import org.modeshape.jcr.value.Property;
 import org.modeshape.jcr.value.binary.AbstractBinary;
 import org.modeshape.jcr.value.binary.BinaryStore;
 import org.modeshape.jcr.value.binary.BinaryStoreException;
+import org.modeshape.schematic.Schematic;
+import org.modeshape.schematic.SchematicEntry;
+import org.modeshape.schematic.document.Document;
+import org.modeshape.schematic.document.EditableDocument;
 
 /**
  * A writable {@link SessionCache} implementation capable of making transient changes and saving them.
@@ -122,16 +123,16 @@ public class WritableSessionCache extends AbstractSessionCache {
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
     private final Transactions txns;
     private final RepositoryEnvironment repositoryEnvironment;
-    private final ConcurrentHashMap<Integer, Transactions.TransactionFunction> completeTxFunctionByTxId = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, Transactions.TransactionFunction> completeTxFunctionByTxId = new ConcurrentHashMap<>();
     private final TransactionalWorkspaceCaches txWorkspaceCaches;
+    private final ConcurrentHashMap<String, Set<String>> lockedKeysByTxId;
     private Map<NodeKey, SessionNode> changedNodes;
     private Set<NodeKey> replacedNodes;
     private LinkedHashSet<NodeKey> changedNodesInOrder;
     private Map<NodeKey, ReferrerChanges> referrerChangesForRemovedNodes;
 
-
     /**
-     * Track the binary keys which are being referenced/unreferenced by nodes so they can be locked in ISPN
+     * Track the binary keys which are being referenced/unreferenced by nodes so they can be locked
      */                        
     private final ConcurrentHashMap<NodeKey, Set<BinaryKey>> binaryReferencesByNodeKey;
 
@@ -157,6 +158,7 @@ public class WritableSessionCache extends AbstractSessionCache {
         this.repositoryEnvironment = repositoryEnvironment;
         assert txWorkspaceCaches != null;
         this.txWorkspaceCaches = txWorkspaceCaches;
+        this.lockedKeysByTxId = new ConcurrentHashMap<>();
         checkForTransaction();        
     }
 
@@ -406,12 +408,9 @@ public class WritableSessionCache extends AbstractSessionCache {
                 // function *only after* the persistent storage has been updated
                 // if there isn't an active ModeShape transaction, one will become active later during "save"
                 // otherwise, "save" is never called meaning this cache should be discarded
-                Transactions.Transaction modeshapeTx = transactions.currentTransaction();
+                Transaction modeshapeTx = transactions.currentTransaction();
                 if (modeshapeTx != null) {
-                    // we can use the identity hash code as a tx id, because we essentially want a different tx function for each
-                    // different transaction and as long as a tx is active, it should not be garbage collected, hence we should
-                    // get different IDs for different transactions
-                    final int txId = System.identityHashCode(modeshapeTx);
+                    String txId = modeshapeTx.id();
                     if (!completeTxFunctionByTxId.containsKey(txId)) {
                         // create and register the complete transaction function only once
                         Transactions.TransactionFunction completeFunction = () -> completeTransaction(txId);
@@ -423,7 +422,8 @@ public class WritableSessionCache extends AbstractSessionCache {
                 }
             } else {
                 // There is no active transaction, so just use the shared workspace cache ...
-                completeTransaction(null);
+                // reset the ws cache to the shared (global one)
+                setWorkspaceCache(sharedWorkspaceCache());
             }
         } catch (Exception e) {
             logger().error(e, JcrI18n.errorDeterminingCurrentTransactionAssumingNone, workspaceName(), e.getMessage());
@@ -434,12 +434,15 @@ public class WritableSessionCache extends AbstractSessionCache {
      * Signal that the transaction that was active and in which this session participated has completed and that this session
      * should no longer use a transaction-specific workspace cache.
      */
-    private void completeTransaction(final Integer txId) {
+    private void completeTransaction(final String txId) {
         // reset the ws cache to the shared (global one)
         setWorkspaceCache(sharedWorkspaceCache());
-        if (txId != null) {
-            completeTxFunctionByTxId.remove(txId);
+        // and clear some tx specific data
+        Set<String> lockedKeys = lockedKeysByTxId.remove(txId);
+        if (lockedKeys != null) {
+            lockedKeys.clear();
         }
+        completeTxFunctionByTxId.remove(txId);
     }
 
     protected final void logChangesBeingSaved( Iterable<NodeKey> firstNodesInOrder,
@@ -520,27 +523,20 @@ public class WritableSessionCache extends AbstractSessionCache {
                     // Start a ModeShape transaction (which may be a part of a larger JTA transaction) ...
                     txn = txns.begin();
                     assert txn != null;
-
-                    // Lock the nodes in Infinispan and bring the latest version of these nodes in the shared workspace cache
-                    WorkspaceCache persistedCache = lockNodes(changedNodesInOrder);
-
+                    
                     // We've either started our own transaction or one was already started. In either case *we must* make 
-                    // sure we're not using the shared workspace cache as the active workspace cache. This is because the
-                    // the shared workspace cache is "shared" with all others (incl readers) and we might end up placing entries in the 
-                    // shared workspace cache which are being edited by us & this can happen after we've placed in the ISPN
-                    // cache the clone for each document we're editing. Remember that for each active transaction ISPN will
-                    // see the "most recent" object reference which was placed in the cache. See SchematicEntryLiteral#edit
-                    // The shared workspace cache can become corrupted whenever methods like `node.getPrimaryType(this)` are
-                    // called from the #persistChanges method
-
+                    // sure we're not using the shared workspace cache as the active workspace cache. 
                     checkForTransaction();
+
+                    // Lock the nodes and bring the latest version of these nodes in the transactional cache
+                    lockNodes(changedNodesInOrder);
                     
                     // process after locking
-                    runAfterLocking(preSaveOperation, persistedCache);
+                    runAfterLocking(preSaveOperation);
 
                     // Now persist the changes ...
                     logChangesBeingSaved(this.changedNodesInOrder, this.changedNodes, null, null);
-                    events = persistChanges(this.changedNodesInOrder, persistedCache);
+                    events = persistChanges(this.changedNodesInOrder);
 
                     // If there are any binary changes, add a function which will update the binary store
                     if (events.hasBinaryChanges()) {
@@ -629,13 +625,11 @@ public class WritableSessionCache extends AbstractSessionCache {
         return nodeKeys;
     }
 
-    private void runAfterLocking(PreSave preSaveOperation,
-                                 NodeCache persistedCache) throws Exception {
-        runAfterLocking(preSaveOperation, persistedCache, changedNodesInOrder);
+    private void runAfterLocking(PreSave preSaveOperation) throws Exception {
+        runAfterLocking(preSaveOperation, changedNodesInOrder);
     }
 
     private void runAfterLocking(PreSave preSaveOperation,
-                                 NodeCache persistedCache,
                                  Collection<NodeKey> filter) throws Exception {
         if (preSaveOperation != null) {
             SaveContext saveContext = new BasicSaveContext(context());
@@ -644,14 +638,14 @@ public class WritableSessionCache extends AbstractSessionCache {
                 if (node == REMOVED || !filter.contains(node.getKey())) {
                     continue;
                 }
-                preSaveOperation.processAfterLocking(node, saveContext, persistedCache);
+                preSaveOperation.processAfterLocking(node, saveContext);
             }
         }
     }
 
     protected void clearState() {
         // The changes have been made, so create a new map (we're using the keys from the current map) ...
-        this.changedNodes = new HashMap<NodeKey, SessionNode>();
+        this.changedNodes = new HashMap<>();
         this.referrerChangesForRemovedNodes.clear();
         this.changedNodesInOrder.clear();
         this.binaryReferencesByNodeKey.clear();
@@ -703,34 +697,29 @@ public class WritableSessionCache extends AbstractSessionCache {
 
                     // Get a monitor via the transaction ...
                     try {
-                        // Lock the nodes in Infinispan  and bring the latest version of these nodes in the shared workspace cache
-                        WorkspaceCache thisPersistedCache = lockNodes(this.changedNodesInOrder);
-                        WorkspaceCache thatPersistedCache = that.lockNodes(that.changedNodesInOrder);
-                       
                         // We've either started our own transaction or one was already started. In either case *we must* make 
                         // sure we're not using the shared workspace cache as the active workspace cache. This is because the
                         // the shared workspace cache is "shared" with all others (incl readers) and we might end up placing entries in the 
-                        // shared workspace cache which are being edited by us - this can happen after we've placed in the ISPN
-                        // cache the clone for each document we're editing. Remember that for each active transaction ISPN will
-                        // see the "most recent" object reference which was placed in the cache. See SchematicEntryLiteral#edit
-                        // The shared workspace cache can become corrupted whenever methods like `node.getPrimaryType(this)` are
-                        // called from the #persistChanges method
-
+                        // shared workspace cache which are being edited by us
                         this.checkForTransaction();
                         that.checkForTransaction();
+
+                        // Lock the nodes in  and bring the latest version of these nodes in the transactional workspace cache
+                        lockNodes(this.changedNodesInOrder);
+                        that.lockNodes(that.changedNodesInOrder);
                         
                         // process after locking
-                        runAfterLocking(preSaveOperation, thisPersistedCache);
+                        runAfterLocking(preSaveOperation);
 
                         // Now persist the changes ...
                         logChangesBeingSaved(this.changedNodesInOrder, this.changedNodes, that.changedNodesInOrder,
                                              that.changedNodes);
-                        events1 = persistChanges(this.changedNodesInOrder, thisPersistedCache);
+                        events1 = persistChanges(this.changedNodesInOrder);
                         // If there are any binary changes, add a function which will update the binary store
                         if (events1.hasBinaryChanges()) {
                             txn.uponCommit(binaryUsageUpdateFunction(events1.usedBinaries(), events1.unusedBinaries()));
                         }
-                        events2 = that.persistChanges(that.changedNodesInOrder, thatPersistedCache);
+                        events2 = that.persistChanges(that.changedNodesInOrder);
                         if (events2.hasBinaryChanges()) {
                             txn.uponCommit(binaryUsageUpdateFunction(events2.usedBinaries(), events2.unusedBinaries()));
                         }
@@ -859,33 +848,29 @@ public class WritableSessionCache extends AbstractSessionCache {
                     assert txn != null;
 
                     try {
-                        // Lock the nodes in Infinispan and bring the latest version of these nodes in the shared workspace cache
-                        WorkspaceCache thisPersistedCache = lockNodes(savedNodesInOrder);
-                        WorkspaceCache thatPersistedCache = that.lockNodes(that.changedNodesInOrder);
-
                         // We've either started our own transaction or one was already started. In either case *we must* make 
                         // sure we're not using the shared workspace cache as the active workspace cache. This is because the
                         // the shared workspace cache is "shared" with all others (incl readers) and we might end up placing entries in the 
-                        // shared workspace cache which are being edited by us - this can happen after we've placed in the ISPN
-                        // cache the clone for each document we're editing. Remember that for each active transaction ISPN will
-                        // see the "most recent" object reference which was placed in the cache. See SchematicEntryLiteral#edit
-                        // The shared workspace cache can become corrupted whenever methods like `node.getPrimaryType(this)` are
-                        // called from the #persistChanges method
+                        // shared workspace cache which are being edited by us
                         this.checkForTransaction();
                         that.checkForTransaction();
                         
+                        // Lock the nodes and bring the latest version of these nodes in the transactional workspace cache
+                        lockNodes(savedNodesInOrder);
+                        that.lockNodes(that.changedNodesInOrder);
+                        
                         // process after locking
                         // Before we start the transaction, apply the pre-save operations to the new and changed nodes ...
-                        runAfterLocking(preSaveOperation, thisPersistedCache, toBeSaved);
+                        runAfterLocking(preSaveOperation, toBeSaved);
 
                         // Now persist the changes ...
                         logChangesBeingSaved(savedNodesInOrder, this.changedNodes, that.changedNodesInOrder, that.changedNodes);
-                        events1 = persistChanges(savedNodesInOrder, thisPersistedCache);
+                        events1 = persistChanges(savedNodesInOrder);
                         // If there are any binary changes, add a function which will update the binary store
                         if (events1.hasBinaryChanges()) {
                             txn.uponCommit(binaryUsageUpdateFunction(events1.usedBinaries(), events1.unusedBinaries()));
                         }
-                        events2 = that.persistChanges(that.changedNodesInOrder, thatPersistedCache);
+                        events2 = that.persistChanges(that.changedNodesInOrder);
                         if (events2.hasBinaryChanges()) {
                             txn.uponCommit(binaryUsageUpdateFunction(events2.usedBinaries(), events2.unusedBinaries()));
                         }
@@ -961,7 +946,6 @@ public class WritableSessionCache extends AbstractSessionCache {
      * Persist the changes within an already-established transaction.
      *
      * @param changedNodesInOrder the nodes that are to be persisted; may not be null
-     * @param persistedCache a view of the existing (persisted) nodes which are going to be modified.
      * @return the ChangeSet encapsulating the changes that were made
      * @throws LockFailureException if a requested lock could not be made
      * @throws DocumentAlreadyExistsException if this session attempts to create a document that has the same key as an existing
@@ -969,9 +953,10 @@ public class WritableSessionCache extends AbstractSessionCache {
      * @throws DocumentNotFoundException if one of the modified documents was removed by another session
      */
     @GuardedBy( "lock" )
-    protected ChangeSet persistChanges( Iterable<NodeKey> changedNodesInOrder,
-                                        WorkspaceCache persistedCache ) {
+    protected ChangeSet persistChanges(Iterable<NodeKey> changedNodesInOrder) {
+        
         // Compute the save meta-info ...
+        WorkspaceCache persistedCache = workspaceCache();
         ExecutionContext context = context();
         String userId = context.getSecurityContext().getUserName();
         Map<String, String> userData = context.getData();
@@ -1473,11 +1458,12 @@ public class WritableSessionCache extends AbstractSessionCache {
             Map<NodeKey, Set<NodeKey>> referrersByRemovedNodes = new HashMap<>();
          
             for (NodeKey removedKey : removedNodes) {
-                // we need the current document from the documentStore, because this differs from what's persisted
+                // we need the current document from the documentStore, because may differs from what's persisted (i.e. the latest
+                // persisted information
                 SchematicEntry entry = documentStore.get(removedKey.toString());
                 if (entry != null) {
                     // The entry hasn't yet been removed by another (concurrent) session ...
-                    Document doc = documentStore.get(removedKey.toString()).getContent();
+                    Document doc = entry.content();
                     Set<NodeKey> strongReferrers = translator.getReferrers(doc, ReferenceType.STRONG);
                     strongReferrers.removeAll(removedNodes);
                     if (!strongReferrers.isEmpty()) {
@@ -1527,57 +1513,76 @@ public class WritableSessionCache extends AbstractSessionCache {
         return changes;
     }
 
-    private WorkspaceCache lockNodes( Collection<NodeKey> changedNodesInOrder ) {
+    private void lockNodes(Collection<NodeKey> changedNodesInOrder) {
+        WorkspaceCache workspaceCache = workspaceCache();
+        // this should be a transactional ws cache always since we've already started a tx by now
+        assert workspaceCache instanceof TransactionalWorkspaceCache;
+        
         if (changedNodesInOrder.isEmpty()) {
-            return workspaceCache();
+            return;
         }
-        DocumentStore documentStore = workspaceCache().documentStore();
+        DocumentStore documentStore = workspaceCache.documentStore();
 
         if (LOGGER.isDebugEnabled()) {
             if (!this.changedNodes.isEmpty()) {
-                LOGGER.debug("Attempting to lock nodes in Infinispan: {0}", changedNodes.keySet());
+                LOGGER.debug("Attempting to the lock nodes: {0}", changedNodes.keySet());
             }
         }
         // Try to acquire from the DocumentStore locks for all the nodes that we're going to change ...
-        Set<String> keysToLock = new TreeSet<String>();
+        Set<String> keysToLock = changedNodesInOrder.stream().map(this::keysToLockForNode).collect(TreeSet::new, 
+                                                                                                   TreeSet::addAll,
+                                                                                                   TreeSet::addAll);
 
-        for (NodeKey key : changedNodesInOrder) {
-            SessionNode node = changedNodes.get(key);
-            if (!node.isNew()) {
-                String keyStr = key.toString();
-                keysToLock.add(keyStr);
-            }
-            // collect all binary reference document keys since they have to be locked as well
-            Set<BinaryKey> binaryReferencesForNode = binaryReferencesByNodeKey.get(key);
-            if (binaryReferencesForNode != null) {
-                for (BinaryKey binaryKey : binaryReferencesForNode) {
-                    keysToLock.add(translator().keyForBinaryReferenceDocument(binaryKey.toString()));
-                }
-            }
+        // we may already have a list of locked nodes, so remove the ones that we've already locked (and we hold the lock for)
+        Transaction modeshapeTx = repositoryEnvironment.getTransactions().currentTransaction();
+        assert modeshapeTx != null;
+        String txId = modeshapeTx.id();
+        Set<String> lockedKeysForTx = lockedKeysByTxId.computeIfAbsent(txId, id -> new LinkedHashSet<>());
+        if (keysToLock.removeAll(lockedKeysForTx)) {
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("The keys {0} have been locked previously as part of the transaction {1}; skipping them...",
+                             lockedKeysForTx, txId);    
+            }             
         }
         
-        if (!keysToLock.isEmpty()) {
-            int retryCountOnLockTimeout = 2;
-            boolean locksAquired = false;
-            while (!locksAquired && retryCountOnLockTimeout > 0) {
-                locksAquired = documentStore.lockDocuments(keysToLock);
-                if (locksAquired) {
-                    if (LOGGER.isDebugEnabled()) {
-                        LOGGER.debug("Locked the nodes: {0}", keysToLock);
-                    }
-                } else {
-                    if (LOGGER.isDebugEnabled()) {
-                        LOGGER.debug("Timeout while attempting to lock keys {0} in Infinispan. Retrying....", keysToLock);
-                    }
-                    --retryCountOnLockTimeout;
+        if (keysToLock.isEmpty()) {
+            return;   
+        }
+
+        int retryCountOnLockTimeout = 2;
+        boolean locksAquired = false;
+        while (!locksAquired && retryCountOnLockTimeout > 0) {
+            locksAquired = documentStore.lockDocuments(keysToLock);
+            if (locksAquired) {
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debug("Locked the nodes: {0}", keysToLock);
                 }
-            }
-            if (!locksAquired) {
-                throw new TimeoutException("Timeout while attempting to lock the keys " + keysToLock + " after 2 retry attempts.");
+            } else {
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debug("Timeout while attempting to lock keys {0}. Retrying....", keysToLock);
+                }
+                --retryCountOnLockTimeout;
             }
         }
-        //return a transient workspace cache, which contains the latest view of the nodes which will be changed
-        return workspaceCache().persistedCache(changedNodesInOrder);
+        if (!locksAquired) {
+            throw new TimeoutException("Timeout while attempting to lock the keys " + keysToLock + " after 2 retry attempts.");
+        }
+        lockedKeysForTx.addAll(keysToLock);
+        // by now we should have an exclusive lock on all the nodes we're about to change, so go to the document store
+        // and load into the cache the latest "persisted" version of these nodes only if we haven't locked them previously...
+
+        keysToLock.stream().forEach(workspaceCache::loadFromDocumentStore);
+    }
+    
+    private Set<String> keysToLockForNode(NodeKey key) {
+        Set<String> keys = new TreeSet<>();
+        keys.add(key.toString());
+        TreeSet<String> binaryRefKeys = binaryReferencesByNodeKey.getOrDefault(key, Collections.emptySet()).stream()
+                                                                 .map(binaryKey -> translator().keyForBinaryReferenceDocument(
+                                                                         binaryKey.toString()))
+                                                                 .collect(Collectors.toCollection(TreeSet::new));
+        keys.addAll(binaryRefKeys);
+        return keys;
     }
    
     private Transactions.TransactionFunction binaryUsageUpdateFunction( final Set<BinaryKey> usedBinaries,

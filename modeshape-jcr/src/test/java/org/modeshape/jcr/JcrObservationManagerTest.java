@@ -61,7 +61,6 @@ import org.apache.jackrabbit.test.api.observation.PropertyAddedTest;
 import org.apache.jackrabbit.test.api.observation.PropertyChangedTest;
 import org.apache.jackrabbit.test.api.observation.PropertyRemovedTest;
 import org.apache.jackrabbit.test.api.observation.WorkspaceOperationTest;
-import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -95,12 +94,6 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
         // Initialize PicketBox ...
         JaasTestUtil.initJaas("security/jaas.conf.xml");
     }
-
-    @AfterClass
-    public static void afterAll() {
-        JaasTestUtil.releaseJaas();
-    }
-
     @Override
     protected boolean startRepositoryAutomatically() {
         return false;
@@ -111,7 +104,7 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
     public void beforeEach() throws Exception {
         super.beforeEach();
         FileUtil.delete("target/obs_journal");
-        startRepositoryWithConfiguration(resourceStream("config/repo-config-observation.json"));
+        startRepositoryWithConfigurationFrom("config/repo-config-observation.json");
         session = login(WORKSPACE);
 
         this.testRootNode = this.session.getRootNode().addNode("testroot", UNSTRUCTURED);
@@ -2227,19 +2220,16 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
     @FixFor( "MODE-2336" )
     public void shouldReceiveNodeTypeFilteredEventsWithUserTransactions() throws Exception {
         stopRepository();
-        startRepositoryWithConfiguration(resourceStream("config/repo-config-inmemory-jbosstxn.json"));
+        startRepositoryWithConfigurationFrom("config/repo-config-inmemory-txn.json");
         session = repository.login();
         // initialize workspace
         session.getRootNode().addNode("folder1");
         session.save();
         // register listener for PropertyEvent with nodeType restriction
         Session listenerSession = newSession();
-        EventListener listener = new EventListener() {
-            @Override
-            public void onEvent(EventIterator events) {
-                while (events.hasNext()) {
-                    events.nextEvent();
-                }
+        EventListener listener = events -> {
+            while (events.hasNext()) {
+                events.nextEvent();
             }
         };
         listenerSession
@@ -2249,7 +2239,7 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
 
         // try to add nodes within transactions
         TransactionManager txMgr = repository.transactionManager();
-        for (int i = 0; i < 1000; i++) {
+        for (int i = 0; i < 100; i++) {
             txMgr.begin();
             Session writerSession = repository().login();
             String nodeName = "node" + i;

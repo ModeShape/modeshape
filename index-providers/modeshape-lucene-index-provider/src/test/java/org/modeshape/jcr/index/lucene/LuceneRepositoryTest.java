@@ -16,6 +16,7 @@
 package org.modeshape.jcr.index.lucene;
 
 import static org.modeshape.jcr.ValidateQuery.validateQuery;
+import java.util.UUID;
 import javax.jcr.Node;
 import javax.jcr.Session;
 import javax.jcr.query.Query;
@@ -23,7 +24,6 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
-import org.modeshape.common.util.FileUtil;
 import org.modeshape.jcr.ClusteringHelper;
 import org.modeshape.jcr.JcrRepository;
 import org.modeshape.jcr.TestingUtil;
@@ -48,8 +48,6 @@ public class LuceneRepositoryTest {
     
     @Test
     public void shouldAllowAdvancedLuceneConfiguration() throws Exception {
-        FileUtil.delete("target/persistent_repository");
-        
         JcrRepository repository = TestingUtil.startRepositoryWithConfig(
                 "config/repo-config-persistent-lucene-provider-advanced-settings.json");
         
@@ -80,18 +78,21 @@ public class LuceneRepositoryTest {
     @Test
     @FixFor( "MODE-1903" )
     public void shouldReindexContentInClusterIncrementally() throws Exception {
-        FileUtil.delete("target/clustered");
+        TestingUtil.waitUntilFolderCleanedUp("target/clustered");
         
         JcrRepository repository1 = null;
         JcrRepository repository2 = null;
         try {
             // Start the first process completely ...
-            repository1 = TestingUtil.startRepositoryWithConfig("config/cluster/clustered-repo-with-incremental-indexes-config-1.json");
-            Thread.sleep(300);
+            String clusterNode1 = UUID.randomUUID().toString();
+            repository1 = TestingUtil.startClusteredRepositoryWithConfig(
+                    "config/repo-config-clustered-incremental-indexes.json", clusterNode1);
+            
 
             // Start the second process completely ...
-            repository2 = TestingUtil.startRepositoryWithConfig("config/cluster/clustered-repo-with-incremental-indexes-config-2.json");
-            Thread.sleep(300);
+            String clusterNode2 = UUID.randomUUID().toString();
+            repository2 = TestingUtil.startClusteredRepositoryWithConfig(
+                    "config/repo-config-clustered-incremental-indexes.json", clusterNode2);
 
             // make 1 change which should be propagated in the cluster
             Session session1 = repository1.login();
@@ -111,9 +112,8 @@ public class LuceneRepositoryTest {
 
             // start the 2nd repo back up - at the end of this the journals should be up-to-date and ISPN should've done the state
             // transfer
-            repository2 = TestingUtil.startRepositoryWithConfig(
-                    "config/cluster/clustered-repo-with-incremental-indexes-config-2.json");
-            Thread.sleep(300);
+            repository2 = TestingUtil.startClusteredRepositoryWithConfig(
+                    "config/repo-config-clustered-incremental-indexes.json", clusterNode2);
 
             // run a query to check that the index are not yet up-to-date
             Session session2 = repository2.login();
@@ -136,10 +136,9 @@ public class LuceneRepositoryTest {
 
             // start the 1st repo back up - at the end of this the journals should be up-to-date and ISPN should've done the state
             // transfer
-            repository1 = TestingUtil.startRepositoryWithConfig(
-                    "config/cluster/clustered-repo-with-incremental-indexes-config-1.json");
-            Thread.sleep(300);
-
+            repository1 = TestingUtil.startClusteredRepositoryWithConfig(
+                    "config/repo-config-clustered-incremental-indexes.json", clusterNode1);
+            
             session1 = repository1.login();
             query = session1.getWorkspace().getQueryManager().createQuery(
                     "select node.[jcr:path] from [mix:title] as node where node.[jcr:title] = 'title3'",
@@ -157,9 +156,8 @@ public class LuceneRepositoryTest {
             // bring the 2nd repo back up
             // start the 2nd repo back up - at the end of this the journals should be up-to-date and ISPN should've done the state
             // transfer
-            repository2 = TestingUtil.startRepositoryWithConfig(
-                    "config/cluster/clustered-repo-with-incremental-indexes-config-2.json");
-            Thread.sleep(300);
+            repository2 = TestingUtil.startClusteredRepositoryWithConfig(
+                    "config/repo-config-clustered-incremental-indexes.json", clusterNode2);
 
             // run a query to check that the indexes are synced
             session2 = repository2.login();

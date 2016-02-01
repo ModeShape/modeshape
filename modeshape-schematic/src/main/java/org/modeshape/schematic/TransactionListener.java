@@ -35,8 +35,26 @@ package org.modeshape.schematic;
  * @since 5.0
  */
 public interface TransactionListener {
-    
+
+    /**
+     * Called by ModeShape once a ModeShape transaction has been created.
+     * 
+     * @param id the tx id; never null
+     */
     void txStarted(String id);
+    
+    /**
+     * Called by ModeShape once an existing transaction has been successfully committed. This may be either a single ModeShape
+     * transaction or a longer-spanning user transaction.
+     *
+     * @param id the tx id; never null
+     */
     void txCommitted(String id);
+
+    /**
+     * Called to indicate tha a transaction has been rolled back.
+     *
+     * @param id the tx id; never null
+     */
     void txRolledback(String id);
 }

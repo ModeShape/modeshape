@@ -18,19 +18,20 @@ package org.modeshape.jcr.cache.document;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
 import java.io.InputStream;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import org.modeshape.schematic.internal.annotation.FixFor;
+import org.junit.Before;
+import org.junit.Test;
 import org.modeshape.schematic.Schematic;
 import org.modeshape.schematic.SchematicEntry;
 import org.modeshape.schematic.document.Document;
 import org.modeshape.schematic.document.EditableDocument;
+import org.modeshape.schematic.internal.annotation.FixFor;
 import org.modeshape.schematic.internal.schema.SchemaValidationTest;
-import org.junit.Before;
-import org.junit.Test;
 
 public class LocalDocumentStoreTest extends AbstractDocumentStoreTest {
 
@@ -50,13 +51,13 @@ public class LocalDocumentStoreTest extends AbstractDocumentStoreTest {
     @Test
     public void shouldStoreDocumentWithUnusedKeyAndWithNullMetadata() {
         Document doc = Schematic.newDocument("k1", "value1", "k2", 2);
-        String key = "can be anything"; 
-        localStore.put(key, doc);
+        String key = "can be anything";
+        runInTransaction(() -> localStore.put(key, doc));
         SchematicEntry entry = localStore.get(key);
         assertThat("Should have found the entry", entry, is(notNullValue()));
 
         // Verify the content ...
-        Document read = entry.getContent();
+        Document read = entry.content();
         assertThat(read, is(notNullValue()));
         assertThat(read.getString("k1"), is("value1"));
         assertThat(read.getInteger("k2"), is(2));
@@ -73,14 +74,14 @@ public class LocalDocumentStoreTest extends AbstractDocumentStoreTest {
     public void shouldStoreDocumentWithUnusedKeyAndWithNonNullMetadata() {
         Document doc = Schematic.newDocument("k1", "value1", "k2", 2);
         String key = "can be anything";
-        localStore.put(key, doc);
+        runInTransaction(() -> localStore.put(key, doc));
 
         // Read back from the database ...
         SchematicEntry entry = localStore.get(key);
         assertThat("Should have found the entry", entry, is(notNullValue()));
 
         // Verify the content ...
-        Document read = entry.getContent();
+        Document read = entry.content();
         assertThat(read, is(notNullValue()));
         assertThat(read.getString("k1"), is("value1"));
         assertThat(read.getInteger("k2"), is(2));
@@ -98,14 +99,14 @@ public class LocalDocumentStoreTest extends AbstractDocumentStoreTest {
         // Store the document ...
         Document doc = Schematic.newDocument("k1", "value1", "k2", 2);
         String key = "can be anything";
-        localStore.put(key, doc);
+        runInTransaction(() -> localStore.put(key, doc));
         
         // Read back from the database ...
         SchematicEntry entry = localStore.get(key);
         assertThat("Should have found the entry", entry, is(notNullValue()));
 
         // Verify the content ...
-        Document read = entry.getContent();
+        Document read = entry.content();
         assertThat(read, is(notNullValue()));
         assertThat(read.getString("k1"), is("value1"));
         assertThat(read.getInteger("k2"), is(2));
@@ -113,19 +114,16 @@ public class LocalDocumentStoreTest extends AbstractDocumentStoreTest {
         assertThat(read.equals(doc), is(true));
 
         // Modify using an editor ...
-        try {
-            transactions().begin();
+        runInTransaction(() -> {
             localStore.lockDocuments(key);
             EditableDocument editable = localStore.edit(key, true);
             editable.setBoolean("k3", true);
             editable.setNumber("k4", 3.5d);
-        } finally {
-            transactions().commit();
-        }
+        });
 
         // Now re-read ...
         SchematicEntry entry2 = localStore.get(key);
-        Document read2 = entry2.getContent();
+        Document read2 = entry2.content();
         assertThat(read2, is(notNullValue()));
         assertThat(read2.getString("k1"), is("value1"));
         assertThat(read2.getInteger("k2"), is(2));
@@ -138,14 +136,14 @@ public class LocalDocumentStoreTest extends AbstractDocumentStoreTest {
         // Store the document ...
         Document doc = Schematic.newDocument("k1", "value1", "k2", 2);
         String key = "can be anything";
-        localStore.put(key, doc);
+        runInTransaction(() -> localStore.put(key, doc));
         
         // Read back from the database ...
         SchematicEntry entry = localStore.get(key);
         assertThat("Should have found the entry", entry, is(notNullValue()));
 
         // Verify the content ...
-        Document read = entry.getContent();
+        Document read = entry.content();
         assertThat(read, is(notNullValue()));
         assertThat(read.getString("k1"), is("value1"));
         assertThat(read.getInteger("k2"), is(2));
@@ -153,19 +151,16 @@ public class LocalDocumentStoreTest extends AbstractDocumentStoreTest {
         assertThat(read.equals(doc), is(true));
 
         // Modify using an editor ...
-        try {
-            transactions().begin();
+        runInTransaction(() -> {
             localStore.lockDocuments(key);
             EditableDocument editable = localStore.edit(key, true);
             editable.setBoolean("k3", true);
             editable.setNumber("k4", 3.5d);
-        } finally {
-            transactions().commit();
-        }
+        });
 
         // Now re-read ...
         SchematicEntry entry2 = localStore.get(key);
-        Document read2 = entry2.getContent();
+        Document read2 = entry2.content();
         assertThat(read2, is(notNullValue()));
         assertThat(read2.getString("k1"), is("value1"));
         assertThat(read2.getInteger("k2"), is(2));
@@ -178,7 +173,7 @@ public class LocalDocumentStoreTest extends AbstractDocumentStoreTest {
     public void shouldAllowMultipleConcurrentWritersToUpdateEntryInSerialFashion() throws Exception {
         Document doc = Schematic.newDocument("k1", "value1", "k2", 2);
         final String key = "can be anything";
-        localStore.put(key, doc);
+        runInTransaction(() -> localStore.put(key, doc));
         SchematicEntry entry = localStore.get(key);
         assertThat("Should have found the entry", entry, is(notNullValue()));
         // Start two threads that each attempt to edit the document ...
@@ -186,26 +181,40 @@ public class LocalDocumentStoreTest extends AbstractDocumentStoreTest {
         final CountDownLatch latch = new CountDownLatch(1);
         Future<Void> f1 = executors.submit(() -> {
             latch.await(); // synchronize ...
-            transactions().begin();
-            print("Began txn1");
-            localStore.lockDocuments(key);
-            EditableDocument editor = localStore.edit(key, true);
-            editor.setNumber("k2", 3); // update an existing field
-            print(editor);
-            print("Committing txn1");
-            transactions().commit();
+            runInTransaction(() -> {
+                print("Began txn1");
+                while (!localStore.lockDocuments(key)) {
+                    try {
+                        Thread.sleep(1);
+                    } catch (InterruptedException e) {
+                        Thread.interrupted();
+                        fail("Cannot acquire lock...");
+                    }
+                }
+                EditableDocument editor = localStore.edit(key, true);
+                editor.setNumber("k2", 3); // update an existing field
+                print(editor);
+                print("Committing txn1");
+            });
             return null;
         });
         Future<Void> f2 = executors.submit(() -> {
             latch.await(); // synchronize ...
-            transactions().begin();
-            print("Began txn2");
-            localStore.lockDocuments(key);
-            EditableDocument editor = localStore.edit(key, true);
-            editor.setNumber("k3", 3); // add a new field
-            print(editor);
-            print("Committing txn2");
-            transactions().commit();
+            runInTransaction(() -> {
+                print("Began txn2");
+                while (!localStore.lockDocuments(key)) {
+                    try {
+                        Thread.sleep(1);
+                    } catch (InterruptedException e) {
+                        Thread.interrupted();
+                        fail("Cannot acquire lock...");
+                    }
+                }
+                EditableDocument editor = localStore.edit(key, true);
+                editor.setNumber("k3", 3); // add a new field
+                print(editor);
+                print("Committing txn2");
+            });
             return null;
         });
         // print = true;
@@ -216,18 +225,18 @@ public class LocalDocumentStoreTest extends AbstractDocumentStoreTest {
         f2.get();
         // System.out.println("Completed all threads");
         // Now re-read ...
-        transactions().begin();
-        Document read = localStore.get(key).getContent();
-        assertThat(read, is(notNullValue()));
-        assertThat(read.getString("k1"), is("value1"));
-        assertThat(read.getInteger("k3"), is(3)); // Thread 2 is last, so this should definitely be there
-        assertThat(read.getInteger("k2"), is(3)); // Thread 1 is first, but still shouldn't have been overwritten
-        transactions().commit();
+        runInTransaction(() -> {
+            Document read = localStore.get(key).content();
+            assertThat(read, is(notNullValue()));
+            assertThat(read.getString("k1"), is("value1"));
+            assertThat(read.getInteger("k3"), is(3)); // Thread 2 is last, so this should definitely be there
+            assertThat(read.getInteger("k2"), is(3)); // Thread 1 is first, but still shouldn't have been overwritten
+        });
     }
 
     protected void print( Object obj ) {
         if (print) {
-            System.out.println(obj);
+            System.out.printf("%s - %s%n", Thread.currentThread().getName(), obj);
         }
     }
 

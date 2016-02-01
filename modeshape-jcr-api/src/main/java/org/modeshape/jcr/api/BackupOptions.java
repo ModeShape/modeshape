@@ -34,7 +34,7 @@ public abstract class BackupOptions {
     public static final BackupOptions DEFAULT = new BackupOptions(){};
 
     /**
-     * Whether or not binary data should be part of the backup or not. Since ModeShape stores references from the Infinispan documents
+     * Whether or not binary data should be part of the backup or not. Since ModeShape stores references from the schematic documents
      * toward the binary values which are being used, it might not always be desired to do a full binary backup.
      * 
      * @return {@code true} if binary data should be exported; defaults to {@code true}

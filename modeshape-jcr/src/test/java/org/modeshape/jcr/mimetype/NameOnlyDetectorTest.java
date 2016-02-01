@@ -24,7 +24,7 @@ import org.apache.tika.mime.MediaType;
 import org.junit.Test;
 import org.modeshape.common.util.StringUtil;
 import org.modeshape.jcr.InMemoryTestBinary;
-import org.modeshape.jcr.TestingEnvironment;
+import org.modeshape.jcr.LocalEnvironment;
 
 /**
  * Unit test for {@link NameOnlyDetector}.
@@ -33,7 +33,7 @@ import org.modeshape.jcr.TestingEnvironment;
  */
 public class NameOnlyDetectorTest {
     
-    private static final MimeTypeDetector DETECTOR = new NameOnlyDetector(new TestingEnvironment());
+    private static final MimeTypeDetector DETECTOR = new NameOnlyDetector(new LocalEnvironment());
 
     protected void testMimeType( String name,
                                  String... mimeTypes ) throws Exception {

@@ -68,12 +68,9 @@ public class MockConnectorTest extends SingleUseAbstractTest {
     @Before
     @Override
     public void beforeEach() throws Exception {
-        startRepositoryWithConfiguration(getClass().getClassLoader()
-                                                   .getResourceAsStream("config/repo-config-mock-federation.json"));
-
+        startRepositoryWithConfigurationFrom("config/repo-config-mock-federation.json");
         testRoot = ((Node)session.getRootNode()).addNode("testRoot");
         session.save();
-
         federationManager = ((Workspace)session.getWorkspace()).getFederationManager();
     }
 
@@ -370,6 +367,8 @@ public class MockConnectorTest extends SingleUseAbstractTest {
         session.save();
         // check external nodes are still there
         assertNodeFound("/testRoot/federated2/federated3");
+        // but the projection has been removed...
+        assertNoNode("/testRoot/internalNode1/federated2/federated3");
 
         testRoot.addNode("internalNode2").addNode("internalNode2_1");
         session.save();

@@ -157,7 +157,7 @@ public class DdlParsersTest extends DdlParserTestHelper {
 
     @Test( expected = ParsingException.class )
     public void shouldErrorWhenInvalidParserId() {
-        final String content = getFileContent(DDL_TEST_FILE_PATH + "dialect/oracle/oracle_test_statements_3.ddl");
+        final String content = getFileContent(DDL_TEST_FILE_PATH + "dialect/derby/derby_test_statements.ddl");
         this.parsers.parseUsing(content, "BOGUS");
     }
 
@@ -181,13 +181,15 @@ public class DdlParsersTest extends DdlParserTestHelper {
 
     @Test
     public void shouldReturnParsersConstructedWith() {
+        printTest("shouldReturnParsersConstructedWith()");
+
         final List<DdlParser> myParsers = new ArrayList<DdlParser>();
-        myParsers.add(new OracleDdlParser());
+        myParsers.add(new DerbyDdlParser());
 
         final DdlParsers ddlParsers = new DdlParsers(myParsers);
         assertThat(ddlParsers.getParsers(), hasItems(myParsers.toArray(new DdlParser[myParsers.size()])));
     }
-
+    
     @Test
     public void shouldReturnResultsInOrder() {
         printTest("shouldReturnResultsInOrder()");
@@ -205,7 +207,7 @@ public class DdlParsersTest extends DdlParserTestHelper {
             final List<ParsingResult> results = this.parsers.parseUsingAll(ddl);
 
             assertThat(results.size(), is(DdlParsers.BUILTIN_PARSERS.size()));
-            assertThat(results.get(0).getParserId(), is(DerbyDdlParser.ID)); // first element should be Derby result
+            assertThat(results.get(0).getParserId(), is(DerbyDdlParser.ID)); // first element should be Teiid result
         }
     }
 

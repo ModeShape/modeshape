@@ -45,17 +45,13 @@ public class RelationalDbTransactionsTest extends AbstractRelationalDbTest {
     
     @Test
     public void shouldIsolateChangesWithinTransaction() throws Exception {
-        SchematicEntry entry1 = SchematicEntry.create(UUID.randomUUID().toString(), defaultContent);
-        SchematicEntry entry2 = SchematicEntry.create(UUID.randomUUID().toString(), defaultContent);
+        SchematicEntry entry1 = SchematicEntry.create(UUID.randomUUID().toString(), DEFAULT_CONTENT);
+        SchematicEntry entry2 = SchematicEntry.create(UUID.randomUUID().toString(), DEFAULT_CONTENT);
         CyclicBarrier syncBarrier = new CyclicBarrier(2);
-        CompletableFuture<Void> thread1 = CompletableFuture.runAsync(() -> changeAndCommit(entry1,
-                                                                                           entry2,
-                                                                                           syncBarrier));
-        CompletableFuture<Void> thread2 = CompletableFuture.runAsync(() -> changeAndCommit(entry2,
-                                                                                           entry1,
-                                                                                           syncBarrier));
-        thread1.get(2, TimeUnit.SECONDS);
-        thread2.get(2, TimeUnit.SECONDS);
+        CompletableFuture<Void> thread1 = CompletableFuture.runAsync(() -> changeAndCommit(entry1, entry2, syncBarrier));
+        CompletableFuture<Void> thread2 = CompletableFuture.runAsync(() -> changeAndCommit(entry2, entry1, syncBarrier));
+        thread1.get(3, TimeUnit.SECONDS);
+        thread2.get(3, TimeUnit.SECONDS);
        
         // both transactions should've removed the entries in the end
         assertFalse(db.containsKey(entry1.id()));
@@ -64,8 +60,8 @@ public class RelationalDbTransactionsTest extends AbstractRelationalDbTest {
 
     @Test
     public void shouldRollbackChangesWithinTransaction() throws Exception {
-        SchematicEntry entry1 = SchematicEntry.create(UUID.randomUUID().toString(), defaultContent);
-        SchematicEntry entry2 = SchematicEntry.create(UUID.randomUUID().toString(), defaultContent);
+        SchematicEntry entry1 = SchematicEntry.create(UUID.randomUUID().toString(), DEFAULT_CONTENT);
+        SchematicEntry entry2 = SchematicEntry.create(UUID.randomUUID().toString(), DEFAULT_CONTENT);
         CyclicBarrier syncBarrier = new CyclicBarrier(2);
 
         CompletableFuture<Void> thread1 = CompletableFuture.runAsync(() -> changeAndRollback(entry1, entry2, syncBarrier));

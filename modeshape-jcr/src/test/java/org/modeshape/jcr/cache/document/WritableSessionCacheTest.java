@@ -173,9 +173,7 @@ public class WritableSessionCacheTest extends AbstractSessionCacheTest {
         Stopwatch total = new Stopwatch();
         Stopwatch save = new Stopwatch();
         Stopwatch opt = new Stopwatch();
-        transactions().begin();
-        optimizer.optimizeChildrenBlocks(key, null, 1000, 500); // will merge two into a single block ...
-        transactions().commit();
+        runInTransaction(() -> optimizer.optimizeChildrenBlocks(key, null, 1000, 500)); // will merge two into a single block ...
         print(true);
         print("Creating nodes ...");
         total.start();
@@ -196,9 +194,7 @@ public class WritableSessionCacheTest extends AbstractSessionCacheTest {
                 print("Optimizing...");
                 print(false);
                 opt.start();
-                transactions().begin();
-                optimizer.optimizeChildrenBlocks(key, null, 1000, 500); // will split into blocks ...
-                transactions().commit();
+                runInTransaction(() ->optimizer.optimizeChildrenBlocks(key, null, 1000, 500));
                 opt.stop();
                 // Find node B again after the save ...
                 nodeB = check(session1).mutableNode("/childB");
@@ -231,7 +227,7 @@ public class WritableSessionCacheTest extends AbstractSessionCacheTest {
 
     @Ignore( "Usually ignored because of memory requirements" )
     @Test
-    public void shouldAllowSessionToCreate100KChildrenWithSameNameWithMultipleSaves() {
+    public void shouldAllowSessionToCreate100KChildrenWithSameNameWithMultipleSaves() throws Exception {
         // Make sure the property does not exist ...
         check(cache).noNode("/childB/newChild");
 
@@ -244,7 +240,7 @@ public class WritableSessionCacheTest extends AbstractSessionCacheTest {
         Stopwatch total = new Stopwatch();
         Stopwatch save = new Stopwatch();
         Stopwatch opt = new Stopwatch();
-        optimizer.optimizeChildrenBlocks(key, null, 1000, 500); // will merge two into a single block ...
+        runInTransaction(() -> optimizer.optimizeChildrenBlocks(key, null, 1000, 500)); // will merge two into a single block ...
         print(true);
         print("Creating nodes ...");
         total.start();
@@ -265,7 +261,7 @@ public class WritableSessionCacheTest extends AbstractSessionCacheTest {
                 print("Optimizing...");
                 print(false);
                 opt.start();
-                optimizer.optimizeChildrenBlocks(key, null, 1000, 500); // will split into blocks ...
+                runInTransaction(() -> optimizer.optimizeChildrenBlocks(key, null, 1000, 500)); // will split into blocks ...)
                 opt.stop();
                 // Find node B again after the save ...
                 nodeB = check(session1).mutableNode("/childB");
@@ -396,15 +392,5 @@ public class WritableSessionCacheTest extends AbstractSessionCacheTest {
         MutableCachedNode child = root.createChild(sessionCache, childKey, name("childA"), property("p1", "value A"));
         session1.destroy(child.getKey());
         assertEquals(new HashSet<NodeKey>(Arrays.asList(rootKey, childKey)), session1.getChangedNodeKeysAtOrBelow(root));
-    }
-
-    @Test
-    public void shouldAllowTransientlyMovingNode() {
-
-    }
-
-    @Test
-    public void shouldAllowAccessingRenamedMovedNodeAfterPersisting() {
-
     }
 }

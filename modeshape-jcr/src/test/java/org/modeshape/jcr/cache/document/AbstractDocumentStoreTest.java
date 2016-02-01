@@ -26,6 +26,7 @@ import org.modeshape.jcr.txn.DefaultTransactionManagerLookup;
 import org.modeshape.jcr.txn.Transactions;
 import org.modeshape.schematic.Schematic;
 import org.modeshape.schematic.SchematicDb;
+import org.modeshape.schematic.internal.document.BasicDocument;
 
 public abstract class AbstractDocumentStoreTest {
 
@@ -35,13 +36,13 @@ public abstract class AbstractDocumentStoreTest {
 
     @Before
     public void beforeTest() throws Exception {
-        // Now create the SchematicDb ...
-        db = Schematic.getDb("mem");
+        // create a default in-memory db....
+        db = Schematic.getDb(new BasicDocument(Schematic.TYPE_FIELD, "db"));
         db.start();
         TransactionManagerLookup txLookup = new DefaultTransactionManagerLookup();
         TransactionManager tm = txLookup.getTransactionManager();
         assertNotNull("Cannot find a transaction manager", tm);        
-        repoEnv = new TestRepositoryEnvironment(tm);
+        repoEnv = new TestRepositoryEnvironment(tm, db);
         localStore = new LocalDocumentStore(db, repoEnv);
     }
 
@@ -60,5 +61,12 @@ public abstract class AbstractDocumentStoreTest {
 
     protected Transactions transactions() {
         return repoEnv.getTransactions();
+    }
+    
+    protected void runInTransaction(Runnable operation) {
+       localStore.runInTransaction(() -> {
+           operation.run();
+           return null;
+       }, 0);
     }
 }

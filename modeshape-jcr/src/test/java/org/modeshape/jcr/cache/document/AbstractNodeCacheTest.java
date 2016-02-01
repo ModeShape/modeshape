@@ -24,9 +24,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.UUID;
-import org.modeshape.schematic.document.Document;
-import org.modeshape.schematic.document.Json;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -49,6 +46,8 @@ import org.modeshape.jcr.value.Path.Segment;
 import org.modeshape.jcr.value.Property;
 import org.modeshape.jcr.value.PropertyFactory;
 import org.modeshape.jcr.value.PropertyType;
+import org.modeshape.schematic.document.Document;
+import org.modeshape.schematic.document.Json;
 
 /**
  * Abstract base class for tests that operate against a NodeCache.
@@ -597,14 +596,7 @@ public abstract class AbstractNodeCacheTest extends AbstractSchematicDbTest {
         assertThat(iter.next(), is(childD)); // from second block
         assertThat(iter.hasNext(), is(false));
     }
-
-    // @Test
-    public void generateUuids() {
-        for (int i = 0; i != 10; ++i) {
-            System.out.println(UUID.randomUUID());
-        }
-    }
-
+    
     @Test
     public void shouldGetNodesByPath() {
         CacheCheck check = check(cache);

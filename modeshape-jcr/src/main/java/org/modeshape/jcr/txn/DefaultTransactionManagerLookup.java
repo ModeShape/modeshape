@@ -67,9 +67,7 @@ public class DefaultTransactionManagerLookup implements TransactionManagerLookup
     
     @Override
     public TransactionManager getTransactionManager() {
-        return Stream.of((Supplier<Optional<TransactionManager>>) this::lookInJNDI,
-                         this::lookForStandaloneJBossJTA,
-                         this::lookForAtomikosJTA)
+        return Stream.of(getTransactionManagerSuppliers())
                      .map(Supplier::get)
                      .filter(Optional::isPresent)
                      .map(Optional::get)
@@ -77,12 +75,19 @@ public class DefaultTransactionManagerLookup implements TransactionManagerLookup
                                    LOGGER.debug("Found tx manager '{0}'", transactionManager.getClass().getName()))
                      .findFirst()
                      .orElseGet(() -> {
-                         LOGGER.warn(JcrI18n.warnNoTxManagerFound);
+                         LOGGER.debug(JcrI18n.warnNoTxManagerFound.text());
                          return new LocalTransactionManager();
                      });
     }
-    
-    private Optional<TransactionManager> lookForAtomikosJTA() {
+
+    @SuppressWarnings("unchecked")
+    protected Supplier<Optional<TransactionManager>>[] getTransactionManagerSuppliers() {
+        return new Supplier[] { (Supplier<Optional<TransactionManager>>) this::lookInJNDI,
+                                this::lookForStandaloneJBossJTA,
+                                this::lookForAtomikosJTA };
+    }
+
+    protected Optional<TransactionManager> lookForAtomikosJTA() {
         LOGGER.debug("Looking for Atomikos JTA...");
         try {
             Class<?> clazz = getClass().getClassLoader().loadClass("com.atomikos.icatch.jta.UserTransactionManager");
@@ -95,8 +100,8 @@ public class DefaultTransactionManagerLookup implements TransactionManagerLookup
             return Optional.empty();
         } 
     }
-    
-    private Optional<TransactionManager> lookForStandaloneJBossJTA() {
+
+    protected Optional<TransactionManager> lookForStandaloneJBossJTA() {
         LOGGER.debug("Looking for JBoss Standalone JTA...");
         try {
             Class<?> clazz = getClass().getClassLoader().loadClass("com.arjuna.ats.jta.TransactionManager");

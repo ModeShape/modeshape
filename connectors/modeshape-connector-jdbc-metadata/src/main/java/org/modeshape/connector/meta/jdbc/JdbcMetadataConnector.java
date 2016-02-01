@@ -15,7 +15,6 @@
  */
 package org.modeshape.connector.meta.jdbc;
 
-import java.beans.PropertyVetoException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.sql.Connection;
@@ -29,12 +28,12 @@ import javax.jcr.RepositoryException;
 import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.sql.DataSource;
-import org.modeshape.schematic.document.Document;
 import org.modeshape.common.util.StringUtil;
 import org.modeshape.jcr.api.nodetype.NodeTypeManager;
 import org.modeshape.jcr.spi.federation.DocumentWriter;
 import org.modeshape.jcr.spi.federation.ReadOnlyConnector;
-import com.mchange.v2.c3p0.ComboPooledDataSource;
+import org.modeshape.schematic.document.Document;
+import com.zaxxer.hikari.HikariDataSource;
 
 /**
  * Readonly connector which exposes JDBC metadata.
@@ -191,32 +190,21 @@ public class JdbcMetadataConnector extends ReadOnlyConnector {
                 throw new JdbcMetadataException(JdbcMetadataI18n.driverClassNameAndUrlAreRequired, "driverClassName", "url");
             }
 
-            ComboPooledDataSource cpds = new ComboPooledDataSource();
-            try {
-                cpds.setDriverClass(this.driverClassName);
-                cpds.setJdbcUrl(this.url);
-                cpds.setUser(this.username);
-                cpds.setPassword(this.password);
-                cpds.setMaxStatements(this.maximumSizeOfStatementCache);
-                cpds.setAcquireRetryAttempts(this.retryLimit);
-                cpds.setMaxIdleTime(this.maximumConnectionIdleTimeInSeconds);
-                cpds.setMinPoolSize(this.minimumConnectionsInPool);
-                cpds.setMaxPoolSize(this.maximumConnectionsInPool);
-                cpds.setAcquireIncrement(this.numberOfConnectionsToAcquireAsNeeded);
-                cpds.setIdleConnectionTestPeriod(this.idleTimeInSecondsBeforeTestingConnections);
+            HikariDataSource dataSource = new HikariDataSource();
+            dataSource.setDriverClassName(this.driverClassName);
+            dataSource.setJdbcUrl(this.url);
+            dataSource.setUsername(this.username);
+            dataSource.setPassword(this.password);
+            dataSource.setMaximumPoolSize(this.maximumConnectionsInPool);
+            dataSource.setIdleTimeout(this.maximumConnectionIdleTimeInSeconds * 1000);
 
-            } catch (PropertyVetoException pve) {
-                throw new JdbcMetadataException(pve);
-            }
-
-            this.dataSource = cpds;
+            this.dataSource = dataSource;
         }
     }
 
     protected void initMetadataCollector() {
         try {
-            Class<?> newCollectorClass = Class.forName(metadataCollectorClassName, true, getEnvironment().getClassLoader(
-                    getClass().getClassLoader()));
+            Class<?> newCollectorClass = Class.forName(metadataCollectorClassName, true, getEnvironment().getClassLoader(this));
             this.metadataCollector = (MetadataCollector)newCollectorClass.newInstance();
         } catch (Exception e) {
             throw new JdbcMetadataException(e);
@@ -291,8 +279,8 @@ public class JdbcMetadataConnector extends ReadOnlyConnector {
 
     @Override
     public void shutdown() {
-        if (closeDataSourceOnShutdown && this.dataSource instanceof ComboPooledDataSource) {
-            ((ComboPooledDataSource)this.dataSource).close();
+        if (closeDataSourceOnShutdown && this.dataSource instanceof HikariDataSource) {
+            ((HikariDataSource)this.dataSource).close();
         }
     }
 

@@ -49,7 +49,7 @@ public class TransactionalWorkspaceCache extends WorkspaceCache {
     protected TransactionalWorkspaceCache( WorkspaceCache sharedWorkspaceCache,
                                            TransactionalWorkspaceCaches txWorkspaceCaches,
                                            Transaction txn) {
-        // Use a new in-memory map for the transactional cache ...
+        // Use a new in-memory map for the transactional cache which is empty when first created...
         super(sharedWorkspaceCache, new ConcurrentHashMap<>());
         this.sharedWorkspaceCache = sharedWorkspaceCache;
         this.txn = txn;

@@ -282,12 +282,9 @@ class RepositoryQueryManager implements ChangeSetListener {
                     if (!async) {
                         reindexIncrementally(journal);
                     } else {
-                        indexingExecutorService.submit(new Callable<Void>() {
-                            @Override
-                            public Void call() throws Exception {
-                                reindexIncrementally(journal);
-                                return null;
-                            }
+                        asyncReindexingResult = indexingExecutorService.submit(() -> {
+                            reindexIncrementally(journal);
+                            return null;
                         }); 
                     }
                     break;
@@ -348,52 +345,45 @@ class RepositoryQueryManager implements ChangeSetListener {
         if (!request.isEmpty()) {
             final IndexWriter writer = indexManager.getIndexWriterForProviders(request.providerNames());
             final RepositoryCache repoCache = runningState.repositoryCache();
-            scan(async, writer, new Callable<Void>() {
-                @Override
-                public Void call() throws Exception {
-                    // Scan each of the workspace-path pairs ...
-                    ScanOperation op = new ScanOperation() {
-                        @Override
-                        public void scan( String workspaceName,
-                                          Path path ) {
-                            NodeCache workspaceCache = repoCache.getWorkspaceCache(workspaceName);
-                            if (workspaceCache != null) {
-                                // The workspace is still valid ...
-                                CachedNode node = workspaceCache.getNode(workspaceCache.getRootKey());
-                                if (!path.isRoot()) {
-                                    for (Path.Segment segment : path) {
-                                        ChildReference child = node.getChildReferences(workspaceCache).getChild(segment);
-                                        if (child == null) {
-                                            // The child no longer exists, so ignore this pair ...
-                                            node = null;
-                                            break;
-                                        }
-                                        node = workspaceCache.getNode(child);
-                                        if (node == null) break;
-                                    }
+            scan(async, writer, () -> {
+                // Scan each of the workspace-path pairs ...
+                ScanOperation op = (workspaceName, path) -> {
+                    NodeCache workspaceCache = repoCache.getWorkspaceCache(workspaceName);
+                    if (workspaceCache != null) {
+                        // The workspace is still valid ...
+                        CachedNode node = workspaceCache.getNode(workspaceCache.getRootKey());
+                        if (!path.isRoot()) {
+                            for (Segment segment : path) {
+                                ChildReference child = node.getChildReferences(workspaceCache).getChild(segment);
+                                if (child == null) {
+                                    // The child no longer exists, so ignore this pair ...
+                                    node = null;
+                                    break;
                                 }
-                                if (node != null) {
-                                    if (logger.isDebugEnabled()) {
-                                        logger.debug("Performing full reindexing for repository '{0}' and workspace '{1}'", 
-                                                     repoCache.getName(),
-                                                     workspaceName);
-                                    }
-                                    // If we find a node to start at, then scan the content ...
-                                    // in certain cases (e.g. at startup) we have to index the system content (if it applies to
-                                    // any of the indexes)
-                                    boolean scanSystemContent = includeSystemContent ||
-                                                                repoCache.getSystemWorkspaceName().equals(workspaceName);
-                                    if (reindexContent(workspaceName, workspaceCache, node, Integer.MAX_VALUE, scanSystemContent, 
-                                                       writer)) {
-                                        commitChanges(workspaceName);
-                                    }
-                                }
+                                node = workspaceCache.getNode(child);
+                                if (node == null) break;
                             }
                         }
-                    };
-                    request.onEachPathInWorkspace(op);
-                    return null;
-                }
+                        if (node != null) {
+                            if (logger.isDebugEnabled()) {
+                                logger.debug("Performing full reindexing for repository '{0}' and workspace '{1}'", 
+                                             repoCache.getName(),
+                                             workspaceName);
+                            }
+                            // If we find a node to start at, then scan the content ...
+                            // in certain cases (e.g. at startup) we have to index the system content (if it applies to
+                            // any of the indexes)
+                            boolean scanSystemContent = includeSystemContent ||
+                                                        repoCache.getSystemWorkspaceName().equals(workspaceName);
+                            if (reindexContent(workspaceName, workspaceCache, node, Integer.MAX_VALUE, scanSystemContent, 
+                                               writer)) {
+                                commitChanges(workspaceName);
+                            }
+                        }
+                    }
+                };
+                request.onEachPathInWorkspace(op);
+                return null;
             });
         }
     }
@@ -587,12 +577,9 @@ class RepositoryQueryManager implements ChangeSetListener {
     protected Future<Boolean> reindexSinceAsync( final WorkspaceCache cache,
                                                  final IndexWriter indexWriter,
                                                  final Iterator<NodeKey> changedNodes ) {
-        return indexingExecutorService.submit(new Callable<Boolean>() {
-            @Override
-            public Boolean call() throws Exception {
-                reindexSince(cache, indexWriter, changedNodes);
-                return Boolean.TRUE;
-            }
+        return indexingExecutorService.submit(() -> {
+            reindexSince(cache, indexWriter, changedNodes);
+            return Boolean.TRUE;
         });    
     }
 
@@ -740,12 +727,9 @@ class RepositoryQueryManager implements ChangeSetListener {
      * @throws IllegalArgumentException if the workspace is null
      */
     public Future<Boolean> reindexContentAsync( final JcrWorkspace workspace ) {
-        return indexingExecutorService.submit(new Callable<Boolean>() {
-            @Override
-            public Boolean call() throws Exception {
-                reindexContent(workspace);
-                return Boolean.TRUE;
-            }
+        return indexingExecutorService.submit(() -> {
+            reindexContent(workspace);
+            return Boolean.TRUE;
         });
     }
 
@@ -761,12 +745,9 @@ class RepositoryQueryManager implements ChangeSetListener {
     public Future<Boolean> reindexContentAsync( final JcrWorkspace workspace,
                                                 final Path path,
                                                 final int depth ) {
-        return indexingExecutorService.submit(new Callable<Boolean>() {
-            @Override
-            public Boolean call() throws Exception {
-                reindexContent(workspace, path, depth);
-                return Boolean.TRUE;
-            }
+        return indexingExecutorService.submit(() -> {
+            reindexContent(workspace, path, depth);
+            return Boolean.TRUE;
         });
     }
 

@@ -2307,9 +2307,8 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
         }
 
         @Override
-        public void processAfterLocking( MutableCachedNode modifiedNode,
-                                         SaveContext context,
-                                         NodeCache persistentNodeCache ) throws RepositoryException {
+        public void processAfterLocking(MutableCachedNode modifiedNode,
+                                        SaveContext context) throws RepositoryException {
             // We actually can avoid this altogether if certain conditions are met ...
             final Name primaryType = modifiedNode.getPrimaryType(cache);
             final Set<Name> mixinTypes = modifiedNode.getMixinTypes(cache);
@@ -2386,8 +2385,9 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
 
             // look at the information that was already persisted to determine whether some other thread has already
             // created a child with the same name
-            CachedNode persistentNode = persistentNodeCache.getNode(modifiedNode.getKey());
-            final ChildReferences persistedChildReferences = persistentNode.getChildReferences(persistentNodeCache);
+            WorkspaceCache workspaceCache = cache().getWorkspace();
+            CachedNode persistentNode = workspaceCache.getNode(modifiedNode.getKey());
+            final ChildReferences persistedChildReferences = persistentNode.getChildReferences(workspaceCache);
             final SiblingCounter siblingCounter = SiblingCounter.create(persistedChildReferences);
 
             // process appended/renamed children

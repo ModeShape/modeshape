@@ -1,8 +1,10 @@
 {
     "name": "Persistent repo no indexes",
     "storage": {
-        "cacheName": "persistentRepository",
-        "cacheConfiguration": "config/infinispan-persistent.xml", //this is picked up from the modeshape-jcr-tests.jar artifact....
+        "persistence" : {
+            "type" : "db",
+            "connectionUrl": "jdbc:h2:file:./target/persistent_repository/db;AUTO_SERVER=TRUE"
+        },
         "binaryStorage": {
             "type": "file",
             "directory": "target/persistent_repository/binaries",

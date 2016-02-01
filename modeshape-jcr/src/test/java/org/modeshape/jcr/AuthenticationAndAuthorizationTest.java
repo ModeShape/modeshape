@@ -15,6 +15,11 @@
  */
 package org.modeshape.jcr;
 
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNull.notNullValue;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import java.security.AccessControlContext;
 import java.security.AccessController;
 import java.security.PrivilegedExceptionAction;
@@ -29,13 +34,7 @@ import javax.jcr.Session;
 import javax.jcr.SimpleCredentials;
 import javax.security.auth.Subject;
 import javax.security.auth.login.LoginContext;
-import org.modeshape.schematic.Schematic;
-import org.modeshape.schematic.document.Document;
-import org.modeshape.schematic.document.EditableArray;
-import org.modeshape.schematic.document.EditableDocument;
 import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
@@ -51,11 +50,10 @@ import org.modeshape.jcr.security.JaasSecurityContext.UserPasswordCallbackHandle
 import org.modeshape.jcr.security.SecurityContext;
 import org.modeshape.jcr.value.Path;
 import org.modeshape.jcr.value.StringFactory;
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsNull.notNullValue;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import org.modeshape.schematic.Schematic;
+import org.modeshape.schematic.document.Document;
+import org.modeshape.schematic.document.EditableArray;
+import org.modeshape.schematic.document.EditableDocument;
 
 public class AuthenticationAndAuthorizationTest {
 
@@ -70,20 +68,9 @@ public class AuthenticationAndAuthorizationTest {
         JaasTestUtil.initJaas("security/jaas.conf.xml");
     }
 
-    @AfterClass
-    public static void afterAll() {
-        JaasTestUtil.releaseJaas();
-    }
-
-    private Environment environment;
     protected JcrRepository repository;
     protected JcrSession session;
-
-    @Before
-    public void beforeEach() throws Exception {
-        environment = new TestingEnvironment();
-    }
-
+    
     @After
     public void afterEach() throws Exception {
         if (repository != null) {
@@ -92,7 +79,6 @@ public class AuthenticationAndAuthorizationTest {
             } finally {
                 repository = null;
                 session = null;
-                environment.shutdown();
             }
         }
     }
@@ -106,7 +92,7 @@ public class AuthenticationAndAuthorizationTest {
      */
     protected void startRepositoryWith( Document doc,
                                         String repoName ) throws Exception {
-        RepositoryConfiguration config = new RepositoryConfiguration(doc, repoName, environment);
+        RepositoryConfiguration config = new RepositoryConfiguration(doc, repoName, new TestingEnvironment());
         repository = new JcrRepository(config);
         repository.start();
     }
@@ -406,7 +392,6 @@ public class AuthenticationAndAuthorizationTest {
     public void shouldNotLeakUninitializedWorkspaceCaches() throws Exception {
         int runCount = 200;
         for (int i = 0; i < runCount; i++) {
-            beforeEach();
             shouldLogInAsAnonymousUserIfNoProviderAuthenticatesCredentials();
             afterEach();
         }

@@ -75,21 +75,6 @@
             <artifactId>mockito-core</artifactId>
             <scope>compile</scope>
         </dependency>
-
-        <!--
-        Bring in the more popular Infinispan CacheLoader libraries, plus the H2 database.
-        These are commonly needed when running ModeShape with more typical configurations.
-        However, simply use an "<exclusions>" section to intensionally exclude any of these
-        libraries.
-        -->
-        <dependency>
-            <groupId>org.infinispan</groupId>
-            <artifactId>infinispan-cachestore-leveldb</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.infinispan</groupId>
-            <artifactId>infinispan-cachestore-jdbc</artifactId>
-        </dependency>
     </dependencies>
     <profiles>
         <profile>

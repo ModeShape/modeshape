@@ -114,8 +114,7 @@ public final class NodeTypesImporter {
 
         private InputStream getInputStreamForFile( String cndFileString ) {
             return IoUtil.getResourceAsStream(cndFileString,
-                                              repository.environment().getClassLoader(
-                                                      NodeTypesImporter.class.getClassLoader()),
+                                              repository.environment().getClassLoader(this),
                                               null);
         }
 

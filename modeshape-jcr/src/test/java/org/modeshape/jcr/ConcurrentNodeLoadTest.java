@@ -100,10 +100,10 @@ public class ConcurrentNodeLoadTest {
         initializeDomainAndOneHierarchyNode("aaa");
 
         ExecutorService executorService = Executors.newFixedThreadPool(modifierThreadsCount);
-        Set<String> allNames = new HashSet<String>(totalNumberOfCustomers);
+        Set<String> allNames = new HashSet<>(totalNumberOfCustomers);
         try {
-            List<Future<?>> threadResults = new ArrayList<Future<?>>();
-            Set<String> namesPerBatch = new HashSet<String>();
+            List<Future<?>> threadResults = new ArrayList<>();
+            Set<String> namesPerBatch = new HashSet<>();
 
             for (int i = 0; i != totalNumberOfCustomers; ++i) {
                 // make sure the customer is always under /customers/aaa
@@ -115,7 +115,7 @@ public class ConcurrentNodeLoadTest {
                     session.save();
                     // fire up the threads; each thread will modify each customer and add numberOfDecksPerCustomerAndThread
                     for (int j = 0; j < modifierThreadsCount; j++) {
-                        threadResults.add(executorService.submit(new CustomerModifier(new ArrayList<String>(namesPerBatch),
+                        threadResults.add(executorService.submit(new CustomerModifier(new ArrayList<>(namesPerBatch),
                                                                                       numberOfDecksPerCustomerAndThread)));
                     }
                     allNames.addAll(namesPerBatch);
@@ -127,14 +127,14 @@ public class ConcurrentNodeLoadTest {
             if (!namesPerBatch.isEmpty()) {
                 threadResults.add(executorService.submit(new CustomerModifier(new ArrayList<String>(namesPerBatch),
                                                                               numberOfDecksPerCustomerAndThread)));
+
+                print("Waiting for " + threadResults.size() + " threads to complete");
+                for (Future<?> future : threadResults) {
+                    future.get(3, TimeUnit.MINUTES);
+                }
             }
             print("Total time to insert records=" + TimeUnit.NANOSECONDS.toSeconds(System.nanoTime() - start)
                   + " seconds with batch size=" + saveBatchSize);
-
-            print("Waiting for " + threadResults.size() + " threads to complete");
-            for (Future<?> future : threadResults) {
-                future.get(1, TimeUnit.MINUTES);
-            }
         } finally {
             executorService.shutdownNow();
         }
@@ -216,7 +216,7 @@ public class ConcurrentNodeLoadTest {
                 return null;
             } catch (Exception e) {
                 e.printStackTrace();
-                return null;
+                throw e;
             } finally {
                 jcrSession.logout();
             }

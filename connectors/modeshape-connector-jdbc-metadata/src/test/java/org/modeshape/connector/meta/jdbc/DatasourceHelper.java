@@ -15,7 +15,9 @@
  */
 package org.modeshape.connector.meta.jdbc;
 
-import java.beans.PropertyVetoException;
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNull.notNullValue;
+import static org.junit.Assert.assertThat;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -26,10 +28,7 @@ import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import javax.sql.DataSource;
 import org.modeshape.jcr.store.DataSourceConfig;
-import com.mchange.v2.c3p0.ComboPooledDataSource;
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsNull.notNullValue;
-import static org.junit.Assert.assertThat;
+import com.zaxxer.hikari.HikariDataSource;
 
 /**
  * Test helper which executes DDL statements from a file against a given datasource.
@@ -37,7 +36,7 @@ import static org.junit.Assert.assertThat;
 public class DatasourceHelper {
 
     private static final DataSourceConfig DATA_SOURCE_CONFIG = new DataSourceConfig();
-    private static ComboPooledDataSource dataSource;
+    private static HikariDataSource dataSource;
     private static boolean print = false;
 
     /**
@@ -113,22 +112,13 @@ public class DatasourceHelper {
      */
     public static DataSource getDataSource() {
         if (dataSource == null) {
-            dataSource = new ComboPooledDataSource();
-            try {
-                dataSource.setDriverClass(DATA_SOURCE_CONFIG.getDriverClassName());
-                dataSource.setJdbcUrl(DATA_SOURCE_CONFIG.getUrl());
-                dataSource.setUser(DATA_SOURCE_CONFIG.getUsername());
-                dataSource.setPassword(DATA_SOURCE_CONFIG.getPassword());
-                dataSource.setMaxStatements(DATA_SOURCE_CONFIG.getMaximumSizeOfStatementsCache());
-                dataSource.setAcquireRetryAttempts(DATA_SOURCE_CONFIG.getRetryLimit());
-                dataSource.setMaxIdleTime(DATA_SOURCE_CONFIG.getMaximumConnectionIdleTimeInSeconds());
-                dataSource.setAcquireIncrement(DATA_SOURCE_CONFIG.getNumberOfConnectionsToAcquireAsNeeded());
-                dataSource.setMinPoolSize(DATA_SOURCE_CONFIG.getMinimumConnectionsInPool());
-                dataSource.setMaxPoolSize(DATA_SOURCE_CONFIG.getMaximumConnectionsInPool());
-
-            } catch (PropertyVetoException pve) {
-                throw new RuntimeException(pve);
-            }
+            dataSource = new HikariDataSource();
+            dataSource.setDriverClassName(DATA_SOURCE_CONFIG.getDriverClassName());
+            dataSource.setJdbcUrl(DATA_SOURCE_CONFIG.getUrl());
+            dataSource.setUsername(DATA_SOURCE_CONFIG.getUsername());
+            dataSource.setPassword(DATA_SOURCE_CONFIG.getPassword());
+            dataSource.setIdleTimeout(DATA_SOURCE_CONFIG.getMaximumConnectionIdleTimeInSeconds() * 1000);
+            dataSource.setMaximumPoolSize(DATA_SOURCE_CONFIG.getMaximumConnectionsInPool());
         }
         return dataSource;
     }

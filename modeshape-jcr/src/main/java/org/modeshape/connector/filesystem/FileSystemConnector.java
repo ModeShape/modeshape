@@ -46,7 +46,6 @@ import java.util.concurrent.Future;
 import java.util.regex.Pattern;
 import javax.jcr.NamespaceRegistry;
 import javax.jcr.RepositoryException;
-import org.modeshape.schematic.document.Document;
 import org.modeshape.common.util.FileUtil;
 import org.modeshape.common.util.IoUtil;
 import org.modeshape.common.util.NamedThreadFactory;
@@ -75,6 +74,7 @@ import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.Property;
 import org.modeshape.jcr.value.binary.ExternalBinaryValue;
 import org.modeshape.jcr.value.binary.UrlBinaryValue;
+import org.modeshape.schematic.document.Document;
 
 /**
  * {@link Connector} implementation that exposes a single directory on the local file system. This connector has several
@@ -89,7 +89,7 @@ import org.modeshape.jcr.value.binary.UrlBinaryValue;
  * <code>false</code> by default.</li>
  * <li><strong><code>extraPropertyStorage</code></strong> - An optional string flag that specifies how this source handles "extra"
  * properties that are not stored via file system attributes. See {@link #extraPropertiesStorage} for details. By default, extra
- * properties are stored in the same Infinispan cache that the repository uses.</li>
+ * properties are stored in the same DB that the repository uses.</li>
  * <li><strong><code>exclusionPattern</code></strong> - Optional property that specifies a regular expression that is used to
  * determine which files and folders in the underlying file system are not exposed through this connector. Files and folders with
  * a name that matches the provided regular expression will <i>not</i> be exposed by this source.</li>
@@ -205,7 +205,7 @@ public class FileSystemConnector extends WritableConnector implements Pageable {
      * cannot be stored natively on the file system as file attributes. This field is set via reflection, and the value is
      * expected to be one of these valid values:
      * <ul>
-     * <li>"<code>store</code>" - Any extra properties are stored in the same Infinispan cache where the content is stored. This
+     * <li>"<code>store</code>" - Any extra properties are stored in the same DB where the content is stored. This
      * is the default and is used if the actual value doesn't match any of the other accepted values.</li>
      * <li>"<code>json</code>" - Any extra properties are stored in a JSON file next to the file or directory.</li>
      * <li>"<code>legacy</code>" - Any extra properties are stored in a ModeShape 2.x-compatible file next to the file or

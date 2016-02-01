@@ -5,7 +5,6 @@
         "allowCreation" : true
     },
     "storage" : {
-        "cacheName" : "persistentRepository",
         "binaryStorage" : {
             "minimumStringSize" : 2,
             "type"  : "database",

@@ -49,7 +49,7 @@ public class ConnectorChangesTest extends SingleUseAbstractTest {
     public void beforeEach() throws Exception {
         FileUtil.delete("target/files");
         // Now start the repository ...
-        startRepositoryWithConfiguration(resource("config/repo-config-federation-changes.json"));
+        startRepositoryWithConfigurationFrom("config/repo-config-federation-changes.json");
         printMessage("Started repository...");
         changeBus = repository().changeBus();
     }

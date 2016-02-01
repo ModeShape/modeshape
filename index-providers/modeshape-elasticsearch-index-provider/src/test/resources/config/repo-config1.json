@@ -1,8 +1,6 @@
 {
     "name": "Persistent repo no indexes",
     "storage": {
-        "cacheName": "persistentRepository",
-        "cacheConfiguration": "config/infinispan-persistent.xml", //this is picked up from the modeshape-jcr-tests.jar artifact....
         "binaryStorage": {
             "type": "file",
             "directory": "target/persistent_repository/binaries",
@@ -22,7 +20,5 @@
     },
     "reindexing" : {
         "async" : false //make sure this is sync to avoid waiting in tests after registering indexes
-    }, 
-
-  
+    } 
 }

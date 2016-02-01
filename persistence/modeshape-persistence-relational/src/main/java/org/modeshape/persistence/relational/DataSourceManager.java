@@ -15,7 +15,6 @@
  */
 package org.modeshape.persistence.relational;
 
-import java.beans.PropertyVetoException;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
@@ -26,7 +25,7 @@ import javax.sql.DataSource;
 import org.modeshape.common.database.DatabaseType;
 import org.modeshape.common.database.DatabaseUtil;
 import org.modeshape.common.logging.Logger;
-import com.mchange.v2.c3p0.ComboPooledDataSource;
+import com.zaxxer.hikari.HikariDataSource;
 
 /**
  * Class which handles the configuration and actual database discovery for a {@link RelationalDb}
@@ -55,7 +54,7 @@ public final class DataSourceManager {
             dataSource = createManagedDS(config);
         }
         
-        try (Connection connection = newConnection(false)) {
+        try (Connection connection = newConnection(false, true)) {
             DatabaseMetaData metaData = connection.getMetaData();
             dbType = DatabaseUtil.determineType(metaData);
             if (!SUPPORTED_DBS.contains(dbType.name())) {
@@ -74,18 +73,15 @@ public final class DataSourceManager {
         String password = config.password();
         LOGGER.debug("Attempting to connect to '{0}' with '{1}' for username '{2}' and password '{3}'", connectionUrl,
                      driver, userName, password);
-        try {
-            ComboPooledDataSource c3p0Ds = new ComboPooledDataSource();
-            c3p0Ds.setJdbcUrl(connectionUrl);
-            c3p0Ds.setDriverClass(driver);
-            c3p0Ds.setUser(userName);
-            c3p0Ds.setPassword(password);
-            c3p0Ds.setMaxPoolSize(1000);
-            c3p0Ds.setInitialPoolSize(10);
-            dataSource = c3p0Ds;
-        } catch (PropertyVetoException e) {
-            throw new RelationalProviderException(e);
-        }
+        HikariDataSource ds = new HikariDataSource();
+        ds.setJdbcUrl(connectionUrl);
+        ds.setDriverClassName(driver);
+        ds.setUsername(userName);
+        ds.setPassword(password);
+        ds.setMaximumPoolSize(config.threadPoolSize());
+        ds.setIdleTimeout(10000); //10sec
+        dataSource = ds;
+
         return dataSource;
     }
 
@@ -115,14 +111,22 @@ public final class DataSourceManager {
         return dbType;
     }
     
-    protected Connection newConnection(boolean autocommit) {
+    protected Connection newConnection(boolean autocommit, boolean readonly) {
         try {
             Connection connection = dataSource.getConnection();
             connection.setAutoCommit(autocommit);
             connection.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
+            connection.setReadOnly(readonly);
             return connection;
         } catch (SQLException e) {
             throw new RelationalProviderException(e);
+        }
+    }
+    
+    protected void close() {
+        if (dataSource instanceof HikariDataSource) {
+            // we're managing this, so force a close to release all connections...
+            ((HikariDataSource) this.dataSource).close();
         }
     }
 

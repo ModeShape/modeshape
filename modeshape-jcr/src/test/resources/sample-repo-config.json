@@ -5,8 +5,11 @@
         "enabled" : true
     },
     "storage" : {
-        "cacheName" : "some-cache",
-        "cacheConfiguration" : "infinispan.xml",
+        "persistence" : {
+            "type" : "mycustom",
+            "prop1" : "value",
+            "prop2" : true
+        },
         "binaryStorage" : {
             "minimumBinarySizeInBytes" : 10240
         }

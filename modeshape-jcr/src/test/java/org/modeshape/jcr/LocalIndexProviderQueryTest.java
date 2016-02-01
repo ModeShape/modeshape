@@ -19,14 +19,13 @@ package org.modeshape.jcr;
 import javax.jcr.Node;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.modeshape.common.util.FileUtil;
 
 public class LocalIndexProviderQueryTest extends JcrQueryManagerTest {
 
     @BeforeClass
     public static void beforeAll() throws Exception {
         // Clean up the indexes and storage ...
-        FileUtil.delete("target/LocalIndexProviderQueryTest");
+        TestingUtil.waitUntilFolderCleanedUp("target/LocalIndexProviderQueryTest");
 
         String configFileName = LocalIndexProviderQueryTest.class.getSimpleName() + ".json";
         JcrQueryManagerTest.beforeAll(configFileName);

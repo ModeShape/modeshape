@@ -25,11 +25,9 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
+import java.util.concurrent.Callable;
+import javax.transaction.SystemException;
 import javax.transaction.TransactionManager;
-import org.modeshape.schematic.Schematic;
-import org.modeshape.schematic.SchematicDb;
-import org.modeshape.schematic.document.Document;
-import org.modeshape.schematic.document.Json;
 import org.junit.After;
 import org.junit.Before;
 import org.modeshape.common.logging.Logger;
@@ -37,6 +35,12 @@ import org.modeshape.jcr.api.txn.TransactionManagerLookup;
 import org.modeshape.jcr.cache.document.TestRepositoryEnvironment;
 import org.modeshape.jcr.txn.DefaultTransactionManagerLookup;
 import org.modeshape.jcr.txn.Transactions;
+import org.modeshape.persistence.relational.RelationalDbConfig;
+import org.modeshape.schematic.Schematic;
+import org.modeshape.schematic.SchematicDb;
+import org.modeshape.schematic.document.Document;
+import org.modeshape.schematic.document.Json;
+import org.modeshape.schematic.internal.document.BasicDocument;
 
 /**
  * An abstract base class for unit tests that require an testable SchematicDb instance.
@@ -51,12 +55,13 @@ public abstract class AbstractSchematicDbTest {
     @Before
     public void beforeEach() {
         logger = Logger.getLogger(getClass());
-        schematicDb = Schematic.getDb("mem");
+        // default to an in-memory h2
+        schematicDb = Schematic.getDb(testConfiguration());
         schematicDb.start();
         TransactionManagerLookup txManagerLookup = new DefaultTransactionManagerLookup();
-        TransactionManager transactionManager = txManagerLookup.getTransactionManager();
-        assertNotNull("Was not able to locate a transaction manager in the test classpath", transactionManager);
-        repoEnv = new TestRepositoryEnvironment(transactionManager);
+        TransactionManager txManager = txManagerLookup.getTransactionManager();
+        assertNotNull("Was not able to locate a transaction manager in the test classpath", txManager);
+        repoEnv = new TestRepositoryEnvironment(txManager, schematicDb);
     }
 
     @After
@@ -67,6 +72,10 @@ public abstract class AbstractSchematicDbTest {
             schematicDb = null;
             repoEnv = null;
         }
+    }
+    
+    protected Document testConfiguration() {
+        return new BasicDocument(Schematic.TYPE_FIELD, "db", RelationalDbConfig.DROP_ON_EXIT, true);     
     }
 
     protected Transactions transactions() {
@@ -84,13 +93,13 @@ public abstract class AbstractSchematicDbTest {
      * @param stream the stream containing the JSON data Document
      */
     protected void loadJsonDocuments( InputStream stream ) {
-        try {
+        runInTransaction(() -> {
             Document document = Json.read(stream);
             List<?> data = document.getArray("data");
             if (data != null) {
                 for (Object value : data) {
                     if (value instanceof Document) {
-                        Document dataDoc = (Document)value;
+                        Document dataDoc = (Document) value;
                         // Get the key ...
                         Document content = dataDoc.getDocument("content");
                         Document metadata = dataDoc.getDocument("metadata");
@@ -99,9 +108,8 @@ public abstract class AbstractSchematicDbTest {
                     }
                 }
             }
-        } catch (IOException e) {
-            throw new AssertionError(e);
-        }
+            return null;
+        });
     }
 
     protected InputStream resource( String resourcePath ) {
@@ -124,5 +132,25 @@ public abstract class AbstractSchematicDbTest {
         }
         assertThat(stream, is(notNullValue()));
         return stream;
+    }
+    
+    protected <V> V runInTransaction(Callable<V> operation) {
+        Transactions transactions = transactions();
+        try {
+            try {
+                transactions.begin();
+                V result = operation.call();
+                transactions.commit();
+                return result;
+            } catch (RuntimeException re) {
+                transactions.rollback();
+                throw re;
+            } catch (Throwable t) {
+                transactions.rollback();
+                throw new RuntimeException(t);
+            }
+        } catch (SystemException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

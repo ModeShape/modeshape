@@ -40,7 +40,7 @@ public class MutableChildReferences extends AbstractChildReferences {
     private final Map<Name, List<NodeKey>> childReferenceKeysByName;
     private final Map<NodeKey, ChildReference> childReferencesByKey;
 
-    protected MutableChildReferences() {
+    public MutableChildReferences() {
         this.childReferenceKeysByName = new HashMap<>();
         this.childReferencesByKey = new LinkedHashMap<>();
     }

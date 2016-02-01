@@ -77,16 +77,6 @@
     </files>
 
     <dependencySets>
-        <!--Infinispan AS modules -->
-        <dependencySet>
-            <useProjectArtifact>false</useProjectArtifact>
-            <outputDirectory>${jboss.kit.modules.location}</outputDirectory>
-            <includes>
-                <include>org.infinispan:infinispan-as-embedded-modules</include>
-            </includes>
-            <unpack>true</unpack>
-        </dependencySet>
-
 
         <!-- Module for the standard JCR API -->
 		<dependencySet>
@@ -185,10 +175,10 @@
 
         <dependencySet>
             <useProjectArtifact>false</useProjectArtifact>
-            <outputDirectory>${jboss.kit.modules.location}/org/modeshape/connector/jdbc/metadata/main</outputDirectory>
+            <outputDirectory>${jboss.kit.modules.location}/org/modeshape/persistence/relational/main</outputDirectory>
             <includes>
-                <include>org.modeshape:modeshape-connector-jdbc-metadata:jar</include>
-                <include>com.mchange:c3p0:jar</include>
+                <include>org.modeshape:modeshape-persistence-relational:jar</include>
+                <include>com.zaxxer:HikariCP:jar</include>
             </includes>
         </dependencySet>
 
@@ -257,7 +247,7 @@
                 <include>org.modeshape:modeshape-sequencer-sramp:jar</include>
             </includes>
         </dependencySet>
-        
+
         <dependencySet>
             <useProjectArtifact>false</useProjectArtifact>
             <outputDirectory>${jboss.kit.modules.location}/org/modeshape/sequencer/text/main</outputDirectory>

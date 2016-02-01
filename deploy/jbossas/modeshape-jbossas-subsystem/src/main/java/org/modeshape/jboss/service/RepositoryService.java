@@ -15,24 +15,14 @@
  */
 package org.modeshape.jboss.service;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import javax.jcr.RepositoryException;
-import org.infinispan.manager.CacheContainer;
-import org.infinispan.manager.DefaultCacheManager;
-import org.modeshape.schematic.Schematic;
-import org.modeshape.schematic.document.Changes;
-import org.modeshape.schematic.document.EditableArray;
-import org.modeshape.schematic.document.EditableDocument;
-import org.modeshape.schematic.document.Editor;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.dmr.ModelNode;
 import org.jboss.logging.Logger;
@@ -57,6 +47,11 @@ import org.modeshape.jcr.NoSuchRepositoryException;
 import org.modeshape.jcr.RepositoryConfiguration;
 import org.modeshape.jcr.RepositoryConfiguration.FieldName;
 import org.modeshape.jcr.RepositoryStatistics;
+import org.modeshape.schematic.Schematic;
+import org.modeshape.schematic.document.Changes;
+import org.modeshape.schematic.document.EditableArray;
+import org.modeshape.schematic.document.EditableDocument;
+import org.modeshape.schematic.document.Editor;
 import org.wildfly.clustering.jgroups.ChannelFactory;
 
 /**
@@ -75,19 +70,14 @@ public class RepositoryService implements Service<JcrRepository>, Environment {
     private final InjectedValue<ChannelFactory> channelFactoryInjector = new InjectedValue<>();
     private final InjectedValue<ISecurityManagement> securityManagementServiceInjector = new InjectedValue<>();
 
-    private final ConcurrentHashMap<String, CacheContainer> containers;
-    private final String cacheConfigRelativeTo;
     private final RepositoryConfiguration repositoryConfiguration;
     private final Set<ModuleIdentifier> additionalModuleDependencies = new LinkedHashSet<>();
     
     private String journalPath;
     private String journalRelativeTo;
 
-    public RepositoryService(RepositoryConfiguration repositoryConfiguration, String cacheConfigRelativeTo,
-                             String additionalModuleDependencies) {
+    public RepositoryService(RepositoryConfiguration repositoryConfiguration, String additionalModuleDependencies) {
         this.repositoryConfiguration = repositoryConfiguration;
-        this.containers = new ConcurrentHashMap<>();
-        this.cacheConfigRelativeTo = cacheConfigRelativeTo;
         if (!StringUtil.isBlank(additionalModuleDependencies)) {
             for (String moduleName : additionalModuleDependencies.split(",")) {
                 ModuleIdentifier moduleId = moduleIdentifierFromName(moduleName);
@@ -112,68 +102,35 @@ public class RepositoryService implements Service<JcrRepository>, Environment {
     }
 
     @Override
-    public CacheContainer getCacheContainer( String name ) {
-        CacheContainer cacheContainer = containers.get(name);
-        if (cacheContainer != null) {
-            return cacheContainer;
-        }
-        InputStream is = null;
-        String resourceFile = name;
-
-        String cacheConfig = name;
-        if (name.startsWith("/")) {
-            cacheConfig = name.substring(1);
-        }
-        String cacheConfigPath = this.cacheConfigRelativeTo + cacheConfig;
-        File file = new File(cacheConfigPath);
-        try {
-            is = new FileInputStream(file);
-            resourceFile = cacheConfigPath;
-        } catch (FileNotFoundException e) {
-            throw new RuntimeException("Cannot locate and read the Infinispan configuration file: " + cacheConfigPath);
-        }
-        try {
-            DefaultCacheManager defaultCacheManager = new DefaultCacheManager(is);
-            CacheContainer storedCacheContainer = containers.putIfAbsent(name, defaultCacheManager);
-            return storedCacheContainer != null ? storedCacheContainer : defaultCacheManager;
-        } catch (Exception e) {
-            throw new RuntimeException("Cannot load the Infinispan configuration file: " + resourceFile, e);
-        }
-    }
-
-
-    @Override
-    public ClassLoader getClassLoader( ClassLoader fallbackLoader,
+    public ClassLoader getClassLoader( Object caller,
                                        String... classpathEntries ) {
-        Set<ModuleIdentifier> moduleIds = new HashSet<>();
-        if (classpathEntries != null && classpathEntries.length > 0) {
-            // each classpath entry is interpreted as a module identifier
-            for (String moduleId : classpathEntries) {
-                ModuleIdentifier moduleIdentifier = moduleIdentifierFromName(moduleId);
-                if (moduleIdentifier != null) {
-                    moduleIds.add(moduleIdentifier);
-                }
-                
-            }
-        } 
-        moduleIds.addAll(this.additionalModuleDependencies);
-        List<ClassLoader> delegatingLoaders = new ArrayList<>();
-        if (!moduleIds.isEmpty()) {
-            for (ModuleIdentifier moduleIdentifier : moduleIds) {
-                try {
-                    delegatingLoaders.add(moduleLoader().loadModule(moduleIdentifier).getClassLoader());
-                } catch (ModuleLoadException e) {
-                    LOG.warnv("Cannot load module from (from classpath entry) with identifier: {0}", moduleIdentifier);
-                }
-            }
-        }
+        caller = Objects.requireNonNull(caller, "caller");
+        Stream<ModuleIdentifier> optionalModuleIds = Arrays.stream(classpathEntries)
+                                                           .filter(Objects::nonNull)
+                                                           .map(this::moduleIdentifierFromName)
+                                                           .filter(Objects::nonNull);
+        List<ClassLoader> delegatingLoaders = Stream.concat(optionalModuleIds, this.additionalModuleDependencies.stream())
+                                                    .map(moduleId -> {
+                                                        try {
+                                                            return moduleLoader().loadModule(moduleId).getClassLoader();
+                                                        } catch (ModuleLoadException e) {
+                                                            LOG.warnv(
+                                                                    "Cannot load module from classpath entry with identifier: {0}",
+                                                                    moduleId);
+                                                            return null;
+                                                        }
+                                                    })
+                                                    .filter(Objects::nonNull)
+                                                    .collect(Collectors.toList());
+
         ClassLoader currentLoader = getClass().getClassLoader();
-        if (fallbackLoader != null && !fallbackLoader.equals(currentLoader)) {
+        ClassLoader callerLoader = caller.getClass().getClassLoader();
+        if (!callerLoader.equals(currentLoader)) {
             // if the parent of fallback is the same as the current loader, just use that
-            if (fallbackLoader.getParent().equals(currentLoader)) {
-                currentLoader = fallbackLoader;
+            if (callerLoader.getParent().equals(currentLoader)) {
+                currentLoader = callerLoader;
             } else {
-                delegatingLoaders.add(fallbackLoader);
+                delegatingLoaders.add(callerLoader);
             }
         }
 

@@ -1,0 +1,14 @@
+{
+    "name" : "In Memory Repository",
+    "workspaces" : {
+        "default" : "default",
+        "predefined" : ["otherWorkspace"],
+        "allowCreation" : true
+    },
+    "security" : {
+        "anonymous" : {
+            "roles" : ["readonly","readwrite","admin"],
+            "useOnFailedLogin" : false
+        }
+    },
+}

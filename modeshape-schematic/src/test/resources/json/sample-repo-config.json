@@ -9,8 +9,19 @@
         "allowCreation" : true,
     },
     "storage" : {
-        "cacheName" : "Thorough",
-        "cacheConfiguration" : "infinispan_configuration.xml",
+        "persistence" : {
+            "type": "db",
+            "connectionUrl" : "test",
+            "driver" : "test",
+            "username" : "test",
+            "password" : "",
+            "datasourceJNDI" : "test",
+            "tableName" : "test",
+            "createOnStart" : true,
+            "dropOnExit" : false,
+            "fetchSize" : 1000,
+            "compress" : false
+        },
         "binaryStorage" : {
             "type" : "file",
             "directory" : "Thorough/binaries",

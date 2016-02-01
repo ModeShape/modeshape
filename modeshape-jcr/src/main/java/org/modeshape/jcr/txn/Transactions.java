@@ -16,10 +16,11 @@
 package org.modeshape.jcr.txn;
 
 import java.util.HashSet;
-import java.util.IdentityHashMap;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import javax.transaction.HeuristicMixedException;
 import javax.transaction.HeuristicRollbackException;
@@ -31,11 +32,12 @@ import javax.transaction.Synchronization;
 import javax.transaction.SystemException;
 import javax.transaction.TransactionManager;
 import javax.transaction.xa.XAResource;
-import org.modeshape.schematic.TransactionListener;
 import org.modeshape.common.logging.Logger;
+import org.modeshape.jcr.JcrI18n;
 import org.modeshape.jcr.cache.change.ChangeSet;
 import org.modeshape.jcr.cache.document.TransactionalWorkspaceCache;
 import org.modeshape.jcr.cache.document.WorkspaceCache;
+import org.modeshape.schematic.TransactionListener;
 
 /**
  * An abstraction for the logic of working with transactions. Sessions use this to create local transactions around a single set
@@ -81,7 +83,7 @@ public class Transactions {
     protected final Logger logger = Logger.getLogger(Transactions.class);
     
     private final TransactionListener listener;
-    private final IdentityHashMap<javax.transaction.Transaction, SynchronizedTransaction> transactionTable;
+    private final ConcurrentMap<javax.transaction.Transaction, SynchronizedTransaction> transactionTable;
 
     /**
      * Creates a new instance wrapping an existing transaction manager and a transaction listener.
@@ -92,7 +94,7 @@ public class Transactions {
     public Transactions(TransactionManager txnMgr, TransactionListener listener) {
         this.txnMgr = txnMgr;
         this.listener = listener;
-        this.transactionTable = new IdentityHashMap<>();
+        this.transactionTable = new ConcurrentHashMap<>();
     }
 
     /**
@@ -149,8 +151,14 @@ public class Transactions {
 
         // Get the transaction currently associated with this thread (if there is one) ...
         javax.transaction.Transaction txn = txnMgr.getTransaction();
+        if (txn != null && txn.getStatus() != Status.STATUS_ACTIVE) {
+            logger.warn(JcrI18n.warnRogueTransaction,txn);
+            txnMgr.suspend(); 
+            txn = null;
+        }
+        
         if (txn == null) {
-            // There is no transaction, so start a local one ...
+            // There is no transaction or a leftover one which isn't active, so start a local one ...
             txnMgr.begin();
             // create our wrapper ...
             localTx = new NestableThreadLocalTransaction(txnMgr).begin();
@@ -166,7 +174,6 @@ public class Transactions {
             return logTransactionInformation(synchronizedTransaction);
         } else {
             synchronizedTransaction = new SynchronizedTransaction(txnMgr, txn);
-            // transactions should be thread-bound, so the following should work even if the map is not concurrent....
             transactionTable.put(txn, synchronizedTransaction);
             // this is the first time ModeShape has seen this user transaction, so notify the listener
             listener.txStarted(synchronizedTransaction.id);
@@ -333,6 +340,13 @@ public class Transactions {
     public interface Transaction {
 
         /**
+         * Returns a unique identifier for the transaction.
+         * 
+         * @return a String, never {@code null}
+         */
+        String id();
+
+        /**
          * Returns the status associated with the current transaction
          *
          * @return an {@code int} code representing a transaction status.
@@ -421,6 +435,11 @@ public class Transactions {
         }
 
         @Override
+        public String id() {
+            return id;
+        }
+
+        @Override
         public String toString() {
             final StringBuilder sb = new StringBuilder(getClass().getSimpleName()).append("[");
             sb.append("id='").append(id).append('\'');
@@ -453,17 +472,21 @@ public class Transactions {
 
         @Override
         public void rollback() throws IllegalStateException, SecurityException, SystemException {
+            boolean canRollback = canRollback();
             try {
-                if (canRollback()) {
+                if (canRollback) {
                     // rollback first
                     txnMgr.rollback();
-                    // notify the listener
-                    listener.txRolledback(id);
                 }
             } finally {
-                // even if rollback fails, we want to execute the complete functions to try and leave the repository into a consistent state
-                // because a rollback was requested in the first place, meaning something went wrong during the UOW
-                executeFunctionsUponCompletion();
+                if (canRollback) {
+                    // notify the listener always
+                    listener.txRolledback(id);
+
+                    // even if rollback fails, we want to execute the complete functions to try and leave the repository into a consistent state
+                    // because a rollback was requested in the first place, meaning something went wrong during the UOW
+                    executeFunctionsUponCompletion();
+                }
             }
         }
 
@@ -626,6 +649,11 @@ public class Transactions {
     protected class RollbackOnlyTransaction implements Transaction {
 
         public RollbackOnlyTransaction() {
+        }
+
+        @Override
+        public String id() {
+            return "";
         }
 
         @Override

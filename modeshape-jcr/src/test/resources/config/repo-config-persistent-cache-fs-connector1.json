@@ -2,11 +2,13 @@
     "name" : "Persistent Repository",
     "jndiName" : "java:jcr/local/PersistentRepository",
     "monitoring" : {
-        "enabled" : true
+        "enabled" : false
     },
     "storage" : {
-        "cacheName" : "persistentRepository",
-        "cacheConfiguration" : "config/infinispan-persistent.xml",
+        "persistence" : {
+            "type" : "db",
+            "connectionUrl": "jdbc:h2:file:./target/persistent_repository/db"
+        },
         "binaryStorage" : {
             "type" : "file",
             "directory": "target/persistent_repository/binaries"

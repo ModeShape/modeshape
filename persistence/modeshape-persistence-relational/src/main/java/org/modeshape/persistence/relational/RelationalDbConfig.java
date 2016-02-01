@@ -37,14 +37,16 @@ public final class RelationalDbConfig {
     protected static final String USERNAME = "username";
     protected static final String PASSWORD = "password";
     protected static final String DATASOURCE_JNDI_NAME = "datasourceJNDI";
+    protected static final String THREAD_POOL_SIZE = "threadPoolSize";
 
-    protected static final String DEFAULT_CONNECTION_URL = "jdbc:h2:mem:modeshape;DB_CLOSE_DELAY=0";
+    protected static final String DEFAULT_CONNECTION_URL = "jdbc:h2:mem:modeshape;DB_CLOSE_DELAY=0;";
     protected static final String DEFAULT_DRIVER = "org.h2.Driver";
     protected static final String DEFAULT_USERNAME = "sa";
     protected static final String DEFAULT_PASSWORD = "";
     protected static final String DEFAULT_TABLE_NAME = "MODESHAPE_REPOSITORY";
     protected static final int DEFAULT_FETCH_SIZE = 1000;
     protected static final int DEFAULT_CACHE_SIZE = 1000;
+    protected static final int DEFAULT_THREAD_POOL_SIZE = 1000;
   
     private final boolean createOnStart;
     private final boolean dropOnExit;
@@ -56,7 +58,8 @@ public final class RelationalDbConfig {
     private final String driver;
     private final String username;
     private final String password;
-    private final String datasourceJNDIName;
+    private final String datasourceJNDIName; 
+    private final int threadPoolSize;
 
     protected RelationalDbConfig(Document document) {
         this.connectionUrl = document.getString(CONNECTION_URL, DEFAULT_CONNECTION_URL);
@@ -70,6 +73,7 @@ public final class RelationalDbConfig {
         this.fetchSize = document.getInteger(FETCH_SIZE, DEFAULT_FETCH_SIZE);
         this.compress = document.getBoolean(COMPRESS, true);
         this.cacheSize = document.getInteger(CACHE_SIZE, DEFAULT_FETCH_SIZE);
+        this.threadPoolSize = document.getInteger(THREAD_POOL_SIZE, DEFAULT_THREAD_POOL_SIZE);
     }
 
     protected String connectionUrl() {
@@ -114,6 +118,10 @@ public final class RelationalDbConfig {
 
     protected int cacheSize() {
         return cacheSize;
+    }
+    
+    protected int threadPoolSize() { 
+        return threadPoolSize; 
     }
     
     @Override

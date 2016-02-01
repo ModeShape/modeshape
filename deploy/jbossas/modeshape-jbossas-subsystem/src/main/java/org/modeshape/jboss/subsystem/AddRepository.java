@@ -17,9 +17,6 @@ package org.modeshape.jboss.subsystem;
 
 import java.util.ArrayList;
 import java.util.List;
-import org.modeshape.schematic.Schematic;
-import org.modeshape.schematic.document.EditableArray;
-import org.modeshape.schematic.document.EditableDocument;
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
@@ -53,6 +50,9 @@ import org.modeshape.jcr.ModeShapeEngine;
 import org.modeshape.jcr.RepositoryConfiguration;
 import org.modeshape.jcr.RepositoryConfiguration.FieldName;
 import org.modeshape.jcr.api.monitor.RepositoryMonitor;
+import org.modeshape.schematic.Schematic;
+import org.modeshape.schematic.document.EditableArray;
+import org.modeshape.schematic.document.EditableDocument;
 import org.wildfly.clustering.jgroups.ChannelFactory;
 
 public class AddRepository extends AbstractAddStepHandler {
@@ -200,8 +200,7 @@ public class AddRepository extends AbstractAddStepHandler {
         }
         
         String additionalModuleDependencies = attribute(context, model, ModelAttributes.REPOSITORY_MODULE_DEPENDENCIES, null);
-        RepositoryService repositoryService = new RepositoryService(repositoryConfig, configRelativeTo,
-                                                                    additionalModuleDependencies);
+        RepositoryService repositoryService = new RepositoryService(repositoryConfig, additionalModuleDependencies);
         ServiceName repositoryServiceName = ModeShapeServiceNames.repositoryServiceName(repositoryName);
 
         // Sequencing
@@ -422,9 +421,7 @@ public class AddRepository extends AbstractAddStepHandler {
                                                     String cacheName,
                                                     EditableDocument configDoc ) {
         EditableDocument storage = configDoc.getOrCreateDocument(FieldName.STORAGE);
-        storage.set(FieldName.CACHE_NAME, cacheName);
-        // set the ISPN config relative path which will be resolved later on
-        storage.set(FieldName.CACHE_CONFIGURATION, infinispanConfig);
+        //TODO author=Horia Chiorean date=29/01/2016 description=fix
     }
 
 

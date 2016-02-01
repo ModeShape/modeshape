@@ -167,18 +167,26 @@ public abstract class ClusteringService implements org.modeshape.jcr.locking.Loc
         if (channel == null) {
             return false;
         }
-        LOGGER.debug("Shutting down clustering service...");
+        Address address = channel.getAddress();
+        LOGGER.debug("{0} Shutting down clustering service...", address);
         consumers.clear();
 
         // Mark this as not accepting any more ...
         isOpen.set(false);
-        lockService.unlockAll();
+        try {
+            LOGGER.debug("{0} releasing all clustering locks...", address);
+            lockService.unlockAll();
+        } catch (Throwable t) {
+            LOGGER.debug(t, "Cannot release all locks...");
+        }
+        
         try {
             // Disconnect from the channel and close it ...
+            channel.disconnect();
             channel.removeChannelListener(listener);
             channel.setReceiver(null);
             channel.close();
-            LOGGER.debug("Successfully closed main channel");
+            LOGGER.debug("{0} Successfully closed main channel", address);
         } finally {
             channel = null;
         }
@@ -193,11 +201,27 @@ public abstract class ClusteringService implements org.modeshape.jcr.locking.Loc
         Set<Lock> successfullyAcquiredLocks = new HashSet<>();
         for (String name : names) {
             boolean success = false;
-            LOGGER.debug("Attempting to lock {0}", name);
+            LOGGER.debug("{0} attempting to lock {1}", channel.getAddress(), name);
             Lock lock = lockService.getLock(name);
             try {
-                success = time > 0 ? lock.tryLock(time, unit) : lock.tryLock();
-                LOGGER.debug("{0} locked successfully", name);
+                if (time > 0) {
+                    // even though JG has a tryLock(timeunit) method, sometimes it seems to deadlock when using it
+                    // so this is a workaround for that
+                    long timeUnitMillis = TimeUnit.MILLISECONDS.convert(time, unit);
+                    int threadWaitTimeMillis = 100;
+                    long repeatCycles = timeUnitMillis / threadWaitTimeMillis;
+                    while (repeatCycles-- > 0) {
+                        LOGGER.debug("Attempt {0} at obtaining cluster lock {1}", repeatCycles, name);
+                        success = lock.tryLock();
+                        if (success) {
+                            break;
+                        }
+                        LOGGER.debug("...attempt failed. Sleeping for {0} millis before retrying...", threadWaitTimeMillis);
+                        Thread.sleep(threadWaitTimeMillis);
+                    }
+                } else {
+                    success = lock.tryLock();     
+                }
             } catch (InterruptedException e) {
                 LOGGER.debug("Thread " + Thread.currentThread().getName()
                              + " received interrupt request while waiting to acquire lock '{0}'", name);
@@ -210,6 +234,8 @@ public abstract class ClusteringService implements org.modeshape.jcr.locking.Loc
                              successfullyAcquiredLocks);
                 successfullyAcquiredLocks.stream().forEach(Lock::unlock);
                 return false;
+            } else {
+                LOGGER.debug("{0} locked successfully", name);
             }
             successfullyAcquiredLocks.add(lock);
         }
@@ -231,7 +257,7 @@ public abstract class ClusteringService implements org.modeshape.jcr.locking.Loc
     public List<String> unlock(String... names) {
         List<String> result = new ArrayList<>();
         for (String name : names) {
-            LOGGER.debug("Attempting to unlock {0}", name);
+            LOGGER.debug("{0} attempting to unlock {1}", channel.getAddress(), name);
             Lock lock = lockService.getLock(name);
             // JG locks are do not have a holder count, so locking/unlocking an already held lock is a no-op
             if (!lock.tryLock()) {
@@ -308,7 +334,7 @@ public abstract class ClusteringService implements org.modeshape.jcr.locking.Loc
         }
 
         if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("Sending payload {0} in cluster {1} ", payload, clusterName());
+            LOGGER.debug("{0} sending payload {1} in cluster {2} ", channel.getAddress(), payload, clusterName());
         }
         try {
             byte[] messageData = toByteArray(payload);
@@ -408,7 +434,7 @@ public abstract class ClusteringService implements org.modeshape.jcr.locking.Loc
                 Serializable payload = fromByteArray(message.getBuffer(), getClass().getClassLoader());
 
                 if (LOGGER.isDebugEnabled()) {
-                    LOGGER.debug("Cluster {0} received payload {1}", clusterName(), payload);
+                    LOGGER.debug("{0} from cluster {1} received payload {2}", channel.getAddress(), clusterName(), payload);
                 }
 
                 for (MessageConsumer<Serializable> consumer : consumers) {
@@ -430,8 +456,8 @@ public abstract class ClusteringService implements org.modeshape.jcr.locking.Loc
 
         @Override
         public void viewAccepted( View newView ) {
-            LOGGER.trace("Members of '{0}' cluster have changed: {1}, total count: {2}", clusterName(), newView,
-                         newView.getMembers().size());
+            LOGGER.trace("{0} Members of '{1}' cluster have changed: {2}, total count: {3}", channel.getAddress(), clusterName(), 
+                         newView, newView.getMembers().size());
             if (newView instanceof MergeView) {
                 LOGGER.trace("Received a merged view in cluster {0}. Releasing all locks...", clusterName());
                 // see JGroups docs in case of a cluster split-merge case
@@ -439,10 +465,11 @@ public abstract class ClusteringService implements org.modeshape.jcr.locking.Loc
             }
             membersInCluster.set(newView.getMembers().size());
             if (membersInCluster.get() > 1) {
-                LOGGER.debug("There are now multiple members of cluster '{0}'; changes will be propagated throughout the cluster",
-                             clusterName());
+                LOGGER.debug("{0} There are now multiple members of cluster '{1}'; changes will be propagated throughout the cluster",
+                             channel.getAddress(), clusterName());
             } else if (membersInCluster.get() == 1) {
-                LOGGER.debug("There is only one member of cluster '{0}'; changes will be propagated locally only", clusterName());
+                LOGGER.debug("{0} There is only one member of cluster '{1}'; changes will be propagated locally only", 
+                             channel.getAddress(), clusterName());
             }
         }
     }

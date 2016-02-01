@@ -92,7 +92,8 @@ public class JcrLockManagerTest extends SingleUseAbstractTest {
         session.logout();
         
         //forcibly remove the lock node from the system area...
-        assertTrue(repository.documentStore().remove(lock.lockKey().toString()));
+        String lockKey = lock.lockKey().toString();
+        assertTrue(runInTransaction(() -> repository.documentStore().remove(lockKey)));
         
         //and then force a refresh
         RepositoryLockManager lockManager = repository.lockManager();

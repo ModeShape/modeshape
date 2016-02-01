@@ -310,7 +310,7 @@ public class ImportExportTest extends SingleUseAbstractTest {
         session.exportDocumentView("/unicodeContent", baos, false, false);
         baos.close();
 
-        predefineWorkspace("workspace2");
+        predefineWorkspace(repository.getConfiguration(), "workspace2");
 
         InputStream istream = new ByteArrayInputStream(baos.toByteArray());
         Session session2 = repository.login("workspace2");
@@ -339,7 +339,7 @@ public class ImportExportTest extends SingleUseAbstractTest {
         session.exportSystemView("/unicodeContent", baos, false, false);
         baos.close();
 
-        predefineWorkspace("workspace2");
+        predefineWorkspace(repository.getConfiguration(), "workspace2");
 
         InputStream istream = new ByteArrayInputStream(baos.toByteArray());
         Session session2 = repository.login("workspace2");
@@ -881,7 +881,7 @@ public class ImportExportTest extends SingleUseAbstractTest {
     @FixFor("MODE-1478")
     @Test
     public void shouldBeAbleToImportDroolsXMLIntoSystemView() throws Exception {
-        startRepositoryWithConfiguration(resourceStream("config/drools-repository.json"));
+        startRepositoryWithConfigurationFrom("config/drools-repository.json");
         session.importXML("/", resourceStream("io/drools-system-view.xml"), ImportUUIDBehavior.IMPORT_UUID_CREATE_NEW);
 
         assertNode("/drools:repository", "nt:folder");

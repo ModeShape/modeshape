@@ -1,8 +1,10 @@
 {
     "name": "Persistent repo no indexes",
     "storage": {
-        "cacheName": "persistentRepository",
-        "cacheConfiguration": "config/infinispan-persistent.xml",
+        "persistence" : {
+            "type" : "db",
+            "connectionUrl": "jdbc:h2:file:./target/persistent_repository/db"
+        },
         "binaryStorage": {
             "type": "file",
             "directory": "target/persistent_repository/binaries",

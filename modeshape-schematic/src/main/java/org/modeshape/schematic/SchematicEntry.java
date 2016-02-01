@@ -32,22 +32,26 @@ import org.modeshape.schematic.internal.document.BasicDocument;
 @FunctionalInterface
 public interface SchematicEntry {
 
-    interface FieldName {
+    abstract class FieldName {
+        private FieldName() {
+        }
+
         /**
          * The name of the field used internally to store an entry's metadata.
          */
-        String METADATA = "metadata";
+        protected static final String  METADATA = "metadata";
+        
         /**
          * The name of the field used internally to store an entry's content, which is either a {@link Document} or a
          * {@link Binary} value.
          */
-        String CONTENT = "content";
+        protected static final String CONTENT = "content";
 
         /**
          * The name of the metadata field used to store the document key. Note that {@value} is also the field name used by <a
          * href="http://tools.ietf.org/html/draft-zyp-json-schema-03#section-5.27">JSON Schema</a>.
          */
-        String ID = "id";
+        protected static final String ID = "id";
     }
 
     /**
@@ -71,8 +75,8 @@ public interface SchematicEntry {
      *
      * @return the content, or null if there is no content
      */
-    default Document getContent() {
-        return source().getDocument(FieldName.CONTENT);
+    default Document content() {
+        return SchematicEntry.content(source());
     }
 
     /**
@@ -81,8 +85,8 @@ public interface SchematicEntry {
      * @return the ID, or null if no ID field is present
      * @throws NullPointerException if this document does not have a metadata section
      */
-    default String getId() {
-        return Objects.requireNonNull(getMetadata(), "Metadata document is null").getString(FieldName.ID);
+    default String id() {
+        return SchematicEntry.id(source());
     }
 
     /**
@@ -108,5 +112,31 @@ public interface SchematicEntry {
         final Document source = new BasicDocument(FieldName.METADATA, new BasicDocument(FieldName.ID, id), 
                                                   FieldName.CONTENT, content);
         return () -> source;
+    }
+
+    /**
+     * Returns the value of the ID from a given entry document.
+     * 
+     * @param entryDocument a {@link Document} instance representing a schematic entry.
+     * @return a {@link String} or {@code null} if there is no {@link org.modeshape.schematic.SchematicEntry.FieldName#METADATA}
+     * document or if that document doesn't have an id.
+     */
+    static String id(Document entryDocument) {
+        Document metadata = entryDocument.getDocument(FieldName.METADATA);
+        if (metadata == null) {
+            return null;
+        }
+        return metadata.getString(FieldName.ID);
+    }
+
+    /**
+     * Returns the value of the CONTENT document from a given entry document.
+     * 
+     * @param entryDocument a {@link Document} instance representing a schematic entry.
+     * @return a {@link Document} or {@code null} if there is no {@link org.modeshape.schematic.SchematicEntry.FieldName#CONTENT}
+     * document.
+     */
+    static Document content(Document entryDocument) {
+        return entryDocument.getDocument(FieldName.CONTENT);
     }
 }

@@ -137,14 +137,13 @@
         <version.org.jboss.jbossts.jta>5.2.9.Final</version.org.jboss.jbossts.jta>
         <version.com.atomikos>3.8.0</version.com.atomikos>
         <version.org.picketbox>4.0.21.Final</version.org.picketbox>
-
+        <version.com.zaxxer.HikariCP>2.4.3</version.com.zaxxer.HikariCP>
+        
         <version.org.jboss.spec.javax.transaction.jboss-transaction-api_1.1_spec>1.0.1.Final</version.org.jboss.spec.javax.transaction.jboss-transaction-api_1.1_spec>
         <version.com.googlecode.concurrentlinkedhashmap>1.4.2</version.com.googlecode.concurrentlinkedhashmap>
-        <version.org.infinispan>7.2.4.Final</version.org.infinispan>
-        <infinispan.module.slot>ispn-7.2</infinispan.module.slot>
         <!--Make sure the jgroups version is the same as the one used by ISPN -->
-        <version.org.jgroups>3.6.6.Final</version.org.jgroups>
-        <jgroups.module.slot>ispn-7.2</jgroups.module.slot>
+        <version.org.jgroups>3.6.7.Final</version.org.jgroups>
+        <jgroups.module.slot>main</jgroups.module.slot>
         
         <version.com.mchange.c3p0>0.9.5</version.com.mchange.c3p0>
         <version.org.jboss.logging>3.2.1.Final</version.org.jboss.logging>
@@ -942,6 +941,11 @@
             </dependency>
             <dependency>
                 <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-persistence-relational</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.modeshape</groupId>
                 <artifactId>modeshape-jcr-api</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -1184,29 +1188,15 @@
                 <artifactId>jboss-transaction-api_1.1_spec</artifactId>
                 <version>${version.org.jboss.spec.javax.transaction.jboss-transaction-api_1.1_spec}</version>
             </dependency>
-            <!--
-                Infinispan
-            -->
-            <dependency>
-                <groupId>org.infinispan</groupId>
-                <artifactId>infinispan-core</artifactId>
-                <version>${version.org.infinispan}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.infinispan</groupId>
-                <artifactId>infinispan-commons</artifactId>
-                <version>${version.org.infinispan}</version>
-            </dependency>
+            
             <!-- 
-                Infinispan AS Server modules artifact
+                Used by ModeShape's persistence providers...            
             -->
             <dependency>
-                <groupId>org.infinispan</groupId>
-                <artifactId>infinispan-as-embedded-modules</artifactId>
-                <version>${version.org.infinispan}</version>
-                <type>zip</type>
+                <groupId>com.zaxxer</groupId>
+                <artifactId>HikariCP</artifactId>
+                <version>${version.com.zaxxer.HikariCP}</version>
             </dependency>
-
             <!--
                 JGroups is used for the changes bus, but it's optional. Most of the times though, this will be in the classpath
                 because of ISPN.
@@ -1215,25 +1205,6 @@
                 <groupId>org.jgroups</groupId>
                 <artifactId>jgroups</artifactId>
                 <version>${version.org.jgroups}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.infinispan</groupId>
-                <artifactId>infinispan-cachestore-jdbc</artifactId>
-                <version>${version.org.infinispan}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.infinispan</groupId>
-                <artifactId>infinispan-cachestore-leveldb</artifactId>
-                <version>${version.org.infinispan}</version>
-                <scope>test</scope>
-            </dependency>
-
-            <!--Required by infinispan-cachestore-jdbc -->
-            <dependency>
-                <groupId>com.mchange</groupId>
-                <artifactId>c3p0</artifactId>
-                <version>${version.com.mchange.c3p0}</version>
             </dependency>
             
             <!-- Heap and file-based maps -->

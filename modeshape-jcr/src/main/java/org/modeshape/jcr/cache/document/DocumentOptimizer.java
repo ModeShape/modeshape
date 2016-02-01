@@ -18,12 +18,12 @@ package org.modeshape.jcr.cache.document;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.schematic.Schematic;
 import org.modeshape.schematic.SchematicEntry;
 import org.modeshape.schematic.document.Document;
 import org.modeshape.schematic.document.EditableArray;
 import org.modeshape.schematic.document.EditableDocument;
-import org.modeshape.jcr.cache.NodeKey;
 
 /**
  * A component that can optimize the document for a node.
@@ -281,7 +281,7 @@ public class DocumentOptimizer implements DocumentConstants {
         String nextBlocksNext = null;
         while (nextBlock != null) {
             nextEntry = documentStore.get(nextBlock);
-            Document nextDoc = nextEntry.getContent();
+            Document nextDoc = nextEntry.content();
             List<?> nextChildren = nextDoc.getArray(CHILDREN);
             Document nextInfo = nextDoc.getDocument(CHILDREN_INFO);
 

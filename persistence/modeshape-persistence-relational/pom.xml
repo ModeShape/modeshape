@@ -16,15 +16,17 @@
     <dependencies>
         <!-- Used when no JNDI datasource is available -->
         <dependency>
-            <groupId>com.mchange</groupId>
-            <artifactId>c3p0</artifactId>
-            <version>${version.com.mchange.c3p0}</version>
+            <groupId>com.zaxxer</groupId>
+            <artifactId>HikariCP</artifactId>
         </dependency>
-        <!-- Used for transactional ws caches -->
+        <!-- Hikari requires SLF4j compile-time, ours is 'test' by default -->
         <dependency>
-            <groupId>com.googlecode.concurrentlinkedhashmap</groupId>
-            <artifactId>concurrentlinkedhashmap-lru</artifactId>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>${version.org.slf4j}</version>
+            <scope>compile</scope>
         </dependency>
+
         <!-- Force the use of H2 because as a default database -->
         <dependency>
             <groupId>com.h2database</groupId>

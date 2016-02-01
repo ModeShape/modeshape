@@ -69,20 +69,86 @@
         },
         "storage" : {
             "type" : "object",
-            "description" : "The specification of how to obtain the Infinispan cache used for storage.",
+            "description" : "The specification of how to store the repository and binary data",
             "additionalProperties" : false,
             "properties" : {
                 "description" : {
                     "type" : "string",
                     "description" : "The optional description of this section of the configuration. It is unused by ModeShape."
                 },
-                "cacheName" : {
-                    "type" : "string",
-                    "description" : "The name of the Infinispan cache that this repository should use. If not specified, the repository's name is used."
-                },
-                "cacheConfiguration" : {
-                    "type" : "string",
-                    "description" : "The name of the Infinispan configuration file for creating a new cache manager. If a file could not be found (on the thread context classloader, on the application's classpath, or on the system classpath), then the name is assumed to reference an existing Infinispan CacheContainer instance via a valid JNDI name or as the name of a service as defined by the local environment. If no such container is found, then a default Infinispan configuration (a basic, local mode, non-clustered cache) will be used."
+                "persistence" : {
+                    "type" : [
+                        {
+                            "type" : "object",
+                            "additionalProperties" : false,
+                            "properties" : {
+                                "type" : {
+                                    "type" : "string",
+                                    "description" : "The specification of the database persistence",
+                                    "enum" : [ "db", "database" ]
+                                },
+                                "connectionUrl" : {
+                                    "type" : "string",
+                                    "default" : "jdbc:h2:mem:modeshape;DB_CLOSE_DELAY=-1",
+                                    "description" : "The db connection url"
+                                },
+                                "driver" : {
+                                    "type" : "string",
+                                    "default" : "org.h2.Driver",
+                                    "description" : "The fully qualified name of the DB driver"
+                                },
+                                "username" : {
+                                    "type" : "string",
+                                    "default"  : "sa",
+                                    "description" : "The db connection user name"
+                                },
+                                "password" : {
+                                    "type" : "string",
+                                    "default"  : "",
+                                    "description" : "The db connection password"
+                                },
+                                "datasourceJNDI" : {
+                                    "type" : "string",
+                                    "description" : "The JNDI name of an existing datasource"
+                                },
+                                "tableName" : {
+                                    "type" : "string",
+                                    "default"  : "MODESHAPE_REPOSITORY",
+                                    "description" : "The name of the DB table where ModeShape will store data"
+                                },
+                                "createOnStart" : {
+                                    "type" : "boolean",
+                                    "default" : true,
+                                    "description" : "Whether the DB table should be created on startup if it does not exist"
+                                },
+                                "dropOnExit" : {
+                                    "type" : "boolean",
+                                    "default" : false,
+                                    "description" : "Whether the DB table should be dropped on exit"
+                                },
+                                "fetchSize" : {
+                                    "type" : "integer",
+                                    "default" : 1000,
+                                    "description" : "The JDBC fetch size"
+                                },
+                                "compress" : {
+                                    "type" : "boolean",
+                                    "default" : true,
+                                    "description" : "Whether binary data stored in the DB should be compressed or not"
+                                }
+                            }
+                        },
+                        {
+                            "type": "object",
+                            "additionalProperties": true,
+                            "properties": {
+                                "type": {
+                                    "type": "string",
+                                    "description": "The specification of a custom persistence provider"
+                                }
+                            }
+                        }
+                    ]
                 },
                 "transactionManagerLookup" : {
                     "type" : "object",
@@ -421,39 +487,6 @@
                                                         "type" : "string",
                                                         "description" : "The (optional) password for the database connection. Many JDBC drivers accept specifying the password in the URL.",
                                                         "required" : false,
-                                                    },
-                                                    "description" : {
-                                                        "type" : "string",
-                                                        "description" : "The optional description of this section of the configuration. It is unused by ModeShape."
-                                                    },
-                                                }
-                                            },
-                                            {
-                                                "type" : "object",
-                                                "additionalProperties" : false,
-                                                "properties" : {
-                                                    "type" : {
-                                                        "type" : "string",
-                                                        "description" : "The specification of the Infinispan binary store, which stores BINARY values in a Infinispan cache.",
-                                                        "enum" : [ "cache" ]
-                                                    },
-                                                    "storeName" : {
-                                                        "type" : "string",
-                                                        "description" : "A short, implementer-supplied name for this binary store"
-                                                    },
-                                                    "dataCacheName" : {
-                                                        "type" : "string",
-                                                        "required" : true,
-                                                        "description" : "The name of the Infinispan cache where BINARY values are stored as chunks."
-                                                    },
-                                                    "metadataCacheName" : {
-                                                        "type" : "string",
-                                                        "required" : true,
-                                                        "description" : "The name of the Infinispan cache where metadata of the values should be stored."
-                                                    },
-                                                    "cacheConfiguration" : {
-                                                        "type" : "string",
-                                                        "description" : "The name of the Infinispan configuration file for creating a new cache manager. If a file could not be found (on the thread context classloader, on the application's classpath, or on the system classpath), then the name is assumed to reference an existing Infinispan CacheContainer instance via a valid JNDI name or as the name of a service as defined by the local environment. If not specified or no such container is found, then the same cache manager used for the content storage will be used."
                                                     },
                                                     "description" : {
                                                         "type" : "string",

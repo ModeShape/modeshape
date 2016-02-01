@@ -2,8 +2,6 @@
     "name" : "Persistent Repository",
     "jndiName" : "java:jcr/local/PersistentRepository",
     "storage" : {
-        "cacheName" : "persistentRepository",
-        "cacheConfiguration" : "config/infinispan-persistent.xml",
         "binaryStorage" : {
             "type" : "file",
             "directory": "target/persistent_repository/binaries",

@@ -14,12 +14,35 @@
     <description>ModeShape servlet that provides WebDAV access to JCR items</description>
     <url>http://www.modeshape.org</url>
     <dependencies>
-        <!--  TESTING DEPENDENCIES -->
         <dependency>
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-web-jcr-webdav</artifactId>
         </dependency>
-
+        
+        <!-- H2 is the default DB -->
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        <!-- SLF4j is required by ModeShape persistence-->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-log4j12</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>log4j</groupId>
+            <artifactId>log4j</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+      
+        <!--  TESTING DEPENDENCIES -->
         <dependency>
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-webdav-war</artifactId>
@@ -32,21 +55,6 @@
             <artifactId>modeshape-common</artifactId>
             <scope>test</scope>
             <type>test-jar</type>
-        </dependency>
-
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-api</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-log4j12</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>log4j</groupId>
-            <artifactId>log4j</artifactId>
         </dependency>
 
         <dependency>

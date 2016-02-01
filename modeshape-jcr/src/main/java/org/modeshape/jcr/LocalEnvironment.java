@@ -15,103 +15,28 @@
  */
 package org.modeshape.jcr;
 
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import javax.naming.Context;
-import javax.naming.InitialContext;
-import javax.naming.NamingException;
-import org.infinispan.configuration.cache.Configuration;
-import org.infinispan.configuration.cache.ConfigurationBuilder;
-import org.infinispan.configuration.global.GlobalConfiguration;
-import org.infinispan.configuration.global.GlobalConfigurationBuilder;
-import org.infinispan.manager.CacheContainer;
-import org.infinispan.manager.DefaultCacheManager;
-import org.infinispan.manager.EmbeddedCacheManager;
-import org.infinispan.transaction.LockingMode;
-import org.infinispan.transaction.TransactionMode;
-import org.infinispan.transaction.lookup.GenericTransactionManagerLookup;
-import org.infinispan.transaction.lookup.TransactionManagerLookup;
+import java.util.stream.Collectors;
 import org.jgroups.Channel;
-import org.modeshape.common.logging.Logger;
-import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.DelegatingClassLoader;
 import org.modeshape.common.util.StringURLClassLoader;
 import org.modeshape.common.util.StringUtil;
 
 /**
- * An {@link Environment} that can be used within a local (non-clustered) process.
+ * An {@link Environment} that can be used with a standalone repository.
  * <p>
  * To use a custom Environment instance, simply create a {@link RepositoryConfiguration} as usual but then call the
  * {@link RepositoryConfiguration#with(Environment)} with the Environment instance and then use the resulting
  * RepositoryConfiguration instance.
  * </p>
- * <p>
- * When a ModeShape {@link RepositoryConfiguration repository configuration} defines cache containers with configuration files on
- * the file system or the classpath, then a {@link LocalEnvironment} instance can be used as-is with no other configuration or
- * setup.
- * </p>
  */
 public class LocalEnvironment implements Environment {
 
-    public static final Class<? extends TransactionManagerLookup> DEFAULT_TRANSACTION_MANAGER_LOOKUP_CLASS = GenericTransactionManagerLookup.class;
-
-    /**
-     * The name for the default cache container that is used when {@link #getCacheContainer()} is called or if null is supplied as
-     * the name in {@link #getCacheContainer(String)}.
-     */
-    public static final String DEFAULT_CONFIGURATION_NAME = "defaultCacheContainer";
-
-    private final Class<? extends TransactionManagerLookup> transactionManagerLookupClass;
-    private final ConcurrentMap<String, CacheContainer> containers = new ConcurrentHashMap<String, CacheContainer>();
-    private volatile boolean shared = false;
-    private final Logger logger = Logger.getLogger(getClass());
-
     public LocalEnvironment() {
-        this.transactionManagerLookupClass = DEFAULT_TRANSACTION_MANAGER_LOOKUP_CLASS;
-    }
-
-    public LocalEnvironment( Class<? extends TransactionManagerLookup> transactionManagerLookupClass ) {
-        if (transactionManagerLookupClass == null) transactionManagerLookupClass = DEFAULT_TRANSACTION_MANAGER_LOOKUP_CLASS;
-        this.transactionManagerLookupClass = transactionManagerLookupClass;
-    }
-
-    /**
-     * Get the default cache container.
-     * 
-     * @return the default cache container; never null
-     * @throws IOException
-     * @throws NamingException
-     */
-    public CacheContainer getCacheContainer() throws IOException, NamingException {
-        return getCacheContainer(null);
-    }
-
-    @Override
-    public synchronized CacheContainer getCacheContainer( String name ) throws IOException, NamingException {
-        if (name == null) name = DEFAULT_CONFIGURATION_NAME;
-        CacheContainer container = containers.get(name);
-        if (container == null) {
-            container = createContainer(name);
-            containers.put(name, container);
-        }
-        return container;
-    }
-
-    /**
-     * Shutdown this environment, allowing it to reclaim any resources.
-     * <p>
-     * This method does nothing if the environment has been marked as {@link #isShared() shared}.
-     * </p>
-     */
-    @Override
-    public synchronized void shutdown() {
-        if (!shared) doShutdown();
     }
 
     @Override
@@ -119,29 +44,15 @@ public class LocalEnvironment implements Environment {
         return null;
     }
 
-    /**
-     * Shutdown all containers and caches.
-     */
-    protected void doShutdown() {
-        for (CacheContainer container : containers.values()) {
-            shutdown(container);
-        }
-        containers.clear();
-    }
-
     @Override
-    public ClassLoader getClassLoader( ClassLoader fallbackLoader,
+    public ClassLoader getClassLoader( Object caller,
                                        String... classpathEntries ) {
-        List<String> urls = new ArrayList<String>();
-        if (classpathEntries != null) {
-            for (String url : classpathEntries) {
-                if (!StringUtil.isBlank(url)) {
-                    urls.add(url);
-                }
-            }
-        }
+        caller = Objects.requireNonNull(caller);
+
         Set<ClassLoader> delegates = new LinkedHashSet<>();
-        if (!urls.isEmpty()) {
+
+        List<String> urls = Arrays.stream(classpathEntries).filter(StringUtil::notBlank).collect(Collectors.toList());
+        if (urls.isEmpty()) {
             StringURLClassLoader urlClassLoader = new StringURLClassLoader(urls);
             // only if any custom urls were parsed add this loader
             if (urlClassLoader.getURLs().length > 0) {
@@ -150,175 +61,23 @@ public class LocalEnvironment implements Environment {
         }
 
         ClassLoader currentLoader = getClass().getClassLoader();
-
+        ClassLoader callerLoader = caller.getClass().getClassLoader();
         ClassLoader tccl = Thread.currentThread().getContextClassLoader();
+        
         //add the TCCL to the list if it's not the same as the current loader or the fallback loader
-        if (fallbackLoader != null && !fallbackLoader.equals(tccl) ||
-            fallbackLoader == null && !currentLoader.equals(tccl)) {
+        if (!callerLoader.equals(tccl) && !currentLoader.equals(tccl)) {
             delegates.add(tccl);
         }
 
-        if (fallbackLoader != null && !fallbackLoader.equals(currentLoader)) {
+        if (!callerLoader.equals(currentLoader)) {
             // if the parent of fallback is the same as the current loader, just use that
-            if (fallbackLoader.getParent().equals(currentLoader)) {
-                currentLoader = fallbackLoader;
+            if (currentLoader.equals(callerLoader.getParent())) {
+                currentLoader = callerLoader;
             } else {
-                delegates.add(fallbackLoader);
+                delegates.add(callerLoader);
             }
         }
-
 
         return delegates.isEmpty() ? currentLoader : new DelegatingClassLoader(currentLoader, delegates);
     }
-
-    protected void shutdown( CacheContainer container ) {
-        container.stop();
-    }
-
-    protected Class<? extends TransactionManagerLookup> transactionManagerLookupClass() {
-        return transactionManagerLookupClass;
-    }
-
-    protected TransactionManagerLookup transactionManagerLookupInstance() {
-        try {
-            return transactionManagerLookupClass().newInstance();
-        } catch (Throwable t) {
-            throw new RuntimeException(t);
-        }
-    }
-
-    protected CacheContainer createContainer( String configFile ) throws IOException, NamingException {
-        CacheContainer container = null;
-        // First try finding the cache configuration ...
-        if (configFile != null && !configFile.equals(DEFAULT_CONFIGURATION_NAME)) {
-            configFile = configFile.trim();
-            try {
-                logger.debug("Starting cache manager using configuration at '{0}'", configFile);
-                container = new DefaultCacheManager(configFile);
-            } catch (FileNotFoundException e) {
-                // Configuration file was not found, so try JNDI using configFileName as JNDI name...
-                container = (CacheContainer)jndiContext().lookup(configFile);
-            }
-        }
-        if (container == null) {
-            // The default Infinispan configuration is in-memory, local and non-clustered.
-            // But we need a transaction manager, so use the generic TM which is a good default ...
-            ConfigurationBuilder config = createDefaultConfigurationBuilder();
-            GlobalConfigurationBuilder global = createGlobalConfigurationBuilder();
-            container = createContainer(global, config);
-        }
-        return container;
-    }
-
-    /**
-     * Create the default configuration.
-     * 
-     * @return the default cache configuration.
-     */
-    protected ConfigurationBuilder createDefaultConfigurationBuilder() {
-        ConfigurationBuilder configurationBuilder = new ConfigurationBuilder();
-        configurationBuilder.transaction().transactionMode(TransactionMode.TRANSACTIONAL);
-        configurationBuilder.transaction().transactionManagerLookup(transactionManagerLookupInstance());
-        configurationBuilder.transaction().lockingMode(LockingMode.PESSIMISTIC);
-        return configurationBuilder;
-    }
-
-    /**
-     * Create the global configuration.
-     * 
-     * @return the global configuration.
-     */
-    protected GlobalConfigurationBuilder createGlobalConfigurationBuilder() {
-        GlobalConfigurationBuilder global = new GlobalConfigurationBuilder();
-        global.globalJmxStatistics().allowDuplicateDomains(true);
-        // TODO author=Horia Chiorean date=7/26/12 description=MODE-1524 - Currently we don't use advanced externalizers
-        // global = global.fluent().serialization().addAdvancedExternalizer(Schematic.externalizers()).build();
-        return global;
-    }
-
-    /**
-     * Create a cache container using the supplied configurations.
-     * 
-     * @param globalConfigurationBuilder the global configuration builder
-     * @param configurationBuilder the default cache configuration builder
-     * @return the cache container
-     */
-    protected CacheContainer createContainer( GlobalConfigurationBuilder globalConfigurationBuilder,
-                                              ConfigurationBuilder configurationBuilder ) {
-        GlobalConfiguration globalConfiguration = globalConfigurationBuilder.build();
-        Configuration configuration = configurationBuilder.build();
-        logger.debug("Starting cache manager with global configuration \n{0}\nand default configuration:\n{1}",
-                     globalConfiguration,
-                     configuration);
-        return new DefaultCacheManager(globalConfiguration, configuration);
-    }
-
-    protected Context jndiContext() throws NamingException {
-        return new InitialContext();
-    }
-
-    /**
-     * Define within the default cache container an Infinispan cache with the given cache name and configuration. Note that the
-     * cache container is created if required, but if it exists it must implement the {@link EmbeddedCacheManager} interface for
-     * this method to succeed.
-     * 
-     * @param cacheName the name of the cache being defined; may not be null
-     * @param configuration the cache configuration; may not be null
-     * @return the clone of the supplied configuration that is used by the cache container; never null
-     */
-    public Configuration defineCache( String cacheName,
-                                      Configuration configuration ) {
-        CheckArg.isNotNull(cacheName, "cacheName");
-        CheckArg.isNotNull(configuration, "configuration");
-        return defineCache(null, cacheName, configuration);
-    }
-
-    /**
-     * Define within the named cache container an Infinispan cache with the given cache name and configuration. Note that the
-     * cache container is created if required, but if it exists it must implement the {@link EmbeddedCacheManager} interface for
-     * this method to succeed.
-     * 
-     * @param cacheContainerName the name of the cache container; if null, the {@link #DEFAULT_CONFIGURATION_NAME default
-     *        container name} is used
-     * @param cacheName the name of the cache being defined; may not be null
-     * @param configuration the cache configuration; may not be null
-     * @return the clone of the supplied configuration that is used by the cache container; never null
-     */
-    public Configuration defineCache( String cacheContainerName,
-                                      String cacheName,
-                                      Configuration configuration ) {
-        CheckArg.isNotNull(cacheName, "cacheName");
-        CheckArg.isNotNull(configuration, "configuration");
-        if (cacheContainerName == null) cacheContainerName = DEFAULT_CONFIGURATION_NAME;
-        CacheContainer container = containers.get(cacheContainerName);
-        if (container == null) {
-            CacheContainer newContainer = createContainer(createGlobalConfigurationBuilder(), createDefaultConfigurationBuilder());
-            container = containers.putIfAbsent(cacheContainerName, newContainer);
-            if (container == null) container = newContainer;
-        }
-        return ((EmbeddedCacheManager)container).defineConfiguration(cacheName, configuration);
-    }
-
-    /**
-     * Set whether this environment is shared amongst multiple repositories. Shared environments are not shutdown automatically,
-     * and the application is expected to shutdown all containers and caches. By default, environments are not shared unless this
-     * method is explicitly called with a parameter value of <code>true</code>.
-     * 
-     * @param shared true if this environment is shared, or false otherwise
-     * @see #isShared()
-     */
-    public void setShared( boolean shared ) {
-        this.shared = shared;
-    }
-
-    /**
-     * Return whether this environment is shared amongst multiple repositories.
-     * 
-     * @return true if this environment is shared, or false otherwise
-     * @see #setShared(boolean)
-     */
-    public boolean isShared() {
-        return shared;
-    }
-
 }

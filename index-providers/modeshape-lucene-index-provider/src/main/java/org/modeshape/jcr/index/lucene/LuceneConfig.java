@@ -170,7 +170,7 @@ public final class LuceneConfig {
         if (StringUtil.isBlank(analyzerClass)) {
             return new StandardAnalyzer();    
         } else {
-            return Reflection.getInstance(analyzerClass, environment.getClassLoader(getClass().getClassLoader()));
+            return Reflection.getInstance(analyzerClass, environment.getClassLoader(this));
         }
     }
 

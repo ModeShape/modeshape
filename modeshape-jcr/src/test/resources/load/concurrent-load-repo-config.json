@@ -4,11 +4,14 @@
     "workspaces" : {
         "default" : "load",
         "predefined" : ["load"],
-        "allowCreation" : true,
+        "allowCreation" : true
     },
     "storage" : {
-        "cacheName" : "DATAREPOSITORY",
-        "cacheConfiguration" : "load/concurrent-load-infinispan-cache.xml",
+        "persistence" : {
+            "type" : "db",
+            "dropOnExit" : true,
+            "threadPoolSize" : 25000
+        },
         "binaryStorage" : {
             "type" : "file",
             "directory": "../modeshape-jcr/target/concurrent_load_non_clustered/binary/",

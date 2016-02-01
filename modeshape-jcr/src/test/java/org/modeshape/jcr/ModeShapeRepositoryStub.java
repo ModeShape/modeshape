@@ -157,11 +157,6 @@ public class ModeShapeRepositoryStub extends RepositoryStub {
         }
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.apache.jackrabbit.test.RepositoryStub#getRepository()
-     */
     @Override
     public JcrRepository getRepository() {
         if (!currentConfigurationName.equals(repositoryConfigurationName) || reloadRepositoryInstance) {
@@ -179,21 +174,11 @@ public class ModeShapeRepositoryStub extends RepositoryStub {
         return super.getProperty(name);
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.apache.jackrabbit.test.RepositoryStub#getKnownPrincipal(javax.jcr.Session)
-     */
     @Override
     public Principal getKnownPrincipal( Session session ) {
         return SimplePrincipal.newInstance(session.getUserID());
     }
 
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.apache.jackrabbit.test.RepositoryStub#getUnknownPrincipal(javax.jcr.Session)
-     */
     @Override
     public Principal getUnknownPrincipal( Session session ) {
         return SimplePrincipal.newInstance("unknown");

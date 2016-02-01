@@ -15,7 +15,9 @@
  */
 package org.modeshape.schematic;
 
+import java.util.Set;
 import java.util.stream.Stream;
+import org.modeshape.schematic.annotation.RequiresTransaction;
 import org.modeshape.schematic.document.Document;
 import org.modeshape.schematic.document.EditableDocument;
 
@@ -23,36 +25,74 @@ import org.modeshape.schematic.document.EditableDocument;
  * A store for JSON documents and other binary content, plus a library of JSON Schema documents used to describe and validate the
  * stored documents.
  * 
- * @author Randall Hauch <rhauch@redhat.com> (C) 2011 Red Hat Inc.
  * @author Horia Chiorean <hchiorea@redhat.com>
  * @since 5.0
  */
 public interface SchematicDb extends TransactionListener, Lifecycle {
+
+    /**
+     * Returns a unique identifier for this schematic DB. 
+     * <p>
+     * Implementations should make sure that the provided id  is unique per storage instance. 
+     * In other words, if two {@link SchematicDb} instances of the same type store data in two different places, they should
+     * return a different id.
+     * </p>
+     * 
+     * @return a {@link String}, never {@code null}
+     */
+    String id();
     
     /**
-     * Returns a stream over all the keys present in the DB
+     * Returns a set over all the keys present in the DB.
+     * <p>
+     * If this method is called within an existing transaction, it should take into account the transient transactional context
+     * (i.e. any local but not yet committed changes)
+     * </p>
      * 
      * @return a {@link Stream} instance, never {@code null}
      */
-    Stream<String> keys();
+    Set<String> keys();
     
     /**
-     * Get the document with the supplied key.
+     * Get the document with the supplied key. This will represent the full {@link SchematicEntry} document if one exists. 
+     * <p>
+     * If this method is called within an existing transaction, it should take into account the transient transactional context
+     * (i.e. any local but not yet committed changes)
+     * </p>
      *
      * @param key the key or identifier for the document
      * @return the document, or null if there was no document with the supplied key
      */
     Document get( String key );
+    
+    /**
+     * Stores the supplied schematic entry under the given key. If an entry already exists with the same key, it should be
+     * overwritten.
+     * @param key a schematic entry id, never {@code null}
+     * @param entry a {@link SchematicEntry} instance, never {@code null}
+     */
+    @RequiresTransaction
+    void put(String key, SchematicEntry entry);
 
     /**
-     * Store the supplied document and metadata at the given key. If a document already exists with the given key, this should
-     * overwrite the existing document.
+     * Get an editor for the content of the given entry with the supplied key. 
      *
      * @param key the key or identifier for the document
-     * @param content the document that is to be stored
-     * @see #putIfAbsent(String, Document)
+     * @param createIfMissing true if a new entry should be created and added to the database if an existing entry does not exist
+     * @return the entry, or null if there was no document with the supplied key and a new one could not be created
      */
-    void put( String key, Document content );
+    @RequiresTransaction
+    EditableDocument editContent(String key, boolean createIfMissing);
+
+    /**
+     * Store the supplied content at the given key.
+     *
+     * @param key the key or identifier for the content
+     * @param content the content that is to be stored
+     * @return the existing entry for the supplied key, or null if there was no entry and the put was successful
+     */
+    @RequiresTransaction
+    SchematicEntry putIfAbsent(String key, Document content);
 
     /**
      * Remove the existing document at the given key.
@@ -60,15 +100,34 @@ public interface SchematicDb extends TransactionListener, Lifecycle {
      * @param key the key or identifier for the document
      * @return {@code true} if the removal was successful, {@code false} otherwise
      */
+    @RequiresTransaction
     boolean remove(String key);
 
     /**
      * Removes all the entries from this DB.
      */
+    @RequiresTransaction
     void removeAll();
-    
+
+    /**
+     * Store the supplied content document at the given key. If a document already exists with the given key, this should
+     * overwrite the existing document.
+     *
+     * @param key the key or identifier for the document
+     * @param content the document that is to be stored
+     * @see #putIfAbsent(String, Document)
+     */
+    @RequiresTransaction
+    default void put( String key, Document content ) {
+        put(key, SchematicEntry.create(key, content));
+    }
+
     /**
      * Get the entry with the supplied key.
+     * <p>
+     * If this method is called within an existing transaction, it should take into account the transient transactional context
+     * (i.e. any local but not yet committed changes)
+     * </p>
      *
      * @param key the key or identifier for the document
      * @return the entry, or null if there was no document with the supplied key
@@ -77,30 +136,13 @@ public interface SchematicDb extends TransactionListener, Lifecycle {
         Document doc = get(key);
         return doc != null ? () -> doc : null;    
     }
-
-    /**
-     * Get an editor for the entry with the supplied key. 
-     * The resulting editor will operate upon a copy of the entry and the database will be updated as part of the transaction. 
-     *
-     * @param key the key or identifier for the document
-     * @param createIfMissing true if a new entry should be created and added to the database if an existing entry does not exist
-     * @return the entry, or null if there was no document with the supplied key and a new one could not be created
-     */
-    default EditableDocument editContent(String key,
-                                         boolean createIfMissing) {
-        Document document = get(key);
-        if (document != null) {
-            return document.editable();
-        } else if (createIfMissing) {
-            Document empty = SchematicEntry.create(key).source();
-            Document existingDocument = putIfAbsent(key, empty);
-            return existingDocument != null ? existingDocument.editable() : empty.editable();
-        }
-        return null;
-    }
-
+    
     /**
      * Determine whether the database contains an entry with the supplied key.
+     * <p>
+     * If this method is called within an existing transaction, it should take into account the transient transactional context
+     * (i.e. any local but not yet committed changes)
+     * </p>
      *
      * @param key the key or identifier for the document
      * @return true if the database contains an entry with this key, or false otherwise
@@ -116,25 +158,9 @@ public interface SchematicDb extends TransactionListener, Lifecycle {
      * @param entryDocument the document that contains the metadata document and content document.
      * @see #putIfAbsent(String, Document)
      */
+    @RequiresTransaction
     default void putEntry(Document entryDocument) {
         SchematicEntry entry = () -> entryDocument;
-        put(entry.getId(), entryDocument);
-    }
-
-    /**
-     * Store the supplied document and metadata at the given key.
-     * 
-     * @param key the key or identifier for the document
-     * @param document the document that is to be stored
-     * @return the existing document for the supplied key, or null if there was no entry and the put was successful
-     */
-    default Document putIfAbsent( String key, Document document ) {
-        Document existingDocument = get(key);
-        if (existingDocument != null) {
-            return existingDocument;
-        } else {
-            put(key, document);
-            return null;
-        }
+        put(entry.id(), entry);
     }
 }

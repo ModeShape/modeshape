@@ -29,7 +29,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
-import java.util.concurrent.Callable;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -66,14 +65,15 @@ public class BinaryStorageIntegrationTest extends SingleUseAbstractTest {
 
     @Override
     public void beforeEach() throws Exception {
-        FileUtil.delete("target/persistent_repository");
+        // c3p0 is async, so it might take a bit until we can do this....
+        TestingUtil.waitUntilFolderCleanedUp("target/persistent_repository");
         super.beforeEach();
     }
 
     @Test
     @FixFor( "MODE-1786" )
     public void shouldStoreBinariesIntoJDBCBinaryStore() throws Exception {
-        startRepositoryWithConfiguration(resourceStream("config/repo-config-jdbc-binary-storage.json"));
+        startRepositoryWithConfigurationFrom("config/repo-config-jdbc-binary-storage.json");
         byte[] data = randomBytes(4 * 1024);
         storeBinaryAndAssert(data, "node");
         storeStringsAndAssert("stringNode");
@@ -84,7 +84,7 @@ public class BinaryStorageIntegrationTest extends SingleUseAbstractTest {
     @FixFor( "MODE-2200" )
     public void shouldDecrementBinaryRefCountsWithFederations() throws Exception {
         new File("target/federation_persistent_3").mkdir();
-        startRepositoryWithConfiguration(resourceStream("config/repo-config-persistent-infinispan-fs-connector3.json"));
+        startRepositoryWithConfigurationFrom("config/repo-config-binaries-fs-connector3.json");
 
         byte[] data = randomBytes(10);
         storeBinaryProperty(data, "skipNode1");
@@ -96,14 +96,14 @@ public class BinaryStorageIntegrationTest extends SingleUseAbstractTest {
     @Test
     @FixFor( "MODE-2144" )
     public void shouldCleanupUnusedBinariesForFilesystemStore() throws Exception {
-        startRepositoryWithConfiguration(resourceStream("config/repo-config-persistent-cache.json"));
+        startRepositoryWithConfigurationFrom("config/repo-config-binaries-fs.json");
         checkUnusedBinariesAreCleanedUp();
     }
 
     @Test
     @FixFor( "MODE-2302" )
     public void shouldReuseBinariesFromTrashForFilesystemStore() throws Exception {
-        startRepositoryWithConfiguration(resourceStream("config/repo-config-persistent-cache.json"));
+        startRepositoryWithConfigurationFrom("config/repo-config-binaries-fs.json");
         int repCount = 5;
         for (int i = 0; i < repCount; i++) {
             // upload a file which should mark the binary as used
@@ -122,7 +122,7 @@ public class BinaryStorageIntegrationTest extends SingleUseAbstractTest {
     @Test
     @FixFor( "MODE-2144" )
     public void shouldCleanupUnusedBinariesForDatabaseStore() throws Exception {
-        startRepositoryWithConfiguration(resourceStream("config/repo-config-jdbc-binary-storage-other.json"));
+        startRepositoryWithConfigurationFrom("config/repo-config-jdbc-binary-storage-other.json");
         checkUnusedBinariesAreCleanedUp();
     }
 
@@ -130,21 +130,21 @@ public class BinaryStorageIntegrationTest extends SingleUseAbstractTest {
     @Test
     @FixFor( "MODE-2303" )
     public void binaryUsageShouldChangeAfterSavingFS() throws Exception {
-        startRepositoryWithConfiguration(resourceStream("config/repo-config-persistent-cache.json"));
+        startRepositoryWithConfigurationFrom("config/repo-config-binaries-fs.json");
         checkBinaryUsageAfterSaving();
     }
 
     @Test
     @FixFor( "MODE-2303" )
     public void binaryUsageShouldChangeAfterSavingJDBC() throws Exception {
-        startRepositoryWithConfiguration(resourceStream("config/repo-config-jdbc-binary-storage.json"));
+        startRepositoryWithConfigurationFrom("config/repo-config-jdbc-binary-storage.json");
         checkBinaryUsageAfterSaving();
     }
     
     @Test
     @FixFor( "MODE-2484 ")
     public void shouldModifyTheSameBinaryPropertiesFromMultipleThreadsWithoutDeadlocking() throws Exception {
-        startRepositoryWithConfiguration(resourceStream("config/repo-config-persistent-disk.json"));
+        startRepositoryWithConfigurationFrom("config/repo-config-binaries-fs.json");
         //verify we have no binaries yet (see afterEach)
         assertEquals(0, binariesCount());
         int threadCount = 7;
@@ -161,33 +161,30 @@ public class BinaryStorageIntegrationTest extends SingleUseAbstractTest {
         // nodes
         ExecutorService executorService = Executors.newFixedThreadPool(threadCount);
         final CyclicBarrier barrier = new CyclicBarrier(threadCount);
-        final List<Future> results = new ArrayList<Future>();
+        final List<Future<?>> results = new ArrayList<>();
         final AtomicInteger folderCounter = new AtomicInteger(1);
         for (int i = 0; i < threadCount; i++) {
-            results.add(executorService.submit(new Callable<Void>() {
-                @Override
-                public Void call() throws Exception {
-                    JcrSession session = repository.login();
-                    List<String> localFilesToUpload = new ArrayList<String>(filesToUpload);
-                    Collections.shuffle(localFilesToUpload);
-                    try {
-                        int folderIdx = folderCounter.getAndIncrement();
-                        for (int i = 0; i < localFilesToUpload.size(); i++) {
-                            tools.uploadFile(session, "/folder_" + folderIdx + "/file_" + (i + 1), resourceStream(localFilesToUpload.get(i)));
-                        }
-                        barrier.await();
-                        session.save();
-                        return null;
-                    } finally {
-                        session.logout();
+            results.add(executorService.submit(() -> {
+                JcrSession session1 = repository.login();
+                List<String> localFilesToUpload = new ArrayList<>(filesToUpload);
+                Collections.shuffle(localFilesToUpload);
+                try {
+                    int folderIdx = folderCounter.getAndIncrement();
+                    for (int i1 = 0; i1 < localFilesToUpload.size(); i1++) {
+                        tools.uploadFile(session1, "/folder_" + folderIdx + "/file_" + (i1 + 1), resourceStream(localFilesToUpload.get(
+                                i1)));
                     }
+                    barrier.await();
+                    session1.save();
+                    return null;
+                } finally {
+                    session1.logout();
                 }
             }));
         }
 
         try {
-            // the ISPN cache is configured with 2 seconds timeout, so we shouldn't wait a lot more
-            for (Future result : results) {
+            for (Future<?> result : results) {
                 result.get(3, TimeUnit.SECONDS);
             }
 
@@ -199,24 +196,21 @@ public class BinaryStorageIntegrationTest extends SingleUseAbstractTest {
             folderCounter.set(1);
             barrier.reset();
             for (int i = 0; i < threadCount; i++) {
-                results.add(executorService.submit(new Callable<Void>() {
-                    @Override
-                    public Void call() throws Exception {
-                        JcrSession session = repository.login();
-                        try {
-                            int folderIdx = folderCounter.getAndIncrement();
-                            session.getNode("/folder_" + folderIdx).remove();
-                            barrier.await();
-                            session.save();
-                            return null;
-                        } finally {
-                            session.logout();
-                        }
+                results.add(executorService.submit(() -> {
+                    JcrSession session1 = repository.login();
+                    try {
+                        int folderIdx = folderCounter.getAndIncrement();
+                        session1.getNode("/folder_" + folderIdx).remove();
+                        barrier.await();
+                        session1.save();
+                        return null;
+                    } finally {
+                        session1.logout();
                     }
                 }));
             }
             // the remove should be a lot faster...
-            for (Future result : results) {
+            for (Future<?> result : results) {
                 result.get(1, TimeUnit.SECONDS);
             }
             
@@ -234,7 +228,7 @@ public class BinaryStorageIntegrationTest extends SingleUseAbstractTest {
     @Test
     @FixFor( "MODE-2484 ")
     public void shouldUpdateBinaryReferencesWhenChangingProperties() throws Exception {
-        startRepositoryWithConfiguration(resourceStream("config/repo-config-persistent-disk.json"));
+        startRepositoryWithConfigurationFrom("config/repo-config-binaries-fs.json");
         registerNodeTypes("cnd/multi_binary.cnd");
         // verify we have no binaries yet (see afterEach)
         assertEquals(0, binariesCount());
@@ -281,7 +275,7 @@ public class BinaryStorageIntegrationTest extends SingleUseAbstractTest {
     @Test
     @FixFor( "MODE-2489" )
     public void shouldSupportContentBasedTypeDetection() throws Exception {
-        startRepositoryWithConfiguration(resourceStream("config/repo-config-persistent-disk.json"));
+        startRepositoryWithConfigurationFrom("config/repo-config-binaries-fs.json");
 
         // upload 2 binaries but don't save
         tools.uploadFile(session, "/file1", resourceStream("io/file1.txt"));
@@ -300,7 +294,7 @@ public class BinaryStorageIntegrationTest extends SingleUseAbstractTest {
     @Test
     @FixFor( "MODE-2489" )
     public void shouldSupportNoMimeTypeDetection() throws Exception {
-        startRepositoryWithConfiguration(resourceStream("config/repo-config-no-mimetype-detection.json"));
+        startRepositoryWithConfigurationFrom("config/repo-config-no-mimetype-detection.json");
 
         // upload 2 binaries but don't save
         tools.uploadFile(session, "/file1.txt", resourceStream("io/file1.txt"));
@@ -318,7 +312,7 @@ public class BinaryStorageIntegrationTest extends SingleUseAbstractTest {
     @Test
     @FixFor( "MODE-2489" )
     public void shouldSupportNameBasedTypeDetection() throws Exception {
-        startRepositoryWithConfiguration(resourceStream("config/repo-config-name-mimetype-detection.json"));
+        startRepositoryWithConfigurationFrom("config/repo-config-name-mimetype-detection.json");
 
         tools.uploadFile(session, "/file1", resourceStream("io/file1.txt"));
         tools.uploadFile(session, "/file2.txt", resourceStream("io/file2.txt"));
@@ -483,5 +477,10 @@ public class BinaryStorageIntegrationTest extends SingleUseAbstractTest {
         Property binary = jcrSession().getNode("/" + nodeName).getProperty("binary");
         Assert.assertNotNull(binary);
         return binary.getBinary().getStream();
+    }
+
+    @Override
+    protected boolean startRepositoryAutomatically() {
+        return false;
     }
 }

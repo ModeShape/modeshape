@@ -59,8 +59,7 @@ public class ConcurrentWriteTest extends SingleUseAbstractTest {
     @Override
     @Before
     public void beforeEach() throws Exception {
-        startRepositoryWithConfiguration(getClass().getClassLoader()
-                                                   .getResourceAsStream("config/repo-config-concurrent-tests.json"));
+        startRepositoryWithConfigurationFrom("config/repo-config-concurrent-tests.json");
         tools = new JcrTools();
 
         // Set the transaction timeout so that we can debug code called within the transaction ...
@@ -261,7 +260,7 @@ public class ConcurrentWriteTest extends SingleUseAbstractTest {
     public void shouldVersionNodesConcurrently() throws Exception {
         stopRepository();
         FileUtil.delete("target/persistent_repository/store");
-        repository = TestingUtil.startRepositoryWithConfig("config/repo-config-filesystem-jbosstxn-pessimistic.json");
+        repository = TestingUtil.startRepositoryWithConfig("config/repo-config-new-workspaces.json");
         
         Session session = repository.login();
         Node uploads = session.getRootNode().addNode("uploads", NodeType.NT_FOLDER);

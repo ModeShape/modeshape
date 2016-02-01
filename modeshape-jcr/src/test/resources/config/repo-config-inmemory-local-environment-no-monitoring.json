@@ -4,7 +4,10 @@
         "enabled" : false
     },
     "storage" : {
-        "cacheName" : "inmemoryRepository"
+        "persistence" : {
+            "type" : "db",
+            "connectionUrl": "jdbc:h2:file:./target/persistent_repository/db"
+        }
     },
     "workspaces" : {
         "default" : "default",

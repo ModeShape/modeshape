@@ -1,8 +1,10 @@
 {
     "name" : "Persistent Repository With Initial Content",
     "storage" : {
-        "cacheName" : "persistentRepositoryInitialContent",
-        "cacheConfiguration" : "config/infinispan-persistent-initial-content.xml"
+        "persistence" : {
+            "type" : "db",
+            "connectionUrl": "jdbc:h2:file:./target/persistent_repository/db"
+        }
     },
     "workspaces" : {
         "predefined" : ["ws1"],

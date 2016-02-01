@@ -736,7 +736,7 @@ class JcrContentHandler extends DefaultHandler {
                         switch (uuidBehavior) {
                             case ImportUUIDBehavior.IMPORT_UUID_COLLISION_REPLACE_EXISTING:
                                 parent = existingNode.getParent();
-                                // Attention: this *does not* remove the entry from the DB (ISPN). Therefore, it's always
+                                // Attention: this *does not* remove the entry from the DB. Therefore, it's always
                                 // accessible
                                 // to the workspace cache and thus to the current session !!!.
                                 // Therefore, *old properties, mixins etc* will be accessible on the new child created later on
@@ -754,7 +754,7 @@ class JcrContentHandler extends DefaultHandler {
                                                                                               parent.getPath());
                                     throw new ConstraintViolationException(text);
                                 }
-                                // Attention: this *does not* remove the entry from the DB (ISPN). Therefore, it's always
+                                // Attention: this *does not* remove the entry from the DB. Therefore, it's always
                                 // accessible
                                 // to the workspace cache and thus to the current session !!!.
                                 // Therefore, *old properties, mixins etc* will be accessible on the new child created later on

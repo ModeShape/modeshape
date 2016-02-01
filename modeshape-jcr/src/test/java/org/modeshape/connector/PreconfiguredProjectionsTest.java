@@ -16,6 +16,7 @@
 
 package org.modeshape.connector;
 
+import static org.junit.Assert.assertNotNull;
 import java.io.File;
 import java.io.FileOutputStream;
 import javax.jcr.RepositoryException;
@@ -25,7 +26,6 @@ import org.junit.Test;
 import org.modeshape.common.util.FileUtil;
 import org.modeshape.common.util.IoUtil;
 import org.modeshape.jcr.SingleUseAbstractTest;
-import static org.junit.Assert.assertNotNull;
 
 /**
  * Tests the loading of preconfigured projections.
@@ -46,7 +46,7 @@ public class PreconfiguredProjectionsTest extends SingleUseAbstractTest {
 
     @Test
     public void shouldCreatePreconfiguredProjections() throws Exception {
-        startRepositoryWithConfiguration(getClass().getClassLoader().getResourceAsStream("config/repo-config-federation-projections.json"));
+        startRepositoryWithConfigurationFrom("config/repo-config-federation-projections.json");
         //from mock connector
         assertProjection("default", "/projection1");
         assertProjection("default", "/testRoot/projection2");

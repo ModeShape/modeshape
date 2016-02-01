@@ -1,8 +1,9 @@
 {
     "name" : "In Memory Repository",
     "storage" : {
-        "cacheName" : "inmemoryRepository",
-        "cacheConfiguration" : "config/infinispan-inmemory-atomikos.xml",
+        "transactionManagerLookup" : {
+            "name" : "org.modeshape.jcr.txn.AtomikosTransactionManagerLookup"
+        }
     },
     "workspaces" : {
         "default" : "default",

@@ -22,12 +22,13 @@ import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
+import org.junit.After;
+import org.junit.Before;
 import org.modeshape.schematic.Schematic;
 import org.modeshape.schematic.SchematicEntry;
 import org.modeshape.schematic.document.Document;
 import org.modeshape.schematic.document.Json;
+import org.modeshape.schematic.document.ParsingException;
 
 /**
  * Base class for the unit tests around {@link org.modeshape.schematic.SchematicDb}
@@ -35,23 +36,29 @@ import org.modeshape.schematic.document.Json;
  * @author Horia Chiorean (hchiorea@redhat.com)
  */
 public abstract class AbstractRelationalDbTest {
-    protected static Document defaultContent;
-    protected static RelationalDb db;
-    
-    protected static boolean print = false;
+    protected static final Document DEFAULT_CONTENT ;
 
-    @BeforeClass
-    public static void beforeAll() throws Exception {
-        ClassLoader cl = RelationalDbTest.class.getClassLoader();
-        defaultContent  = Json.read(cl.getResourceAsStream("document.json"));
-        db = Schematic.getDb(cl.getResourceAsStream("db-config.json"));
+    protected RelationalDb db;
+    protected boolean print;
+    
+    static {
+        try {
+            DEFAULT_CONTENT = Json.read(AbstractRelationalDbTest.class.getClassLoader().getResourceAsStream("document.json"));
+        } catch (ParsingException e) {
+            throw new RuntimeException(e);
+        }
+    }
+    
+    @Before
+    public void before() throws Exception {
+        db = Schematic.getDb(RelationalDbTest.class.getClassLoader().getResourceAsStream("db-config.json"));
         db.start();
         // run a query to validate that the table has been created and is empty.
-        assertEquals(0, db.keys().count());
+        assertEquals(0, db.keys().size());
     }
 
-    @AfterClass
-    public static void afterAll() throws Exception {
+    @After
+    public void after() throws Exception {
         db.stop();
         // run a query to check that the table has been removed
         try {
@@ -71,7 +78,7 @@ public abstract class AbstractRelationalDbTest {
 
     protected SchematicEntry writeSingleEntry() throws Exception {
         return simulateTransaction(() -> {
-            SchematicEntry entry = SchematicEntry.create(UUID.randomUUID().toString(), defaultContent);
+            SchematicEntry entry = SchematicEntry.create(UUID.randomUUID().toString(), DEFAULT_CONTENT);
             db.putEntry(entry.source());
             return entry;
         });
@@ -80,6 +87,6 @@ public abstract class AbstractRelationalDbTest {
 
     protected List<SchematicEntry> randomEntries(int sampleSize) throws Exception {
         return IntStream.range(0, sampleSize).mapToObj(i -> SchematicEntry.create(
-                UUID.randomUUID().toString(), defaultContent)).collect(Collectors.toList());
+                UUID.randomUUID().toString(), DEFAULT_CONTENT)).collect(Collectors.toList());
     }
 }

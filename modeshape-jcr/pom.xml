@@ -27,7 +27,6 @@
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-jcr-api</artifactId>
         </dependency>
-        <!-- This should eventually get refactored into this project -->
         <dependency>
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-common</artifactId>
@@ -36,14 +35,10 @@
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-schematic</artifactId>
         </dependency>
-        <!-- Infinispan -->
         <dependency>
-            <groupId>org.infinispan</groupId>
-            <artifactId>infinispan-core</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.infinispan</groupId>
-            <artifactId>infinispan-commons</artifactId>
+            <groupId>org.modeshape</groupId>
+            <artifactId>modeshape-persistence-relational</artifactId>
+            <version>${project.version}</version>
         </dependency>
         <!--Event bus clustering. Note the scope in the parent (provided) - this should be optional from a MS perspective -->
         <dependency>
@@ -159,19 +154,6 @@
             <artifactId>modeshape-schematic</artifactId>
             <type>test-jar</type>
             <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.infinispan</groupId>
-            <artifactId>infinispan-cachestore-jdbc</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.mchange</groupId>
-            <artifactId>c3p0</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.infinispan</groupId>
-            <artifactId>infinispan-cachestore-leveldb</artifactId>
         </dependency>
         <dependency>
             <groupId>org.mongodb</groupId>

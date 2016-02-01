@@ -9,8 +9,9 @@
         "allowCreation" : true,
     },
     "storage" : {
-        "cacheName" : "Thorough",
-        "cacheConfiguration" : "infinispan_configuration.xml",
+        "persistence" : {
+            "type" : "database"
+        },
         "binaryStorage" : {
             "type" : "file",
             "directory" : "Thorough/binaries",

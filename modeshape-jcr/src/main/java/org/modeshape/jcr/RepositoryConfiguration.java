@@ -36,21 +36,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import javax.naming.NamingException;
 import javax.security.auth.login.LoginException;
-import org.infinispan.manager.CacheContainer;
-import org.modeshape.schematic.SchemaLibrary;
-import org.modeshape.schematic.SchemaLibrary.Problem;
-import org.modeshape.schematic.SchemaLibrary.Results;
-import org.modeshape.schematic.Schematic;
-import org.modeshape.schematic.document.Array;
-import org.modeshape.schematic.document.Changes;
-import org.modeshape.schematic.document.Document;
-import org.modeshape.schematic.document.Document.Field;
-import org.modeshape.schematic.document.EditableDocument;
-import org.modeshape.schematic.document.Editor;
-import org.modeshape.schematic.document.Json;
-import org.modeshape.schematic.document.ParsingException;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.collection.Problems;
 import org.modeshape.common.collection.SimpleProblems;
@@ -83,6 +69,18 @@ import org.modeshape.jcr.value.binary.CompositeBinaryStore;
 import org.modeshape.jcr.value.binary.DatabaseBinaryStore;
 import org.modeshape.jcr.value.binary.FileSystemBinaryStore;
 import org.modeshape.jcr.value.binary.TransientBinaryStore;
+import org.modeshape.schematic.SchemaLibrary;
+import org.modeshape.schematic.SchemaLibrary.Problem;
+import org.modeshape.schematic.SchemaLibrary.Results;
+import org.modeshape.schematic.Schematic;
+import org.modeshape.schematic.document.Array;
+import org.modeshape.schematic.document.Changes;
+import org.modeshape.schematic.document.Document;
+import org.modeshape.schematic.document.Document.Field;
+import org.modeshape.schematic.document.EditableDocument;
+import org.modeshape.schematic.document.Editor;
+import org.modeshape.schematic.document.Json;
+import org.modeshape.schematic.document.ParsingException;
 import org.modeshape.sequencer.cnd.CndSequencer;
 
 /**
@@ -213,6 +211,11 @@ public class RepositoryConfiguration {
         public static final String DESCRIPTION = "description";
 
         /**
+         * The name of the persistence section of the configuration.
+         */
+        public static final String PERSISTENCE = "persistence";
+
+        /**
          * The name for the optional field specifying where in JNDI this repository should be registered.
          */
         public static final String JNDI_NAME = "jndiName";
@@ -233,24 +236,10 @@ public class RepositoryConfiguration {
         public static final String MONITORING_ENABLED = "enabled";
 
         /**
-         * The name for the field whose value is a document containing the Infinispan storage information.
+         * The name for the field whose value is a document containing storage information.
          */
         public static final String STORAGE = "storage";
 
-        /**
-         * The name for the field containing the name of the Infinispan cache that this repository should use. If not specified,
-         * the repository's name is used as the Infinispan cache name.
-         */
-        public static final String CACHE_NAME = "cacheName";
-
-        /**
-         * The name for the field containing the name of the Infinispan configuration file. If a file could not be found (on the
-         * thread context classloader, on the application's classpath, or on the system classpath), then the name is used to look
-         * in JNDI for an Infinispan CacheContainer instance. If no such container is found, then a default Infinispan
-         * configuration (a basic, local mode, non-clustered cache) will be used.
-         */
-        public static final String CACHE_CONFIGURATION = "cacheConfiguration";   
-        
         /**
          * The maximum number of milliseconds to wait when a lock cannot be obtained on a node
          */
@@ -483,7 +472,7 @@ public class RepositoryConfiguration {
     }
 
     public static class Default {
-
+        
         /**
          * The default number of items the workspace cache can hold in memory
          */
@@ -588,12 +577,12 @@ public class RepositoryConfiguration {
     protected static final Set<List<String>> DEPRECATED_FIELDS = Collections.emptySet();
 
     /**
-     * The set of field names that should be skipped when {@link Component#createInstance(ClassLoader) instantiating a component}.
+     * The set of field names that should be skipped when {@link Component#createInstance()}  instantiating a component}.
      */
     protected static final Set<String> COMPONENT_SKIP_PROPERTIES;
 
     static {
-        Set<String> skipProps = new HashSet<String>();
+        Set<String> skipProps = new HashSet<>();
         skipProps.add(FieldName.CLASSLOADER);
         skipProps.add(FieldName.CLASSNAME);
         skipProps.add(FieldName.PROJECTIONS);
@@ -604,7 +593,7 @@ public class RepositoryConfiguration {
         String jaasProvider = "org.modeshape.jcr.security.JaasProvider";
         String servletProvider = "org.modeshape.jcr.security.ServletProvider";
 
-        Map<String, String> aliases = new HashMap<String, String>();
+        Map<String, String> aliases = new HashMap<>();
         aliases.put("jaas", jaasProvider);
         aliases.put("jaasprovider", jaasProvider);
         aliases.put("servlet", servletProvider);
@@ -661,7 +650,7 @@ public class RepositoryConfiguration {
         SEQUENCER_ALIASES = Collections.unmodifiableMap(aliases);
 
         String localIndexProvider = LocalIndexProvider.class.getName();
-        aliases = new HashMap<String, String>();
+        aliases = new HashMap<>();
         aliases.put("local", localIndexProvider);
         aliases.put("lucene", "org.modeshape.jcr.index.lucene.LuceneIndexProvider");
 
@@ -671,7 +660,7 @@ public class RepositoryConfiguration {
         String gitConnector = "org.modeshape.connector.git.GitConnector";
         String cmisConnector = "org.modeshape.connector.cmis.CmisConnector";
 
-        aliases = new HashMap<String, String>();
+        aliases = new HashMap<>();
         aliases.put("files", fileSystemConnector);
         aliases.put("filesystem", fileSystemConnector);
         aliases.put("filesystemconnector", fileSystemConnector);
@@ -684,7 +673,7 @@ public class RepositoryConfiguration {
 
         String tikaExtractor = "org.modeshape.extractor.tika.TikaTextExtractor";
 
-        aliases = new HashMap<String, String>();
+        aliases = new HashMap<>();
         aliases.put("tika", tikaExtractor);
         aliases.put("tikaextractor", tikaExtractor);
         aliases.put("tikatextextractor", tikaExtractor);
@@ -885,24 +874,12 @@ public class RepositoryConfiguration {
         return doc.getString(FieldName.JNDI_NAME, DEFAULT_JNDI_PREFIX_OF_NAME + getName());
     }
 
-    public String getStoreName() {
-        return getCacheName();
-    }
-
-    public String getCacheName() {
+    public Document getPersistenceConfiguration() {
         Document storage = doc.getDocument(FieldName.STORAGE);
-        if (storage != null) {
-            return storage.getString(FieldName.CACHE_NAME, getName());
+        if (storage == null) {
+            return null;
         }
-        return getName();
-    }
-
-    public String getCacheConfiguration() {
-        Document storage = doc.getDocument(FieldName.STORAGE);
-        if (storage != null) {
-            return storage.getString(FieldName.CACHE_CONFIGURATION);
-        }
-        return null;
+        return storage.getDocument(FieldName.PERSISTENCE);
     }
 
     public long getLockTimeoutMillis() {
@@ -921,7 +898,7 @@ public class RepositoryConfiguration {
             }
         }
         try {
-            return new Component(className, classPath).createInstance(getClass().getClassLoader());
+            return new Component(className, classPath).createInstance();
         } catch (Exception e) {
             throw new RuntimeException(JcrI18n.unableToInitializeTxManagerLookup.text(className), e);
         }
@@ -933,15 +910,6 @@ public class RepositoryConfiguration {
             return storage.getInteger(FieldName.WORKSPACE_CACHE_SIZE, Default.WORKSPACE_CACHE_SIZE);
         }
         return Default.WORKSPACE_CACHE_SIZE;
-    }
-
-    CacheContainer getContentCacheContainer() throws IOException, NamingException {
-        return getCacheContainer(null);
-    }
-
-    protected CacheContainer getCacheContainer( String config ) throws IOException, NamingException {
-        if (config == null) config = getCacheConfiguration();
-        return environment.getCacheContainer(config);
     }
 
     public Clustering getClustering() {
@@ -1032,17 +1000,6 @@ public class RepositoryConfiguration {
      */
     public static String getBuiltInTextExtractorClassName( String alias ) {
         return EXTRACTOR_ALIASES.get(alias);
-    }
-
-    /**
-     * Returns a fully qualified built-in authentication provider class name mapped to the given alias, or {@code null} if there
-     * isn't such a mapping
-     *
-     * @param alias the alias
-     * @return the name of the authentication provider class, or null if the alias did not correspond to a built-in class
-     */
-    public static String getBuiltInAuthenticationProviderClassName( String alias ) {
-        return PROVIDER_ALIASES.get(alias);
     }
 
     @Immutable
@@ -1225,7 +1182,7 @@ public class RepositoryConfiguration {
          * Instantiates custom binary store.
          */
         private AbstractBinaryStore createInstance() throws Exception {
-            ClassLoader classLoader = environment().getClassLoader(getClass().getClassLoader(), classPath);
+            ClassLoader classLoader = environment().getClassLoader(this, classPath);
             return (AbstractBinaryStore)classLoader.loadClass(classname).newInstance();
         }
 
@@ -2132,7 +2089,7 @@ public class RepositoryConfiguration {
          * @return a {@link Map} instance, never null.
          */
         public Map<String, List<ProjectionConfiguration>> getProjectionsByWorkspace() {
-            Map<String, List<ProjectionConfiguration>> projectionsByWorkspace = new HashMap<String, List<ProjectionConfiguration>>();
+            Map<String, List<ProjectionConfiguration>> projectionsByWorkspace = new HashMap<>();
             if (!federation.containsField(FieldName.EXTERNAL_SOURCES)) {
                 return projectionsByWorkspace;
             }
@@ -2150,7 +2107,7 @@ public class RepositoryConfiguration {
 
                     List<ProjectionConfiguration> projectionsInWorkspace = projectionsByWorkspace.get(workspaceName);
                     if (projectionsInWorkspace == null) {
-                        projectionsInWorkspace = new ArrayList<ProjectionConfiguration>();
+                        projectionsInWorkspace = new ArrayList<>();
                         projectionsByWorkspace.put(workspaceName, projectionsInWorkspace);
                     }
                     projectionsInWorkspace.add(projectionConfiguration);
@@ -2511,7 +2468,7 @@ public class RepositoryConfiguration {
     }
 
     /**
-     * Create a copy of this configuration that uses the supplied Infinispan {@link CacheContainer} instance.
+     * Create a copy of this configuration that uses the supplied environment.
      *
      * @param environment the environment that should be used for the repository; may be null
      * @return the new configuration; never null
@@ -2631,14 +2588,12 @@ public class RepositoryConfiguration {
          * Create an instance of this class.
          *
          * @param <Type>
-         * @param fallbackLoader the fallback class loader that should be used for
-         *        {@link Environment#getClassLoader(ClassLoader, String...)}
          * @return the new instance, with all {@link #getDocument() document fields} set on it; never null
          * @see #getClasspath()
          * @throws Exception if anything fails
          */
         @SuppressWarnings( "unchecked" )
-        public <Type> Type createInstance( ClassLoader fallbackLoader ) throws Exception {
+        protected  <Type> Type createInstance() throws Exception {
             // Handle some of the built-in providers in a special way ...
             String classname = getClassname();
             if (AnonymousProvider.class.getName().equals(classname)) {
@@ -2646,7 +2601,7 @@ public class RepositoryConfiguration {
             } else if (JaasProvider.class.getName().equals(classname)) {
                 return (Type)createJaasProvider();
             }
-            ClassLoader classLoader = environment().getClassLoader(fallbackLoader, classpath);
+            ClassLoader classLoader = environment().getClassLoader(this, classpath);
             return (Type)createGenericComponent(classLoader);
         }
 

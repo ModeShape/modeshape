@@ -115,8 +115,7 @@ public final class InitialContentImporter {
     private InputStream getInitialContentFileStream( String workspaceName ) {
         String initialContentFileString = initialContentConfig.getInitialContentFile(workspaceName);
         InputStream stream = IoUtil.getResourceAsStream(initialContentFileString,
-                                                        repository.environment()
-                                                                  .getClassLoader(InitialContentImporter.class.getClassLoader()),
+                                                        repository.environment().getClassLoader(this),
                                                         null);
         if (stream == null) {
             repository.warn(JcrI18n.cannotLoadInitialContentFile, initialContentFileString);

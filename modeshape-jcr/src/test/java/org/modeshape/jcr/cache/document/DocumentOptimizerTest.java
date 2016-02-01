@@ -21,10 +21,6 @@ import static org.junit.Assert.fail;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
-import org.modeshape.schematic.SchematicEntry;
-import org.modeshape.schematic.document.Document;
-import org.modeshape.schematic.document.EditableArray;
-import org.modeshape.schematic.document.EditableDocument;
 import org.junit.Before;
 import org.junit.Test;
 import org.modeshape.jcr.ExecutionContext;
@@ -35,6 +31,10 @@ import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.cache.SessionCache;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.Path.Segment;
+import org.modeshape.schematic.SchematicEntry;
+import org.modeshape.schematic.document.Document;
+import org.modeshape.schematic.document.EditableArray;
+import org.modeshape.schematic.document.EditableDocument;
 
 public class DocumentOptimizerTest extends AbstractSessionCacheTest {
 
@@ -101,14 +101,14 @@ public class DocumentOptimizerTest extends AbstractSessionCacheTest {
         session1.save();
 
         // Optimize the storage ...
-        transactions().begin();
-        NodeKey key = nodeB.getKey();
-        EditableDocument doc = workspaceCache.documentStore().edit(key.toString(), true);
-        optimizer.optimizeChildrenBlocks(key, doc, 9, 5);
-        transactions().commit();
-
+        Document result = runInTransaction(() -> {
+            NodeKey key = nodeB.getKey();
+            EditableDocument doc = workspaceCache.documentStore().edit(key.toString(), true);
+            optimizer.optimizeChildrenBlocks(key, doc, 9, 5);
+            return doc;
+        });
         print(false);
-        print(doc, true);
+        print(result, true);
     }
 
     @Test
@@ -121,27 +121,25 @@ public class DocumentOptimizerTest extends AbstractSessionCacheTest {
         }
         session1.save();
 
-        // Optimize the storage ...
-        transactions().begin();
-        NodeKey key = nodeB.getKey();
-        EditableDocument doc = workspaceCache.documentStore().edit(key.toString(), true);
-        optimizer.optimizeChildrenBlocks(key, doc, 5, 3); // will merge into a single block ...
-        optimizer.optimizeChildrenBlocks(key, doc, 5, 3); // will split into two blocks ...
-        transactions().commit();
-
+        Document result = runInTransaction(() -> {
+            NodeKey key = nodeB.getKey();
+            EditableDocument doc = workspaceCache.documentStore().edit(key.toString(), true);
+            optimizer.optimizeChildrenBlocks(key, doc, 5, 3); // will merge into a single block ...
+            optimizer.optimizeChildrenBlocks(key, doc, 5, 3); // will split into two blocks ...
+            return doc;
+        });
+      
         print(false);
-        print(doc, true);
+        print(result, true);
     }
 
     @Test
     public void shouldSplitDocumentThatRepeatedlyContainsTooManyChildReferencesIntoMultipleSegments() throws Exception {
         MutableCachedNode nodeB = check(session1).mutableNode("/childB");
+        NodeKey key = nodeB.getKey();
 
         // Make it optimum to start out ...
-        transactions().begin();
-        NodeKey key = nodeB.getKey();
-        optimizer.optimizeChildrenBlocks(key, null, 5, 2); // will merge into a single block ...
-        transactions().commit();
+        runInTransaction(() -> optimizer.optimizeChildrenBlocks(key, null, 5, 2)); // will merge into a single block ...
         // Save the session, otherwise the database is inconsistent after the optimize operation
         session1.save();
         nodeB = check(session1).mutableNode("/childB");
@@ -162,18 +160,13 @@ public class DocumentOptimizerTest extends AbstractSessionCacheTest {
             print(false);
             print("\nOptimizing...");
             print(document(key), true);
-            transactions().begin();
-            optimizer.optimizeChildrenBlocks(key, null, 5, 2); // will split into blocks ...
-            transactions().commit();
+            runInTransaction(() -> optimizer.optimizeChildrenBlocks(key, null, 5, 2)); // will split into blocks ...)
             print("\nOptimized...");
             print(document(key), true);
             print(false);
         }
-
-        // Optimize the storage ...
-        transactions().begin();
-        optimizer.optimizeChildrenBlocks(key, null, 5, 2); // will split into blocks ...
-        transactions().commit();
+        
+        runInTransaction(() -> optimizer.optimizeChildrenBlocks(key, null, 5, 2));
 
         print(false);
         print(document(key), true);
@@ -181,7 +174,7 @@ public class DocumentOptimizerTest extends AbstractSessionCacheTest {
 
     protected Document document( NodeKey key ) {
         SchematicEntry entry = workspaceCache.documentStore().get(key.toString());
-        return entry.getContent();
+        return entry.content();
     }
 
     protected void assertChildren( Document doc,
@@ -228,7 +221,7 @@ public class DocumentOptimizerTest extends AbstractSessionCacheTest {
                                String expectedLastBlock,
                                boolean firstBlock,
                                long expectedBlockSize ) {
-        Document doc = workspaceCache.documentStore().get(key).getContent();
+        Document doc = workspaceCache.documentStore().get(key).content();
         Document info = doc.getDocument(DocumentTranslator.CHILDREN_INFO);
         assertThat(info.getLong(DocumentTranslator.COUNT), is(expectedChildCount));
         assertThat(info.getString(DocumentTranslator.NEXT_BLOCK), is(expectedNextBlock));

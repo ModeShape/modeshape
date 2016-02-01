@@ -55,8 +55,7 @@ public class JcrInitialContentTest extends SingleUseAbstractTest {
 
     @Test
     public void shouldImportInitialContentForAllWorkspaceConfigurations() throws Exception {
-        startRepositoryWithConfiguration(getClass().getClassLoader().getResourceAsStream(
-                "config/repo-config-initial-content.json"));
+        startRepositoryWithConfigurationFrom("config/repo-config-initial-content.json");
         //preconfigured ws
         String ws1 = "ws1";
         assertCarsWithMixins(ws1);
@@ -90,16 +89,14 @@ public class JcrInitialContentTest extends SingleUseAbstractTest {
     @Test
     @FixFor( "MODE-1959" )
     public void shouldImportInitialContentWhenTransactionModeNone() throws  Exception {
-        startRepositoryWithConfiguration(getClass().getClassLoader().getResourceAsStream(
-                "config/repo-config-initial-content-transaction-mode-none.json"));
+        startRepositoryWithConfigurationFrom("config/repo-config-initial-content-transaction-mode-none.json");
         assertCarsWithoutNamespace("default");
     }
 
     @Test
     @FixFor("MODE-1995")
     public void shouldImportInitialContentWhenContainsNonHTTPNamespaceURIs() throws  Exception {
-        startRepositoryWithConfiguration(getClass().getClassLoader().getResourceAsStream(
-                "config/repo-config-initial-content-with-non-HTTP-namespaces.json"));
+        startRepositoryWithConfigurationFrom("config/repo-config-initial-content-with-non-HTTP-namespaces.json");
 
         String defaultWs = "default";
         assertContentInWorkspace(defaultWs, "/{info:test/ns/}Cars", JcrConstants.NT_UNSTRUCTURED, null);
@@ -130,8 +127,7 @@ public class JcrInitialContentTest extends SingleUseAbstractTest {
     @Test
     @FixFor( "MODE-2217" )
     public void shouldKeepChildrenOrder() throws Exception {
-        startRepositoryWithConfiguration(getClass().getClassLoader().getResourceAsStream(
-                "config/repo-config-initial-content-children-order.json"));
+        startRepositoryWithConfigurationFrom("config/repo-config-initial-content-children-order.json");
         JcrSession session = repository.login();
         try {
             NodeIterator children = session.getNode("/testRoot").getNodes();
@@ -160,8 +156,7 @@ public class JcrInitialContentTest extends SingleUseAbstractTest {
     @Test
     @FixFor( "MODE-2241" )
     public void shouldSupportReferenceProperties() throws Exception {
-        startRepositoryWithConfiguration(getClass().getClassLoader().getResourceAsStream(
-                "config/repo-config-initial-content-references.json"));
+        startRepositoryWithConfigurationFrom("config/repo-config-initial-content-references.json");
         JcrSession session = repository.login();
         AbstractJcrNode node1 = session.getNode("/node1");
         AbstractJcrNode node2 = session.getNode("/node2");
@@ -225,8 +220,7 @@ public class JcrInitialContentTest extends SingleUseAbstractTest {
     @Test
     @FixFor( "MODE-2241" )
     public void shouldSupportVariousPropertyTypes() throws Exception {
-        startRepositoryWithConfiguration(getClass().getClassLoader().getResourceAsStream(
-                "config/repo-config-initial-content-props.json"));
+        startRepositoryWithConfigurationFrom("config/repo-config-initial-content-props.json");
         JcrSession session = repository.login();
         AbstractJcrNode node1 = session.getNode("/node1");
 

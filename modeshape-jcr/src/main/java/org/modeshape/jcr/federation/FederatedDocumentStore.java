@@ -24,9 +24,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import org.modeshape.schematic.SchematicEntry;
-import org.modeshape.schematic.document.Document;
-import org.modeshape.schematic.document.EditableDocument;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.SecureHash.Algorithm;
 import org.modeshape.common.util.StringUtil;
@@ -51,6 +48,9 @@ import org.modeshape.jcr.value.ReferenceFactory;
 import org.modeshape.jcr.value.basic.NodeKeyReference;
 import org.modeshape.jcr.value.basic.StringReference;
 import org.modeshape.jcr.value.binary.ExternalBinaryValue;
+import org.modeshape.schematic.SchematicEntry;
+import org.modeshape.schematic.document.Document;
+import org.modeshape.schematic.document.EditableDocument;
 
 /**
  * An implementation of {@link DocumentStore} which is used when federation is enabled
@@ -263,8 +263,7 @@ public class FederatedDocumentStore implements DocumentStore {
                 EditableDocument editableDocument = replaceConnectorIdsWithNodeKeys(document, connector.getSourceName());
                 editableDocument = updateCaching(connector, editableDocument);
                 editableDocument = updateQueryable(connector, editableDocument);
-                final EditableDocument result = editableDocument;
-                return () -> result;
+                return new ExternalSchematicEntry(key, editableDocument);
             }
         }
         return null;
@@ -580,4 +579,33 @@ public class FederatedDocumentStore implements DocumentStore {
         }
     }
 
+    private static class ExternalSchematicEntry implements SchematicEntry {
+        private final EditableDocument result;
+        private final String id;
+
+        protected ExternalSchematicEntry(String id, EditableDocument result) {
+            this.result = result;
+            this.id = id;
+        }
+
+        @Override
+        public Document source() {
+            return result;
+        }
+
+        @Override
+        public Document content() {
+            return result;
+        }
+
+        @Override
+        public Document getMetadata() {
+            throw new UnsupportedOperationException("Not supported");
+        }
+
+        @Override
+        public String id() {
+           return id;
+        }
+    }
 }

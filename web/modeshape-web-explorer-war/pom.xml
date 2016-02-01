@@ -21,6 +21,28 @@
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-web-explorer</artifactId>
         </dependency>
+        <!-- SLF4j is required by modeshape-persistence-relational-->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        <!-- H2 is the default DB -->
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-log4j12</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>log4j</groupId>
+            <artifactId>log4j</artifactId>
+            <scope>runtime</scope>
+        </dependency>
         <!--The following dependencies are installed in the container and will be picked up via the manifest-->
         <dependency>
             <groupId>junit</groupId>

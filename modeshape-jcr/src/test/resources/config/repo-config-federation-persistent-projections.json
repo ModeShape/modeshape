@@ -16,7 +16,9 @@
         }
     },
     "storage" : {
-        "cacheName" : "persistentRepository",
-        "cacheConfiguration" : "config/infinispan-federation-persistent.xml"
-    },
+        "persistence" : {
+            "type" : "db",
+            "connectionUrl": "jdbc:h2:file:./target/persistent_repository/db"
+        }
+    }
 }
