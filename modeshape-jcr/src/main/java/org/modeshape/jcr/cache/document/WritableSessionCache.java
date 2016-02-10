@@ -1544,16 +1544,16 @@ public class WritableSessionCache extends AbstractSessionCache {
                              lockedKeysForTx, txId);    
             }             
         }
-        
+        // no new locks that we don't already own are required, so just return...
         if (keysToLock.isEmpty()) {
             return;   
         }
 
-        int retryCountOnLockTimeout = 2;
-        boolean locksAquired = false;
-        while (!locksAquired && retryCountOnLockTimeout > 0) {
-            locksAquired = documentStore.lockDocuments(keysToLock);
-            if (locksAquired) {
+        int retryCountOnLockTimeout = 3;
+        boolean locksAcquired = false;
+        while (!locksAcquired && retryCountOnLockTimeout > 0) {
+            locksAcquired = documentStore.lockDocuments(keysToLock);
+            if (locksAcquired) {
                 if (LOGGER.isDebugEnabled()) {
                     LOGGER.debug("Locked the nodes: {0}", keysToLock);
                 }
@@ -1564,19 +1564,32 @@ public class WritableSessionCache extends AbstractSessionCache {
                 --retryCountOnLockTimeout;
             }
         }
-        if (!locksAquired) {
-            throw new TimeoutException("Timeout while attempting to lock the keys " + keysToLock + " after 2 retry attempts.");
+        if (!locksAcquired) {
+            throw new TimeoutException("Timeout while attempting to lock the keys " + keysToLock + " after " + retryCountOnLockTimeout +
+                                       " retry attempts.");
         }
         lockedKeysForTx.addAll(keysToLock);
-        // by now we should have an exclusive lock on all the nodes we're about to change, so go to the document store
-        // and load into the cache the latest "persisted" version of these nodes only if we haven't locked them previously...
-
-        keysToLock.stream().forEach(workspaceCache::loadFromDocumentStore);
+        // tell the transaction that we now have exclusive locks on a number of keys...
+        modeshapeTx.locksObtained(keysToLock);
+        // and go to the document store to load into the cache the latest "persisted" version of these nodes only 
+        // if we haven't locked them previously and they aren't new (new nodes should have a unique UUID which should be 
+        // uncontended
+        keysToLock.stream()
+                  .filter(this::shouldLoadFreshFromDocumentStore)
+                  .forEach(workspaceCache::loadFromDocumentStore);
+    }
+    
+    private boolean shouldLoadFreshFromDocumentStore(String key) {
+        NodeKey nodeKey = new NodeKey(key);
+        SessionNode node = changedNodes.get(nodeKey);
+        return (node != null && !node.isNew()) || (replacedNodes != null && replacedNodes.contains(nodeKey));
     }
     
     private Set<String> keysToLockForNode(NodeKey key) {
         Set<String> keys = new TreeSet<>();
+        //always the node itself
         keys.add(key.toString());
+        //and potentially any binary keys it references for which we'll need to change references
         TreeSet<String> binaryRefKeys = binaryReferencesByNodeKey.getOrDefault(key, Collections.emptySet()).stream()
                                                                  .map(binaryKey -> translator().keyForBinaryReferenceDocument(
                                                                          binaryKey.toString()))

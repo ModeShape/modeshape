@@ -837,7 +837,7 @@ class JcrContentHandler extends DefaultHandler {
                     for (Value value : mixinTypeValueList) {
                         String mixinName = value.getString();
                         // in the case when keys are being reused, the old node at that key is visible (with all its properties)
-                        // via the WS cache -> ISPN db. Therefore, there might be the case when even though the child was created
+                        // via the WS cache -> db. Therefore, there might be the case when even though the child was created
                         // via addChild(), the old node with all the old properties and mixins is still visible at the key() and
                         // so the "new child" reports the mixin as already present (even though it's not)
                         boolean addMixinInternally = (child.isNodeType(mixinName) && !nodeAlreadyExists) ||

@@ -134,15 +134,6 @@ public class ModeShapeSubsystemXMLReader_3_0 implements XMLStreamConstants, XMLE
                         repository.get(OP_ADDR).set(repositoryAddress);
                         repositories.add(repository);
                         break;
-                    case CACHE_NAME:
-                        ModelAttributes.CACHE_NAME.parseAndSetParameter(attrValue, repository, reader);
-                        break;
-                    case CACHE_CONFIG:
-                        ModelAttributes.CACHE_CONFIG.parseAndSetParameter(attrValue, repository, reader);
-                        break;   
-                    case CONFIG_RELATIVE_TO:
-                        ModelAttributes.CONFIG_RELATIVE_TO.parseAndSetParameter(attrValue, repository, reader);
-                        break;
                     case JNDI_NAME:
                         ModelAttributes.JNDI_NAME.parseAndSetParameter(attrValue, repository, reader);
                         break;
@@ -215,6 +206,7 @@ public class ModeShapeSubsystemXMLReader_3_0 implements XMLStreamConstants, XMLE
             }
         }
 
+        ModelNode persistence = null;
         ModelNode binaryStorage = null;
         List<ModelNode> sequencers = new ArrayList<ModelNode>();
         List<ModelNode> indexProviders = new ArrayList<ModelNode>();
@@ -226,6 +218,10 @@ public class ModeShapeSubsystemXMLReader_3_0 implements XMLStreamConstants, XMLE
         while (reader.hasNext() && (reader.nextTag() != XMLStreamConstants.END_ELEMENT)) {
             Element element = Element.forName(reader.getLocalName());
             switch (element) {
+                case DB_PERSISTENCE: {
+                    persistence = parseDBPersistence(reader, repositoryName);
+                    break;
+                }
                 case WORKSPACES:
                     parseWorkspaces(reader, address, repository);
                     break;
@@ -301,6 +297,7 @@ public class ModeShapeSubsystemXMLReader_3_0 implements XMLStreamConstants, XMLE
         }
 
         if (binaryStorage != null) repositories.add(binaryStorage);
+        if (persistence != null) repositories.add(persistence);
         repositories.addAll(multipleStorageNodes);
         repositories.addAll(sequencers);
         repositories.addAll(indexProviders);
@@ -308,6 +305,66 @@ public class ModeShapeSubsystemXMLReader_3_0 implements XMLStreamConstants, XMLE
         repositories.addAll(externalSources);
         repositories.addAll(textExtractors);
         repositories.addAll(authenticators);
+    }
+
+    private ModelNode parseDBPersistence(XMLExtendedStreamReader reader, String repositoryName) throws XMLStreamException {
+        final ModelNode persistence = new ModelNode();
+        persistence.get(OP).set(ADD);
+
+        if (reader.getAttributeCount() > 0) {
+            for (int i = 0; i < reader.getAttributeCount(); i++) {
+                String attrName = reader.getAttributeLocalName(i);
+                String attrValue = reader.getAttributeValue(i);
+                Attribute attribute = Attribute.forName(attrName);
+                switch (attribute) {
+                    case TABLE_NAME:
+                        ModelAttributes.TABLE_NAME.parseAndSetParameter(attrValue, persistence, reader);
+                        break;
+                    case CREATE_ON_START:
+                        ModelAttributes.CREATE_ON_START.parseAndSetParameter(attrValue, persistence, reader);
+                        break;
+                    case DROP_ON_EXIT:
+                        ModelAttributes.DROP_ON_EXIT.parseAndSetParameter(attrValue, persistence, reader);
+                        break;
+                    case URL:
+                        ModelAttributes.CONNECTION_URL.parseAndSetParameter(attrValue, persistence, reader);
+                        break;
+                    case USERNAME:
+                        ModelAttributes.USERNAME.parseAndSetParameter(attrValue, persistence, reader);
+                        break;
+                    case PASSWORD:
+                        ModelAttributes.PASSWORD.parseAndSetParameter(attrValue, persistence, reader);
+                        break;
+                    case DRIVER:
+                        ModelAttributes.DRIVER.parseAndSetParameter(attrValue, persistence, reader);
+                        break;
+                    case FETCH_SIZE:
+                        ModelAttributes.FETCH_SIZE.parseAndSetParameter(attrValue, persistence, reader);
+                        break;
+                    case COMPRESS:
+                        ModelAttributes.COMPRESS.parseAndSetParameter(attrValue, persistence, reader);
+                        break;
+                    case PERSISTENCE_DS_JNDI:
+                        ModelAttributes.PERSISTENCE_DS_JNDI_NAME.parseAndSetParameter(attrValue, persistence, reader);
+                        break;
+                    case POOL_SIZE:
+                        ModelAttributes.POOL_SIZE.parseAndSetParameter(attrValue, persistence, reader);
+                        break;
+                    default:
+                        throw ParseUtils.unexpectedAttribute(reader, i);
+                }
+            }
+        }
+
+        String dbPersistenceKey = Attribute.DB_PERSISTENCE.getLocalName();
+        persistence.get(OP_ADDR)
+                     .add(SUBSYSTEM, ModeShapeExtension.SUBSYSTEM_NAME)
+                     .add(ModelKeys.REPOSITORY, repositoryName)
+                     .add(dbPersistenceKey, dbPersistenceKey);
+
+        requireNoElements(reader);
+        
+        return persistence;
     }
 
     private void parseNodeTypes( XMLExtendedStreamReader reader,

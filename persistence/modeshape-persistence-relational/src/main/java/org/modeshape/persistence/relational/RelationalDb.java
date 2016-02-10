@@ -167,9 +167,10 @@ public class RelationalDb implements SchematicDb {
         Document cachedDocument = transactionalCaches.search(key);
         // if we found a cached value, return either that or null if it has been removed
         if (cachedDocument != null) {
+            logDebug("Getting {0} from cache; value {1}", key, cachedDocument);
             return cachedDocument != TransactionalCaches.REMOVED ? cachedDocument : null;
         }
-        // if it's not in the cache, bring one from the DB using or TL connection
+        // if it's not in the cache, bring one from the DB using a TL connection
         Document doc = runWithConnection(connection -> statements.getById(connection, key, this::readDocument), false);
         if (doc != null) {
             // store for further reading...
@@ -187,7 +188,7 @@ public class RelationalDb implements SchematicDb {
             try (InputStream contentStream = config.compress() ? 
                                              new GZIPInputStream(binaryStream) : 
                                              new BufferedInputStream(binaryStream)) {
-                return Json.read(contentStream);    
+                return Json.read(contentStream, false);    
             }
         } catch (Exception e) {
             throw new RelationalProviderException(e);
@@ -200,7 +201,7 @@ public class RelationalDb implements SchematicDb {
         transactionalCaches.putForWriting(key, entry.source());
     }
 
-    private StatementsProvider.StreamSupplier documentStream(Document content)  {
+    private StatementsProvider.StreamSupplier writeDocument(Document content)  {
         try {
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
             try (OutputStream out = config.compress() ? new GZIPOutputStream(bos) : new BufferedOutputStream(bos)) {
@@ -282,6 +283,12 @@ public class RelationalDb implements SchematicDb {
     }
 
     @Override
+    public void locksObtained(String txId, Set<String> ids) {
+        logDebug("Transaction {0} now has exclusive locks on {1}. Flushing local cache...", txId, ids);
+        transactionalCaches.flushReadCache(ids);
+    }
+
+    @Override
     public void txStarted(String id) {
         logDebug("New transaction '{0}' started by ModeShape...", id);
         // mark the current thread as linked to a tx...
@@ -323,7 +330,7 @@ public class RelationalDb implements SchematicDb {
                 if (TransactionalCaches.REMOVED == document) {
                     statements.removeContent(tlConnection, key);
                 } else {
-                    statements.insertOrUpdateContent(tlConnection, key, documentStream(document));
+                    statements.insertOrUpdateContent(tlConnection, key, writeDocument(document));
                 }
             } catch (SQLException e) {
                 throw new RelationalProviderException(e);

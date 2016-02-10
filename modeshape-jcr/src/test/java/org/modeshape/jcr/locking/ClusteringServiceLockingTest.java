@@ -103,7 +103,7 @@ public class ClusteringServiceLockingTest extends StandaloneLockingServiceTest {
         assertFalse(service2.tryLock("lock2", "lock3"));
         assertTrue(service1.unlock("lock2").isEmpty());
         assertTrue(service2.tryLock("lock2", "lock3"));
-        assertFalse(service1.unlock("lock2").isEmpty());
+        assertFalse(service1.tryLock("lock3"));
         assertTrue(service2.unlock("lock2", "lock3").isEmpty());
     }
 

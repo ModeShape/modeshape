@@ -15,6 +15,7 @@
  */
 package org.modeshape.schematic.document;
 
+import java.io.Serializable;
 import java.util.Arrays;
 import org.modeshape.schematic.Base64;
 import org.modeshape.schematic.annotation.Immutable;
@@ -25,7 +26,8 @@ import org.modeshape.schematic.annotation.Immutable;
  * @author Randall Hauch <rhauch@redhat.com> (C) 2011 Red Hat Inc.
  */
 @Immutable
-public final class Binary {
+public final class Binary implements Serializable {
+    private static final long serialVersionUID = 1L;
 
     private final byte type;
     private final byte[] data;

@@ -15,9 +15,12 @@
  */
 package org.modeshape.schematic;
 
+import java.util.Set;
+
 /**
  * Notification interface which is used by ModeShape to tell a 3rd party (typically a {@link SchematicDb}) when a transaction has 
- * been started, committed or rolled back from ModeShape's perspective.
+ * been started, committed or rolled back from ModeShape's perspective. It also informs when locks have been obtained by ModeShape
+ * on certain resources.
  * <p>
  * Since ModeShape supports both user-managed transactions and internal transactions, the notification methods from this interface
  * may be called in different contexts. For example, for a ModeShape-managed transaction the {@link #txStarted(String)} method
@@ -57,4 +60,12 @@ public interface TransactionListener {
      * @param id the tx id; never null
      */
     void txRolledback(String id);
+
+    /**
+     * Called to indicate that ModeShape has obtained exclusive locks on a set of ids as part of an active transaction. 
+     * 
+     * @param txId the transaction id; never null
+     * @param ids a collection of all the ids which have been successfully locked; never null
+     */
+    void locksObtained(String txId, Set<String> ids);
 }

@@ -124,6 +124,7 @@ public final class JcrI18n {
     public static I18n errorCleaningUpLocks;
     public static I18n errorRefreshingLocks;
     public static I18n lockNotFound;
+    public static I18n unexpectedLockingError;
     public static I18n invalidRelativePath;
     public static I18n invalidAbsolutePath;
     public static I18n invalidPathParameter;

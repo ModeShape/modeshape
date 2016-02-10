@@ -13,24 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.modeshape.persistence.relational;
+package org.modeshape.test.performance;
 
-import org.modeshape.schematic.SchematicDbProvider;
-import org.modeshape.schematic.document.Document;
+import org.junit.Test;
+import org.modeshape.jcr.TestingUtil;
 
-/**
- * {@link SchematicDbProvider} implementation for relational databases.
- * 
- * @author Horia Chiorean (hchiorea@redhat.com)
- * @since 5.0
- */
-public class RelationalProvider implements SchematicDbProvider<RelationalDb> {
+public class FSPerformanceTest extends InMemoryPerformanceTest {
+    @Override
+    protected void cleanUpFileSystem() {
+        TestingUtil.waitUntilFolderCleanedUp("target/perf-test");
+    }
 
     @Override
-    public RelationalDb getDB(String type, Document configuration) {
-        if (!RelationalDbConfig.ALIASES.contains(type.toLowerCase())) {
-            return null;
-        }
-        return new RelationalDb(configuration);
+    @Test
+    public void shouldGetNodePathsInFlatLargeHierarchyWithSns() throws Exception {
+        super.shouldGetNodePathsInFlatLargeHierarchyWithSns();
     }
 }

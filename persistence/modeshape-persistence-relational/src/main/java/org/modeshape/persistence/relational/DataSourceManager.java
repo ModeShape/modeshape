@@ -78,7 +78,7 @@ public final class DataSourceManager {
         ds.setDriverClassName(driver);
         ds.setUsername(userName);
         ds.setPassword(password);
-        ds.setMaximumPoolSize(config.threadPoolSize());
+        ds.setMaximumPoolSize(config.poolSize());
         ds.setIdleTimeout(10000); //10sec
         dataSource = ds;
 

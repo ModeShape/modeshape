@@ -16,14 +16,11 @@
 package org.modeshape.test.integration;
 
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
 import java.io.File;
+import java.util.UUID;
 import javax.annotation.Resource;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
-import javax.jcr.query.Query;
-import javax.jcr.query.QueryManager;
-import javax.jcr.query.QueryResult;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.shrinkwrap.api.ArchivePaths;
@@ -59,35 +56,41 @@ public class ClusteredConfigurationIntegrationTest {
     @Resource( mappedName = "java:/jcr/repo-clustered2" )
     private JcrRepository clusteredRepository2;
 
+    @Resource( mappedName = "java:/jcr/repo-clustered3" )
+    private JcrRepository clusteredRepository3;
+
+    @Resource( mappedName = "java:/jcr/repo-clustered4" )
+    private JcrRepository clusteredRepository4;
+
     @Before
     public void before() {
         assertNotNull(clusteredRepository1);
         assertNotNull(clusteredRepository2);
+        assertNotNull(clusteredRepository3);
+        assertNotNull(clusteredRepository4);
     }
 
     @Test
     @FixFor({"MODE-1923", "MODE-1929", "MODE-2226"})
     public void clusteredRepositoryShouldHaveStartedUpUsingExternalJGroupsConfigFile() throws Exception {
-        checkRepoStarted(clusteredRepository1);
-        checkRepoStarted(clusteredRepository2);
+        checkRepoStarted(clusteredRepository1, clusteredRepository2);
     }
-
-    private void checkRepoStarted(JcrRepository repository) throws RepositoryException {
-        Session session = repository.login();
-        assertNotNull(session);
-        session.logout();
-    }
-
+    
     @Test
-    @FixFor( "MODE-1935" )
-    public void shouldIndexNodesOnMaster() throws Exception {
-        Session session = clusteredRepository1.login();
-        session.getRootNode().addNode("test");
-        session.save();
+    public void clusteredRepositoryShouldHaveStartedUsingInternalJGroupsConfig() throws Exception {
+        checkRepoStarted(clusteredRepository3, clusteredRepository4);
+    }
 
-        String queryString = "select * from [nt:unstructured] where [jcr:name] like '%test%'";
-        QueryManager queryManager = session.getWorkspace().getQueryManager();
-        QueryResult result = queryManager.createQuery(queryString, Query.JCR_SQL2).execute();
-        assertTrue(result.getNodes().getSize() > 0);
+    private void checkRepoStarted(JcrRepository firstRepo, JcrRepository secondRepo) throws RepositoryException {
+        Session firstSession = firstRepo.login();
+        assertNotNull(firstSession);
+        String uuid = UUID.randomUUID().toString();
+        firstSession.getRootNode().addNode(uuid);
+        firstSession.save();
+        firstSession.logout();
+        
+        Session secondSession = secondRepo.login();
+        assertNotNull(secondSession.getNode("/" + uuid));
+        secondSession.logout();
     }
 }

@@ -88,6 +88,27 @@
 			<unpack>false</unpack>
 		</dependencySet>
 
+        <!-- Module for the ModeShape schematic -->
+        <dependencySet>
+            <useProjectArtifact>false</useProjectArtifact>
+            <outputDirectory>${jboss.kit.modules.location}/org/modeshape/schematic/main</outputDirectory>
+            <includes>
+                <include>org.modeshape:modeshape-schematic:jar</include>
+            </includes>
+            <unpack>false</unpack>
+        </dependencySet>
+
+        <!--Relational persistence module -->
+        <dependencySet>
+            <useProjectArtifact>false</useProjectArtifact>
+            <outputDirectory>${jboss.kit.modules.location}/org/modeshape/persistence/relational/main</outputDirectory>
+            <includes>
+                <include>org.modeshape:modeshape-persistence-relational:jar</include>
+                <include>com.zaxxer:HikariCP:jar</include>
+                <include>com.h2database:h2:jar</include>
+            </includes>
+        </dependencySet>
+        
 		<!-- Module for the ModeShape API (extension of the JCR API) -->
 		<dependencySet>
             <useProjectArtifact>false</useProjectArtifact>
@@ -115,7 +136,6 @@
             <includes>
                 <include>org.modeshape:modeshape-jcr:jar</include>
                 <include>org.modeshape:modeshape-jbossas-subsystem:jar</include>
-                <include>org.modeshape:modeshape-schematic:jar</include>
                 <include>org.mapdb:mapdb:jar</include>
                 <include>com.googlecode.concurrentlinkedhashmap:concurrentlinkedhashmap-lru:jar</include>
             </includes>
@@ -175,12 +195,13 @@
 
         <dependencySet>
             <useProjectArtifact>false</useProjectArtifact>
-            <outputDirectory>${jboss.kit.modules.location}/org/modeshape/persistence/relational/main</outputDirectory>
+            <outputDirectory>${jboss.kit.modules.location}/org/modeshape/connector/jdbc/metadata/main</outputDirectory>
             <includes>
-                <include>org.modeshape:modeshape-persistence-relational:jar</include>
+                <include>org.modeshape:modeshape-connector-jdbc-metadata:jar</include>
                 <include>com.zaxxer:HikariCP:jar</include>
             </includes>
         </dependencySet>
+
 
         <!--Sequencers-->
         <dependencySet>

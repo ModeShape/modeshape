@@ -18,7 +18,7 @@
 <module xmlns="urn:jboss:module:1.3" name="org.modeshape.connector.jdbc.metadata">
     <resources>
         <resource-root path="modeshape-connector-jdbc-metadata-${project.version}.jar" />
-        <resource-root path="c3p0-${version.com.mchange.c3p0}.jar" />
+        <resource-root path="HikariCP-${version.com.zaxxer.HikariCP}.jar" />
     </resources>
 
     <dependencies>

@@ -1,0 +1,20 @@
+{
+    "name" : "FS Repository",
+    "storage" : {
+        "persistence" : {
+            "type" : "db",
+            "connectionUrl" : "jdbc:h2:file:./target/perf_test/db",
+            "dropOnExit" : true
+        }
+    },
+    "workspaces" : {
+        "default" : "default",
+        "allowCreation" : true
+    },
+    "security" : {
+        "anonymous" : {
+            "roles" : ["readonly","readwrite","admin"],
+            "useOnFailedLogin" : false
+        }
+    }
+}

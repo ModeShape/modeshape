@@ -42,8 +42,8 @@ public final class TransactionalCaches {
         this.cachesByTxId = new ConcurrentHashMap<>();
     }    
 
-    protected ReadWriteCache cacheForTransaction() {
-        return cachesByTxId.computeIfAbsent(TransactionsHolder.requireActiveTransaction(), ReadWriteCache::new);
+    protected void flushReadCache(Set<String> ids) {
+        cacheForTransaction().flushReadCache(ids);
     }
     
     protected Document search(String key) {
@@ -96,14 +96,16 @@ public final class TransactionalCaches {
             return null;
         });
     }
-    
+
+    private ReadWriteCache cacheForTransaction() {
+        return cachesByTxId.computeIfAbsent(TransactionsHolder.requireActiveTransaction(), ReadWriteCache::new);
+    }
+
     private static class ReadWriteCache {
-        private final ConcurrentMap<String, Document> read;
-        private final ConcurrentMap<String, Document> write;
+        private final ConcurrentMap<String, Document> read = new ConcurrentHashMap<>();
+        private final ConcurrentMap<String, Document> write = new ConcurrentHashMap<>();
 
         protected ReadWriteCache(String txId) {
-            read = new ConcurrentHashMap<>();
-            write = new ConcurrentHashMap<>();
         }
 
         protected Document getFromReadCache(String id) {
@@ -147,6 +149,17 @@ public final class TransactionalCaches {
         protected void clear() {
             read.clear();
             write.clear();
+        }
+        
+        protected void flushReadCache(String id) {
+            read.remove(id);
+        }
+        
+        protected void flushReadCache(Set<String> ids) {
+            if (read.isEmpty()) {
+                return;
+            }
+            ids.stream().forEach(this::flushReadCache);
         }
     }
 }

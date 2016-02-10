@@ -1,6 +1,5 @@
 <subsystem xmlns="urn:jboss:domain:modeshape:3.0">
-  <repository name="sample"
-              cache-name="sample">
+  <repository name="sample">
     <workspaces default-workspace="default" allow-workspace-creation="true">
       <workspace name="predefinedWorkspace1">
           <initial-content>file1</initial-content>

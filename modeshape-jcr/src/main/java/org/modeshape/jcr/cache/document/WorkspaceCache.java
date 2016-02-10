@@ -335,6 +335,10 @@ public class WorkspaceCache implements DocumentCache {
         if (document != null) {
             NodeKey nodeKey = new NodeKey(key);
             this.nodesByKey.put(nodeKey, new LazyCachedNode(nodeKey, document));
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("Read a fresh copy from the document store for '{0}' and stored it in the tx ws cache as '{1}'", 
+                             key, document);
+            }
         }
     }
 

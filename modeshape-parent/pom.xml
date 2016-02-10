@@ -312,8 +312,6 @@
                 <dependency>
                     <groupId>com.h2database</groupId>
                     <artifactId>h2</artifactId>
-                    <version>${version.com.h2}</version>
-                    <scope>test</scope>
                 </dependency>
             </dependencies>
             <properties>
@@ -1192,6 +1190,12 @@
             <!-- 
                 Used by ModeShape's persistence providers...            
             -->
+            <!-- H2 is used for testing in some cases regardless of the DB profile-->
+            <dependency>
+                <groupId>com.h2database</groupId>
+                <artifactId>h2</artifactId>
+                <version>${version.com.h2}</version>
+            </dependency>
             <dependency>
                 <groupId>com.zaxxer</groupId>
                 <artifactId>HikariCP</artifactId>
@@ -1806,12 +1810,6 @@
                 <artifactId>narayana-jta</artifactId>
                 <version>${version.org.jboss.jbossts.jta}</version>
                 <scope>test</scope>
-            </dependency>
-            <!-- H2 is used for testing in some cases regardless of the DB profile-->
-            <dependency>
-                <groupId>com.h2database</groupId>
-                <artifactId>h2</artifactId>
-                <version>${version.com.h2}</version>
             </dependency>
           
             <!--

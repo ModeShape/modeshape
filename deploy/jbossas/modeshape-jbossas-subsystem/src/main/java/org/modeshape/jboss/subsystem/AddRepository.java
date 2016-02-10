@@ -124,9 +124,6 @@ public class AddRepository extends AbstractAddStepHandler {
         final ServiceTarget target = context.getServiceTarget();
         final AddressContext addressContext = AddressContext.forOperation(operation);
         final String repositoryName = addressContext.repositoryName();
-        final String cacheName = attribute(context, model, ModelAttributes.CACHE_NAME, repositoryName);
-        String infinispanConfig = attribute(context, model, ModelAttributes.CACHE_CONFIG, null);
-        String configRelativeTo = attribute(context, model, ModelAttributes.CONFIG_RELATIVE_TO).asString();
         final String clusterName = attribute(context, model, ModelAttributes.CLUSTER_NAME, null);
         final boolean enableMonitoring = attribute(context, model, ModelAttributes.ENABLE_MONITORING).asBoolean();
         final String gcThreadPool = attribute(context, model, ModelAttributes.GARBAGE_COLLECTION_THREAD_POOL, null);
@@ -160,23 +157,9 @@ public class AddRepository extends AbstractAddStepHandler {
         if (lockTimeoutMillis != null) {
             configDoc.setNumber(FieldName.LOCK_TIMEOUT_MILLIS, lockTimeoutMillis);
         }
-
-        // Parse the cache configuration
-        if (StringUtil.isBlank(infinispanConfig)) {
-            infinispanConfig = "modeshape/" + repositoryName + "-cache-config.xml";
-        } else {
-            // check if it's a system property
-            String infinispanConfigSystemProperty = System.getProperty(infinispanConfig);
-            if (!StringUtil.isBlank(infinispanConfigSystemProperty)) {
-                infinispanConfig = infinispanConfigSystemProperty;
-            }
-        }
         
         List<String> additionalClasspathEntries = new ArrayList<>();
         
-        // Set the storage information (that was set on the repository ModelNode) ...
-        setRepositoryStorageConfiguration(infinispanConfig, cacheName, configDoc);
-
         // Always set whether monitoring is enabled ...
         enableMonitoring(enableMonitoring, configDoc);
 
@@ -191,13 +174,6 @@ public class AddRepository extends AbstractAddStepHandler {
 
         // Now create the repository service that manages the lifecycle of the JcrRepository instance ...
         RepositoryConfiguration repositoryConfig = new RepositoryConfiguration(configDoc, repositoryName);
-        String configRelativeToSystemProperty = System.getProperty(configRelativeTo);
-        if (!StringUtil.isBlank(configRelativeToSystemProperty)) {
-            configRelativeTo = configRelativeToSystemProperty;
-        }
-        if (!configRelativeTo.endsWith("/")) {
-            configRelativeTo = configRelativeTo  + "/";
-        }
         
         String additionalModuleDependencies = attribute(context, model, ModelAttributes.REPOSITORY_MODULE_DEPENDENCIES, null);
         RepositoryService repositoryService = new RepositoryService(repositoryConfig, additionalModuleDependencies);
@@ -416,14 +392,6 @@ public class AddRepository extends AbstractAddStepHandler {
         servlet.set(FieldName.CLASSNAME, "servlet");
         providers.add(servlet);
     }
-
-    private void setRepositoryStorageConfiguration( String infinispanConfig,
-                                                    String cacheName,
-                                                    EditableDocument configDoc ) {
-        EditableDocument storage = configDoc.getOrCreateDocument(FieldName.STORAGE);
-        //TODO author=Horia Chiorean date=29/01/2016 description=fix
-    }
-
 
     private EditableDocument parseWorkspaces(OperationContext context,
                                              ModelNode model,

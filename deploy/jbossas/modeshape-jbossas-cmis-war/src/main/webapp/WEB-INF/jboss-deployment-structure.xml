@@ -13,6 +13,7 @@
             <module name="javax.xml.ws.api"/>
             <module name="javax.jcr"/>
             <module name="org.modeshape.jcr.api" services="import"/>
+            <module name="org.modeshape.persistence.relational" services="import"/>
             <module name="org.modeshape" services="import"/>
         </dependencies>
         <!--

@@ -15,7 +15,7 @@
  */
 package org.modeshape.persistence.relational;
 
-import static junit.framework.Assert.assertEquals;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -34,7 +34,7 @@ public class RelationalProviderTest {
     
     @Test
     public void shouldReturnDefaultDbWhenNoExplicitConfigurationGiven() {
-        BasicDocument configDocument = new BasicDocument(Schematic.TYPE_FIELD, RelationalProvider.ALIAS1);
+        BasicDocument configDocument = new BasicDocument(Schematic.TYPE_FIELD, RelationalDbConfig.ALIAS1);
         RelationalDb db = Schematic.getDb(configDocument);
         assertNotNull(db);
         assertEquals(RelationalDbConfig.DEFAULT_CONNECTION_URL, db.id());
@@ -46,7 +46,6 @@ public class RelationalProviderTest {
         assertEquals(RelationalDbConfig.DEFAULT_TABLE_NAME, config.tableName());
         assertEquals(RelationalDbConfig.DEFAULT_FETCH_SIZE, config.fetchSize());
         assertTrue(config.compress());
-        assertEquals(RelationalDbConfig.DEFAULT_CACHE_SIZE, config.cacheSize());
         
         DataSourceManager dsManager = db.dsManager();
         assertNotNull(dsManager);
@@ -66,8 +65,6 @@ public class RelationalProviderTest {
         assertEquals("REPO", config.tableName());
         assertEquals(100, config.fetchSize());
         assertFalse(config.compress());
-        assertEquals(100, config.cacheSize());
-
 
         DataSourceManager dsManager = db.dsManager();
         assertNotNull(dsManager);

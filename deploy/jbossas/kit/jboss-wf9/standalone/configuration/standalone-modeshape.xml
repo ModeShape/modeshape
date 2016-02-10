@@ -277,13 +277,15 @@
             <webapp name="modeshape-cmis.war"/>
             <webapp name="modeshape-explorer.war"/>
 
-            <!-- A sample repository that uses the "sample" cache in the "modeshape" container. All content, binary values,
-                 and indexes are stored within the server's data directory. This is the simplest way to configure a repository
-                 that uses defaults for everything; feel free to change and specify other configuration options.  -->
-            <repository name="sample" anonymous-roles="admin"/>
+            <!-- A sample repository. All content, binary values,and indexes are stored within the server's data directory. 
+                 This is the simplest way to configure a repository that uses defaults for everything; feel free to change 
+                 and specify other configuration options.  -->
+            <repository name="sample" anonymous-roles="admin">
+                <db-persistence url="jdbc:h2:file:${jboss.server.data.dir}/modeshape/sample/db;DB_CLOSE_DELAY=0"/>
+            </repository>
             <!-- A second sample repository that defines additional non-default components such as extra workspaces and sequencers. -->
             <repository name="artifacts" anonymous-roles="admin">
-                <!--Store binary artifacts on the FS under ${jboss.data.dir}/modeshape/artifacts/binaries -->
+                <db-persistence url="jdbc:h2:file:${jboss.server.data.dir}/modeshape/artifacts/db;DB_CLOSE_DELAY=0"/>
                 <file-binary-storage/>
                 <!-- Define 3 workspaces to exist upon startup -->
                 <workspaces default-workspace="default" allow-workspace-creation="false">
@@ -436,7 +438,12 @@
                 </security-domain>
                 <security-domain name="modeshape-security" cache-type="default">
                     <authentication>
-                        <login-module code="RealmDirect" flag="required">
+                        <!--keep things simple...-->
+                        <login-module code="UsersRoles" flag="sufficient">
+                            <module-option name="usersProperties" value="${jboss.server.config.dir}/modeshape-users.properties"/>
+                            <module-option name="rolesProperties" value="${jboss.server.config.dir}/modeshape-roles.properties"/>
+                        </login-module>
+                        <login-module code="RealmDirect" flag="sufficient">
                             <module-option name="password-stacking" value="useFirstPass"/>
                         </login-module>
                     </authentication>

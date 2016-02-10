@@ -15,6 +15,8 @@
  */
 package org.modeshape.jboss.service;
 
+import java.io.FileInputStream;
+import java.io.InputStream;
 import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -36,6 +38,8 @@ import org.jboss.msc.service.StopContext;
 import org.jboss.msc.value.InjectedValue;
 import org.jboss.security.ISecurityManagement;
 import org.jgroups.Channel;
+import org.jgroups.JChannel;
+import org.jgroups.conf.XmlConfigurator;
 import org.modeshape.common.collection.Problems;
 import org.modeshape.common.util.DelegatingClassLoader;
 import org.modeshape.common.util.StringUtil;
@@ -157,7 +161,16 @@ public class RepositoryService implements Service<JcrRepository>, Environment {
     @Override
     public Channel getChannel(String name) throws Exception {
         final ChannelFactory channelFactory = channelFactoryInjector.getOptionalValue();
-        return channelFactory != null ? channelFactory.createChannel(name) : null;
+        if (channelFactory != null) {
+            // there is a cluster-stack attribute configured, so use that
+            return channelFactory.createChannel(name);
+        }
+        // there is no cluster stack, so use a configured XML file 
+        String clusterConfig = repositoryConfiguration.getClustering().getConfiguration();
+        assert clusterConfig != null;
+        InputStream configStream = new FileInputStream(clusterConfig);
+        XmlConfigurator configurator = XmlConfigurator.getInstance(configStream);
+        return new JChannel(configurator);
     }
 
     public final String repositoryName() {
@@ -399,6 +412,40 @@ public class RepositoryService implements Service<JcrRepository>, Environment {
                 break;
             }
         }
+
+        // Get and apply the changes to the current configuration. Note that the 'update' call asynchronously
+        // updates the configuration, and returns a Future<JcrRepository> that we could use if we wanted to
+        // wait for the changes to take place. But we don't want/need to wait, so we'll not use the Future ...
+        Changes changes = editor.getChanges();
+        engine.update(repositoryName, changes);
+    }
+    
+    /**
+     * Immediately change and apply the specified persistence field to the repository configuration
+     * 
+     * @param defn the attribute definition for the value; may not be null
+     * @param newValue the new string value
+     * @throws RepositoryException if there is a problem obtaining the repository configuration or applying the change
+     * @throws OperationFailedException if there is a problem obtaining the raw value from the supplied model node
+     */
+    public void changePersistenceField(MappedAttributeDefinition defn,
+                                       ModelNode newValue) throws RepositoryException, OperationFailedException {
+        ModeShapeEngine engine = getEngine();
+        String repositoryName = repositoryName();
+
+        // Get a snapshot of the current configuration ...
+        RepositoryConfiguration config = engine.getRepositoryConfiguration(repositoryName);
+
+        // Now start to make changes ...
+        Editor editor = config.edit();
+        EditableDocument persistence = editor.getOrCreateDocument(FieldName.STORAGE).getOrCreateDocument(FieldName.PERSISTENCE);
+
+        // Change the field ...
+        String fieldName = defn.getFieldName();
+        // Get the raw value from the model node ...
+        Object rawValue = defn.getTypedValue(newValue);
+        // And update the field ...
+        persistence.set(fieldName, rawValue);        
 
         // Get and apply the changes to the current configuration. Note that the 'update' call asynchronously
         // updates the configuration, and returns a Future<JcrRepository> that we could use if we wanted to

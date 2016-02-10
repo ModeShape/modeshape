@@ -38,7 +38,7 @@ public interface Environment {
      */
     default Document defaultPersistenceConfiguration() {
         try {
-            return Json.read(RepositoryConfiguration.class.getResource("default-persistence-config.json"));
+            return Json.read(getClassLoader(this).getResource("org/modeshape/jcr/default-persistence-config.json"));
         } catch (ParsingException e) {
             throw new RuntimeException(e);
         }

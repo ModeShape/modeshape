@@ -52,13 +52,7 @@ import static org.junit.Assert.fail;
 public class JDBCRepositoryIntegrationTest {
 
     private static final JcrTools JCR_TOOLS = new JcrTools();
-
-    @Resource( mappedName = "/jcr/jdbcRepository" )
-    private Repository repositoryWithoutEviction;
-
-    @Resource( mappedName = "/jcr/jdbcRepositoryWithEviction" )
-    private Repository repositoryWithEviction;
-
+    
     @Resource (mappedName =  "/jcr/dbBinaryJDBCRepository")
     private JcrRepository repositoryWithDbBinaryStorage;
 
@@ -68,17 +62,6 @@ public class JDBCRepositoryIntegrationTest {
         // Add our custom Manifest, which has the additional Dependencies entry ...
         archive.setManifest(new File("src/main/webapp/META-INF/MANIFEST.MF"));
         return archive;
-    }
-
-    @Test
-    public void shouldPersistDataInJDBCWithoutEviction() throws Exception {
-        assertDataPersisted(repositoryWithoutEviction);
-    }
-
-    @Test
-    @FixFor( "MODE-1842" )
-    public void shouldPersistDataInJDBCWithEviction() throws Exception {
-        assertDataPersisted(repositoryWithEviction);
     }
 
     private void assertDataPersisted( Repository repository ) throws RepositoryException {
@@ -106,6 +89,7 @@ public class JDBCRepositoryIntegrationTest {
     @Test
     @FixFor( "MODE-2194" )
     public void shouldPersistBinaryDataInDBBinaryStore() throws Exception {
+        assertDataPersisted(repositoryWithDbBinaryStorage);
         persistBinaryContent(repositoryWithDbBinaryStorage);
     }
 

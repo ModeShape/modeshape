@@ -82,23 +82,23 @@ public class ModeShapeConfigurationTest extends AbstractSubsystemBaseTest {
     }
 
     @Test
-    public void testOutputPersistenceOfConfigurationWithIndexStorage() throws Exception {
+    public void testConfigurationWithIndexStorage() throws Exception {
         parse(readResource("modeshape-index-storage.xml"));
     }
 
     @Test
-    public void testOutputPersistenceOfConfigurationWithAllIndexTypes() throws Exception {
+    public void testConfigurationWithAllIndexTypes() throws Exception {
         // fix for MODE-2348
         parse(readResource("modeshape-index-types.xml"));
     }
 
     @Test
-    public void testOutputPersistenceOfConfigurationWithFileBinaryStorage() throws Exception {
+    public void testConfigurationWithFileBinaryStorage() throws Exception {
         parse(readResource("modeshape-file-binary-storage.xml"));
     }  
     
     @Test
-    public void testOutputPersistenceOfConfigurationWithTransientBinaryStorage() throws Exception {
+    public void testConfigurationWithTransientBinaryStorage() throws Exception {
         parse(readResource("modeshape-transient-binary-storage.xml"));
     }  
     
@@ -108,7 +108,7 @@ public class ModeShapeConfigurationTest extends AbstractSubsystemBaseTest {
     }
 
     @Test
-    public void testOutputPersistenceOfConfigurationWithCompositeBinaryStores() throws Exception {
+    public void testConfigurationWithCompositeBinaryStores() throws Exception {
         parse(readResource("modeshape-composite-binary-storage-config.xml"));
     }
 
@@ -118,67 +118,72 @@ public class ModeShapeConfigurationTest extends AbstractSubsystemBaseTest {
     }
 
     @Test
-    public void testOutputPersistenceOfConfigurationWithWorkspaceInitialContent() throws Exception {
+    public void testConfigurationWithWorkspaceInitialContent() throws Exception {
         parse(readResource("modeshape-initial-content-config.xml"));
     }
     
     @Test
-    public void testOutputPersistenceOfConfigurationWithClustering() throws Exception {
+    public void testConfigurationWithClustering() throws Exception {
         parse(readResource("modeshape-clustered-config.xml"));
     }
 
     @Test
-    public void testOutputPersistenceOfConfigurationWithNodeTypes() throws Exception {
+    public void testConfigurationWithNodeTypes() throws Exception {
         parse(readResource("modeshape-node-types-config.xml"));
     }
 
     @Test
-    public void testOutputPersistenceOfConfigurationWithCustomAuthenticators() throws Exception {
+    public void testConfigurationWithCustomAuthenticators() throws Exception {
         parse(readResource("modeshape-custom-authenticators-config.xml"));
     }
 
     @Test
-    public void testOutputPersistenceOfConfigurationWithWorkspacesCacheContainer() throws Exception {
+    public void testConfigurationWithWorkspacesCacheContainer() throws Exception {
         parse(readResource("modeshape-workspaces-cache-config.xml"));
     }
 
     @Test
-    public void testOutputPersistenceOfConfigurationWithExternalSources() throws Exception {
+    public void testConfigurationWithExternalSources() throws Exception {
         parse(readResource("modeshape-federation-config.xml"));
     }
 
     @Test
-    public void testOutputPersistenceOfConfigurationWithGarbageCollectionSpecified() throws Exception {
+    public void testConfigurationWithGarbageCollectionSpecified() throws Exception {
         parse(readResource("modeshape-garbage-collection.xml"));
     }
 
     @Test
-    public void testOutputPersistenceOfConfigurationWithWebapps() throws Exception {
+    public void testConfigurationWithWebapps() throws Exception {
         parse(readResource("modeshape-webapp-config.xml"));
     }
 
     @Test
-    public void testOutputPersistenceOfConfigurationWithJournaling() throws Exception {
+    public void testConfigurationWithJournaling() throws Exception {
         parse(readResource("modeshape-journaling.xml"));
     }
     
     @Test
-    public void testOutputPersistenceOfConfigurationWithOptimization() throws Exception {
+    public void testConfigurationWithOptimization() throws Exception {
         parse(readResource("modeshape-optimiziation-config.xml"));
     }
     
     @Test
-    public void testOutputPersistenceOfConfigurationWithMimeTypeDetection() throws Exception {
+    public void testConfigurationWithMimeTypeDetection() throws Exception {
         parse(readResource("modeshape-mime-type-detection.xml"));
     } 
     
     @Test
-    public void testOutputPersistenceOfConfigurationWithReindexing() throws Exception {
+    public void testConfigurationWithReindexing() throws Exception {
         parse(readResource("modeshape-reindexing.xml"));
+    }
+    
+    @Test
+    public void testConfigurationWithPersistence() throws Exception {
+        parse(readResource("modeshape-persistence-config.xml"));
     }  
     
     @Test
-    public void testOutputPersistenceOfConfigurationWithCustomDependencies() throws Exception {
+    public void testConfigurationWithCustomDependencies() throws Exception {
         parse(readResource("modeshape-repository-dependencies-config.xml"));
     }
 

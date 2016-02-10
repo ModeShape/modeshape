@@ -162,8 +162,6 @@ public class Transactions {
             txnMgr.begin();
             // create our wrapper ...
             localTx = new NestableThreadLocalTransaction(txnMgr).begin();
-            // and notify the listener
-            listener.txStarted(localTx.id);
             return logTransactionInformation(localTx);
         }
 
@@ -175,8 +173,6 @@ public class Transactions {
         } else {
             synchronizedTransaction = new SynchronizedTransaction(txnMgr, txn);
             transactionTable.put(txn, synchronizedTransaction);
-            // this is the first time ModeShape has seen this user transaction, so notify the listener
-            listener.txStarted(synchronizedTransaction.id);
             // and register a synchronization
             txn.registerSynchronization(synchronizedTransaction);
             return logTransactionInformation(synchronizedTransaction);
@@ -398,6 +394,13 @@ public class Transactions {
          * @throws SystemException If the transaction service fails in an unexpected way.
          */
         void rollback() throws IllegalStateException, SecurityException, SystemException;
+
+        /**
+         * Indicates that a set of exclusive locks have been obtained for the given ids.
+         * 
+         * @param ids a set of ids, never null.
+         */
+        void locksObtained(Set<String> ids);
     }
 
     /**
@@ -417,6 +420,15 @@ public class Transactions {
         protected BaseTransaction( TransactionManager txnMgr ) {
             this.txnMgr = txnMgr;
             this.id = UUID.randomUUID().toString();
+        }
+
+        protected void started() {
+            Transactions.this.listener.txStarted(id);
+        }
+
+        @Override
+        public void locksObtained(Set<String> ids) {
+            Transactions.this.listener.locksObtained(id, ids);            
         }
 
         @Override
@@ -468,6 +480,7 @@ public class Transactions {
 
         protected SimpleTransaction( TransactionManager txnMgr ) {
             super(txnMgr);
+            started();
         }
 
         @Override
@@ -601,6 +614,7 @@ public class Transactions {
         protected SynchronizedTransaction( TransactionManager txnMgr, javax.transaction.Transaction transaction ) {
             super(txnMgr);
             this.transaction = transaction;
+            started();
         }
 
         @Override
@@ -648,7 +662,12 @@ public class Transactions {
 
     protected class RollbackOnlyTransaction implements Transaction {
 
-        public RollbackOnlyTransaction() {
+        protected RollbackOnlyTransaction() {
+        }
+
+        @Override
+        public void locksObtained(Set<String> ids) {
+            //nothing
         }
 
         @Override

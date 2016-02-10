@@ -59,6 +59,8 @@ import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.StringUtil;
+import org.modeshape.jcr.JcrI18n;
+import org.modeshape.jcr.locking.StandaloneLockingService;
 
 /**
  * ModeShape service which handles sending/receiving messages in a cluster via JGroups. This service is also a
@@ -122,6 +124,11 @@ public abstract class ClusteringService implements org.modeshape.jcr.locking.Loc
     private final Set<MessageConsumer<Serializable>> consumers;
 
     /**
+     * An embedded standalone locking service which will be used when there are no members in the cluster.
+     */
+    private final StandaloneLockingService standaloneLockingService;
+
+    /**
      * The default lock timeout
      */
     private volatile long lockTimeoutMillis = 0;
@@ -135,7 +142,8 @@ public abstract class ClusteringService implements org.modeshape.jcr.locking.Loc
         this.isOpen = new AtomicBoolean(false);
         this.membersInCluster = new AtomicInteger(1);
         this.maxAllowedClockDelayMillis = DEFAULT_MAX_CLOCK_DELAY_CLUSTER_MILLIS;
-        this.consumers = new CopyOnWriteArraySet<>();
+        this.consumers = new CopyOnWriteArraySet<>();   
+        this.standaloneLockingService = new StandaloneLockingService();
     }
 
     /**
@@ -198,6 +206,9 @@ public abstract class ClusteringService implements org.modeshape.jcr.locking.Loc
     public boolean tryLock( long time,
                             TimeUnit unit,
                             String... names) {
+        if (!multipleMembersInCluster()) {
+            return standaloneLockingService.tryLock(time, unit, names);            
+        }
         Set<Lock> successfullyAcquiredLocks = new HashSet<>();
         for (String name : names) {
             boolean success = false;
@@ -227,7 +238,7 @@ public abstract class ClusteringService implements org.modeshape.jcr.locking.Loc
                              + " received interrupt request while waiting to acquire lock '{0}'", name);
                 Thread.currentThread().interrupt();
             } catch (Exception e) {
-                LOGGER.debug(e, "Unexpected exception while trying to obtain cluster lock {0}", name);
+                LOGGER.error(e, JcrI18n.unexpectedLockingError, name);
             }
             if (!success) {
                 LOGGER.debug("Unable to acquire lock on {0}. Reverting back the already obtained locks: {1}", name,
@@ -255,22 +266,18 @@ public abstract class ClusteringService implements org.modeshape.jcr.locking.Loc
 
     @Override
     public List<String> unlock(String... names) {
+        if (!multipleMembersInCluster()) {
+            return standaloneLockingService.unlock(names);
+        }
         List<String> result = new ArrayList<>();
         for (String name : names) {
             LOGGER.debug("{0} attempting to unlock {1}", channel.getAddress(), name);
             Lock lock = lockService.getLock(name);
-            // JG locks are do not have a holder count, so locking/unlocking an already held lock is a no-op
-            if (!lock.tryLock()) {
-                LOGGER.debug("Unlock {0} failed. Lock is held by someone else...", name);
-                //we can't lock, meaning we aren't really holding this lock so therefore we shouldn't be able to unlock it
-                result.add(name);
-                continue;
-            } 
             try {
                 lock.unlock();
                 LOGGER.debug("Unlocked {0}", name);
             } catch (Exception e) {
-                LOGGER.debug(e, "Unexpected exception while trying to unlock {0}", name);
+                LOGGER.error(e, JcrI18n.unexpectedLockingError, name);
                 result.add(name);                        
             }
         }
@@ -371,11 +378,13 @@ public abstract class ClusteringService implements org.modeshape.jcr.locking.Loc
     /**
      * Starts a standalone clustering service which uses the supplied channel.
      * 
+     *
+     * @param clusterName the name of the cluster to which the JGroups channel should connect; may not be null
      * @param channel a  {@link Channel} instance, may not be {@code null}
      * @return a {@link org.modeshape.jcr.clustering.ClusteringService} instance, never null
      */
-    public static ClusteringService startStandalone(Channel channel) {
-        ClusteringService clusteringService = new StandaloneClusteringService(channel);
+    public static ClusteringService startStandalone(String clusterName, Channel channel) {
+        ClusteringService clusteringService = new StandaloneClusteringService(clusterName, channel);
         clusteringService.init();
         return clusteringService;
     }
@@ -534,8 +543,8 @@ public abstract class ClusteringService implements org.modeshape.jcr.locking.Loc
             this.channel = null;
         }
 
-        protected StandaloneClusteringService( Channel channel ) {
-            super(channel.getClusterName());
+        protected StandaloneClusteringService( String clusterName, Channel channel ) {
+            super(clusterName);
             this.jgroupsConfig = null;
             this.channel = channel;
         }

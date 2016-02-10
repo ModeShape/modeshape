@@ -1046,7 +1046,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                         final String clusterName = clustering.getClusterName();
                         Channel channel = environment().getChannel(clusterName);
                         if (channel != null) {
-                            this.clusteringService = ClusteringService.startStandalone(channel);
+                            this.clusteringService = ClusteringService.startStandalone(clusterName, channel);
                         } else {
                             this.clusteringService = ClusteringService.startStandalone(clusterName, clustering.getConfiguration());        
                         }

@@ -1,6 +1,5 @@
 <subsystem xmlns="urn:jboss:domain:modeshape:3.0">
-  <repository name="sample"
-              cache-name="sample">
+  <repository name="sample">
       <node-types>
           <node-type>file1.cnd</node-type>
           <node-type>${jboss.server.config.dir}/file2.cnd</node-type>

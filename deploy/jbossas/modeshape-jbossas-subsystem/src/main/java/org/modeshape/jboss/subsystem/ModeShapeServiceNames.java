@@ -28,6 +28,11 @@ public class ModeShapeServiceNames {
     public static ServiceName sequencerServiceName( String repositoryName,
                                                     String sequencerName ) {
         return ServiceName.of(ServiceName.JBOSS, "modeshape", repositoryName, "sequencers", sequencerName);
+    }  
+    
+    public static ServiceName persistenceDBServiceName(String repositoryName,
+                                                       String type) {
+        return ServiceName.of(ServiceName.JBOSS, "modeshape", repositoryName, "db-persistence", type);
     }
 
     public static ServiceName sourceServiceName( String repositoryName,

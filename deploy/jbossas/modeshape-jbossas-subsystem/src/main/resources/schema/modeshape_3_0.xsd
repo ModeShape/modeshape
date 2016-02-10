@@ -53,8 +53,23 @@
     </xs:complexType>
 
     <xs:complexType name="repository">
-
         <xs:sequence minOccurs="0" maxOccurs="unbounded">
+            <xs:choice>
+                <xs:element name="db-persistence" type="db-persistence" minOccurs="0" maxOccurs="1">
+                    <xs:annotation>
+                        <xs:documentation>
+                            The repository DB persistence configuration. If absent, will default to an in-memory H2 database.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+                <xs:element name="custom-persistence" type="custom-persistence" minOccurs="0" maxOccurs="1">
+                    <xs:annotation>
+                        <xs:documentation>
+                            A repository custom persistence configuration. If absent, will default to an in-memory H2 database.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:element>  
+            </xs:choice>
             <xs:element name="workspaces" type="workspaces" minOccurs="0" maxOccurs="1">
                 <xs:annotation>
                     <xs:documentation>The definition of the pre-existing workspaces that will exist when the repository starts
@@ -154,31 +169,6 @@
         <xs:attribute name="name" type="xs:string" use="required">
             <xs:annotation>
                 <xs:documentation>The name of the repository, which must be unique within the subsystem.</xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-        <xs:attribute name="cache-name" type="xs:string">
-            <xs:annotation>
-                <xs:documentation>The name of the Infinispan cache where repository content will be stored.
-                    If not provided, the repository name is used for the cache name.
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-        <xs:attribute name="cache-config" type="xs:string">
-            <xs:annotation>
-                <xs:documentation>
-                    The relative path of the file which contains the Infinispan cache(s) configuration.
-                    The folder relative to which this is searched is defined by the config-relative-to attribute.
-                    If this attribute is not provided at all, it defaults to  modeshape/repository-name-cache-config.xml
-                </xs:documentation>
-            </xs:annotation>
-        </xs:attribute>
-        <xs:attribute name="config-relative-to" type="xs:string" default="jboss.server.config.dir">
-            <xs:annotation>
-                <xs:documentation>
-                    The folder relative to which the "cache-config" file will be searched. Defaults to ${jboss.server.config.dir}.
-                    All other cache configuration file (for binary stores, workspace caches etc) will be searched relative
-                    to this location.
-                </xs:documentation>
             </xs:annotation>
         </xs:attribute>
         <xs:attribute name="jndi-name" type="xs:string">
@@ -525,6 +515,78 @@
                 </xs:annotation>
             </xs:element>
         </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="db-persistence">
+        <xs:attribute name="table-name" type="xs:string" use="optional" default="MODESHAPE_REPOSITORY">
+            <xs:annotation>
+                <xs:documentation>The name of the DB table where persistence data will be stored</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="create-on-start" type="xs:boolean" use="optional" default="true">
+            <xs:annotation>
+                <xs:documentation>Whether the DB table should be created at startup if it does not already exist</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="drop-on-exit" type="xs:boolean" use="optional" default="false">
+            <xs:annotation>
+                <xs:documentation>Whether the DB table should be dropped when the repository shuts down</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="fetch-size" type="xs:integer" use="optional" default="1000">
+            <xs:annotation>
+                <xs:documentation>The JDBC fetch size when loading data</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="url" type="xs:string" use="optional" default="jdbc:h2:mem:modeshape;DB_CLOSE_DELAY=0;">
+            <xs:annotation>
+                <xs:documentation>The DB connection URL. Either this or the datasource JNDI name should be set</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="driver" type="xs:string" use="optional" default="org.h2.Driver" >
+            <xs:annotation>
+                <xs:documentation>The fully qualified JDBC driver name</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="username" type="xs:string" use="optional" default="sa" >
+            <xs:annotation>
+                <xs:documentation>The username used for the JDBC connection authentication</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="password" type="xs:string" use="optional">
+            <xs:annotation>
+                <xs:documentation>The password used for the JDBC connection authentication</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="datasource-jndi" type="xs:string" use="optional">
+            <xs:annotation>
+                <xs:documentation>The JNDI name of a DataSource. If used, this datasource *must not* be JTA enabled</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="compress" type="xs:boolean" use="optional" default="true">
+            <xs:annotation>
+                <xs:documentation>Whether binary data stored in the database should be compressed or not</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="pool-size" type="xs:integer" use="optional" >
+            <xs:annotation>
+                <xs:documentation>The maximum size of the DB connection pool</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+  
+    <xs:complexType name="custom-persistence">
+        <xs:attribute name="type" type="xs:string" use="required">
+            <xs:annotation>
+                <xs:documentation>The type of persistence</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="module" type="xs:string" use="optional">
+            <xs:annotation>
+                <xs:documentation>The name of the module containing the implementation class.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>        
+        <xs:anyAttribute namespace="##any" processContents="lax"/>
     </xs:complexType>
 
     <xs:complexType name="index-provider">
