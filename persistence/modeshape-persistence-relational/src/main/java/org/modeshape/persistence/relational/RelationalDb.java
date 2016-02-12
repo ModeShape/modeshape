@@ -235,7 +235,7 @@ public class RelationalDb implements SchematicDb {
                 return null;
             }
         }
-        // by this point the write cache should have a clone of what we're about to edit, so just return that...
+        // look for an entry which was set for writing
         Document entryDocument = transactionalCaches.getForWriting(key);
         if (entryDocument == null) {
             // it's the first time we're editing this document as part of this tx so store this document for writing...
@@ -320,22 +320,32 @@ public class RelationalDb implements SchematicDb {
         TransactionsHolder.clearActiveTransaction();
     }
 
-    public Void persistContent(Connection tlConnection) throws SQLException {
+    private Void persistContent(Connection tlConnection) throws SQLException {
         ConcurrentMap<String, Document> txCache = transactionalCaches.writeCache();
         logDebug("Committing the active connection for transaction {0} with the changes: {1}",
                  TransactionsHolder.requireActiveTransaction(),
                  txCache);
+        StatementsProvider.BatchUpdate batchUpdate = statements.batchUpdate(tlConnection);
         txCache.forEach((key, document) -> {
             try {
                 if (TransactionalCaches.REMOVED == document) {
-                    statements.removeContent(tlConnection, key);
+                    batchUpdate.remove(key);
                 } else {
-                    statements.insertOrUpdateContent(tlConnection, key, writeDocument(document));
+                    // if the key is in our read cache OR it's in the DB we must perform an update
+                    // otherwise we should do an insert
+                    // this is a slight optimization over going to the db each time
+                    boolean update = transactionalCaches.hasBeenRead(key) || statements.contentExists(tlConnection, key);
+                    if (update) {
+                        batchUpdate.update(key, writeDocument(document));
+                    } else {
+                        batchUpdate.insert(key, writeDocument(document));
+                    }
                 }
             } catch (SQLException e) {
                 throw new RelationalProviderException(e);
             }
         });
+        batchUpdate.execute();
         tlConnection.commit();
         return null;
     }

@@ -34,7 +34,12 @@ import org.modeshape.schematic.internal.document.BasicDocument;
 @ThreadSafe
 public final class TransactionalCaches {
   
-    protected static final Document REMOVED = new BasicDocument();
+    protected static final Document REMOVED = new BasicDocument() {
+        @Override
+        public String toString() {
+            return "DOCUMENT_REMOVED";
+        }
+    };
     
     private final Map<String, ReadWriteCache> cachesByTxId;
     
@@ -54,6 +59,11 @@ public final class TransactionalCaches {
         }
         return cache.getFromReadCache(key); 
     }
+    
+    protected boolean hasBeenRead(String key) {
+        ReadWriteCache cache = cacheForTransaction();
+        return cache.readCache().containsKey(key);
+    }
 
     protected Document getForWriting(String key) {
         return cacheForTransaction().getFromWriteCache(key);                     
@@ -70,7 +80,7 @@ public final class TransactionalCaches {
     
     protected Set<String> documentKeys() {
         ReadWriteCache readWriteCache = cacheForTransaction();
-        return readWriteCache.readCache().entrySet()
+        return readWriteCache.writeCache().entrySet()
                              .stream()
                              .filter(entry -> !readWriteCache.isRemoved(entry.getKey()))
                              .map(Map.Entry::getKey)
@@ -124,8 +134,6 @@ public final class TransactionalCaches {
             if (write.replace(id, doc) == null) {
                 // when storing a value for the first time, clone it for the write cache 
                 write.putIfAbsent(id, doc.clone());
-                // and store it as-is for the read cache
-                read.putIfAbsent(id, doc);
             }
             return write.get(id);
         }

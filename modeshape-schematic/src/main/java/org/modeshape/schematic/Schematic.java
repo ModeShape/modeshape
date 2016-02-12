@@ -79,7 +79,7 @@ public class Schematic extends DocumentFactory {
                                         return raisedExceptions.get(0);
                                     } else {
                                         return new RuntimeException(
-                                                "None of the existing DB providers could return a DB with alias '" + type + "' and configuration " + document);
+                                                "None of the existing persistence providers could return a Schematic DB with type '" + type + "'");
                                     }
                                 });
     }

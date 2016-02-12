@@ -561,10 +561,10 @@
             </dependencies>
             <properties>
                 <database>oracle11g</database>
-                <dataSource.driverClassName>oracle.jdbc.driver.OracleDriver</dataSource.driverClassName>
+                <dataSource.driverClassName>oracle.jdbc.OracleDriver</dataSource.driverClassName>
                 <dataSource.url>jdbc:oracle:thin:@192.168.99.100:49161:xe</dataSource.url>
                 <dataSource.username>system</dataSource.username>
-                <dataSource.password>DBALLO02</dataSource.password>
+                <dataSource.password>oracle</dataSource.password>
             </properties>
         </profile>
 

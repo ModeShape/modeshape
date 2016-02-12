@@ -25,6 +25,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
@@ -103,6 +104,10 @@ public final class StatementsProvider {
         }
     }
 
+    protected BatchUpdate batchUpdate(Connection connection) {
+        return new BatchUpdate(connection);
+    }
+
     protected void insertOrUpdateContent(Connection connection, String id,
                                          StreamSupplier streamSupplier) throws SQLException {
         logDebug("Performing insert or update on {0} in {1}", id, tableName);
@@ -129,7 +134,7 @@ public final class StatementsProvider {
             }
         }
     }
-    
+
     protected boolean contentExists(Connection connection, String id) throws SQLException {
         logDebug("Checking if the content with ID {0} exists in {1}", id, tableName);
         try (PreparedStatement ps = connection.prepareStatement(statements.get(CONTENT_EXISTS))) {
@@ -200,6 +205,77 @@ public final class StatementsProvider {
     private void logDebug(String message, String...args) {
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug(message, args);
+        }
+    }
+   
+    protected class BatchUpdate {
+        private final Connection connection;
+
+        private final AtomicReference<PreparedStatement> insertStatement;
+        private final AtomicReference<PreparedStatement> updateStatement;
+        private final AtomicReference<PreparedStatement> removeStatement;
+
+        protected BatchUpdate(Connection connection) {
+            this.connection = connection;
+            this.insertStatement = new AtomicReference<>();
+            this.updateStatement = new AtomicReference<>();
+            this.removeStatement = new AtomicReference<>();
+        }
+        
+        protected BatchUpdate insert(String id, StreamSupplier streamSupplier) throws SQLException {
+            String sql = statements.get(INSERT_CONTENT);
+            this.insertStatement.compareAndSet(null, connection.prepareStatement(sql));
+            PreparedStatement insert = this.insertStatement.get();
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("adding batch statement: {0}", sql.replaceFirst("\\?", id));
+            }
+            insert.setString(1, id);
+            insert.setBinaryStream(2, streamSupplier.get(), streamSupplier.length());
+            insert.addBatch();
+            return this;            
+        }
+        
+        protected BatchUpdate update(String id, StreamSupplier streamSupplier) throws SQLException {
+            String sql = statements.get(UPDATE_CONTENT);
+            this.updateStatement.compareAndSet(null, connection.prepareStatement(sql));
+            PreparedStatement update = this.updateStatement.get();
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("adding batch statement: {0}", sql.replaceFirst(" ID.*=.*\\?"," ID = " + id));
+            }
+            update.setBinaryStream(1, streamSupplier.get(), streamSupplier.length());
+            update.setString(2, id);
+            update.addBatch();
+            return this;            
+        } 
+        
+        protected BatchUpdate remove(String id) throws SQLException {
+            String sql = statements.get(REMOVE_CONTENT);
+            this.removeStatement.compareAndSet(null, connection.prepareStatement(sql));
+            PreparedStatement remove = removeStatement.get();
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("adding batch statement: {0}", sql.replaceFirst("\\?", id));
+            }
+            remove.setString(1, id);
+            remove.addBatch();
+            return this;
+        }
+        
+        private void executeBatch(AtomicReference<PreparedStatement> statementHolder) throws SQLException {
+            PreparedStatement statement = statementHolder.getAndSet(null);
+            if (statement != null) {
+                try {
+                    logDebug("executing batch statements...");
+                    statement.executeBatch();
+                } finally {
+                    statement.close();
+                }
+            }
+        }
+        
+        protected void execute() throws SQLException {
+            executeBatch(insertStatement);
+            executeBatch(updateStatement);
+            executeBatch(removeStatement);
         }
     }
 }

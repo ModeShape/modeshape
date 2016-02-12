@@ -1489,6 +1489,15 @@ public class JcrRepositoryTest {
         session = createSession();
         session.getWorkspace().reindexSince(System.currentTimeMillis());
     }
+    
+    
+    @Test(expected = RuntimeException.class)
+    @FixFor( "MODE-2528" )
+    public void shouldNotStartRepositoryWithInvalidPersistence() throws Exception {
+        shutdownDefaultRepository();
+        repository = TestingUtil.startRepositoryWithConfig("config/repo-config-invalid-persistence.json");
+        repository.start();
+    }
 
     protected void nodeExists( Session session,
                                String parentPath,
