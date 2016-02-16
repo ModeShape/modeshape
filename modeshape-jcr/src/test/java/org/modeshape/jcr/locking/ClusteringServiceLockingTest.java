@@ -20,6 +20,7 @@ import static org.junit.Assert.assertTrue;
 import java.util.BitSet;
 import java.util.Stack;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import org.junit.After;
@@ -93,6 +94,42 @@ public class ClusteringServiceLockingTest extends StandaloneLockingServiceTest {
         ClusteringService service2 = newLockingService();
         assertTrue(service1.tryLock("lock1", "lock2"));
         assertTrue(service2.tryLock("lock3", "lock4"));         
+    } 
+    
+    @Test
+    public void shouldNotAcquireSameLockFromMultipleThreadOnTheSameClusterNode() throws Exception {
+        ClusteringService service1 = newLockingService();
+        // start a second service to form a cluster
+        newLockingService();
+        assertTrue(service1.tryLock("lock1"));
+        Boolean result = CompletableFuture.supplyAsync(() -> service1.tryLock("lock1")).get();
+        assertFalse("should not acquire same lock from different thread in cluster", result);
+        assertTrue(service1.unlock("lock1").isEmpty());
+        result = CompletableFuture.supplyAsync(() -> service1.tryLock("lock1")).get();
+        assertTrue("should acquire same lock from different thread once unlocked", result);
+    }
+    
+    @Test
+    public void shouldPropagateLockInformationWhenChangingMembersInCluster() throws Exception {
+        ClusteringService service1 = newLockingService();
+        // lock while we're the only member
+        assertTrue(service1.tryLock("lock1"));
+        ClusteringService service2 = newLockingService();
+        // check that a new member can't get the lock yet
+        assertFalse(service2.tryLock("lock1"));
+        // and neither another thread...
+        Boolean result = CompletableFuture.supplyAsync(() -> service1.tryLock("lock1")).get();
+        assertFalse("should not acquire same lock from different thread in cluster", result);
+
+        // now unlock
+        assertTrue(service1.unlock("lock1").isEmpty());
+        // check that the new member can get the lock
+        assertTrue(service2.tryLock("lock1"));
+        // shutdown the second member (which should release the lock)
+        service2.shutdown();
+        // and now check that another thread can get the lock
+        result = CompletableFuture.supplyAsync(() -> service1.tryLock("lock1")).get();
+        assertTrue("should be able to acquire same lock from different thread in cluster", result);
     }
 
     @Test
@@ -128,7 +165,7 @@ public class ClusteringServiceLockingTest extends StandaloneLockingServiceTest {
         assertFalse(service1.tryLock( "lock1", "lock5"));
         assertFalse(service1.tryLock("lock6", "lock1"));
     }
-    
+
     @Override
     protected ClusteringService newLockingService() {
         ClusteringService service = ClusteringService.startStandalone("locking-cluster", "config/cluster/jgroups-test-config.xml");  

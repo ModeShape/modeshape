@@ -379,7 +379,7 @@
         </profile>
 
         <profile>
-            <id>mysql5_docker</id>
+            <id>mysql5_local_docker</id>
             <activation>
                 <property>
                     <name>database</name>
@@ -459,7 +459,7 @@
         </profile>
 
         <profile>
-            <id>postgresql9_docker</id>
+            <id>postgresql9_local_docker</id>
             <activation>
                 <property>
                     <name>database</name>
@@ -543,7 +543,7 @@
             Oracle 11g docker profile from https://github.com/wnameless/docker-oracle-xe-11g
         -->
         <profile>
-            <id>oracle11g_docker</id>
+            <id>oracle11g_local_docker</id>
             <activation>
                 <property>
                     <name>database</name>

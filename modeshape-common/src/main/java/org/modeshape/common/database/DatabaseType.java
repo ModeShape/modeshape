@@ -22,6 +22,7 @@ import org.modeshape.common.util.CheckArg;
  * Enum for a list of known databases.
  * 
  * @author Horia Chiorean (hchiorea@redhat.com)
+ * @since 5.0
  */
 public class DatabaseType implements Comparable<DatabaseType> {
     

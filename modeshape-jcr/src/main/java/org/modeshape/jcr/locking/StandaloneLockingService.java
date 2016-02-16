@@ -41,10 +41,12 @@ public class StandaloneLockingService implements LockingService {
     private static final Logger LOGGER = Logger.getLogger(StandaloneLockingService.class);
 
     private final ConcurrentHashMap<String, ReentrantLock> locksByName = new ConcurrentHashMap<>();
+    private final AtomicBoolean running = new AtomicBoolean(false);
     private volatile long lockTimeoutMillis = 0;
 
     public StandaloneLockingService() {
-    }
+        running.compareAndSet(false, true);
+    }                                     
 
     @Override
     public boolean tryLock(String... names) {
@@ -120,5 +122,16 @@ public class StandaloneLockingService implements LockingService {
             return null;
         });
         return unlocked.get() ? Optional.empty() : Optional.of(name);
+    }
+
+    @Override
+    public synchronized boolean shutdown() {
+        if (!running.get()) {
+            return false;
+        }
+        unlock(locksByName.keySet().toArray(new String[locksByName.size()]));
+        locksByName.clear();
+        running.compareAndSet(true, false);
+        return true;
     }
 }

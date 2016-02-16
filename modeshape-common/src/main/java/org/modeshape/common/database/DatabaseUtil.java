@@ -23,6 +23,7 @@ import java.util.Objects;
  * Utility for interacting with various databases.
  * 
  * @author Horia Chiorean (hchiorea@redhat.com)
+ * @since 5.0
  */
 public class DatabaseUtil {
 
@@ -70,7 +71,7 @@ public class DatabaseUtil {
             return new DatabaseType(DatabaseType.Name.ORACLE, majorVersion, minorVersion);
         } else if (name.contains("adaptive")) {
             return new DatabaseType(DatabaseType.Name.SYBASE, majorVersion, minorVersion);
-        } else if (name.contains("Cassandra")) {
+        } else if (name.contains("cassandra")) {
             return new DatabaseType(DatabaseType.Name.CASSANDRA, majorVersion, minorVersion);
         }
         return DatabaseType.UNKNOWN;

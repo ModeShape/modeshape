@@ -1629,6 +1629,10 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
             if (this.clusteringService != null) {
                 this.clusteringService.shutdown();
             }
+            
+            if (lockingService != clusteringService) {
+                lockingService.shutdown();
+            }
 
             // shutdown the event bus
             if (this.changeBus != null) {
