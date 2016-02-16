@@ -20,26 +20,19 @@ import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
-
 import java.util.UUID;
-
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.Session;
-
 import org.junit.Test;
 import org.modeshape.common.FixFor;
-import org.modeshape.common.util.FileUtil;
 
 public class FederationConfigurationTest extends SingleUseAbstractTest {
 
     @FixFor( "MODE-1772" )
     @Test
     public void shouldStartRepositoryWithFileSystemConnectorAccessingAncestorOfCacheStoreDirectory() throws Exception {
-        // Clean up and create some initial files ...
-        FileUtil.delete("target/federation_persistent_repository");
-
-        startRepositoryWithConfiguration(resource("config/repo-config-filesystem-federation-with-persistence.json"));
+        startRepositoryWithConfigurationFrom("config/repo-config-filesystem-federation-with-persistence.json");
         Session session = session();
         Node federation = session.getNode("/federation");
 
@@ -76,7 +69,7 @@ public class FederationConfigurationTest extends SingleUseAbstractTest {
 
     @Test
     public void shouldIgnorePreconfiguredProjectionIfProjectedPathPointsTowardsInternalNode() throws Exception {
-        startRepositoryWithConfiguration(resource("config/repo-config-filesystem-federation-invalid-alias.json"));
+        startRepositoryWithConfigurationFrom("config/repo-config-filesystem-federation-invalid-alias.json");
         //check that there only the internal node + 1 child and that the projection has not been created
         Session session = session();
         Node federation = session.getNode("/federation");

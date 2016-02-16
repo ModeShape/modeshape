@@ -37,7 +37,7 @@
 
     <!-- (must be writeable!) -->
     <entry key="com.arjuna.ats.arjuna.objectstore.objectStoreDir">target/modeshape-txstore</entry>
-    <!--<entry key="CoordinatorEnvironmentBean.defaultTimeout">360</entry>-->
+    <entry key="CoordinatorEnvironmentBean.defaultTimeout">360</entry>
 
     <!-- (default is ON) -->
     <!--<entry key="ObjectStoreEnvironmentBean.transactionSync">ON</entry>-->

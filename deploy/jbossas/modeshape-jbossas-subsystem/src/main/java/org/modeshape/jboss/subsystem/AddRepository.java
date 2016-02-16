@@ -17,9 +17,6 @@ package org.modeshape.jboss.subsystem;
 
 import java.util.ArrayList;
 import java.util.List;
-import org.infinispan.schematic.Schematic;
-import org.infinispan.schematic.document.EditableArray;
-import org.infinispan.schematic.document.EditableDocument;
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
@@ -53,6 +50,9 @@ import org.modeshape.jcr.ModeShapeEngine;
 import org.modeshape.jcr.RepositoryConfiguration;
 import org.modeshape.jcr.RepositoryConfiguration.FieldName;
 import org.modeshape.jcr.api.monitor.RepositoryMonitor;
+import org.modeshape.schematic.Schematic;
+import org.modeshape.schematic.document.EditableArray;
+import org.modeshape.schematic.document.EditableDocument;
 import org.wildfly.clustering.jgroups.ChannelFactory;
 
 public class AddRepository extends AbstractAddStepHandler {
@@ -124,9 +124,6 @@ public class AddRepository extends AbstractAddStepHandler {
         final ServiceTarget target = context.getServiceTarget();
         final AddressContext addressContext = AddressContext.forOperation(operation);
         final String repositoryName = addressContext.repositoryName();
-        final String cacheName = attribute(context, model, ModelAttributes.CACHE_NAME, repositoryName);
-        String infinispanConfig = attribute(context, model, ModelAttributes.CACHE_CONFIG, null);
-        String configRelativeTo = attribute(context, model, ModelAttributes.CONFIG_RELATIVE_TO).asString();
         final String clusterName = attribute(context, model, ModelAttributes.CLUSTER_NAME, null);
         final boolean enableMonitoring = attribute(context, model, ModelAttributes.ENABLE_MONITORING).asBoolean();
         final String gcThreadPool = attribute(context, model, ModelAttributes.GARBAGE_COLLECTION_THREAD_POOL, null);
@@ -160,23 +157,9 @@ public class AddRepository extends AbstractAddStepHandler {
         if (lockTimeoutMillis != null) {
             configDoc.setNumber(FieldName.LOCK_TIMEOUT_MILLIS, lockTimeoutMillis);
         }
-
-        // Parse the cache configuration
-        if (StringUtil.isBlank(infinispanConfig)) {
-            infinispanConfig = "modeshape/" + repositoryName + "-cache-config.xml";
-        } else {
-            // check if it's a system property
-            String infinispanConfigSystemProperty = System.getProperty(infinispanConfig);
-            if (!StringUtil.isBlank(infinispanConfigSystemProperty)) {
-                infinispanConfig = infinispanConfigSystemProperty;
-            }
-        }
         
         List<String> additionalClasspathEntries = new ArrayList<>();
         
-        // Set the storage information (that was set on the repository ModelNode) ...
-        setRepositoryStorageConfiguration(infinispanConfig, cacheName, configDoc);
-
         // Always set whether monitoring is enabled ...
         enableMonitoring(enableMonitoring, configDoc);
 
@@ -191,17 +174,9 @@ public class AddRepository extends AbstractAddStepHandler {
 
         // Now create the repository service that manages the lifecycle of the JcrRepository instance ...
         RepositoryConfiguration repositoryConfig = new RepositoryConfiguration(configDoc, repositoryName);
-        String configRelativeToSystemProperty = System.getProperty(configRelativeTo);
-        if (!StringUtil.isBlank(configRelativeToSystemProperty)) {
-            configRelativeTo = configRelativeToSystemProperty;
-        }
-        if (!configRelativeTo.endsWith("/")) {
-            configRelativeTo = configRelativeTo  + "/";
-        }
         
         String additionalModuleDependencies = attribute(context, model, ModelAttributes.REPOSITORY_MODULE_DEPENDENCIES, null);
-        RepositoryService repositoryService = new RepositoryService(repositoryConfig, configRelativeTo,
-                                                                    additionalModuleDependencies);
+        RepositoryService repositoryService = new RepositoryService(repositoryConfig, additionalModuleDependencies);
         ServiceName repositoryServiceName = ModeShapeServiceNames.repositoryServiceName(repositoryName);
 
         // Sequencing
@@ -417,16 +392,6 @@ public class AddRepository extends AbstractAddStepHandler {
         servlet.set(FieldName.CLASSNAME, "servlet");
         providers.add(servlet);
     }
-
-    private void setRepositoryStorageConfiguration( String infinispanConfig,
-                                                    String cacheName,
-                                                    EditableDocument configDoc ) {
-        EditableDocument storage = configDoc.getOrCreateDocument(FieldName.STORAGE);
-        storage.set(FieldName.CACHE_NAME, cacheName);
-        // set the ISPN config relative path which will be resolved later on
-        storage.set(FieldName.CACHE_CONFIGURATION, infinispanConfig);
-    }
-
 
     private EditableDocument parseWorkspaces(OperationContext context,
                                              ModelNode model,

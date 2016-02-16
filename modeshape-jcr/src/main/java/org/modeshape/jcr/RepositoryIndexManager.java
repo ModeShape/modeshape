@@ -32,7 +32,6 @@ import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import javax.jcr.RepositoryException;
-import org.modeshape.common.SystemFailureException;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.collection.ArrayListMultimap;
@@ -62,7 +61,6 @@ import org.modeshape.jcr.cache.change.PropertyChanged;
 import org.modeshape.jcr.cache.change.WorkspaceAdded;
 import org.modeshape.jcr.cache.change.WorkspaceRemoved;
 import org.modeshape.jcr.query.CompositeIndexWriter;
-import org.modeshape.jcr.query.engine.ScanningQueryEngine;
 import org.modeshape.jcr.spi.index.IndexDefinitionChanges;
 import org.modeshape.jcr.spi.index.IndexFeedback;
 import org.modeshape.jcr.spi.index.IndexFeedback.IndexingCallback;
@@ -131,7 +129,7 @@ class RepositoryIndexManager implements IndexManager, NodeTypes.Listener {
         this.components = config.getIndexProviders();
         for (Component component : components) {
             try {
-                IndexProvider provider = component.createInstance(ScanningQueryEngine.class.getClassLoader());
+                IndexProvider provider = component.createInstance();
                 register(provider);
             } catch (Throwable t) {
                 if (t.getCause() != null) {
@@ -207,7 +205,7 @@ class RepositoryIndexManager implements IndexManager, NodeTypes.Listener {
         }
     }
 
-    synchronized void importIndexDefinitions() throws RepositoryException {
+    protected synchronized void importIndexDefinitions() throws RepositoryException {
         RepositoryConfiguration.Indexes indexes = config.getIndexes();
         if (indexes.isEmpty()) return;
         List<IndexDefinition> defns = new ArrayList<>();
@@ -218,14 +216,6 @@ class RepositoryIndexManager implements IndexManager, NodeTypes.Listener {
         if (!defns.isEmpty()) {
             IndexDefinition[] array = defns.toArray(new IndexDefinition[defns.size()]);
             registerIndexes(array, true);
-            // Wait while the indexes get created ...
-            try {
-                Thread.sleep(500L + array.length * 50L);
-            } catch (Exception e) {
-                throw new SystemFailureException(e);
-            }
-            // We have to index the '/jcr:system' content, since it was created before these indexes were registered ...
-            repository.queryManager().reindexSystemContent();
         }
     }
 
@@ -487,7 +477,7 @@ class RepositoryIndexManager implements IndexManager, NodeTypes.Listener {
                         break;
                 }
             } else {
-                // Mulitple columns ...
+                // Multiple columns ...
                 if (defn.getKind() == IndexKind.NODE_TYPE) {
                     // must be single-column indexes
                     problems.addError(JcrI18n.nodeTypeIndexMustHaveOneColumn, defn.getName());

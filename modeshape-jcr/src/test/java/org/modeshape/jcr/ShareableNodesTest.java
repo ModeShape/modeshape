@@ -64,7 +64,7 @@ public class ShareableNodesTest extends SingleUseAbstractTest {
     @Before
     @Override
     public void beforeEach() throws Exception {
-        startRepositoryWithConfiguration(resourceStream("config/simple-repo-config.json"));
+        startRepositoryWithConfigurationFrom("config/simple-repo-config.json");
 
         // Import the node types and the data ...
         registerNodeTypes("cars.cnd");

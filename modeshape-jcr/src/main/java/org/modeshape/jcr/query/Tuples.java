@@ -25,7 +25,7 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.Iterator;
 
-import org.infinispan.schematic.internal.HashCode;
+import org.modeshape.schematic.internal.HashCode;
 import org.mapdb.Serializer;
 import org.modeshape.common.util.ObjectUtil;
 import org.modeshape.jcr.query.model.TypeSystem.TypeFactory;

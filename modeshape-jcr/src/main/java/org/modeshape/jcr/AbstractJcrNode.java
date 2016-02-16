@@ -831,7 +831,7 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
         return session().node(ref.getKey(), null, key());
     }
 
-    AbstractJcrNode getNodeIfExists( Name childName ) throws RepositoryException {
+    protected AbstractJcrNode getNodeIfExists( Name childName ) throws RepositoryException {
         // It's just a name, so look for a child ...
         ChildReference ref = node().getChildReferences(sessionCache()).getChild(childName);
         return ref != null ? session().node(ref.getKey(), null, key()) : null;

@@ -51,9 +51,8 @@
     <properties>
         <version.javax.jcr>2.0</version.javax.jcr>
         <version.org.jboss.spec.javax.transaction.jboss-transaction-api_1.1_spec>1.0.1.Final</version.org.jboss.spec.javax.transaction.jboss-transaction-api_1.1_spec>
-        <version.org.infinispan>7.2.4.Final</version.org.infinispan>
-        <version.org.jgroups>3.6.2.Final</version.org.jgroups>
-        <version.com.mchange.c3p0>0.9.5</version.com.mchange.c3p0>  <!-- same as the one used by Infinispan's JDBC cache store -->
+        <version.org.jgroups>3.6.7.Final</version.org.jgroups>
+        <version.com.zaxxer.HikariCP>2.4.3</version.com.zaxxer.HikariCP>
         <version.org.picketbox>4.0.21.Final</version.org.picketbox>
         <version.com.atomikos>3.8.0</version.com.atomikos>
         <version.org.jboss.jbossts.jta>5.1.0.Final</version.org.jboss.jbossts.jta>
@@ -173,10 +172,10 @@
                 <groupId>org.modeshape</groupId>
                 <artifactId>modeshape-schematic</artifactId>
                 <version>${project.version}</version>
-            </dependency>
+            </dependency>  
             <dependency>
                 <groupId>org.modeshape</groupId>
-                <artifactId>modeshape-jcr-tck</artifactId>
+                <artifactId>modeshape-persistence-relational</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -300,6 +299,15 @@
                 <scope>test</scope>
             </dependency>
 
+            <!-- 
+                Connection pool used by the ModeShape relational provider
+            -->
+            <dependency>
+                <groupId>com.zaxxer</groupId>
+                <artifactId>HikariCP</artifactId>
+                <version>${version.com.zaxxer.HikariCP}</version>
+            </dependency>
+
             <!--
                 JCR
             -->
@@ -319,31 +327,7 @@
             </dependency>
             
             <!--
-                  Infinispan
-              -->
-            <dependency>
-                <groupId>org.infinispan</groupId>
-                <artifactId>infinispan-core</artifactId>
-                <version>${version.org.infinispan}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.codehaus.woodstox</groupId>
-                        <artifactId>woodstox-core-asl</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.codehaus.woodstox</groupId>
-                        <artifactId>stax2-api</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>org.infinispan</groupId>
-                <artifactId>infinispan-commons</artifactId>
-                <version>${version.org.infinispan}</version>
-            </dependency>
-            <!--
-                JGroups is used for the changes bus, but it's optional. Most of the times though, this will be in the classpath
-                because of ISPN.
+                JGroups is used for the changes bus, but it's optional. 
              -->
             <dependency>
                 <groupId>org.jgroups</groupId>
@@ -351,36 +335,8 @@
                 <version>${version.org.jgroups}</version>
             </dependency>
 
-            <!--
-               Infinispan cachestores
-            -->
-            <dependency>
-                <groupId>org.infinispan</groupId>
-                <artifactId>infinispan-cachestore-leveldb</artifactId>
-                <version>${version.org.infinispan}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.infinispan</groupId>
-                <artifactId>infinispan-cachestore-remote</artifactId>
-                <version>${version.org.infinispan}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.infinispan</groupId>
-                <artifactId>infinispan-cachestore-jpa</artifactId>
-                <version>${version.org.infinispan}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.infinispan</groupId>
-                <artifactId>infinispan-cachestore-jdbc</artifactId>
-                <version>${version.org.infinispan}</version>
-            </dependency>
-            <!--Required by infinispan-cachestore-jdbc -->
-            <dependency>
-                <groupId>com.mchange</groupId>
-                <artifactId>c3p0</artifactId>
-                <version>${version.com.mchange.c3p0}</version>
-            </dependency>
 
+            
             <!--
                 Optional dependencies for modeshape-jcr which are present here so that clients of the BOM use the same version
                 of those dependencies, in case certain features are used.

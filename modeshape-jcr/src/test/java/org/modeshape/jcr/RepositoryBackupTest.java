@@ -81,7 +81,7 @@ public class RepositoryBackupTest extends MultiUseAbstractTest {
         Problems problems = session().getWorkspace().getRepositoryManager().backupRepository(testDirectory);
         sw.stop();
         assertThat(problems.hasProblems(), is(false));
-        System.out.println("Time to perform backup: " + sw.getMaximumDuration());
+        printMessage("Time to perform backup: " + sw.getMaximumDuration());
     }
 
     @Test
@@ -93,7 +93,7 @@ public class RepositoryBackupTest extends MultiUseAbstractTest {
             Problems problems = session().getWorkspace().getRepositoryManager().backupRepository(file);
             sw.stop();
             assertThat(problems.hasProblems(), is(false));
-            System.out.println("Time to perform backup: " + sw.getMaximumDuration());
+            printMessage("Time to perform backup: " + sw.getMaximumDuration());
         }
     }
 
@@ -107,24 +107,21 @@ public class RepositoryBackupTest extends MultiUseAbstractTest {
         final Stopwatch sw = new Stopwatch();
         final CountDownLatch latch = new CountDownLatch(1);
         final AtomicReference<Problems> problems = new AtomicReference<Problems>();
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                sw.start();
-                try {
-                    Problems backupProblems = session().getWorkspace().getRepositoryManager().backupRepository(testDirectory);
-                    problems.set(backupProblems);
-                } catch (RepositoryException e) {
-                    throw new RuntimeException(e);
-                }
-                sw.stop();
-                latch.countDown();
+        new Thread(() -> {
+            sw.start();
+            try {
+                Problems backupProblems = session().getWorkspace().getRepositoryManager().backupRepository(testDirectory);
+                problems.set(backupProblems);
+            } catch (RepositoryException e) {
+                throw new RuntimeException(e);
             }
+            sw.stop();
+            latch.countDown();
         }).start();
         createSubgraph(session, "/extras", 1, 2, 2, false, new Stopwatch(), print ? System.out : null, null);
         latch.await(10, TimeUnit.SECONDS);
         assertThat(problems.get().hasProblems(), is(false));
-        System.out.println("Time to perform backup: " + sw.getTotalDuration());
+        printMessage("Time to perform backup: " + sw.getTotalDuration());
     }
 
 }

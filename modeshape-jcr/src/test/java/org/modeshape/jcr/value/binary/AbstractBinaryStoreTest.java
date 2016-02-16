@@ -43,7 +43,7 @@ import org.junit.rules.TestRule;
 import org.modeshape.common.FixFor;
 import org.modeshape.common.junit.SkipTestRule;
 import org.modeshape.common.util.IoUtil;
-import org.modeshape.jcr.TestingEnvironment;
+import org.modeshape.jcr.LocalEnvironment;
 import org.modeshape.jcr.TextExtractors;
 import org.modeshape.jcr.api.text.TextExtractor;
 import org.modeshape.jcr.mimetype.MimeTypeDetector;
@@ -74,7 +74,7 @@ public abstract class AbstractBinaryStoreTest {
     public static final BinaryKey EMPTY_BINARY_KEY;
     public static final String TEXT_DATA;
 
-    protected static final MimeTypeDetector DEFAULT_DETECTOR = new NameOnlyDetector(new TestingEnvironment());
+    protected static final MimeTypeDetector DEFAULT_DETECTOR = new NameOnlyDetector(new LocalEnvironment());
     
     private static final Random RANDOM = new Random();
 
@@ -254,19 +254,23 @@ public abstract class AbstractBinaryStoreTest {
     @Test
     public void shouldExtractAndStoreTextWhenExtractorConfigured() throws Exception {
         TextExtractors extractors = new TextExtractors(Executors.newSingleThreadExecutor(),
-                                                       Arrays.<TextExtractor>asList(new DummyTextExtractor()));
-        BinaryStore binaryStore = getBinaryStore();
-        binaryStore.setTextExtractors(extractors);
+                                                       new ArrayList<>(Arrays.asList(new DummyTextExtractor())));
+        try {
+            BinaryStore binaryStore = getBinaryStore();
+            binaryStore.setTextExtractors(extractors);
 
-        BinaryValue binaryValue = getBinaryStore().storeValue(new ByteArrayInputStream(STORED_LARGE_BINARY), false);
-        String extractedText = binaryStore.getText(binaryValue);
-        if (extractedText == null) {
-            // if nothing is found the first time, sleep and try again - Mongo on Windows seems to exhibit this problem for some
-            // reason
-            Thread.sleep(TimeUnit.SECONDS.toMillis(2));
-            extractedText = binaryStore.getText(binaryValue);
+            BinaryValue binaryValue = getBinaryStore().storeValue(new ByteArrayInputStream(STORED_LARGE_BINARY), false);
+            String extractedText = binaryStore.getText(binaryValue);
+            if (extractedText == null) {
+                // if nothing is found the first time, sleep and try again - Mongo on Windows seems to exhibit this problem for some
+                // reason
+                Thread.sleep(TimeUnit.SECONDS.toMillis(2));
+                extractedText = binaryStore.getText(binaryValue);
+            }
+            assertEquals(DummyTextExtractor.EXTRACTED_TEXT, extractedText);
+        } finally {
+            extractors.shutdown();
         }
-        assertEquals(DummyTextExtractor.EXTRACTED_TEXT, extractedText);
     }
 
     @Test

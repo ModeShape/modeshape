@@ -15,9 +15,7 @@
  */
 package org.modeshape.jcr.cache;
 
-import java.util.Arrays;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -28,12 +26,6 @@ import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
-import javax.transaction.NotSupportedException;
-import javax.transaction.SystemException;
-import org.infinispan.schematic.Schematic;
-import org.infinispan.schematic.SchematicEntry;
-import org.infinispan.schematic.document.Document;
-import org.infinispan.schematic.document.EditableDocument;
 import org.modeshape.common.SystemFailureException;
 import org.modeshape.common.collection.Collections;
 import org.modeshape.common.i18n.I18n;
@@ -70,12 +62,14 @@ import org.modeshape.jcr.cache.document.WritableSessionCache;
 import org.modeshape.jcr.clustering.ClusteringService;
 import org.modeshape.jcr.federation.FederatedDocumentStore;
 import org.modeshape.jcr.spi.federation.Connector;
-import org.modeshape.jcr.txn.Transactions;
-import org.modeshape.jcr.txn.Transactions.Transaction;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.Property;
 import org.modeshape.jcr.value.PropertyFactory;
 import org.modeshape.jcr.value.ValueFactory;
+import org.modeshape.schematic.Schematic;
+import org.modeshape.schematic.SchematicEntry;
+import org.modeshape.schematic.document.Document;
+import org.modeshape.schematic.document.EditableDocument;
 import com.googlecode.concurrentlinkedhashmap.ConcurrentLinkedHashMap;
 
 /**
@@ -83,10 +77,11 @@ import com.googlecode.concurrentlinkedhashmap.ConcurrentLinkedHashMap;
  */
 public class RepositoryCache {
 
+    public static final String REPOSITORY_INFO_KEY = "repository:info";
+    
     private static final Logger LOGGER = Logger.getLogger(RepositoryCache.class);
 
     private static final String SYSTEM_METADATA_IDENTIFIER = "jcr:system/mode:metadata";
-    private static final String REPOSITORY_INFO_KEY = "repository:info";
     private static final String REPOSITORY_NAME_FIELD_NAME = "repositoryName";
     private static final String REPOSITORY_KEY_FIELD_NAME = "repositoryKey";
     private static final String REPOSITORY_SOURCE_NAME_FIELD_NAME = "sourceName";
@@ -155,14 +150,15 @@ public class RepositoryCache {
         this.upgrades = upgradeFunctions;
         this.workspaceCacheSize = configuration.getWorkspaceCacheSize();
         CheckArg.isPositive(workspaceCacheSize, "workspaceCacheSize");
-        // if we're running in a cluster, try to acquire a global cluster lock to perform initialization
+        
+        // if we're running in a cluster, try to acquire a global cluster lock to perform initialization or to force multiple 
+        // nodes to wait for the one performing the initialization
         if (clusteringService != null) {
             int minutesToWait = 10;
             LOGGER.debug("Waiting at most for {0} minutes while verifying the status of the '{1}' repository", minutesToWait,
                          name);
-            if (!clusteringService.tryLock(minutesToWait, TimeUnit.MINUTES, INITIALIZATION_LOCK)) {
-                throw new SystemFailureException(JcrI18n.repositoryWasNeverInitializedAfterMinutes.text(name, minutesToWait));
-            }
+            waitUntil(() -> clusteringService.tryLock(0, TimeUnit.MILLISECONDS, INITIALIZATION_LOCK), minutesToWait, TimeUnit.MINUTES,
+                      JcrI18n.repositoryWasNeverInitializedAfterMinutes);
             LOGGER.debug("Repository '{0}' acquired clustered-wide lock for performing initialization or verifying status", name);
             // at this point we should have a global cluster-wide lock
             isHoldingClusterLock = true;
@@ -170,30 +166,32 @@ public class RepositoryCache {
 
         SchematicEntry repositoryInfo = this.documentStore.localStore().get(REPOSITORY_INFO_KEY);
         boolean upgradeRequired = false;
+        String databaseId = documentStore.localStore().databaseId();
         if (repositoryInfo == null) {
             // Create a UUID that we'll use as the string specifying who is doing the initialization ...
             String initializerId = UUID.randomUUID().toString();
 
             // Must be a new repository (or one created before 3.0.0.Final) ...
             this.repoKey = NodeKey.keyForSourceName(this.name);
-            this.sourceKey = NodeKey.keyForSourceName(configuration.getStoreName());
+            this.sourceKey = NodeKey.keyForSourceName(databaseId);
             DateTime now = context.getValueFactories().getDateFactory().create();
             // Store this info in the repository info document ...
             EditableDocument doc = Schematic.newDocument();
             doc.setString(REPOSITORY_NAME_FIELD_NAME, this.name);
             doc.setString(REPOSITORY_KEY_FIELD_NAME, this.repoKey);
-            doc.setString(REPOSITORY_SOURCE_NAME_FIELD_NAME, configuration.getStoreName());
+            doc.setString(REPOSITORY_SOURCE_NAME_FIELD_NAME, databaseId);
             doc.setString(REPOSITORY_SOURCE_KEY_FIELD_NAME, this.sourceKey);
             doc.setDate(REPOSITORY_CREATED_AT_FIELD_NAME, now.toDate());
             doc.setString(REPOSITORY_INITIALIZER_FIELD_NAME, initializerId);
             doc.setString(REPOSITORY_CREATED_WITH_MODESHAPE_VERSION_FIELD_NAME, ModeShape.getVersion());
             doc.setNumber(REPOSITORY_UPGRADE_ID_FIELD_NAME, upgrades.getLatestAvailableUpgradeId());
 
+            SchematicEntry entryWrittenBySomeOtherProcess = localStore().runInTransaction(
+                    () -> this.documentStore.storeIfAbsent(REPOSITORY_INFO_KEY, doc), 0);
             // store the repository info
-            if (this.documentStore.storeDocument(REPOSITORY_INFO_KEY, doc) != null) {
+            if (entryWrittenBySomeOtherProcess != null) {
                 // if clustered, we should be holding a cluster-wide lock, so if some other process managed to write under this
-                // key,
-                // smth is seriously wrong. If not clustered, only 1 thread will always perform repository initialization.
+                // key smth is seriously wrong. If not clustered, only 1 thread will always perform repository initialization.
                 // in either case, this should not happen
                 throw new SystemFailureException(JcrI18n.repositoryWasInitializedByOtherProcess.text(name));
             }
@@ -203,13 +201,13 @@ public class RepositoryCache {
             LOGGER.debug("Initializing the '{0}' repository", name);
         } else {
             // Get the repository key and source key from the repository info document ...
-            Document info = repositoryInfo.getContent();
+            Document info = repositoryInfo.content();
             if (LOGGER.isDebugEnabled()) {
                 LOGGER.debug("Repository '{0}' already initialized at '{1}'", name,
                              info.get(REPOSITORY_INITIALIZED_AT_FIELD_NAME));
             }
             String repoName = info.getString(REPOSITORY_NAME_FIELD_NAME, this.name);
-            String sourceName = info.getString(REPOSITORY_SOURCE_NAME_FIELD_NAME, configuration.getStoreName());
+            String sourceName = info.getString(REPOSITORY_SOURCE_NAME_FIELD_NAME, databaseId);
             this.repoKey = info.getString(REPOSITORY_KEY_FIELD_NAME, NodeKey.keyForSourceName(repoName));
             this.sourceKey = info.getString(REPOSITORY_SOURCE_KEY_FIELD_NAME, NodeKey.keyForSourceName(sourceName));
 
@@ -223,9 +221,8 @@ public class RepositoryCache {
                 // The repository does need to be upgraded and nobody is yet doing it. Note that we only want one process in the
                 // cluster to do this, so we need to update the document store in an atomic fashion. So, first attempt to
                 // lock the document ...
-                this.upgradingRepository = runInTransaction(() -> {
+                this.upgradingRepository = localStore().runInTransaction(() -> {
                     LocalDocumentStore store = documentStore().localStore();
-                    store.lockDocuments(Collections.unmodifiableSet(REPOSITORY_INFO_KEY));
                     EditableDocument editor = store.edit(REPOSITORY_INFO_KEY, true);
                     if (editor.get(REPOSITORY_UPGRADER_FIELD_NAME) == null) {
                         // Make sure that some other process didn't sneak in and already upgrade ...
@@ -253,7 +250,7 @@ public class RepositoryCache {
             LOGGER.debug("Waiting at most for 10 minutes for another process in the cluster to upgrade the content in existing repository '{0}'",
                          name);
             waitUntil(() -> {
-                Document info = documentStore().localStore().get(REPOSITORY_INFO_KEY).getContent();
+                Document info = documentStore().localStore().get(REPOSITORY_INFO_KEY).content();
                 int lastUpgradeId = info.getInteger(REPOSITORY_UPGRADE_ID_FIELD_NAME, 0);
                 return !upgrades.isUpgradeRequired(lastUpgradeId);
             }, 10, TimeUnit.MINUTES, JcrI18n.repositoryWasNeverUpgradedAfterMinutes);
@@ -355,19 +352,23 @@ public class RepositoryCache {
     public final void rollbackRepositoryInfo() {
         try {
             SchematicEntry repositoryInfoEntry = this.documentStore.localStore().get(REPOSITORY_INFO_KEY);
-            if (repositoryInfoEntry != null) {
-                Document repoInfoDoc = repositoryInfoEntry.getContent();
-                // we should only remove the repository info if it wasn't initialized successfully previously
-                // in a cluster, it may happen that another node finished initialization while this node crashed (in which case we
-                // should not remove the entry)
-                if (!repoInfoDoc.containsField(REPOSITORY_INITIALIZED_AT_FIELD_NAME)) {
-                    this.documentStore.localStore().remove(REPOSITORY_INFO_KEY);
-                }
+            if (repositoryInfoEntry != null && isInitializingRepository()) {
+                localStore().runInTransaction(() -> {
+                    Document repoInfoDoc = repositoryInfoEntry.content();
+                    // we should only remove the repository info if it wasn't initialized successfully previously
+                    // in a cluster, it may happen that another node finished initialization while this node crashed (in which case we
+                    // should not remove the entry)
+                    if (!repoInfoDoc.containsField(REPOSITORY_INITIALIZED_AT_FIELD_NAME)) {
+                        this.documentStore.localStore().remove(REPOSITORY_INFO_KEY);
+                    }
+                    return null;
+                }, 0, REPOSITORY_INFO_KEY); 
             }
         } finally {
             // if we have a global cluster-wide lock, make sure its released
             if (isHoldingClusterLock) {
                 clusteringService.unlock(INITIALIZATION_LOCK);
+                isHoldingClusterLock = false;
                 LOGGER.debug("Repository '{0}' released clustered-wide lock after failing to start up ", name);
             }
         }
@@ -404,6 +405,10 @@ public class RepositoryCache {
     public final boolean isAccessControlEnabled() {
         return accessControlEnabled.get();
     }
+    
+    protected LocalDocumentStore localStore() {
+        return documentStore.localStore();
+    }
 
     public final void setAccessControlEnabled( boolean enabled ) {
         if (this.accessControlEnabled.compareAndSet(!enabled, enabled)) {
@@ -433,16 +438,15 @@ public class RepositoryCache {
         try {
             if (initializingRepository) {
                 LOGGER.debug("Marking repository '{0}' as fully initialized", name);
-                runInTransaction(() -> {
+                localStore().runInTransaction(() -> {
                     LocalDocumentStore store = documentStore().localStore();
-                    store.lockDocuments(Collections.unmodifiableSet(REPOSITORY_INFO_KEY));
                     EditableDocument repositoryInfo = store.edit(REPOSITORY_INFO_KEY, true);
                     if (repositoryInfo.get(REPOSITORY_INITIALIZED_AT_FIELD_NAME) == null) {
                         DateTime now = context().getValueFactories().getDateFactory().create();
                         repositoryInfo.setDate(REPOSITORY_INITIALIZED_AT_FIELD_NAME, now.toDate());
                     }
                     return null;
-                }, 0);
+                }, 0, REPOSITORY_INFO_KEY);
                 LOGGER.debug("Repository '{0}' is fully initialized", name);
             }
             return this;
@@ -450,6 +454,7 @@ public class RepositoryCache {
             // if we have a global cluster-wide lock, make sure its released
             if (isHoldingClusterLock) {
                 clusteringService.unlock(INITIALIZATION_LOCK);
+                isHoldingClusterLock = false;
                 LOGGER.debug("Repository '{0}' released clustered-wide lock after successful startup", name);
             }
         }
@@ -458,7 +463,7 @@ public class RepositoryCache {
     public RepositoryCache completeUpgrade( final Upgrades.Context resources ) {
         if (upgradingRepository) {
             try {
-                runInTransaction(() -> {
+                localStore().runInTransaction(() -> {
                     LOGGER.debug("Upgrading repository '{0}'", name);
                     lastUpgradeId = upgrades.applyUpgradesSince(lastUpgradeId, resources);
                     LOGGER.debug("Recording upgrade completion in repository '{0}'", name);
@@ -481,57 +486,7 @@ public class RepositoryCache {
         }
         return this;
     }
-
-    /**
-     * Runs the given operation within a transaction, after optionally locking some keys.
-     *
-     * @param operation a {@link Callable} instance; may not be null
-     * @param retryCountOnLockTimeout the number of times the operation should be retried if a timeout occurs while trying
-     * to obtain the locks
-     * @param keysToLock an optional {@link String[]} representing the keys to lock before performing the operation
-     * @param <V> the return type of the operation
-     * @return the result of operation
-     */
-    public  <V> V runInTransaction( Callable<V> operation, int retryCountOnLockTimeout, String... keysToLock ) {
-        // Start a transaction ...
-        Transactions txns = repositoryEnvironment.getTransactions();
-        try {
-            Transaction txn = txns.begin();
-            if (keysToLock.length > 0) {
-                List<String> keysList = Arrays.asList(keysToLock);
-                boolean locksAquired = false;
-                while (!locksAquired && retryCountOnLockTimeout > 0) {
-                    locksAquired = documentStore().localStore().lockDocuments(keysList);
-                    --retryCountOnLockTimeout;
-                }
-                if (!locksAquired) {
-                    txn.rollback();
-                    throw new org.modeshape.jcr.TimeoutException(
-                            "Cannot aquire lock on " + keysToLock + " after " + retryCountOnLockTimeout + " attempts");
-                }
-            }
-            try {
-                V result = operation.call();
-                txn.commit();
-                return result;
-            } catch (Exception e) {
-                // always rollback
-                txn.rollback();
-                // throw as is (see below)
-                throw e;
-            }
-        } catch (IllegalStateException | SystemException err) {
-            throw new SystemFailureException(err);
-        } catch (NotSupportedException e) {
-            logger.debug(e, "nested transactions not supported");
-            return null;
-        } catch (RuntimeException re) {
-            throw re;
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
+    
     public void startShutdown() {
         // Shutdown the in-memory caches used for the WorkspaceCache instances ...
         workspaceCachesByName.values().stream().forEach(WorkspaceCache::signalClosing);
@@ -566,16 +521,13 @@ public class RepositoryCache {
     }
 
     protected void refreshRepositoryMetadata( boolean update ) {
-        // Read the node document ...
-        final DocumentTranslator translator = new DocumentTranslator(context, documentStore,
-                                                                     minimumStringLengthForBinaryStorage.get());
         final String systemMetadataKeyStr = this.systemMetadataKey.toString();
         final boolean accessControlEnabled = this.accessControlEnabled.get();
         SchematicEntry entry = documentStore.get(systemMetadataKeyStr);
 
         if (!update && entry != null) {
             // We just need to read the metadata from the document, and we don't need a transaction for it ...
-            Document doc = entry.getContent();
+            Document doc = entry.content();
             Property accessProp = translator.getProperty(doc, name("accessControl"));
             boolean enabled = false;
             if (accessProp != null) {
@@ -608,14 +560,14 @@ public class RepositoryCache {
         }
 
         try {
-            runInTransaction(() -> {
+            localStore().runInTransaction(() -> {
                 // Re-read the entry within the transaction ...
                 SchematicEntry systemEntry = documentStore().get(systemMetadataKeyStr);
                 if (systemEntry == null) {
                     // We need to create a new entry ...
                     EditableDocument newDoc = Schematic.newDocument();
                     translator.setKey(newDoc, systemMetadataKey);
-                    systemEntry = documentStore.storeDocument(systemMetadataKeyStr, newDoc);
+                    systemEntry = documentStore.storeIfAbsent(systemMetadataKeyStr, newDoc);
                     if (systemEntry == null) {
                         // Read-read the entry that we just put, so we can populate it with the same code that edits it ...
                         systemEntry = documentStore.get(systemMetadataKeyStr);
@@ -823,7 +775,7 @@ public class RepositoryCache {
         synchronized (this) {
             // after we have the lock, check if maybe another thread has already finished
             if (!workspaceCachesByName.containsKey(name)) {
-                WorkspaceCache initializedWsCache = runInTransaction(() -> {
+                WorkspaceCache initializedWsCache = localStore().runInTransaction(() -> {
                     // Create/get the workspaceCache
                     ConcurrentMap<NodeKey, CachedNode> nodeCache = cacheForWorkspace();
                     ExecutionContext context = context();
@@ -845,9 +797,9 @@ public class RepositoryCache {
                                                                        documentStore, translator, rootKey, nodeCache,
                                                                        changeBus, repositoryEnvironment());
 
-                    if (documentStore.storeDocument(rootKey.toString(), rootDoc) == null) {
+                    if (documentStore.storeIfAbsent(rootKey.toString(), rootDoc) == null) {
                         // we are the first node to perform the initialization, so we need to link the system node
-                        if (!RepositoryCache.this.systemWorkspaceName.equals(name)) {
+                        if (!systemWorkspaceName.equals(name)) {
                             logger.debug("Creating '{0}' workspace in repository '{1}'", name, getName());
                             SessionCache workspaceSession = new WritableSessionCache(context, result, txWorkspaceCaches, repositoryEnvironment);
                             MutableCachedNode workspaceRootNode = workspaceSession.mutable(workspaceSession.getRootKey());
@@ -858,7 +810,7 @@ public class RepositoryCache {
                         }
                     }
                     return result;
-                }, 0);
+                }, 0, REPOSITORY_INFO_KEY);
                 workspaceCachesByName.put(name, initializedWsCache);
             }
         }
@@ -971,7 +923,7 @@ public class RepositoryCache {
                 throw new UnsupportedOperationException(JcrI18n.creatingWorkspacesIsNotAllowedInRepository.text(getName()));
             }
             // persist *all* the changes in one unit, because in case of failure we need to remain in consistent state
-            runInTransaction(() -> {
+            localStore().runInTransaction(() -> {
                 // unlink the system node
                 removeSession.mutable(removeSession.getRootKey()).removeChild(removeSession, getSystemKey());
                 // remove the workspace and persist it
@@ -981,7 +933,7 @@ public class RepositoryCache {
                 removeSession.save();
 
                 return null;
-            }, 0);
+            }, 0, REPOSITORY_INFO_KEY);
 
             // And notify the others - this notification will clear & close the WS cache via the local listener
             String userId = context.getSecurityContext().getUserName();

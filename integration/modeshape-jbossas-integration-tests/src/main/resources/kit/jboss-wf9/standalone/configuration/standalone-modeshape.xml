@@ -187,6 +187,15 @@
                         <password>sa</password>
                     </security>
                 </datasource>
+                 <datasource jndi-name="java:jboss/datasources/ModeshapePersistenceDS" pool-name="ModeshapePersistenceDS"
+                            enabled="true" use-java-context="true" jta="false">
+                    <connection-url>jdbc:h2:mem:modeshapeModeshapePersistenceDB</connection-url>
+                    <driver>h2</driver>
+                    <security>
+                        <user-name>sa</user-name>
+                        <password>sa</password>
+                    </security>
+                </datasource>
 
                 <drivers>
                     <driver name="h2" module="com.h2database.h2">
@@ -307,13 +316,14 @@
             <webapp name="modeshape-rest.war"/>
             <webapp name="modeshape-webdav.war"/>
 
-            <!-- A sample repository that uses the "sample" cache in the "modeshape" container. All content, binary values,
-                 and indexes are stored within the server's data directory. This is the simplest way to configure a repository
-                 that uses defaults for everything; feel free to change and specify other configuration options.  -->
-            <repository name="sample" anonymous-roles="admin"/>
+            <!-- A sample repository with content stored in H2 memory -->
+            <repository name="sample" anonymous-roles="admin">
+                <db-persistence url="jdbc:h2:mem:sample_db" drop-on-exit="true"/>
+            </repository>
             
             <!-- A second sample repository that defines additional non-default components such as extra workspaces and sequencers. -->
-            <repository name="artifacts" anonymous-roles="admin" cache-config="modeshape/infinispan-test-caches.xml">
+            <repository name="artifacts" anonymous-roles="admin" >
+                <db-persistence url="jdbc:h2:file:${jboss.server.data.dir}/modeshape/store/artifacts/db"/>
                 <!-- Define 3 workspaces to exist upon startup -->
                 <workspaces default-workspace="default" allow-workspace-creation="false">
                     <workspace name="default">
@@ -406,26 +416,26 @@
                 </text-extractors>
                 <file-binary-storage mime-type-detection="content"/>
             </repository>
-            <repository name="preconfiguredRepository" anonymous-roles="admin"
-                        cache-config="modeshape/infinispan-test-caches.xml"
-                        event-bus-size="2048">
-            <workspaces>
-                    <workspace name="default"/>
-                    <workspace name="other"/>
-                    <workspace name="extra">
-                        <initial-content>initial-content-custom.xml</initial-content>
-                    </workspace>
-                    <workspace name="empty">
-                        <initial-content/>
-                    </workspace>
-                    <!--Defines a default initial content which will be imported in all the workspaces which don't have smth configured-->
-                    <initial-content>initial-content-default.xml</initial-content>
-                </workspaces>
-                <node-types>
-                    <node-type>custom.cnd</node-type>
-                </node-types>
+            <repository name="preconfiguredRepository" anonymous-roles="admin" event-bus-size="2048">
+                <db-persistence drop-on-exit="true" url="jdbc:h2:mem:preconfigured_db" />
+                <workspaces>
+                        <workspace name="default"/>
+                        <workspace name="other"/>
+                        <workspace name="extra">
+                            <initial-content>initial-content-custom.xml</initial-content>
+                        </workspace>
+                        <workspace name="empty">
+                            <initial-content/>
+                        </workspace>
+                        <!--Defines a default initial content which will be imported in all the workspaces which don't have smth configured-->
+                        <initial-content>initial-content-default.xml</initial-content>
+                    </workspaces>
+                    <node-types>
+                        <node-type>custom.cnd</node-type>
+                    </node-types>
             </repository>
-            <repository name="federatedRepository" anonymous-roles="admin" cache-config="modeshape/infinispan-test-caches.xml">
+            <repository name="federatedRepository" anonymous-roles="admin">
+                <db-persistence drop-on-exit="true" url="jdbc:h2:mem:federated_db"/>
                 <workspaces allow-workspace-creation="true" default-workspace="default">
                     <workspace name="default"/>
                     <workspace name="other"/>
@@ -451,45 +461,45 @@
                     </source>
                 </external-sources>
             </repository>
-            <repository name="jdbcRepository" anonymous-roles="admin" cache-config="modeshape/infinispan-test-caches.xml">
+            <repository name="dbBinaryJDBCRepository" anonymous-roles="admin">
+                <db-persistence drop-on-exit="true" datasource-jndi="java:jboss/datasources/ModeshapePersistenceDS"/>
                 <workspaces allow-workspace-creation="true" default-workspace="default">
                     <workspace name="default"/>
                     <initial-content>initial-content-default.xml</initial-content>
                 </workspaces>
-            </repository>
-            <repository name="jdbcRepositoryWithEviction" anonymous-roles="admin" cache-config="modeshape/infinispan-test-caches.xml">
-                <workspaces allow-workspace-creation="true" default-workspace="default">
-                    <workspace name="default"/>
-                    <initial-content>initial-content-default.xml</initial-content>
-                </workspaces>
-            </repository>
-            <repository name="dbBinaryJDBCRepository" anonymous-roles="admin" cache-config="modeshape/infinispan-test-caches.xml">
                 <db-binary-storage data-source-jndi-name="java:jboss/datasources/ExampleDS" mime-type-detection="none"/>
             </repository>
-            <repository name="transient" anonymous-roles="admin" cache-name="sample" cache-config="modeshape/infinispan-test-caches.xml">
+            <repository name="transient" anonymous-roles="admin" >
+                <db-persistence drop-on-exit="true" url="jdbc:h2:mem:transient_db"/>
                 <transient-binary-storage min-string-size="100" mime-type-detection="none"/>
             </repository>
-            <repository name="repo-clustered1" cache-config="modeshape/infinispan-test-clustered-caches.xml"
+            <repository name="repo-clustered1"
                         anonymous-roles="admin"
-                        cluster-name="modeshape-wf-it"
-                        cluster-config="${jboss.server.config.dir}/modeshape/jgroups-test-config.xml"/>
-            <repository name="repo-clustered2" cache-config="modeshape/infinispan-test-clustered-caches.xml"
+                        cluster-name="modeshape-wf-it1"
+                        cluster-config="${jboss.server.config.dir}/modeshape/jgroups-test-config.xml">
+                <db-persistence url="jdbc:h2:${jboss.server.data.dir}/modeshape/clustered_ex1/db;AUTO_SERVER=true"/>
+            </repository>
+            <repository name="repo-clustered2"
                         anonymous-roles="admin"
-                        cluster-name="modeshape-wf-it"
-                        cluster-config="${jboss.server.config.dir}/modeshape/jgroups-test-config.xml"/>
-            <!--
-                Enable once ISPN is gone
+                        cluster-name="modeshape-wf-it1"
+                        cluster-config="${jboss.server.config.dir}/modeshape/jgroups-test-config.xml">
+                <db-persistence url="jdbc:h2:${jboss.server.data.dir}/modeshape/clustered_ex1/db;AUTO_SERVER=true"/>
+            </repository>
+         
             <repository name="repo-clustered3"
-                        cache-config="modeshape/infinispan-test-clustered-caches.xml"
                         anonymous-roles="admin"
-                        cluster-name="modeshape-wf-it"
-                        cluster-stack="tcp"/>
-            <repository name="repo-clustered4" cache-config="modeshape/infinispan-test-clustered-caches.xml"
+                        cluster-name="modeshape-wf-it2"
+                        cluster-stack="tcp">
+                <db-persistence url="jdbc:h2:${jboss.server.data.dir}/modeshape/clustered_ex2/db;AUTO_SERVER=true"/>
+            </repository>
+            <repository name="repo-clustered4" 
                         anonymous-roles="admin"
-                        cluster-name="modeshape-wf-it"
-                        cluster-stack="tcp"/>
-            -->
-            <repository name="compositeBinaryStoreRepository" cache-config="modeshape/infinispan-test-caches.xml" anonymous-roles="admin">
+                        cluster-name="modeshape-wf-it2"
+                        cluster-stack="tcp">
+                <db-persistence url="jdbc:h2:${jboss.server.data.dir}/modeshape/clustered_ex2/db;AUTO_SERVER=true"/>
+            </repository>
+            <repository name="compositeBinaryStoreRepository" anonymous-roles="admin">
+                <db-persistence drop-on-exit="true" url="jdbc:h2:mem:composite_binary"/>
                 <composite-binary-storage min-value-size="100">
                     <file-binary-storage store-name="fs1"
                                          path="modeshape/compositeBinaryStoreRepository/binaries/fs1"
@@ -500,31 +510,39 @@
                     <db-binary-storage store-name="default" data-source-jndi-name="java:jboss/datasources/ExampleDS" />                           
                 </composite-binary-storage>
             </repository>
-            <repository name="journalingRepository" cache-config="modeshape/infinispan-test-caches.xml" anonymous-roles="admin">
+            <repository name="journalingRepository" anonymous-roles="admin">
+                <db-persistence drop-on-exit="true" url="jdbc:h2:mem:journaling_db"/>
                 <journaling max-days-to-keep-records="15" async-writes="false"/>
             </repository>
-            <repository name="anonymousRepository" cache-config="modeshape/infinispan-test-caches.xml" anonymous-roles=""/>
-            <repository name="defaultAnonymousRepository" cache-config="modeshape/infinispan-test-caches.xml"/>
+            <repository name="anonymousRepository" anonymous-roles="">
+                <db-persistence drop-on-exit="true" url="jdbc:h2:mem:anon"/>
+            </repository>
+            <repository name="defaultAnonymousRepository">
+                <db-persistence drop-on-exit="true" url="jdbc:h2:mem:default_anon"/>
+            </repository>
             <repository name="optimizationRepository"
-                        cache-config="modeshape/infinispan-test-caches.xml"
                         document-optimization-child-count-target="10"
                         document-optimization-child-count-tolerance="10"
                         document-optimization-initial-time="02:00"
                         document-optimization-interval="24"
-                        document-optimization-thread-pool="modeshape-opt"/>
-            <repository name="customAuthenticatorRepository" cache-config="modeshape/infinispan-test-caches.xml" cache-name="anonymousRepository">
+                        document-optimization-thread-pool="modeshape-opt">
+                <db-persistence drop-on-exit="true" url="jdbc:h2:mem:optimization_repo"/>
+            </repository>
+            <repository name="customAuthenticatorRepository">
+                <db-persistence drop-on-exit="true" url="jdbc:h2:mem:custom_auth"/>
                 <authenticators>
                     <authenticator classname="org.modeshape.test.integration.CustomAuthenticationProvider" 
                                    module="deployment.security-test.war"
                                    username="arquillian"/>
                 </authenticators>
             </repository>
-            <repository name="reindexingRepository" anonymous-roles="admin" cache-config="modeshape/infinispan-test-caches.xml" cache-name="sample">
+            <repository name="reindexingRepository" anonymous-roles="admin">
+                <db-persistence drop-on-exit="true" url="jdbc:h2:mem:reindexing_repo"/>
                 <reindexing mode="incremental" async="false"/>
                 <journaling max-days-to-keep-records="15" async-writes="false"/>
             </repository>    
-            <repository name="externalDependenciesRepository" anonymous-roles="admin" cache-config="modeshape/infinispan-test-caches.xml" 
-                        cache-name="sample" depends-on="deployment.external-dependencies.war">
+            <repository name="externalDependenciesRepository" anonymous-roles="admin" depends-on="deployment.external-dependencies.war">
+                <db-persistence drop-on-exit="true" url="jdbc:h2:mem:external_dep"/>
                 <workspaces default-workspace="default" allow-workspace-creation="false">
                     <workspace name="default">
                         <initial-content>config/initial-content-cars.xml</initial-content>
@@ -535,7 +553,8 @@
                 </node-types>
             </repository>
 
-            <repository name="repo-with-es-index" anonymous-roles="admin" cache-config="modeshape/infinispan-test-caches.xml">
+            <repository name="repo-with-es-index" anonymous-roles="admin">
+                <db-persistence drop-on-exit="true" url="jdbc:h2:mem:es_repo" />
                 <workspaces allow-workspace-creation="true" default-workspace="default">
                     <workspace name="default"/>
                     <initial-content>initial-content-default.xml</initial-content>

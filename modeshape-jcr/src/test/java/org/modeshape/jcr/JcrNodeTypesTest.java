@@ -39,22 +39,20 @@ public class JcrNodeTypesTest extends SingleUseAbstractTest {
 
     @Test
     public void shouldRegisterCustomNodeTypeAtStartup() throws Exception {
-        startRepositoryWithConfiguration(getClass().getClassLoader().getResourceAsStream("config/repo-config-node-types.json"));
-
+        startRepositoryWithConfigurationFrom("config/repo-config-node-types.json");
         validateNodesWithCustomTypes();
     }
 
     @Test
     public void shouldRegisterValidNodeTypesOnly() throws Exception {
-        startRepositoryWithConfiguration(getClass().getClassLoader().getResourceAsStream("config/repo-config-invalid-node-types.json"));
-
+        startRepositoryWithConfigurationFrom("config/repo-config-invalid-node-types.json");
         validateNodesWithCustomTypes();
     }
 
     @Test
     @FixFor( "MODE-1687" )
     public void shouldRegisterBothUsedAndUnusedNamespacesFromCNDFile() throws Exception {
-        startRepositoryWithConfiguration(getClass().getClassLoader().getResourceAsStream("config/repo-config-node-types.json"));
+        startRepositoryWithConfigurationFrom("config/repo-config-node-types.json");
         NamespaceRegistry namespaceRegistry = session.getWorkspace().getNamespaceRegistry();
         assertEquals("http://www.modeshape.org/examples/cars/1.0", namespaceRegistry.getURI("car"));
         assertEquals("http://www.modeshape.org/examples/aircraft/1.0", namespaceRegistry.getURI("air"));

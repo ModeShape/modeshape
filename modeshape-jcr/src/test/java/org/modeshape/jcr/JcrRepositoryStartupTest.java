@@ -24,7 +24,6 @@ import static org.junit.Assert.fail;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -42,9 +41,7 @@ import javax.jcr.security.AccessControlList;
 import javax.jcr.security.AccessControlManager;
 import javax.jcr.security.AccessControlPolicyIterator;
 import javax.jcr.security.Privilege;
-import org.infinispan.schematic.document.EditableArray;
-import org.infinispan.schematic.document.EditableDocument;
-import org.infinispan.schematic.document.Editor;
+import org.junit.Before;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
 import org.modeshape.common.util.FileUtil;
@@ -56,6 +53,7 @@ import org.modeshape.jcr.cache.CachedNode;
 import org.modeshape.jcr.cache.ChildReference;
 import org.modeshape.jcr.cache.ChildReferences;
 import org.modeshape.jcr.cache.MutableCachedNode;
+import org.modeshape.jcr.cache.RepositoryCache;
 import org.modeshape.jcr.cache.SessionCache;
 import org.modeshape.jcr.cache.document.DocumentStore;
 import org.modeshape.jcr.query.JcrQuery;
@@ -64,6 +62,9 @@ import org.modeshape.jcr.value.BinaryKey;
 import org.modeshape.jcr.value.Property;
 import org.modeshape.jcr.value.PropertyFactory;
 import org.modeshape.jcr.value.binary.FileSystemBinaryStore;
+import org.modeshape.schematic.document.EditableArray;
+import org.modeshape.schematic.document.EditableDocument;
+import org.modeshape.schematic.document.Editor;
 
 /**
  * Tests that related to repeatedly starting/stopping repositories (without another repository configured in the @Before and @After
@@ -73,14 +74,17 @@ import org.modeshape.jcr.value.binary.FileSystemBinaryStore;
  * @author hchiorean
  */
 public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
+    
+    @Before
+    public void before() throws Exception {
+        // c3p0 is async, so it might take a bit until we can do this....
+        TestingUtil.waitUntilFolderCleanedUp("target/persistent_repository");
+    }
 
     @Test
     @FixFor( {"MODE-1526", "MODE-1512", "MODE-1617"} )
     public void shouldKeepPersistentDataAcrossRestart() throws Exception {
-        FileUtil.delete("target/persistent_repository/");
-
-        String repositoryConfigFile = "config/repo-config-persistent-cache.json";
-
+        String repositoryConfigFile = "config/repo-config-binaries-fs.json";
         startRunStop(repository -> {
             Session session = repository.login();
             session.getRootNode().addNode("testNode");
@@ -124,9 +128,6 @@ public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
 
     @Test
     public void shouldNotImportInitialContentIfWorkspaceContentsChanged() throws Exception {
-        // remove the ISPN local data, so we always start fresh
-        FileUtil.delete("target/persistent_repository_initial_content");
-
         String repositoryConfigFile = "config/repo-config-persistent-cache-initial-content.json";
         startRunStop(repository -> {
             Session ws1Session = repository.login("ws1");
@@ -152,17 +153,9 @@ public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
         }, repositoryConfigFile);
     }
 
-    @FixFor( "MODE-1693" )
-    @Test( expected = ConfigurationException.class )
-    public void shouldNotStartIfTransactionsArentEnabled() throws Exception {
-        startRunStop(null, "config/invalid-repo-config-no-transactions.json");
-    }
-
     @Test
     @FixFor( "MODE-1716" )
     public void shouldPersistExternalProjectionToFederatedNodeMappings() throws Exception {
-        FileUtil.delete("target/federation_persistent_repository");
-
         String repositoryConfigFile = "config/repo-config-mock-federation-persistent.json";
         startRunStop(repository -> {
             Session session = repository.login();
@@ -195,8 +188,6 @@ public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
 
     @Test
     public void shouldKeepPreconfiguredProjectionsAcrossRestart() throws Exception {
-        FileUtil.delete("target/federation_persistent_repository");
-
         String repositoryConfigFile = "config/repo-config-federation-persistent-projections.json";
         RepositoryOperation checkPreconfiguredProjection = repository -> {
             Session session = repository.login();
@@ -208,8 +199,6 @@ public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
 
     @Test
     public void shouldCleanStoredProjectionsIfNodesAreDeleted() throws Exception {
-        FileUtil.delete("target/federation_persistent_repository");
-
         String repositoryConfigFile = "config/repo-config-mock-federation-persistent.json";
         startRunStop(repository -> {
             Session session = repository.login();
@@ -242,7 +231,6 @@ public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
     @Test
     @FixFor( "MODE-1844" )
     public void shouldNotRemainInInconsistentStateIfErrorsOccurOnStartup() throws Exception {
-        FileUtil.delete("target/persistent_repository_initial_content");
         // try and start with a config that will produce an exception
         try {
             startRunStop(repository -> {}, "config/invalid-repo-config-persistent-initial-content.json");
@@ -269,7 +257,6 @@ public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
     @Test
     @FixFor( "MODE-2031" )
     public void shouldRestartWithModifiedCNDFile() throws Exception {
-        FileUtil.delete("target/persistent_repository/");
         startRunStop(repository -> {
             Session session = repository.login();
             Node content = session.getRootNode().addNode("content", "jj:content");
@@ -291,7 +278,6 @@ public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
     @Test
     @FixFor( "MODE-2044" )
     public void shouldRun3_6_0UpgradeFunction() throws Exception {
-        FileUtil.delete("target/persistent_repository/");
         // first run is empty, so no upgrades will be performed
         startRunStop(repository ->  {
             // modify the repository-info document to force an upgrade on the next restart
@@ -344,7 +330,6 @@ public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
     @Test
     @FixFor( "MODE-1683" )
     public void shouldAppendJournalEntriesBetweenRestarts() throws Exception {
-        FileUtil.delete("target/journal/");
         final List<Integer> recordsOnStartup = new ArrayList<>(2);
         RepositoryOperation operation = repository -> {
             Session session = repository.login();
@@ -367,10 +352,7 @@ public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
     @Test
     @FixFor( "MODE-2100" )
     public void shouldAddPredefinedWorkspacesOnRestartViaConfigUpdate() throws Exception {
-        FileUtil.delete("target/persistent_repository/");
-        URL configUrl = getClass().getClassLoader().getResource("config/repo-config-persistent-predefined-ws.json");
-        RepositoryConfiguration config = RepositoryConfiguration.read(configUrl);
-        startRunStop(repository -> {
+        RepositoryConfiguration config = startRunStop(repository -> {
             JcrSession session = repository.login("default");
             session.logout();
             session = repository.login("ws1");
@@ -378,7 +360,7 @@ public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
             session.logout();
             session = repository.login("ws2");
             session.logout();
-        }, config);
+        }, "config/repo-config-persistent-predefined-ws.json");
 
         final Editor editor = config.edit();
         EditableArray predefinedWs = editor.getDocument(RepositoryConfiguration.FieldName.WORKSPACES)
@@ -386,7 +368,9 @@ public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
         predefinedWs.add("ws3");
         predefinedWs.add("ws4");
 
-        startRunStop(repository -> {
+        JcrRepository repository = new JcrRepository(config);
+        repository.start();
+        try {
             repository.apply(editor.getChanges());
             JcrSession session = repository.login("default");
             session.logout();
@@ -398,13 +382,14 @@ public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
             session.logout();
             session = repository.login("ws4");
             session.logout();
-        }, config);
+        } finally {
+            TestingUtil.killRepositories(repository);
+        }
     }
 
     @Test
     @FixFor( "MODE-2100" )
     public void shouldAddPredefinedWorkspacesOnRestartViaConfigChange() throws Exception{
-        FileUtil.delete("target/persistent_repository/");
         startRunStop(repository -> {
             JcrSession session = repository.login("ws1");
             session.getWorkspace().createWorkspace("ws3");
@@ -430,9 +415,7 @@ public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
     @Test
     @FixFor( "MODE-2142" )
     public void shouldAllowChangingNamespacePrefixesInSession() throws Exception {
-        FileUtil.delete("target/persistent_repository/");
-
-        String repositoryConfigFile = "config/repo-config-persistent-cache.json";
+        String repositoryConfigFile = "config/repo-config-binaries-fs.json";
 
         final String prefix = "admb";
         final String uri = "http://www.admb.be/modeshape/admb/1.0";
@@ -470,9 +453,7 @@ public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
     @Test
     @FixFor( "MODE-2167" )
     public void shouldDisableACLsIfAllPoliciesAreRemoved() throws Exception {
-        FileUtil.delete("target/persistent_repository/");
-
-        String repositoryConfigFile = "config/repo-config-persistent-cache.json";
+        String repositoryConfigFile = "config/repo-config-binaries-fs.json";
 
         startRunStop(repository -> {
             Session session = repository.login();
@@ -520,7 +501,6 @@ public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
     @Test
     @FixFor( "MODE-2167" )
     public void shouldRun4_0_0_Alpha1_UpgradeFunction() throws Exception {
-        FileUtil.delete("target/persistent_repository/");
         String config = "config/repo-config-persistent-no-indexes.json";
         // first run is empty, so no upgrades will be performed
         startRunStop(repository -> {
@@ -588,8 +568,6 @@ public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
     @Test
     @FixFor( "MODE-2176" )
     public void shouldAllowExternalSourceChangesBetweenRestarts() throws Exception {
-        FileUtil.delete("target/persistent_repository/");
-
         prepareExternalDirectory("target/federation_persistent_1");
         startRunStop(repository-> {
             JcrSession session = repository.login();
@@ -620,7 +598,6 @@ public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
     @FixFor( "MODE-2302" )
     public void shouldRun4_0_0_Beta3_UpgradeFunction() throws Exception {
         FileUtil.delete("target/legacy_fs_binarystore");
-        FileUtil.delete("target/persistent_repository/");
         String config = "config/repo-config-persistent-legacy-fsbinary.json";
         // copy the test-resources legacy structure onto the configured one
         FileUtil.copy(new File("src/test/resources/legacy_fs_binarystore"), new File("target/legacy_fs_binarystore"));
@@ -651,11 +628,8 @@ public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
     @Test
     @FixFor( "MODE-2341" )
     public void shouldAllowReindexingWithLocalProviderBetweenRestartsWhenMissing() throws Exception {
-        // clean the main repo data
-        FileUtil.delete("target/persistent_repository");
-
         // clean the indexes
-        FileUtil.delete("target/startup_test_indexes");
+        TestingUtil.waitUntilFolderCleanedUp("target/startup_test_indexes");
 
         // setup the external content
         prepareExternalDirectory("target/federation_persistent_2");
@@ -667,7 +641,7 @@ public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
         long indexFolderSize1 = FileUtil.size("target/startup_test_indexes");
 
         // clean the indexes
-        assertTrue(FileUtil.delete("target/startup_test_indexes"));
+        TestingUtil.waitUntilFolderCleanedUp("target/startup_test_indexes");
 
         // run 2
         startRunStop(reindexingExternalContentOperation, "config/repo-config-persistent-cache-fs-connector2.json");
@@ -709,10 +683,8 @@ public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
     @Test
     @FixFor( "MODE-2391" )
     public void shouldNotReindexBetweenRestartsLocalProviderIfExists() throws Exception {
-        // clean the main repo data
-        FileUtil.delete("target/persistent_repository");
         // clean the indexes
-        FileUtil.delete("target/startup_test_indexes");
+        TestingUtil.waitUntilFolderCleanedUp("target/startup_test_indexes");
         startRunStop(repository -> {
             long initialSize = FileUtil.size("target/startup_test_indexes");
             JcrSession session = repository.login();
@@ -740,14 +712,13 @@ public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
     @Test
     @FixFor( "MODE-2393 ")
     public void reindexingLocalProviderShouldRemoveExistingDataFirst() throws Exception {
-        // clean the main repo data
-        FileUtil.delete("target/persistent_repository");
         // clean the indexes
-        FileUtil.delete("target/startup_test_indexes");
+        TestingUtil.waitUntilFolderCleanedUp("target/startup_test_indexes");
         startRunStop(repository -> {
             JcrSession session = repository.login();
             session.getRootNode().addNode("testRoot");
             session.save();
+            Thread.sleep(100);
             String sql = "select [jcr:path] from [nt:unstructured] where [jcr:name] = 'testRoot'";
             Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
             ValidateQuery.validateQuery().rowCount(1).useIndex("nodesByName").validate(query, query.execute());
@@ -778,11 +749,12 @@ public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
                                         int value ) throws Exception {
         // modify the repository-info document to force an upgrade on the next restart
         DocumentStore documentStore = repository.documentStore();
-        repository.transactionManager().begin();
-        EditableDocument editableDocument = documentStore.localStore().edit("repository:info", true);
-        editableDocument.set("lastUpgradeId", value);
-        documentStore.localStore().put("repository:info", editableDocument);
-        repository.transactionManager().commit();
+        documentStore.localStore().runInTransaction(() -> {
+            EditableDocument editableDocument = documentStore.localStore().edit(RepositoryCache.REPOSITORY_INFO_KEY, true);
+            editableDocument.set("lastUpgradeId", value);
+            documentStore.localStore().put(RepositoryCache.REPOSITORY_INFO_KEY, editableDocument);
+            return null;
+        }, 0);
     }
 
     protected AccessControlList getACL( AccessControlManager acm,

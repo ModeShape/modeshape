@@ -159,7 +159,7 @@ class RepositoryLockManager implements ChangeSetListener {
      * those locks that are significantly expired are removed.
      *
      * @param activeSessionIds the IDs of the sessions that are still active in this repository
-     * @throws TimeoutException if a timeout occurs attempting to lock nodes in ISPN
+     * @throws TimeoutException if a timeout occurs attempting to lock nodes
      */
     protected void cleanupLocks( Set<String> activeSessionIds ) throws TimeoutException {
         try {
@@ -239,7 +239,7 @@ class RepositoryLockManager implements ChangeSetListener {
                 }
             }
         } catch (TimeoutException te) {
-            // there was a timeout in ISPN while locking on some nodes (most likely mode:locks) so we should re-throw this to callers
+            // there was a timeout while locking on some nodes (most likely mode:locks) so we should re-throw this to callers
             // so they can react
             throw te;
         } catch (Throwable t) {

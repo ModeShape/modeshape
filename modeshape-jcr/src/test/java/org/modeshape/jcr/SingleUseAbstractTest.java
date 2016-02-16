@@ -20,22 +20,23 @@ import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 import javax.jcr.ImportUUIDBehavior;
 import javax.jcr.Node;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.Workspace;
-import junit.framework.AssertionFailedError;
-import org.infinispan.schematic.document.Changes;
-import org.infinispan.schematic.document.Document;
-import org.infinispan.schematic.document.EditableArray;
-import org.infinispan.schematic.document.EditableDocument;
-import org.infinispan.schematic.document.Editor;
-import org.infinispan.schematic.document.Json;
 import org.junit.After;
 import org.junit.Before;
 import org.modeshape.jcr.api.JcrTools;
+import org.modeshape.schematic.document.Changes;
+import org.modeshape.schematic.document.Document;
+import org.modeshape.schematic.document.EditableArray;
+import org.modeshape.schematic.document.EditableDocument;
+import org.modeshape.schematic.document.Editor;
+import org.modeshape.schematic.document.Json;
+import junit.framework.AssertionFailedError;
 
 /**
  * A base class for tests that require a new JcrSession and JcrRepository for each test method.
@@ -46,13 +47,13 @@ public abstract class SingleUseAbstractTest extends AbstractJcrRepositoryTest {
 
     /**
      * Flag that will signal to {@link #beforeEach()} whether to automatically start the repository using the
-     * {@link #createRepositoryConfiguration(String, Environment) default configuration}.
+     * {@link #createRepositoryConfiguration(String) default configuration}.
      * <p>
      * There are two ways to run tests with this class:
      * <ol>
      * <li>All tests runs against a fresh repository created from the same configuration. In this case, the
      * {@link #startRepositoryAutomatically} variable should be set to true, and the
-     * {@link #createRepositoryConfiguration(String, Environment)} should be overridden if a non-default configuration is to be
+     * {@link #createRepositoryConfiguration(String)} should be overridden if a non-default configuration is to be
      * used for all the tests.</li>
      * <li>Each test requires a fresh repository with a different configuration. In this case, the
      * {@link #startRepositoryAutomatically} variable should be set to <code>false</code>, and each test should then call one of
@@ -61,15 +62,14 @@ public abstract class SingleUseAbstractTest extends AbstractJcrRepositoryTest {
      */
     private boolean startRepositoryAutomatically = true;
 
-    protected Environment environment = new TestingEnvironment();
-    protected RepositoryConfiguration config;
     protected JcrRepository repository;
     protected JcrSession session;
     protected JcrTools tools;
-
+    
     protected void startRepository() throws Exception {
-        config = createRepositoryConfiguration(REPO_NAME, environment);
-        repository = new JcrRepository(config);
+        RepositoryConfiguration repositoryConfiguration = createRepositoryConfiguration(REPO_NAME);
+        repositoryConfiguration = repositoryConfiguration.with(new TestingEnvironment());
+        repository = new JcrRepository(repositoryConfiguration);
         repository.start();
         session = repository.login();
     }
@@ -83,8 +83,6 @@ public abstract class SingleUseAbstractTest extends AbstractJcrRepositoryTest {
             }
         } finally {
             repository = null;
-            config = null;
-            environment.shutdown();
         }
     }
 
@@ -123,20 +121,14 @@ public abstract class SingleUseAbstractTest extends AbstractJcrRepositoryTest {
 
     /**
      * Subclasses can override this method to define the RepositoryConfiguration that will be used for the given repository name
-     * and cache container. By default, this method simply returns an empty configuration:
-     * 
-     * <pre>
-     * return new RepositoryConfiguration(repositoryName, cacheContainer);
-     * </pre>
-     * 
+     * By default, this method simply returns an empty configuration:
+     *
      * @param repositoryName the name of the repository to create; never null
-     * @param environment the environment that the resulting configuration should use; may be null
      * @return the repository configuration
      * @throws Exception if there is a problem creating the configuration
      */
-    protected RepositoryConfiguration createRepositoryConfiguration( String repositoryName,
-                                                                     Environment environment ) throws Exception {
-        return new RepositoryConfiguration(repositoryName, environment);
+    protected RepositoryConfiguration createRepositoryConfiguration(String repositoryName) throws Exception {
+        return new RepositoryConfiguration(repositoryName);
     }
 
     /**
@@ -170,7 +162,7 @@ public abstract class SingleUseAbstractTest extends AbstractJcrRepositoryTest {
      */
     protected void startRepositoryWithConfiguration( Document doc ) throws Exception {
         assertThat(doc, is(notNullValue()));
-        RepositoryConfiguration config = new RepositoryConfiguration(doc, REPO_NAME, environment);
+        RepositoryConfiguration config = new RepositoryConfiguration(doc, REPO_NAME);
         startRepositoryWithConfiguration(config);
     }
 
@@ -187,8 +179,12 @@ public abstract class SingleUseAbstractTest extends AbstractJcrRepositoryTest {
      */
     protected void startRepositoryWithConfiguration( InputStream configInputStream ) throws Exception {
         assertThat(configInputStream, is(notNullValue()));
-        RepositoryConfiguration config = RepositoryConfiguration.read(configInputStream, REPO_NAME).with(environment);
+        RepositoryConfiguration config = RepositoryConfiguration.read(configInputStream, REPO_NAME);
         startRepositoryWithConfiguration(config);
+    }
+ 
+    protected void startRepositoryWithConfigurationFrom(String pathToConfiguration) throws Exception {
+        startRepositoryWithConfiguration(getClass().getClassLoader().getResourceAsStream(pathToConfiguration));
     }
 
     /**
@@ -204,8 +200,9 @@ public abstract class SingleUseAbstractTest extends AbstractJcrRepositoryTest {
      * @see #startRepositoryAutomatically
      */
     protected void startRepositoryWithConfiguration( RepositoryConfiguration configuration ) throws Exception {
+        // always use the test environment to provide some persistence defaults...
+        configuration = configuration.with(new TestingEnvironment());
         assertThat(configuration, is(notNullValue()));
-        config = configuration;
         if (repository != null) {
             try {
                 repository.shutdown().get(10, TimeUnit.SECONDS);
@@ -213,7 +210,7 @@ public abstract class SingleUseAbstractTest extends AbstractJcrRepositoryTest {
                 repository = null;
             }
         }
-        repository = new JcrRepository(config);
+        repository = new JcrRepository(configuration);
         repository.start();
         session = repository.login();
     }
@@ -223,10 +220,10 @@ public abstract class SingleUseAbstractTest extends AbstractJcrRepositoryTest {
      * 
      * @param workspaceName the name of the workspace; may not be null
      */
-    protected void predefineWorkspace( String workspaceName ) {
+    protected void predefineWorkspace( RepositoryConfiguration configuration, String workspaceName ) {
         assertThat(workspaceName, is(notNullValue()));
         // Edit the configuration ...
-        Editor editor = config.edit();
+        Editor editor = configuration.edit();
         EditableDocument workspaces = editor.getOrCreateDocument("workspaces");
         EditableArray predefined = workspaces.getOrCreateArray("predefined");
         predefined.addStringIfAbsent(workspaceName);
@@ -310,5 +307,9 @@ public abstract class SingleUseAbstractTest extends AbstractJcrRepositoryTest {
         InputStream stream = getClass().getClassLoader().getResourceAsStream(path);
         assertThat(stream, is(notNullValue()));
         return stream;
+    }
+    
+    protected <R> R runInTransaction(Callable<R> operation, String...keysToLock) {
+        return repository.runningState().documentStore().localStore().runInTransaction(operation, 0, keysToLock);
     }
 }

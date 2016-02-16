@@ -19,7 +19,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import javax.transaction.Transaction;
 import org.modeshape.jcr.cache.RepositoryCache;
 import org.modeshape.jcr.cache.change.ChangeSet;
-import org.modeshape.jcr.txn.SynchronizedTransactions;
+import org.modeshape.jcr.txn.Transactions;
 
 /**
  * A special WorkspaceCache implementation that should be used by sessions running within user transactions.
@@ -49,7 +49,7 @@ public class TransactionalWorkspaceCache extends WorkspaceCache {
     protected TransactionalWorkspaceCache( WorkspaceCache sharedWorkspaceCache,
                                            TransactionalWorkspaceCaches txWorkspaceCaches,
                                            Transaction txn) {
-        // Use a new in-memory map for the transactional cache ...
+        // Use a new in-memory map for the transactional cache which is empty when first created...
         super(sharedWorkspaceCache, new ConcurrentHashMap<>());
         this.sharedWorkspaceCache = sharedWorkspaceCache;
         this.txn = txn;
@@ -69,7 +69,7 @@ public class TransactionalWorkspaceCache extends WorkspaceCache {
      * committed. Generally, the transactional workspace cache will clear any cached nodes that were included in the change set
      * 
      * @param changes the changes that were persisted but not yet committed
-     * @see SynchronizedTransactions#updateCache(WorkspaceCache, ChangeSet, org.modeshape.jcr.txn.Transactions.Transaction)
+     * @see Transactions#updateCache(WorkspaceCache, ChangeSet, org.modeshape.jcr.txn.Transactions.Transaction)
      */
     public void changedWithinTransaction( final ChangeSet changes ) {
         txWorkspaceCaches.workspaceCachesFor(txn).forEach(cache -> cache.internalChangedWithinTransaction(changes));

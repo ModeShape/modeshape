@@ -261,93 +261,13 @@
             <webapp name="modeshape-explorer.war"/>
             <webapp name="modeshape-cmis.war"/>
 
-            <!-- A sample repository that uses the "sample" cache in the "modeshape" container. All content, binary values,
+            <!-- A clustered sample repository. All content, binary values,
                  and indexes are stored within the server's data directory. This is the simplest way to configure a repository
                  that uses defaults for everything; feel free to change and specify other configuration options.  -->
-            <repository name="sample" cache-name="sample" cache-config="modeshape/sample-ha-cache-config.xml"
-                        anonymous-roles="admin"
-                        cluster-name="sample-cluster" cluster-config="${jboss.server.config.dir}/modeshape/jgroups-config.xml">
-                <file-binary-storage path="modeshape/sample/binaries" relative-to="${java.tmp.dir}"/>
-            </repository>
-            <!-- A second sample repository that defines additional non-default components such as extra workspaces and sequencers. -->
-           <repository name="artifacts" cache-name="artifacts" cache-config="modeshape/artifacts-ha-cache-config.xml" anonymous-roles="admin"
-                       cluster-name="artifacts-cluster" cluster-stack="tcp">
-               <index-providers>
-                   <index-provider name="local" classname="local" path="modeshape/artifacts/indexes-${jboss.node.name}" relative-to="jboss.domain.data.dir" />
-               </index-providers>
-               <file-binary-storage path="modeshape/artifacts/binaries" relative-to="${java.tmp.dir}"/>
-                <!-- Define 3 workspaces to exist upon startup -->
-                <workspaces default-workspace="default" allow-workspace-creation="false">
-                    <workspace name="default">
-                        <initial-content>initial-content-default.xml</initial-content>
-                    </workspace>
-                    <workspace name="other"/>
-                    <workspace name="extra"/>
-                </workspaces>
-                <!--
-                Define a bunch of sequencers. Carefully note the differences in the path expressions; some sequencers
-                do not generate a node to represent a file, while other sequencers (e.g., XML, XSD, WSDL, ZIP) always
-                generate a node based upon the filename.
-                The sequencer names are unique identifiers within the configuration, and should not contain spaces.
-                Also, some of the sequencer configurations use the fully-qualified classname, while other use the
-                short alias (which only works for the sequencer provided by ModeShape). -->
-                <sequencers>
-                    <sequencer name="delimited-text-sequencer" classname="org.modeshape.sequencer.text.DelimitedTextSequencer"
-                               module="org.modeshape.sequencer.text" splitPattern=",">
-                        <path-expression>/files(//*.csv[*])/jcr:content[@jcr:data] => /derived/text/delimited/$1</path-expression>
-                    </sequencer>
-                    <sequencer name="fixed-width-text-sequencer"
-                               classname="org.modeshape.sequencer.text.FixedWidthTextSequencer"
-                               module="org.modeshape.sequencer.text" commentMarker="#">
-                        <path-expression>/files(//*.txt[*])/jcr:content[@jcr:data] => /derived/text/fixedWidth/$1</path-expression>
-                    </sequencer>
-                    <sequencer name="ddl-sequencer" classname="org.modeshape.sequencer.ddl.DdlSequencer"
-                               module="org.modeshape.sequencer.ddl">
-                        <path-expression>/files(//*.ddl[*])/jcr:content[@jcr:data] => /derived/ddl/$1</path-expression>
-                    </sequencer>
-                    <!--
-                        For the java & class sequencer we need to explicitly define the module, as it does not map 1-1 to the classname
-                    -->
-                    <sequencer name="java-source-sequencer" classname="org.modeshape.sequencer.javafile.JavaFileSequencer"
-                               module="org.modeshape.sequencer.java">
-                        <path-expression>/files//(*.java[*])/jcr:content[@jcr:data] => /derived/java</path-expression>
-                    </sequencer>
-                    <sequencer name="java-class-sequencer" classname="org.modeshape.sequencer.classfile.ClassFileSequencer"
-                               module="org.modeshape.sequencer.java">
-                        <path-expression>/files//(*.class[*])/jcr:content[@jcr:data] => /derived/class</path-expression>
-                    </sequencer>
-                    <sequencer name="cnd-sequencer" classname="cnd" module="org.modeshape">
-                        <path-expression>default:/files(//*.cnd[*])/jcr:content[@jcr:data] => /derived/cnd/$1</path-expression>
-                    </sequencer>
-                    <sequencer name="msoffice-sequencer" classname="msoffice" module="org.modeshape.sequencer.msoffice">
-                        <path-expression>/files(//*.(xls|ppt|doc)[*])/jcr:content[@jcr:data] => /derived/msoffice/$1</path-expression>
-                    </sequencer>
-                    <!--
-                     The XSD, XML, WSDL, and ZIP sequencers all generate a node for the input documents, and so we don't want the filename to
-                     be included in the output path. Therefore, only the relative path under '/files' and above '*.xsd' (or '*.wsdl'
-                     or '*.xml') is captured in the input path. -->
-                    <sequencer name="xsd-sequencer" classname="xsd" module="org.modeshape.sequencer.xsd">
-                        <path-expression>/files(//*).xsd[*]/jcr:content[@jcr:data] => /derived/xsd/$1</path-expression>
-                    </sequencer>
-                    <sequencer name="wsdl-sequencer" classname="wsdl" module="org.modeshape.sequencer.wsdl">
-                        <path-expression>/files(//)*.wsdl[*]/jcr:content[@jcr:data] => /derived/wsdl/$1</path-expression>
-                    </sequencer>
-                    <sequencer name="xml-sequencer" classname="xml" module="org.modeshape.sequencer.xml">
-                        <path-expression>/files(//)*.xml[*]/jcr:content[@jcr:data] => /derived/xml/$1</path-expression>
-                    </sequencer>
-                    <sequencer name="zip-sequencer" classname="zip" module="org.modeshape.sequencer.zip">
-                        <path-expression>/files(//*.zip[*])/jcr:content[@jcr:data] => /derived/zip/$1</path-expression>
-                    </sequencer>
-                    <sequencer name="image-sequencer" classname="image" module="org.modeshape.sequencer.image">
-                        <path-expression>/files(//*.(png|jpg|gif)[*])/jcr:content[@jcr:data] => /derived/image/$1</path-expression>
-                    </sequencer>
-                    <sequencer name="mp3-sequencer" classname="mp3" module="org.modeshape.sequencer.mp3">
-                        <path-expression>/files(//*.mp3[*])/jcr:content[@jcr:data] => /derived/mp3/$1</path-expression>
-                    </sequencer>
-                </sequencers>
-                <text-extractors>
-                    <text-extractor name="tika-extractor" classname="tika" module="org.modeshape.extractor.tika"/>
-                </text-extractors>
+            <repository name="sample" anonymous-roles="admin"
+                        cluster-name="sample-cluster" cluster-stack="tcp">
+                <db-persistence url="jdbc:h2:${jboss.server.data.dir}/modeshape/sample/db;AUTO_SERVER=true"/>
+                <file-binary-storage path="modeshape/sample/binaries" relative-to="${jboss.server.data.dir}"/>
             </repository>
         </subsystem>
         <subsystem xmlns="urn:jboss:domain:jaxrs:1.0"/>
@@ -472,7 +392,12 @@
                 </security-domain>
                 <security-domain name="modeshape-security" cache-type="default">
                     <authentication>
-                        <login-module code="RealmDirect" flag="required">
+                        <!--keep things simple...-->
+                        <login-module code="UsersRoles" flag="sufficient">
+                            <module-option name="usersProperties" value="${jboss.server.config.dir}/modeshape-users.properties"/>
+                            <module-option name="rolesProperties" value="${jboss.server.config.dir}/modeshape-roles.properties"/>
+                        </login-module>
+                        <login-module code="RealmDirect" flag="sufficient">
                             <module-option name="password-stacking" value="useFirstPass"/>
                         </login-module>
                     </authentication>

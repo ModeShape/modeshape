@@ -16,7 +16,6 @@
 package org.modeshape.test;
 
 import org.junit.Before;
-import org.modeshape.jcr.Environment;
 import org.modeshape.jcr.RepositoryConfiguration;
 import org.modeshape.jcr.SingleUseAbstractTest;
 
@@ -27,7 +26,7 @@ import org.modeshape.jcr.SingleUseAbstractTest;
  * <ol>
  * <li>All tests runs against a fresh repository created from the same configuration. In this case, the
  * {@link #startRepositoryAutomatically} variable should be set to true, and the
- * {@link #createRepositoryConfiguration(String, Environment)} should be overridden if a non-default configuration is to be used
+ * {@link #createRepositoryConfiguration(String)} should be overridden if a non-default configuration is to be used
  * for all the tests.</li>
  * <li>Each test requires a fresh repository with a different configuration. In this case, the
  * {@link #startRepositoryAutomatically} variable should be set to <code>false</code>, and each test should then call one of the

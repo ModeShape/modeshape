@@ -24,9 +24,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import org.infinispan.schematic.SchematicEntry;
-import org.infinispan.schematic.document.Document;
-import org.infinispan.schematic.document.EditableDocument;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.SecureHash.Algorithm;
 import org.modeshape.common.util.StringUtil;
@@ -51,6 +48,9 @@ import org.modeshape.jcr.value.ReferenceFactory;
 import org.modeshape.jcr.value.basic.NodeKeyReference;
 import org.modeshape.jcr.value.basic.StringReference;
 import org.modeshape.jcr.value.binary.ExternalBinaryValue;
+import org.modeshape.schematic.SchematicEntry;
+import org.modeshape.schematic.document.Document;
+import org.modeshape.schematic.document.EditableDocument;
 
 /**
  * An implementation of {@link DocumentStore} which is used when federation is enabled
@@ -113,10 +113,10 @@ public class FederatedDocumentStore implements DocumentStore {
     }
 
     @Override
-    public SchematicEntry storeDocument( String key,
-                                         Document document ) {
+    public SchematicEntry storeIfAbsent(String key,
+                                        Document document) {
         if (isLocalSource(key)) {
-            return localStore().storeDocument(key, document);
+            return localStore().storeIfAbsent(key, document);
         }
         Connector connector = connectors.getConnectorForSourceKey(sourceKey(key));
         if (connector != null) {
@@ -263,7 +263,7 @@ public class FederatedDocumentStore implements DocumentStore {
                 EditableDocument editableDocument = replaceConnectorIdsWithNodeKeys(document, connector.getSourceName());
                 editableDocument = updateCaching(connector, editableDocument);
                 editableDocument = updateQueryable(connector, editableDocument);
-                return new FederatedSchematicEntry(editableDocument);
+                return new ExternalSchematicEntry(key, editableDocument);
             }
         }
         return null;
@@ -331,11 +331,8 @@ public class FederatedDocumentStore implements DocumentStore {
             return localStore().edit(key, createIfMissing);
         }
         // It's federated, so we have to use the federated logic ...
-        FederatedSchematicEntry entry = (FederatedSchematicEntry)get(key);
-        if (entry != null) {
-            return entry.edit();
-        }
-        return null;
+        SchematicEntry entry = get(key);
+        return entry != null ? entry.source().editable() : null;
     }
 
     @Override
@@ -582,4 +579,33 @@ public class FederatedDocumentStore implements DocumentStore {
         }
     }
 
+    private static class ExternalSchematicEntry implements SchematicEntry {
+        private final EditableDocument result;
+        private final String id;
+
+        protected ExternalSchematicEntry(String id, EditableDocument result) {
+            this.result = result;
+            this.id = id;
+        }
+
+        @Override
+        public Document source() {
+            return result;
+        }
+
+        @Override
+        public Document content() {
+            return result;
+        }
+
+        @Override
+        public Document getMetadata() {
+            throw new UnsupportedOperationException("Not supported");
+        }
+
+        @Override
+        public String id() {
+           return id;
+        }
+    }
 }

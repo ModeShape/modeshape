@@ -118,15 +118,15 @@ public class Sequencers implements ChangeSetListener {
             this.processId = repository.context().getProcessId();
             ExecutionContext context = this.repository.context();
             this.stringFactory = context.getValueFactories().getStringFactory();
-            this.sequencersById = new HashMap<UUID, Sequencer>();
-            this.sequencersByName = new HashMap<String, Sequencer>();
-            this.configByWorkspaceName = new HashMap<String, Collection<SequencingConfiguration>>();
-            this.pathExpressionsBySequencerId = new HashMap<UUID, Collection<SequencerPathExpression>>();
+            this.sequencersById = new HashMap<>();
+            this.sequencersByName = new HashMap<>();
+            this.configByWorkspaceName = new HashMap<>();
+            this.pathExpressionsBySequencerId = new HashMap<>();
 
             String repoName = repository.name();
             for (Component component : components) {
                 try {
-                    Sequencer sequencer = component.createInstance(getClass().getClassLoader());
+                    Sequencer sequencer = component.createInstance();
                     // Set the repository name field ...
                     Reflection.setValue(sequencer, "repositoryName", repoName);
 

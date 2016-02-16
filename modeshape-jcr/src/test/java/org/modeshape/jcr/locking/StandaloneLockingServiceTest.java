@@ -56,6 +56,15 @@ public class StandaloneLockingServiceTest {
     }
 
     @Test
+    public void shuttingDownShouldReleaseLocks() throws Exception {
+        LockingService service = newLockingService();
+        CompletableFuture.runAsync(() -> assertTrue(service.tryLock("lock1"))).get();
+        CompletableFuture.runAsync(() -> assertTrue(service.tryLock("lock2"))).get();
+        assertTrue(service.shutdown());
+        assertFalse(service.shutdown());
+    }
+
+    @Test
     public void shouldFailIfLocksAlreadyHeld() {
         List<String> lockNames = Arrays.asList("lock1", "lock2");
         LockingService service = newLockingService();

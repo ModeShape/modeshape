@@ -32,10 +32,4 @@ public class JaasTestUtil {
             throw new IllegalStateException(ex);
         }
     }
-
-    public static void releaseJaas() {
-        // don't release in our test cases ...
-        // SecurityFactory.release();
-    }
-
 }

@@ -1,0 +1,39 @@
+{
+    "name" : "Clustered Repository with Incremental Indexes",
+    "workspaces" : {
+        "predefined" : ["otherWorkspace"],
+        "default" : "default",
+        "allowCreation" : true
+    },
+    "monitoring" : {
+        "enabled" : false
+    },
+    "storage" : {
+        "persistence" : {
+            "type" : "db",
+            "connectionUrl": "jdbc:h2:file:./target/clustered/db;AUTO_SERVER=TRUE"
+        }
+    },
+    "journaling" : {
+        "location" : "target/clustered/journal/${clusterNode}"
+    },
+    "clustering" : {},
+    "indexProviders" : {
+        "lucene" : {
+            "classname" : "lucene",
+            "directory" : "target/clustered/indexes/${clusterNode}"
+        }
+    },
+    "indexes" : {
+        "titleIndex" : {
+            "kind" : "value",
+            "provider" : "lucene",
+            "nodeType" : "mix:title",
+            "columns" : "jcr:title(STRING)"
+        }
+    },
+    "reindexing" : {
+        "async" : false,
+        "mode" : "incremental"
+    }
+}

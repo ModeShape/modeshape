@@ -15,11 +15,14 @@
  */
 package org.modeshape.jcr;
 
-import java.io.IOException;
-import javax.naming.NamingException;
-import org.infinispan.manager.CacheContainer;
+import java.util.Optional;
 import org.jgroups.Channel;
 import org.modeshape.common.annotation.ThreadSafe;
+import org.modeshape.schematic.Schematic;
+import org.modeshape.schematic.SchematicDb;
+import org.modeshape.schematic.document.Document;
+import org.modeshape.schematic.document.Json;
+import org.modeshape.schematic.document.ParsingException;
 
 /**
  * A basic environment in which a repository operates. The logical names supplied to these methods are typically obtained directly
@@ -29,26 +32,47 @@ import org.modeshape.common.annotation.ThreadSafe;
 public interface Environment {
 
     /**
-     * Get the cache container with the given name. Note that the name might be a logical name or it might refer to the location
-     * of an Infinispan configuration; the exact semantics is dependent upon the implementation.
+     * Returns a default persistence configuration document, when nothing is explicitly configured for a repository.
      * 
-     * @param name the name of the cache container; may be null
-     * @return the cache container; never null
-     * @throws IOException if there is an error accessing any resources required to start the container
-     * @throws NamingException if there is an error accessing JNDI (if that is used in the implementation)
+     * @return a {@link Document} instance, never {@code null}
      */
-    CacheContainer getCacheContainer( String name ) throws IOException, NamingException;
+    default Document defaultPersistenceConfiguration() {
+        try {
+            return Json.read(getClassLoader(this).getResource("org/modeshape/jcr/default-persistence-config.json"));
+        } catch (ParsingException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * Returns {@link SchematicDb} instance for the given configuration and optional classpath entries using a 
+     * {@link #getClassLoader(Object, String...) custom loader}. The supplied configuration document may contain a custom 
+     * {@link org.modeshape.jcr.RepositoryConfiguration.FieldName#CLASSLOADER} attribute which if present, will be used as an
+     * additional classpath entry.
+     * 
+     * @param persistenceConfig a {@link Document} representing the persistence configuration document; it may be null in which
+     * case a {@link #defaultPersistenceConfiguration() default configuration} will be used
+     * @return a {@link SchematicDb} instance, never {@code null}
+     * 
+     * @throws ConfigurationException if no persistence provider can return a valid database.
+     */
+    default SchematicDb getDb(Document persistenceConfig) {
+        final Document config = persistenceConfig != null ? persistenceConfig : defaultPersistenceConfiguration();
+        String classloader = config.getString(RepositoryConfiguration.FieldName.CLASSLOADER);
+        String[] classpathEntries = classloader != null ? new String[] {classloader} : new String[0];
+        Optional<SchematicDb> db = Optional.of(Schematic.getDb(config, getClassLoader(this, classpathEntries)));
+        return db.orElseThrow(() -> new ConfigurationException(JcrI18n.unableToCreateDb.text(config)));
+    }
 
     /**
      * Get a classloader given the supplied set of logical classpath entries, which the implementation can interpret however it
      * needs.
      * 
-     * @param fallbackLoader the classloader that should be used is the fallback class loader
+     * @param caller the object instance which calls this method and whose class loader will be used as a fallback; may not be null
      * @param classpathEntries the logical classpath entries; may be null
-     * @return the classloader
+     * @return a classloader instance, never null
      */
-    ClassLoader getClassLoader( ClassLoader fallbackLoader,
-                                String... classpathEntries );
+    ClassLoader getClassLoader( Object caller, String... classpathEntries );
     
     /**
      * Get the JGroups channel with the given logical name.
@@ -62,6 +86,6 @@ public interface Environment {
     /**
      * Shutdown this environment, allowing it to reclaim any resources.
      */
-    void shutdown();
+    default void shutdown() {}
 
 }

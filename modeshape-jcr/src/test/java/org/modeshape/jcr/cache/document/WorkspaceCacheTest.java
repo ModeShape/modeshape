@@ -27,11 +27,12 @@ import org.modeshape.jcr.cache.NodeKey;
 public class WorkspaceCacheTest extends AbstractNodeCacheTest {
 
     private ExecutorService executor;
+    private RepositoryChangeBus changeBus;
 
     @Override
     protected NodeCache createCache() {
         executor = Executors.newCachedThreadPool();
-        RepositoryChangeBus changeBus = new RepositoryChangeBus("repo", executor);
+        changeBus = new RepositoryChangeBus("repo", executor);
         ConcurrentMap<NodeKey, CachedNode> nodeCache = new ConcurrentHashMap<>();
         DocumentStore documentStore = new LocalDocumentStore(schematicDb, repoEnv);
         DocumentTranslator translator = new DocumentTranslator(context, documentStore, 100L);
@@ -44,6 +45,10 @@ public class WorkspaceCacheTest extends AbstractNodeCacheTest {
     @Override
     protected void shutdownCache( NodeCache cache ) {
         super.shutdownCache(cache);
-        executor.shutdown();
+        try {
+            changeBus.shutdown();
+        } finally {
+            executor.shutdownNow();
+        }
     }
 }

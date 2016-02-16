@@ -1,6 +1,10 @@
 {
     "name" : "Test Repository",
     "storage" : {
+        "persistence": {
+            "type": "db",
+            "dropOnExit": true
+        },
         "binaryStorage" : {
             "type"  : "custom",
             "classname" : "org.modeshape.jcr.value.binary.CustomBinaryStoreImpl",

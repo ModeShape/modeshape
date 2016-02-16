@@ -16,13 +16,13 @@
 package org.modeshape.jcr;
 
 import static org.hamcrest.core.Is.is;
-import static org.infinispan.schematic.Schematic.newDocument;
+import static org.modeshape.schematic.Schematic.newDocument;
 import static org.junit.Assert.assertThat;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import org.infinispan.schematic.document.Document;
+import org.modeshape.schematic.document.Document;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;

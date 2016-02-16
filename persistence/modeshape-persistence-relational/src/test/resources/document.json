@@ -1,0 +1,13 @@
+{
+    "firstName": "Jane",
+    "lastName": "Doe",
+    "address": {
+        "street": "Main Street",
+        "city": "Memphis",
+        "zip": 12345
+    },
+    "phone": {
+        "home": "(800)555-1212"
+    },
+    "value" : 1
+}

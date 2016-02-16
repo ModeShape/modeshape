@@ -41,7 +41,7 @@ public abstract class TikaMimeTypeDetector implements MimeTypeDetector {
         this.logger = Logger.getLogger(getClass());
         // the extra classpath entry is the package name of the tika extractor, so it can be located inside AS7 (see
         // RepositoryService)
-        ClassLoader loader = environment.getClassLoader(getClass().getClassLoader(), "org.modeshape.extractor.tika");
+        ClassLoader loader = environment.getClassLoader(this, "org.modeshape.extractor.tika");
         logger.debug("Initializing mime-type detector...");
         initDetector(loader);
         logger.debug("Successfully initialized detector: {0}", getClass().getName());

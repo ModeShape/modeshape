@@ -15,45 +15,24 @@
  */
 package org.modeshape.jcr;
 
-import org.infinispan.configuration.cache.ConfigurationBuilder;
-import org.infinispan.configuration.global.GlobalConfigurationBuilder;
-import org.infinispan.manager.CacheContainer;
-import org.infinispan.manager.DefaultCacheManager;
-import org.infinispan.schematic.TestUtil;
-import org.infinispan.transaction.lookup.DummyTransactionManagerLookup;
-import org.infinispan.transaction.lookup.TransactionManagerLookup;
+import java.util.UUID;
+import org.modeshape.persistence.relational.RelationalDbConfig;
+import org.modeshape.schematic.document.Document;
+import org.modeshape.schematic.document.EditableDocument;
 
 /**
- * An {@link Environment} implementation that can be used for testing.
+ * {@link Environment} implementation used for testing.
+ * 
+ * @author Horia Chiorean (hchiorea@redhat.com)
  */
 public class TestingEnvironment extends LocalEnvironment {
-
-    private final CustomLoaderTest customLoaderTest;
-
-    public TestingEnvironment() {
-        this(null, DummyTransactionManagerLookup.class);
-    }
-
-    public TestingEnvironment( CustomLoaderTest customLoaderTest ) {
-        this(customLoaderTest, DummyTransactionManagerLookup.class);
-    }
-
-    public TestingEnvironment( CustomLoaderTest customLoaderTest,
-                               Class<? extends TransactionManagerLookup> transactionManagerLookup ) {
-        super(transactionManagerLookup);
-        this.customLoaderTest = customLoaderTest;
-    }
-
+    
     @Override
-    protected void shutdown( CacheContainer container ) {
-        TestUtil.killCacheContainers(container);
-    }
-
-    @Override
-    protected CacheContainer createContainer( GlobalConfigurationBuilder globalConfigurationBuilder,
-                                              ConfigurationBuilder configurationBuilder ) {
-        configurationBuilder.jmxStatistics().disable();
-        globalConfigurationBuilder.globalJmxStatistics().disable().allowDuplicateDomains(true);
-        return new DefaultCacheManager(globalConfigurationBuilder.build(), configurationBuilder.build(), true);
+    public Document defaultPersistenceConfiguration() {
+        EditableDocument config = super.defaultPersistenceConfiguration().edit(false);
+        //use a random mem db each time, to avoid possible conflicts....
+        config.setString("connectionUrl", "jdbc:h2:mem:" + UUID.randomUUID().toString() + ";DB_CLOSE_DELAY=0");
+        config.setBoolean(RelationalDbConfig.DROP_ON_EXIT, true);
+        return config;
     }
 }

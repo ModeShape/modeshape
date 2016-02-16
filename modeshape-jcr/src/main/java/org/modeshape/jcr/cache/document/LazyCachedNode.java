@@ -15,7 +15,6 @@
  */
 package org.modeshape.jcr.cache.document;
 
-import java.io.Serializable;
 import java.lang.ref.WeakReference;
 import java.util.Collection;
 import java.util.Collections;
@@ -26,7 +25,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
-import org.infinispan.schematic.document.Document;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.jcr.JcrLexicon;
@@ -46,6 +44,7 @@ import org.modeshape.jcr.value.NamespaceRegistry;
 import org.modeshape.jcr.value.Path;
 import org.modeshape.jcr.value.Path.Segment;
 import org.modeshape.jcr.value.Property;
+import org.modeshape.schematic.document.Document;
 
 /**
  * This is a (mostly) immutable {@link CachedNode} implementation that lazily loads its content. Technically each instance
@@ -55,13 +54,6 @@ import org.modeshape.jcr.value.Property;
  * {@link #getPath(PathCache) methods}). That's because the name of this node is actually stored on the <em>parent</em> in the
  * parent's {@link #getChildReferences(NodeCache) child references}, and this node's name, SNS index, and thus the path can all
  * change even though none of the information stored in this node's document will actually change.
- * <p>
- * This class is marked {@link Serializable} so instances can be placed within an Infinispan cache, though this class is never
- * intended to actually be persisted. Instead, it is kept within ModeShape's {@link WorkspaceCache} that uses a purely in-memory
- * Infinispan cache containing a configurable number of the most-recently-used {@link CachedNode} instances. As soon as
- * {@link CachedNode} instances are evicted, they are GCed and no longer used. (Note that they can be easily reconstructed from
- * the entries stored in the repository's main cache.
- * </p>
  * <p>
  * The {@link WorkspaceCache} that keeps these {@link LazyCachedNode} instances is intended to be a cache of the persisted nodes,
  * and thus are accessed by all sessions for that workspace. When a persisted node is changed, the corresponding
@@ -73,9 +65,7 @@ import org.modeshape.jcr.value.Property;
  * </p>
  */
 @ThreadSafe
-public class LazyCachedNode implements CachedNode, Serializable {
-
-    private static final long serialVersionUID = 1L;
+public class LazyCachedNode implements CachedNode {
 
     // There are two 'final' fields that are always set during construction. The 'document' is the snapshot of node's state
     // (except for the node's name or SNS index, which are stored in the parent's document).
@@ -108,11 +98,10 @@ public class LazyCachedNode implements CachedNode, Serializable {
     /**
      * Get the {@link Document} that represents this node.
      * 
-     * @param cache the cache to which this node belongs, required in case this node needs to use the cache; may not be null
      * @return the document; never null
      * @throws NodeNotFoundException if this node no longer exists
      */
-    protected Document document( WorkspaceCache cache ) {
+    protected Document document() {
         return document;
     }
 
@@ -121,7 +110,7 @@ public class LazyCachedNode implements CachedNode, Serializable {
         if (parent == null) {
             // This is idempotent, so it's okay if another thread sneaks in here and recalculates the object before we do ...
             WorkspaceCache wsCache = workspaceCache(cache);
-            parent = wsCache.translator().getParentKey(document(wsCache), wsCache.getWorkspaceKey(), key.getWorkspaceKey());
+            parent = wsCache.translator().getParentKey(document(), wsCache.getWorkspaceKey(), key.getWorkspaceKey());
         }
         return parent;
     }
@@ -129,14 +118,14 @@ public class LazyCachedNode implements CachedNode, Serializable {
     @Override
     public NodeKey getParentKeyInAnyWorkspace( NodeCache cache ) {
         WorkspaceCache wsCache = workspaceCache(cache);
-        return wsCache.translator().getParentKey(document(wsCache), key.getWorkspaceKey(), key.getWorkspaceKey());
+        return wsCache.translator().getParentKey(document(), key.getWorkspaceKey(), key.getWorkspaceKey());
     }
 
     @Override
     public Set<NodeKey> getAdditionalParentKeys( NodeCache cache ) {
         if (additionalParents == null) {
             WorkspaceCache wsCache = workspaceCache(cache);
-            Set<NodeKey> additionalParents = wsCache.translator().getAdditionalParentKeys(document(wsCache));
+            Set<NodeKey> additionalParents = wsCache.translator().getAdditionalParentKeys(document());
             this.additionalParents = additionalParents.isEmpty() ? additionalParents : Collections.unmodifiableSet(additionalParents);
         }
         return additionalParents;
@@ -372,7 +361,7 @@ public class LazyCachedNode implements CachedNode, Serializable {
     public int getPropertyCount( NodeCache cache ) {
         if (propertiesFullyLoaded) return properties().size();
         WorkspaceCache wsCache = workspaceCache(cache);
-        return wsCache.translator().countProperties(document(wsCache));
+        return wsCache.translator().countProperties(document());
     }
 
     @Override
@@ -381,7 +370,7 @@ public class LazyCachedNode implements CachedNode, Serializable {
         if (!props.isEmpty()) return true;
         if (propertiesFullyLoaded) return false;
         WorkspaceCache wsCache = workspaceCache(cache);
-        return wsCache.translator().hasProperties(document(wsCache));
+        return wsCache.translator().hasProperties(document());
     }
 
     @Override
@@ -391,7 +380,7 @@ public class LazyCachedNode implements CachedNode, Serializable {
         if (props.containsKey(name)) return true;
         if (propertiesFullyLoaded) return false;
         WorkspaceCache wsCache = workspaceCache(cache);
-        return wsCache.translator().hasProperty(document(wsCache), name);
+        return wsCache.translator().hasProperty(document(), name);
     }
 
     @Override
@@ -401,7 +390,7 @@ public class LazyCachedNode implements CachedNode, Serializable {
         Property property = props.get(name);
         if (property == null && !propertiesFullyLoaded) {
             WorkspaceCache wsCache = workspaceCache(cache);
-            property = wsCache.translator().getProperty(document(wsCache), name);
+            property = wsCache.translator().getProperty(document(), name);
             if (property != null) {
                 props.put(name, property);
             }
@@ -413,7 +402,7 @@ public class LazyCachedNode implements CachedNode, Serializable {
     public Properties getPropertiesByName( NodeCache cache ) {
         if (!propertiesFullyLoaded) {
             WorkspaceCache wsCache = workspaceCache(cache);
-            wsCache.translator().getProperties(document(wsCache), properties());
+            wsCache.translator().getProperties(document(), properties());
             this.propertiesFullyLoaded = true;
         }
         return new Properties() {
@@ -433,7 +422,7 @@ public class LazyCachedNode implements CachedNode, Serializable {
     public Iterator<Property> getProperties( NodeCache cache ) {
         if (!propertiesFullyLoaded) {
             WorkspaceCache wsCache = workspaceCache(cache);
-            wsCache.translator().getProperties(document(wsCache), properties());
+            wsCache.translator().getProperties(document(), properties());
             this.propertiesFullyLoaded = true;
         }
         return properties().values().iterator();
@@ -457,7 +446,7 @@ public class LazyCachedNode implements CachedNode, Serializable {
         if (childReferences == null) {
             // This is idempotent, so it's okay if another thread sneaks in here and recalculates the object before we do ...
             WorkspaceCache wsCache = workspaceCache(cache);
-            childReferences = wsCache.translator().getChildReferences(wsCache, document(wsCache));
+            childReferences = wsCache.translator().getChildReferences(wsCache, document());
         }
         return childReferences;
     }
@@ -467,22 +456,22 @@ public class LazyCachedNode implements CachedNode, Serializable {
                                       ReferenceType type ) {
         // Get the referrers ...
         WorkspaceCache wsCache = workspaceCache(cache);
-        return wsCache.translator().getReferrers(document(wsCache), type);
+        return wsCache.translator().getReferrers(document(), type);
     }
 
     @Override
     public ReferrerCounts getReferrerCounts( NodeCache cache ) {
         // Get the referrers ...
         WorkspaceCache wsCache = workspaceCache(cache);
-        Map<NodeKey, Integer> strongCounts = wsCache.translator().getReferrerCounts(document(wsCache), ReferenceType.STRONG);
-        Map<NodeKey, Integer> weakCounts = wsCache.translator().getReferrerCounts(document(wsCache), ReferenceType.WEAK);
+        Map<NodeKey, Integer> strongCounts = wsCache.translator().getReferrerCounts(document(), ReferenceType.STRONG);
+        Map<NodeKey, Integer> weakCounts = wsCache.translator().getReferrerCounts(document(), ReferenceType.WEAK);
         return ReferrerCounts.create(strongCounts, weakCounts);
     }
 
     @Override
     public boolean isExcludedFromSearch( NodeCache cache ) {
         WorkspaceCache wsCache = workspaceCache(cache);
-        return !wsCache.translator().isQueryable(document(wsCache));
+        return !wsCache.translator().isQueryable(document());
     }
 
     @Override

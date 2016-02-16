@@ -17,8 +17,8 @@ package org.modeshape.jboss.service;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.infinispan.schematic.Schematic;
-import org.infinispan.schematic.document.EditableDocument;
+import org.modeshape.schematic.Schematic;
+import org.modeshape.schematic.document.EditableDocument;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceContainer;
 import org.jboss.msc.service.ServiceName;

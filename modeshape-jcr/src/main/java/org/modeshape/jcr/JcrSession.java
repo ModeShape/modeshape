@@ -60,7 +60,6 @@ import javax.jcr.security.AccessControlManager;
 import javax.jcr.version.Version;
 import javax.jcr.version.VersionException;
 import javax.jcr.version.VersionIterator;
-import org.infinispan.schematic.SchematicEntry;
 import org.modeshape.common.i18n.I18n;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.common.text.TextDecoder;
@@ -295,14 +294,6 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
             // This can only happen if the session is not live, which is checked above ...
             Logger.getLogger(getClass()).error(e, JcrI18n.unexpectedException, e.getMessage());
         }
-    }
-
-    protected SchematicEntry entryForNode( NodeKey nodeKey ) throws RepositoryException {
-        SchematicEntry entry = repository.documentStore().get(nodeKey.toString());
-        if (entry == null) {
-            throw new PathNotFoundException(nodeKey.toString());
-        }
-        return entry;
     }
 
     final String workspaceName() {
@@ -2316,9 +2307,8 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
         }
 
         @Override
-        public void processAfterLocking( MutableCachedNode modifiedNode,
-                                         SaveContext context,
-                                         NodeCache persistentNodeCache ) throws RepositoryException {
+        public void processAfterLocking(MutableCachedNode modifiedNode,
+                                        SaveContext context) throws RepositoryException {
             // We actually can avoid this altogether if certain conditions are met ...
             final Name primaryType = modifiedNode.getPrimaryType(cache);
             final Set<Name> mixinTypes = modifiedNode.getMixinTypes(cache);
@@ -2395,8 +2385,9 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
 
             // look at the information that was already persisted to determine whether some other thread has already
             // created a child with the same name
-            CachedNode persistentNode = persistentNodeCache.getNode(modifiedNode.getKey());
-            final ChildReferences persistedChildReferences = persistentNode.getChildReferences(persistentNodeCache);
+            WorkspaceCache workspaceCache = cache().getWorkspace();
+            CachedNode persistentNode = workspaceCache.getNode(modifiedNode.getKey());
+            final ChildReferences persistedChildReferences = persistentNode.getChildReferences(workspaceCache);
             final SiblingCounter siblingCounter = SiblingCounter.create(persistedChildReferences);
 
             // process appended/renamed children

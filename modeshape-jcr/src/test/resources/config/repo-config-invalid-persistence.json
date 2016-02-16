@@ -1,0 +1,19 @@
+{
+    "name" : "Invalid Repository",
+    "storage" : {
+        "persistence" : {
+            "type" : "<dummy>",
+            "dropOnExit" : true
+        }
+    },
+    "sequencing" : {
+        "sequencers" : {
+            "CND sequencer" : {
+                "classname" : "cnd",
+                "pathExpressions" : [ 
+                    "default://(*.cnd)/jcr:content[@jcr:data]" 
+                ]
+            }
+        }
+    }
+}

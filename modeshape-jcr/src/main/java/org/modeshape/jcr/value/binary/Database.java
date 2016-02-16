@@ -26,6 +26,8 @@ import java.sql.Timestamp;
 import java.util.LinkedHashSet;
 import java.util.Properties;
 import java.util.Set;
+import org.modeshape.common.database.DatabaseType;
+import org.modeshape.common.database.DatabaseUtil;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.StringUtil;
 import org.modeshape.jcr.JcrI18n;
@@ -36,7 +38,7 @@ import org.modeshape.jcr.value.BinaryKey;
  * <p>
  * This class looks for database SQL statements in properties files named "<code>binary_store_{type}_database.properties</code>"
  * located within the "org/modeshape/jcr/database" area of the classpath, where "<code>{type}</code>" is
- * {@link #determineType(java.sql.DatabaseMetaData) determined} from the connection, and matches one of the following:
+ * {@link DatabaseUtil#determineType(java.sql.DatabaseMetaData) determined} from the connection, and matches one of the following:
  * <ul>
  * <li><code>mysql</code></li>
  * <li><code>postgres</code></li>
@@ -101,28 +103,6 @@ public class Database {
     
     private static final String EXTRACTED_TEXT_COLUMN_NAME = "ext_text";
 
-    public static enum Type {
-        MYSQL,
-        POSTGRES,
-        DERBY,
-        HSQL,
-        H2,
-        SQLITE,
-        DB2,
-        DB2_390,
-        INFORMIX,
-        INTERBASE,
-        FIREBIRD,
-        SQLSERVER,
-        ACCESS,
-        ORACLE,
-        SYBASE,
-        CASSANDRA,
-        UNKNOWN
-    }
-
-    private final Type databaseType;
-    private final String prefix;
     private final String tableName;
     private final int maxExtractedTextLength;
 
@@ -136,32 +116,30 @@ public class Database {
      * @throws java.sql.SQLException if the db initialization sequence fails
      */
     protected Database( Connection connection ) throws IOException, SQLException {
-        this(connection, null, null);
+        this(connection, null);
     }
 
     /**
      * Creates new instance of the database.
      * 
-     * @param connection a {@link java.sql.Connection} instance; may not be null
-     * @param type the type of database; may be null if the type is to be determined
+     * @param connection a {@link Connection} instance; may not be null
      * @param prefix the prefix for the table name; may be null or blank
      * @throws java.io.IOException if the statements cannot be processed
      * @throws java.sql.SQLException if the db initialization sequence fails
      */
-    protected Database( Connection connection,
-                        Type type,
-                        String prefix ) throws IOException, SQLException {
+    protected Database(Connection connection,
+                       String prefix) throws IOException, SQLException {
         assert connection != null;
         DatabaseMetaData metaData = connection.getMetaData();
-        this.databaseType = type != null ? type : determineType(metaData);
+        DatabaseType databaseType = DatabaseUtil.determineType(metaData);
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("Discovered DBMS type for binary store as '{0}' on '{1}", databaseType, metaData.getURL());
         }
-        this.prefix = prefix == null ? null : prefix.trim();
-        this.tableName = this.prefix != null && this.prefix.length() != 0 ? this.prefix + TABLE_NAME : TABLE_NAME;
+        String tablePrefix = prefix == null ? null : prefix.trim();
+        this.tableName = tablePrefix != null && tablePrefix.length() != 0 ? tablePrefix + TABLE_NAME : TABLE_NAME;
 
-        initializeStatements();
-        initializeStorage(connection);
+        initializeStatements(databaseType);
+        initializeStorage(connection, databaseType);
         this.maxExtractedTextLength = determineMaxExtractedTextLength(metaData);
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("Using max length for extracted text '{0}'", maxExtractedTextLength);
@@ -188,7 +166,7 @@ public class Database {
         }
     }
 
-    private void initializeStatements() throws IOException {
+    private void initializeStatements(DatabaseType databaseType) throws IOException {
         // Load the default statements ...
         String statementsFilename = DEFAULT_STATEMENTS_FILE_PATH;
         InputStream statementStream = getClass().getClassLoader().getResourceAsStream(statementsFilename);
@@ -201,7 +179,7 @@ public class Database {
         }
 
         // Look for type-specific statements ...
-        statementsFilename = STATEMENTS_FILE_PATH + STATEMENTS_FILE_PREFIX + databaseType.name().toLowerCase()
+        statementsFilename = STATEMENTS_FILE_PATH + STATEMENTS_FILE_PREFIX + databaseType.nameString().toLowerCase()
                              + STATEMENTS_FILENAME_SUFFIX;
         statementStream = getClass().getClassLoader().getResourceAsStream(statementsFilename);
         if (statementStream != null) {
@@ -220,7 +198,7 @@ public class Database {
         }
     }
 
-    private void initializeStorage( Connection connection ) throws SQLException {
+    private void initializeStorage(Connection connection, DatabaseType databaseType) throws SQLException {
         // First, prepare a statement to see if the table exists ...
         boolean createTable = true;
         PreparedStatement exists = null;
@@ -262,44 +240,7 @@ public class Database {
         LOGGER.trace("Preparing statement: {0}", statementString);
         return connection.prepareStatement(statementString);
     }
-
-    protected Type determineType( DatabaseMetaData metaData ) throws SQLException {
-
-        String name = metaData.getDatabaseProductName().toLowerCase();
-        if (name.toLowerCase().contains("mysql")) {
-            return Type.MYSQL;
-        } else if (name.contains("postgres")) {
-            return Type.POSTGRES;
-        } else if (name.contains("derby")) {
-            return Type.DERBY;
-        } else if (name.contains("hsql") || name.toLowerCase().contains("hypersonic")) {
-            return Type.HSQL;
-        } else if (name.contains("h2")) {
-            return Type.H2;
-        } else if (name.contains("sqlite")) {
-            return Type.SQLITE;
-        } else if (name.contains("db2")) {
-            return Type.DB2;
-        } else if (name.contains("informix")) {
-            return Type.INFORMIX;
-        } else if (name.contains("interbase")) {
-            return Type.INTERBASE;
-        } else if (name.contains("firebird")) {
-            return Type.FIREBIRD;
-        } else if (name.contains("sqlserver") || name.toLowerCase().contains("microsoft")) {
-            return Type.SQLSERVER;
-        } else if (name.contains("access")) {
-            return Type.ACCESS;
-        } else if (name.contains("oracle")) {
-            return Type.ORACLE;
-        } else if (name.contains("adaptive")) {
-            return Type.SYBASE;
-        } else if (name.contains("Cassandra")) {
-            return Type.CASSANDRA;
-        }
-        return Type.UNKNOWN;
-    }
-
+    
     protected void insertContent( BinaryKey key,
                                   InputStream stream,
                                   long size,

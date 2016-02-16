@@ -736,7 +736,7 @@ class JcrContentHandler extends DefaultHandler {
                         switch (uuidBehavior) {
                             case ImportUUIDBehavior.IMPORT_UUID_COLLISION_REPLACE_EXISTING:
                                 parent = existingNode.getParent();
-                                // Attention: this *does not* remove the entry from the DB (ISPN). Therefore, it's always
+                                // Attention: this *does not* remove the entry from the DB. Therefore, it's always
                                 // accessible
                                 // to the workspace cache and thus to the current session !!!.
                                 // Therefore, *old properties, mixins etc* will be accessible on the new child created later on
@@ -754,7 +754,7 @@ class JcrContentHandler extends DefaultHandler {
                                                                                               parent.getPath());
                                     throw new ConstraintViolationException(text);
                                 }
-                                // Attention: this *does not* remove the entry from the DB (ISPN). Therefore, it's always
+                                // Attention: this *does not* remove the entry from the DB. Therefore, it's always
                                 // accessible
                                 // to the workspace cache and thus to the current session !!!.
                                 // Therefore, *old properties, mixins etc* will be accessible on the new child created later on
@@ -837,7 +837,7 @@ class JcrContentHandler extends DefaultHandler {
                     for (Value value : mixinTypeValueList) {
                         String mixinName = value.getString();
                         // in the case when keys are being reused, the old node at that key is visible (with all its properties)
-                        // via the WS cache -> ISPN db. Therefore, there might be the case when even though the child was created
+                        // via the WS cache -> db. Therefore, there might be the case when even though the child was created
                         // via addChild(), the old node with all the old properties and mixins is still visible at the key() and
                         // so the "new child" reports the mixin as already present (even though it's not)
                         boolean addMixinInternally = (child.isNodeType(mixinName) && !nodeAlreadyExists) ||

@@ -17,12 +17,10 @@ package org.modeshape.jcr;
 
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
-import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -81,27 +79,24 @@ public class TransactionsTest extends SingleUseAbstractTest {
         // Create a runnable to obtain a session and look for a particular node ...
         final AtomicReference<Exception> separateThreadException = new AtomicReference<Exception>();
         final AtomicReference<Node> separateThreadNode = new AtomicReference<Node>();
-        Runnable runnable = new Runnable() {
-            @Override
-            public void run() {
-                // Wait till we both get to the barrier ...
-                Session session = null;
+        Runnable runnable = () -> {
+            // Wait till we both get to the barrier ...
+            Session session1 = null;
+            try {
+                barrier1.await(20, TimeUnit.SECONDS);
+
+                // Create a second session, which should NOT see the persisted-but-not-committed changes ...
+                session1 = newSession();
+                Node grandChild2 = session1.getNode(path);
+                separateThreadNode.set(grandChild2);
+
+            } catch (Exception err) {
+                separateThreadException.set(err);
+            } finally {
                 try {
-                    barrier1.await(20, TimeUnit.SECONDS);
-
-                    // Create a second session, which should NOT see the persisted-but-not-committed changes ...
-                    session = newSession();
-                    Node grandChild2 = session.getNode(path);
-                    separateThreadNode.set(grandChild2);
-
-                } catch (Exception err) {
-                    separateThreadException.set(err);
-                } finally {
-                    try {
-                        barrier2.await();
-                    } catch (Exception e) {
-                        throw new RuntimeException(e);
-                    }
+                    barrier2.await();
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
                 }
             }
         };
@@ -116,17 +111,26 @@ public class TransactionsTest extends SingleUseAbstractTest {
         Node node = session.getRootNode().addNode("childY");
         node.setProperty("foo", "bar");
         Node grandChild = node.addNode("grandChildZ");
+        grandChild.setProperty("foo", "bar");
         assertThat(grandChild.getPath(), is(path));
         session.save(); // persisted but not committed ...
 
+        session.getNode("/childY/grandChildZ").setProperty("bar", "baz");
+        session.save();
+        
         // Use the same session to find the node ...
         Node grandChild1 = session.getNode(path);
         assertThat(grandChild.isSame(grandChild1), is(true));
-
+        assertEquals("bar", grandChild1.getProperty("foo").getString());
+        assertEquals("baz", grandChild1.getProperty("bar").getString());
+        
         // Create a second session, which should see the persisted-but-not-committed changes ...
         Session session2 = newSession();
         Node grandChild2 = session2.getNode(path);
         assertThat(grandChild.isSame(grandChild2), is(true));
+        assertEquals("bar", grandChild2.getProperty("foo").getString());
+        assertEquals("baz", grandChild2.getProperty("bar").getString());
+
         session2.logout();
 
         // Sync up with the other thread ...
@@ -145,6 +149,9 @@ public class TransactionsTest extends SingleUseAbstractTest {
         Session session3 = newSession();
         Node grandChild3 = session3.getNode(path);
         assertThat(grandChild.isSame(grandChild3), is(true));
+        assertEquals("bar", grandChild3.getProperty("foo").getString());
+        assertEquals("baz", grandChild3.getProperty("bar").getString());        
+        
         session3.logout();
     }
 
@@ -176,11 +183,9 @@ public class TransactionsTest extends SingleUseAbstractTest {
 
     @FixFor( "MODE-1822" )
     @Test
-    public void shouldBeAbleToVersionWithinUserTransactionAndJBossTransactionManager() throws Exception {
+    public void shouldBeAbleToVersionWithinUserTransaction() throws Exception {
         // Start the repository using the JBoss Transactions transaction manager ...
-        InputStream config = getClass().getClassLoader().getResourceAsStream("config/repo-config-inmemory-jbosstxn.json");
-        assertThat(config, is(notNullValue()));
-        startRepositoryWithConfiguration(config);
+        startRepositoryWithConfigurationFrom("config/repo-config-inmemory-txn.json");
 
         // print = true;
         startTransaction();
@@ -218,11 +223,8 @@ public class TransactionsTest extends SingleUseAbstractTest {
 
     @FixFor( "MODE-1822" )
     @Test
-    public void shouldBeAbleToVersionWithinSequentialUserTransactionsAndJBossTransactionManager() throws Exception {
-        // Start the repository using the JBoss Transactions transaction manager ...
-        InputStream config = getClass().getClassLoader().getResourceAsStream("config/repo-config-inmemory-jbosstxn.json");
-        assertThat(config, is(notNullValue()));
-        startRepositoryWithConfiguration(config);
+    public void shouldBeAbleToVersionWithinSequentialUserTransactions() throws Exception {
+        startRepositoryWithConfigurationFrom("config/repo-config-inmemory-txn.json");
 
         // print = true;
         startTransaction();
@@ -261,11 +263,8 @@ public class TransactionsTest extends SingleUseAbstractTest {
 
     @FixFor( "MODE-1822" )
     @Test
-    public void shouldBeAbleToVersionWithinImmediatelySequentialUserTransactionsAndJBossTransactionManager() throws Exception {
-        // Start the repository using the JBoss Transactions transaction manager ...
-        InputStream config = getClass().getClassLoader().getResourceAsStream("config/repo-config-inmemory-jbosstxn.json");
-        assertThat(config, is(notNullValue()));
-        startRepositoryWithConfiguration(config);
+    public void shouldBeAbleToVersionWithinImmediatelySequentialUserTransactions() throws Exception {
+        startRepositoryWithConfigurationFrom("config/repo-config-inmemory-txn.json");
 
         // print = true;
         startTransaction();
@@ -306,10 +305,7 @@ public class TransactionsTest extends SingleUseAbstractTest {
     @FixFor( "MODE-1822" )
     @Test
     public void shouldBeAbleToVersionWithinUserTransactionAndAtomikosTransactionManager() throws Exception {
-        // Start the repository using the JBoss Transactions transaction manager ...
-        InputStream config = getClass().getClassLoader().getResourceAsStream("config/repo-config-inmemory-atomikos.json");
-        assertThat(config, is(notNullValue()));
-        startRepositoryWithConfiguration(config);
+        startRepositoryWithConfigurationFrom("config/repo-config-inmemory-atomikos.json");
 
         startTransaction();
         VersionManager vm = session.getWorkspace().getVersionManager();
@@ -326,10 +322,7 @@ public class TransactionsTest extends SingleUseAbstractTest {
     @Test
     @FixFor( "MODE-2050" )
     public void shouldBeAbleToUseNoClientTransactionsInMultithreadedEnvironment() throws Exception {
-        InputStream configFile = getClass().getClassLoader()
-                                           .getResourceAsStream(
-                                                   "config/repo-config-inmemory-local-environment-no-client-tx.json");
-        startRepositoryWithConfiguration(configFile);
+        startRepositoryWithConfigurationFrom("config/repo-config-inmemory-txn.json");
         int threadsCount = 2;
         ExecutorService executorService = Executors.newFixedThreadPool(threadsCount);
         List<Future<Void>> results = new ArrayList<Future<Void>>(threadsCount);
@@ -365,28 +358,23 @@ public class TransactionsTest extends SingleUseAbstractTest {
     }
 
     @Test
-    @FixFor( "MODE-2352 ")
+    @FixFor( "MODE-2352 " )
     public void shouldSupportConcurrentWritersUpdatingTheSameNodeWithSeparateUserTransactions() throws Exception {
         FileUtil.delete("target/persistent_repository");
-        InputStream configFile = getClass().getClassLoader()
-                                           .getResourceAsStream("config/repo-config-filesystem-jbosstxn-pessimistic.json");
-        startRepositoryWithConfiguration(configFile);
+        startRepositoryWithConfigurationFrom("config/repo-config-new-workspaces.json");
         int threadsCount = 10;
         ExecutorService executorService = Executors.newFixedThreadPool(threadsCount);
         List<Future<Void>> results = new ArrayList<>(threadsCount);
         final AtomicInteger counter = new AtomicInteger(1);
         for (int i = 0; i < threadsCount; i++) {
-            Future<Void> result = executorService.submit(new Callable<Void>() {
-                @Override
-                public Void call() throws Exception {
-                    startTransaction();
-                    Session session = repository.login();
-                    session.getRootNode().addNode("test_" + counter.incrementAndGet());
-                    session.save();
-                    session.logout();
-                    commitTransaction();
-                    return null;
-                }
+            Future<Void> result = executorService.submit(() -> {
+                startTransaction();
+                Session session1 = repository.login();
+                session1.getRootNode().addNode("test_" + counter.incrementAndGet());
+                session1.save();
+                session1.logout();
+                commitTransaction();
+                return null;
             });
             results.add(result);
         }
@@ -407,16 +395,14 @@ public class TransactionsTest extends SingleUseAbstractTest {
     @FixFor( "MODE-2371" )
     @Test
     public void shouldInitializeWorkspacesWithOngoingUserTransaction() throws Exception {
-        InputStream configStream = getClass().getClassLoader().getResourceAsStream(
-                "config/repo-config-inmemory-jbosstxn.json");
-        startRepositoryWithConfiguration(configStream);
+        startRepositoryWithConfigurationFrom("config/repo-config-inmemory-txn.json");
 
         startTransaction();
         // the active tx should be suspended for the next call
         Session otherSession = repository.login("otherWorkspace");
         otherSession.logout();
         commitTransaction();
-        
+
         startTransaction();
         session.getWorkspace().createWorkspace("newWS");
         session.logout();
@@ -432,21 +418,19 @@ public class TransactionsTest extends SingleUseAbstractTest {
         otherSession.logout();
         commitTransaction();
     }
-    
+
     @Test
-    @FixFor( "MODE-2395 ")
+    @FixFor( "MODE-2395 " )
     public void shouldSupportMultipleUpdatesFromTheSameSessionWithUserTransactions() throws Exception {
-        InputStream configStream = getClass().getClassLoader().getResourceAsStream(
-                "config/repo-config-inmemory-jbosstxn.json");
-        startRepositoryWithConfiguration(configStream);
+        startRepositoryWithConfigurationFrom("config/repo-config-inmemory-txn.json");
         final JcrSession mainSession = repository.login();
-        
+
         startTransaction();
         Node node1 = mainSession.getRootNode().addNode("node1");
         node1.setProperty("prop", "foo");
         mainSession.save();
         commitTransaction();
-        
+
         startTransaction();
         Node node2 = mainSession.getRootNode().addNode("node2");
         node2.setProperty("prop", "foo");
@@ -454,7 +438,7 @@ public class TransactionsTest extends SingleUseAbstractTest {
         commitTransaction();
         // re-read the node to make sure it's in the cache
         node2 = mainSession.getNode("/node2");
-        
+
         ExecutorService executorService = Executors.newFixedThreadPool(1);
         try {
             Future<Void> updaterResult = executorService.submit((Callable<Void>) () -> {
@@ -478,12 +462,9 @@ public class TransactionsTest extends SingleUseAbstractTest {
 
     @Test
     @FixFor( "MODE-2495" )
-    @Ignore("ModeShape 5 requires thread confinement, otherwise locking will not work correctly")
+    @Ignore( "ModeShape 5 requires thread confinement, otherwise locking will not work correctly" )
     public void shouldSupportMultipleThreadsChangingTheSameUserTransaction() throws Exception {
-        // Start the repository using the JBoss Transactions transaction manager ...
-        InputStream config = getClass().getClassLoader().getResourceAsStream("config/repo-config-inmemory-jbosstxn.json");
-        assertThat(config, is(notNullValue()));
-        startRepositoryWithConfiguration(config);
+        startRepositoryWithConfigurationFrom("config/repo-config-inmemory-txn.json");
 
         // STEP 1: create and checkin parent nodes
         Node root = session.getRootNode();
@@ -494,7 +475,7 @@ public class TransactionsTest extends SingleUseAbstractTest {
 
         VersionManager vm = session.getWorkspace().getVersionManager();
         vm.checkin("/parent");
-        
+
         // STEP 2: checkout, create child and checkin
         vm = session.getWorkspace().getVersionManager();
         vm.checkout("/parent");
@@ -502,7 +483,7 @@ public class TransactionsTest extends SingleUseAbstractTest {
         nested.addNode("child");
         session.save();
         vm.checkin("/parent");
-      
+
         // long transaction
         final Transaction longTx = startTransaction();
 
@@ -512,7 +493,7 @@ public class TransactionsTest extends SingleUseAbstractTest {
         session.removeItem("/parent/nested/child");
         session.save();
         suspendTransaction();
-        
+
         // STEP 4: check if child is still exists outside of longTx
         Session s = repository.login();
         s.getNode("/parent/nested/child");
@@ -528,7 +509,7 @@ public class TransactionsTest extends SingleUseAbstractTest {
                     vm.checkin("/parent");
                     commitTransaction();
                 } catch (Exception e) {
-                   throw new RuntimeException(e);
+                    throw new RuntimeException(e);
                 }
             }
         };
@@ -554,24 +535,22 @@ public class TransactionsTest extends SingleUseAbstractTest {
         TransactionManager txnMgr = transactionManager();
         txnMgr.resume(t);
     }
-    
-    protected Transaction  startTransaction() throws NotSupportedException, SystemException {
+
+    protected Transaction startTransaction() throws NotSupportedException, SystemException {
         TransactionManager txnMgr = transactionManager();
         // Change this to true if/when debugging ...
-        if (true) {
-            try {
-                txnMgr.setTransactionTimeout(1000);
-            } catch (Exception e) {
-                // ignore
-            }
+        try {
+            txnMgr.setTransactionTimeout(1000);
+        } catch (Exception e) {
+            // ignore
         }
         txnMgr.begin();
         return txnMgr.getTransaction();
     }
 
     protected void commitTransaction()
-        throws SystemException, SecurityException, IllegalStateException, RollbackException, HeuristicMixedException,
-        HeuristicRollbackException {
+            throws SystemException, SecurityException, IllegalStateException, RollbackException, HeuristicMixedException,
+                   HeuristicRollbackException {
         TransactionManager txnMgr = transactionManager();
         txnMgr.commit();
     }
@@ -580,7 +559,7 @@ public class TransactionsTest extends SingleUseAbstractTest {
         return session.getRepository().transactionManager();
     }
 
-    private void moveDocument( String nodeName ) throws Exception {
+    private void moveDocument(String nodeName) throws Exception {
         Node section = session.getRootNode().addNode(nodeName);
         section.setProperty("name", nodeName);
 

@@ -17,7 +17,7 @@ package org.modeshape.jcr.index.elasticsearch;
 
 import java.io.IOException;
 import java.util.List;
-import org.infinispan.schematic.document.Document;
+import org.modeshape.schematic.document.Document;
 import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.index.elasticsearch.client.EsClient;
 import org.modeshape.jcr.index.elasticsearch.client.EsRequest;

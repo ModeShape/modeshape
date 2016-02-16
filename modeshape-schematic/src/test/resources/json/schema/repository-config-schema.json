@@ -18,9 +18,19 @@
             "type" : "string",
             "description" : "The name in JNDI where this repository is to be registered. If not specified, the location is assumed to be 'java:jcr/local/<name>', where '<name>' is the repository name. Setting this field to an empty string signals that the repository should not be registered in JNDI."
         },
+        "eventBusSize" : {
+            "type" : "number",
+            "description" : "The maximum number of events that can co-exit in the event bus, before blocking and waiting for the slowest consumer(s) to finish and free up subsequent slots. Should be a power of 2, or the system will auto-adjust to the closest power of 2",
+            "default" : 1024
+        },
+        "lockTimeoutMillis" : {
+            "type" : "integer",
+            "default" : "10000",
+            "description" : "The number of milliseconds to wait when a lock cannot be obtained on a node. In highly concurrent cases, this may be adjusted. Defaults to 10 seconds"
+        },
         "monitoring" : {
             "type" : "object",
-            "description" : "The specification for the monitoring system for the repositories.",
+            "description" : "The specification for the monitoring system for the repository.",
             "additionalProperties" : false,
             "properties" : {
                 "enabled" : {
@@ -34,27 +44,161 @@
                 },
             }
         },
+        "garbageCollection" : {
+            "type" : "object",
+            "description" : "The specification for reclaiming unused persistent storage for the repository.",
+            "additionalProperties" : false,
+            "properties" : {
+                "threadPool" : {
+                    "type" : "string",
+                    "default" : "modeshape-gc",
+                    "description" : "Name of the thread pool that should be used to asynchronously reclaim unused persistent storage. Thread pools are named globally within a single ModeShape engine, and by default all repositories use the same thread pool for garbage collection."
+                },
+                "initialTime" : {
+                    "type" : "string",
+                    "default" : "00:00",
+                    "pattern" : "(([0-1][0-9])|([2][0-3])):[0-5][0-9]",
+                    "description" : "The local time that the first garbage collection process should be run. Garbage collection may be relatively expensive, as it involves scanning all persisted content, so it's recommended that this be done durign off hours if possible. By default, garbage collection is run at midnight (local time) after the repository is started."
+                },
+                "intervalInHours" : {
+                    "type" : "integer",
+                    "default" : "24",
+                    "description" : "The number of hours between garbage collection runs. By default the interval is 24 hours (meaning it runs once per day)."
+                },
+            }
+        },
         "storage" : {
             "type" : "object",
-            "description" : "The specification of how to obtain the Infinispan cache used for storage.",
+            "description" : "The specification of how to store the repository and binary data",
             "additionalProperties" : false,
             "properties" : {
                 "description" : {
                     "type" : "string",
                     "description" : "The optional description of this section of the configuration. It is unused by ModeShape."
                 },
-                "cacheName" : {
-                    "type" : "string",
-                    "description" : "The name of the Infinispan cache that this repository should use. If not specified, the repository's name is used."
-                },
-                "cacheConfiguration" : {
-                    "type" : "string",
-                    "description" : "The name of the Infinispan configuration file for creating a new cache manager. If a file could not be found (on the thread context classloader, on the application's classpath, or on the system classpath), then the name is assumed to reference an existing Infinispan CacheContainer instance via a valid JNDI name or as the name of a service as defined by the local environment. If no such container is found, then a default Infinispan configuration (a basic, local mode, non-clustered cache) will be used."
+                "persistence" : {
+                    "type" : [
+                        {
+                            "type" : "object",
+                            "additionalProperties" : false,
+                            "properties" : {
+                                "type" : {
+                                    "type" : "string",
+                                    "description" : "The specification of the database persistence",
+                                    "enum" : [ "db", "database" ]
+                                },
+                                "connectionUrl" : {
+                                    "type" : "string",
+                                    "default" : "jdbc:h2:mem:modeshape;DB_CLOSE_DELAY=-1",
+                                    "description" : "The db connection url"
+                                },
+                                "driver" : {
+                                    "type" : "string",
+                                    "default" : "org.h2.Driver",
+                                    "description" : "The fully qualified name of the DB driver"
+                                },
+                                "username" : {
+                                    "type" : "string",
+                                    "default"  : "sa",
+                                    "description" : "The db connection user name"
+                                },
+                                "password" : {
+                                    "type" : "string",
+                                    "default"  : "",
+                                    "description" : "The db connection password"
+                                },
+                                "datasourceJNDI" : {
+                                    "type" : "string",
+                                    "description" : "The JNDI name of an existing datasource"
+                                },
+                                "tableName" : {
+                                    "type" : "string",
+                                    "default"  : "MODESHAPE_REPOSITORY",
+                                    "description" : "The name of the DB table where ModeShape will store data"
+                                },
+                                "createOnStart" : {
+                                    "type" : "boolean",
+                                    "default" : true,
+                                    "description" : "Whether the DB table should be created on startup if it does not exist"
+                                },
+                                "dropOnExit" : {
+                                    "type" : "boolean",
+                                    "default" : false,
+                                    "description" : "Whether the DB table should be dropped on exit"
+                                },
+                                "fetchSize" : {
+                                    "type" : "integer",
+                                    "default" : 1000,
+                                    "description" : "The JDBC fetch size"
+                                },
+                                "compress" : {
+                                    "type" : "boolean",
+                                    "default" : true,
+                                    "description" : "Whether binary data stored in the DB should be compressed or not"
+                                }
+                            }
+                        },
+                        {
+                            "type": "object",
+                            "additionalProperties": true,
+                            "properties": {
+                                "type": {
+                                    "type": "string",
+                                    "description": "The specification of a custom persistence provider"
+                                }
+                            }
+                        }
+                    ]
                 },
                 "transactionManagerLookup" : {
-                    "type" : "string",
-                    "default" : "org.infinispan.transaction.lookup.GenericTransactionManagerLookup",
-                    "description" : "The name of the Infinispan class that should be used to find the JTA transaction manager instance. It defaults to 'org.infinispan.transaction.lookup.GenericTransactionManagerLookup'"
+                    "type" : "object",
+                    "default" : "default",
+                    "description" : "The configuration of the transaction manager lookup instance",
+                    "additionalProperties" : false,
+                    "properties" : {
+                        "name" : {
+                            "type" : "string",
+                            "default" : "org.modeshape.jcr.txn.DefaultTransactionManagerLookup",
+                            "description" : "The fully qualified name of the TransactionManagerLookup instance which ModeShape should use to detect an active transaction manager"
+                        },
+                        "classloader" : {
+                            "type" : "string",
+                            "description" : "The optional paths that should be used to load the transaction manager lookup class."
+                        }
+                    }
+                },
+                "documentOptimization" : {
+                    "type" : "object",
+                    "description" : "The specification for optimizing the representation of each individual node persisted in the repository. Currently this is DISABLED by default; to enable, define a 'documentOptimization' document (even empty) under 'storage'.",
+                    "additionalProperties" : false,
+                    "properties" : {
+                        "threadPool" : {
+                            "type" : "string",
+                            "default" : "modeshape-opt",
+                            "description" : "Name of the thread pool that should be used to asynchronously optimize persisted node representations. This process is only required when nodes have large numbers of children, as defined by the child count target. Thread pools are named globally within a single ModeShape engine, and by default all repositories use the same thread pool for document optimization. DOCUMENT OPTIMIZATION IS A TECHNOLOGY PREVIEW AND SHOULD NOT YET BE USED IN PRODUCTION."
+                        },
+                        "initialTime" : {
+                            "type" : "string",
+                            "default" : "00:00",
+                            "pattern" : "(([0-1][0-9])|([2][0-3])):[0-5][0-9]",
+                            "description" : "The local time that the first document optimization process should be run. Document optimization may be relatively expensive, as it involves scanning all persisted content, so it's recommended that this be done during off hours if possible. The format is 'hh:mm', or two-digit hours and two-digit minutes. By default, the value is '02:00' garbage collection is run at 2AM (local time) after the repository is started. DOCUMENT OPTIMIZATION IS A TECHNOLOGY PREVIEW AND SHOULD NOT YET BE USED IN PRODUCTION."
+                        },
+                        "intervalInHours" : {
+                            "type" : "integer",
+                            "default" : "24",
+                            "description" : "The number of hours between document optimization runs. By default the interval is 24 hours (meaning it runs once per day). DOCUMENT OPTIMIZATION IS A TECHNOLOGY PREVIEW AND SHOULD NOT YET BE USED IN PRODUCTION."
+                        },
+                        "childCountTarget" : {
+                            "type" : "integer",
+                            "minimum" : 1,
+                            "description" : "The maximum number of children that are ideally stored within a single document (e.g., node document or separate page of children). A lower number might result in more pages but faster load times for nodes when accessing a subset of the children, but getting particular children or all children of a node will require reading multiple documents/pages. A larger number may increase the time required to read each document/page, but may reduce the total number of document/page reads necessary to load a particular child or all children of a node. There is no default because the performance is highly dependent upon application usage and access patterns. Therefore, we strongly recommend testing with various values. Optimization is only enabled with a valid value. DOCUMENT OPTIMIZATION IS A TECHNOLOGY PREVIEW AND SHOULD NOT YET BE USED IN PRODUCTION."
+                        },
+                        "childCountTolerance" : {
+                            "type" : "integer",
+                            "minimum" : 1,
+                            "description" : "The range that the actual number of children in a document can vary above the target before the documents/pages are split, or below the target before documents/pages are merged. There is no default because the performance is highly dependent upon application usage and access patterns. Therefore, we strongly recommend testing with various values. Optimization is only enabled with a valid value. DOCUMENT OPTIMIZATION IS A TECHNOLOGY PREVIEW AND SHOULD NOT YET BE USED IN PRODUCTION."
+                        },
+                    }
                 },
                 "binaryStorage" : {
                     "type" : [
@@ -67,10 +211,24 @@
                                     "description" : "The specification of the transient binary store, which keeps BINARY values on disk in the temp directory.",
                                     "enum" : [ "transient" ]
                                 },
+                                "storeName" : {
+                                    "type" : "string",
+                                    "description" : "A short, implementer-supplied name for this binary store"
+                                },
                                 "minimumBinarySizeInBytes" : {
                                     "type" : "integer",
                                     "default" : 4096,
-                                    "description" : "The size threshold that dictates whether String and binary values should be stored in the binary store. String and binary values smaller than this value are stored with the node, whereas string and binary values with a size equal to or greater than this limit will be stored separately from the node and in the binary store, keyed by the SHA-1 hash of the value. This is a space and performance optimization that stores each unique large value only once. The default value is '4096' bytes, or 4 kilobytes."
+                                    "description" : "The size threshold that dictates whether binary values should be stored in the binary store. Binary values smaller than this value are stored with the node, whereas binary values with a size equal to or greater than this limit will be stored separately from the node and in the binary store, keyed by the SHA-1 hash of the value. This is a space and performance optimization that stores each unique large value only once. The default value is '4096' bytes, or 4 kilobytes."
+                                },
+                                "minimumStringSize" : {
+                                    "type" : "integer",
+                                    "description" : "The size threshold that dictates whether string values should be stored in the binary store. String values shorter than this length are stored with the node, whereas strings with a length equal to or greater than this limit will be stored separately from the node and in the binary store, keyed by the SHA-1 hash of the value. This is a space and performance optimization that stores each unique large value only once. The default value is to match the 'minimumBinarySizeInBytes' value."
+                                },
+                                "mimeTypeDetection" : {
+                                    "type" : "string",
+                                    "description" : "What type of mime-type detection should be performed when uploading binary values. Defaults to 'content' - i.e. reading the binary content (at least the headers) to determine the mime type",
+                                    "default" : "content",
+                                    "enum" : [ "none", "content", "name" ]
                                 },
                                 "description" : {
                                     "type" : "string",
@@ -87,15 +245,34 @@
                                     "description" : "The specification of the file-based binary store, which keeps BINARY values on disk in the specified directory.",
                                     "enum" : [ "file" ]
                                 },
+                                "storeName" : {
+                                    "type" : "string",
+                                    "description" : "A short, implementer-supplied name for this binary store"
+                                },
                                 "directory" : {
                                     "type" : "string",
                                     "required" : true,
                                     "description" : "The location of the directory the file system under which the BINARY values should be stored. The value can be an absolute or relative path."
                                 },
+                                "trash" : {
+                                    "type" : "string",
+                                    "required" : false,
+                                    "description" : "The location of the directory the file system under which unused BINARY values should be stored before removing them from disk. The value can be an absolute or relative path."
+                                },
                                 "minimumBinarySizeInBytes" : {
                                     "type" : "integer",
                                     "default" : 4096,
-                                    "description" : "The size threshold that dictates whether String and binary values should be stored in the binary store. String and binary values smaller than this value are stored with the node, whereas string and binary values with a size equal to or greater than this limit will be stored separately from the node and in the binary store, keyed by the SHA-1 hash of the value. This is a space and performance optimization that stores each unique large value only once. The default value is '4096' bytes, or 4 kilobytes."
+                                    "description" : "The size threshold that dictates whether binary values should be stored in the binary store. Binary values smaller than this value are stored with the node, whereas binary values with a size equal to or greater than this limit will be stored separately from the node and in the binary store, keyed by the SHA-1 hash of the value. This is a space and performance optimization that stores each unique large value only once. The default value is '4096' bytes, or 4 kilobytes."
+                                },
+                                "minimumStringSize" : {
+                                    "type" : "integer",
+                                    "description" : "The size threshold that dictates whether string values should be stored in the binary store. String values shorter than this length are stored with the node, whereas strings with a length equal to or greater than this limit will be stored separately from the node and in the binary store, keyed by the SHA-1 hash of the value. This is a space and performance optimization that stores each unique large value only once. The default value is to match the 'minimumBinarySizeInBytes' value."
+                                },
+                                "mimeTypeDetection" : {
+                                    "type" : "string",
+                                    "description" : "What type of mime-type detection should be performed when uploading binary values. Defaults to 'content' - i.e. reading the binary content (at least the headers) to determine the mime type",
+                                    "default" : "content",
+                                    "enum" : [ "none", "content", "name" ]
                                 },
                                 "description" : {
                                     "type" : "string",
@@ -109,8 +286,12 @@
                             "properties" : {
                                 "type" : {
                                     "type" : "string",
-                                    "description" : "The specification of the database binary store, which stores BINARY values in a JDBC-compatible database.",
+                                    "description" : "The specification of the database binary store, which stores BINARY values in a JDBC-compatible database accessed through a JDBC DataSource registered in JNDI.",
                                     "enum" : [ "database" ]
+                                },
+                                "storeName" : {
+                                    "type" : "string",
+                                    "description" : "A short, implementer-supplied name for this binary store"
                                 },
                                 "dataSourceJndiName" : {
                                     "type" : "string",
@@ -120,16 +301,316 @@
                                 "minimumBinarySizeInBytes" : {
                                     "type" : "integer",
                                     "default" : 4096,
-                                    "description" : "The size threshold that dictates whether String and binary values should be stored in the binary store. String and binary values smaller than this value are stored with the node, whereas string and binary values with a size equal to or greater than this limit will be stored separately from the node and in the binary store, keyed by the SHA-1 hash of the value. This is a space and performance optimization that stores each unique large value only once. The default value is '4096' bytes, or 4 kilobytes."
+                                    "description" : "The size threshold that dictates whether binary values should be stored in the binary store. Binary values smaller than this value are stored with the node, whereas binary values with a size equal to or greater than this limit will be stored separately from the node and in the binary store, keyed by the SHA-1 hash of the value. This is a space and performance optimization that stores each unique large value only once. The default value is '4096' bytes, or 4 kilobytes."
+                                },
+                                "minimumStringSize" : {
+                                    "type" : "integer",
+                                    "description" : "The size threshold that dictates whether string values should be stored in the binary store. String values shorter than this length are stored with the node, whereas strings with a length equal to or greater than this limit will be stored separately from the node and in the binary store, keyed by the SHA-1 hash of the value. This is a space and performance optimization that stores each unique large value only once. The default value is to match the 'minimumBinarySizeInBytes' value."
+                                },
+                                "mimeTypeDetection" : {
+                                    "type" : "string",
+                                    "description" : "What type of mime-type detection should be performed when uploading binary values. Defaults to 'content' - i.e. reading the binary content (at least the headers) to determine the mime type",
+                                    "default" : "content",
+                                    "enum" : [ "none", "content", "name" ]
                                 },
                                 "description" : {
                                     "type" : "string",
                                     "description" : "The optional description of this section of the configuration. It is unused by ModeShape."
                                 },
                             }
-                        }
+                        },
+                        {
+                            "type" : "object",
+                            "additionalProperties" : true,
+                            "properties" : {
+                                "type" : {
+                                    "type" : "string",
+                                    "description" : "The specification of the database binary store, which stores BINARY values in a JDBC-compatible database accessed through a JDBC connection established by specifying the driver class, URL, and other properties",
+                                    "enum" : [ "database" ]
+                                },
+                                "storeName" : {
+                                    "type" : "string",
+                                    "description" : "A short, implementer-supplied name for this binary store"
+                                },
+                                "driverClass" : {
+                                    "type" : "string",
+                                    "description" : "The full-qualified name of the JDBC driver class.",
+                                    "required" : true,
+                                },
+                                "url" : {
+                                    "type" : "string",
+                                    "description" : "The URL to be used to establish the database connection.",
+                                    "required" : true,
+                                },
+                                "username" : {
+                                    "type" : "string",
+                                    "description" : "The (optional) username for the database connection. Many JDBC drivers accept specifying the username in the URL.",
+                                    "required" : false,
+                                },
+                                "password" : {
+                                    "type" : "string",
+                                    "description" : "The (optional) password for the database connection. Many JDBC drivers accept specifying the password in the URL.",
+                                    "required" : false,
+                                },
+                                "minimumBinarySizeInBytes" : {
+                                    "type" : "integer",
+                                    "default" : 4096,
+                                    "description" : "The size threshold that dictates whether binary values should be stored in the binary store. Binary values smaller than this value are stored with the node, whereas binary values with a size equal to or greater than this limit will be stored separately from the node and in the binary store, keyed by the SHA-1 hash of the value. This is a space and performance optimization that stores each unique large value only once. The default value is '4096' bytes, or 4 kilobytes."
+                                },
+                                "minimumStringSize" : {
+                                    "type" : "integer",
+                                    "description" : "The size threshold that dictates whether string values should be stored in the binary store. String values shorter than this length are stored with the node, whereas strings with a length equal to or greater than this limit will be stored separately from the node and in the binary store, keyed by the SHA-1 hash of the value. This is a space and performance optimization that stores each unique large value only once. The default value is to match the 'minimumBinarySizeInBytes' value."
+                                },
+                                "mimeTypeDetection" : {
+                                    "type" : "string",
+                                    "description" : "What type of mime-type detection should be performed when uploading binary values. Defaults to 'content' - i.e. reading the binary content (at least the headers) to determine the mime type",
+                                    "default" : "content",
+                                    "enum" : [ "none", "content", "name" ]
+                                },
+                                "description" : {
+                                    "type" : "string",
+                                    "description" : "The optional description of this section of the configuration. It is unused by ModeShape."
+                                },
+                            }
+                        },
+                        {
+                            "type" : "object",
+                            "additionalProperties" : false,
+                            "properties" : {
+                                "type" : {
+                                    "type" : "string",
+                                    "description" : "The specification of a composite binary store.",
+                                    "enum" : [ "composite" ]
+                                },
+                                "namedStores" : {
+                                    "type" : "object",
+                                    "required" : true,
+                                    "description" : "A map of implementer-supplied keys to other binaryStorage types",
+                                    "additionalProperties" : {
+                                        "type" : [
+                                            {
+                                                "type" : "object",
+                                                "additionalProperties" : false,
+                                                "properties" : {
+                                                    "type" : {
+                                                        "type" : "string",
+                                                        "description" : "The specification of the transient binary store, which keeps BINARY values on disk in the temp directory.",
+                                                        "enum" : [ "transient" ]
+                                                    },
+                                                    "storeName" : {
+                                                        "type" : "string",
+                                                        "description" : "A short, implementer-supplied name for this binary store"
+                                                    },
+                                                    "description" : {
+                                                        "type" : "string",
+                                                        "description" : "The optional description of this section of the configuration. It is unused by ModeShape."
+                                                    },
+                                                }
+                                            },
+                                            {
+                                                "type" : "object",
+                                                "additionalProperties" : false,
+                                                "properties" : {
+                                                    "type" : {
+                                                        "type" : "string",
+                                                        "description" : "The specification of the file-based binary store, which keeps BINARY values on disk in the specified directory.",
+                                                        "enum" : [ "file" ]
+                                                    },
+                                                    "storeName" : {
+                                                        "type" : "string",
+                                                        "description" : "A short, implementer-supplied name for this binary store"
+                                                    },
+                                                    "directory" : {
+                                                        "type" : "string",
+                                                        "required" : true,
+                                                        "description" : "The location of the directory the file system under which the BINARY values should be stored. The value can be an absolute or relative path."
+                                                    },
+                                                    "description" : {
+                                                        "type" : "string",
+                                                        "description" : "The optional description of this section of the configuration. It is unused by ModeShape."
+                                                    },
+                                                }
+                                            },
+                                            {
+                                                "type" : "object",
+                                                "additionalProperties" : false,
+                                                "properties" : {
+                                                    "type" : {
+                                                        "type" : "string",
+                                                        "description" : "The specification of the database binary store, which stores BINARY values in a JDBC-compatible database accessed through a JDBC DataSource registered in JNDI.",
+                                                        "enum" : [ "database" ]
+                                                    },
+                                                    "storeName" : {
+                                                        "type" : "string",
+                                                        "description" : "A short, implementer-supplied name for this binary store"
+                                                    },
+                                                    "dataSourceJndiName" : {
+                                                        "type" : "string",
+                                                        "description" : "The name in JNDI where the JDBC DataSource is registered that should be used for binary storage.",
+                                                        "required" : true,
+                                                    },
+                                                    "description" : {
+                                                        "type" : "string",
+                                                        "description" : "The optional description of this section of the configuration. It is unused by ModeShape."
+                                                    },
+                                                }
+                                            },
+                                            {
+                                                "type" : "object",
+                                                "additionalProperties" : true,
+                                                "properties" : {
+                                                    "type" : {
+                                                        "type" : "string",
+                                                        "description" : "The specification of the database binary store, which stores BINARY values in a JDBC-compatible database accessed through a JDBC connection established by specifying the driver class, URL, and other properties",
+                                                        "enum" : [ "database" ]
+                                                    },
+                                                    "storeName" : {
+                                                        "type" : "string",
+                                                        "description" : "A short, implementer-supplied name for this binary store"
+                                                    },
+                                                    "driverClass" : {
+                                                        "type" : "string",
+                                                        "description" : "The full-qualified name of the JDBC driver class.",
+                                                        "required" : true,
+                                                    },
+                                                    "url" : {
+                                                        "type" : "string",
+                                                        "description" : "The URL to be used to establish the database connection.",
+                                                        "required" : true,
+                                                    },
+                                                    "username" : {
+                                                        "type" : "string",
+                                                        "description" : "The (optional) username for the database connection. Many JDBC drivers accept specifying the username in the URL.",
+                                                        "required" : false,
+                                                    },
+                                                    "password" : {
+                                                        "type" : "string",
+                                                        "description" : "The (optional) password for the database connection. Many JDBC drivers accept specifying the password in the URL.",
+                                                        "required" : false,
+                                                    },
+                                                    "description" : {
+                                                        "type" : "string",
+                                                        "description" : "The optional description of this section of the configuration. It is unused by ModeShape."
+                                                    },
+                                                }
+                                            },
+                                            {
+                                                "type" : "object",
+                                                "additionalProperties" : true,
+                                                "properties" : {
+                                                    "type" : {
+                                                        "type" : "string",
+                                                        "description" : "The specification of a custom binary store.",
+                                                        "enum" : [ "custom" ]
+                                                    },
+                                                    "classname" : {
+                                                        "type" : "string",
+                                                        "required" : true,
+                                                        "description" : "The fully-qualified name of the 'org.modeshape.jcr.value.binary.BinaryStore' implementation class."
+                                                    },
+                                                    "classloader" : {
+                                                        "type" : "string",
+                                                        "description" : "The optional name of the classloader that should be used to load the BinaryStore implementation class. If empty or not provided, the classpath accessible to ModeShape will be used."
+                                                    },
+                                                    "description" : {
+                                                        "type" : "string",
+                                                        "description" : "The optional description of this section of the configuration. It is unused by ModeShape."
+                                                    },
+                                                }
+                                            }
+                                        
+                                        ]
+                                    },
+                                    "properties": {
+                                        "default" : {
+                                            "type" : "object",
+                                            "required" : true,
+                                            "description" : "a binaryStorage configuration element for the binaryStore that is used in the absence of applicable storage hints"
+                                        }
+                                    }
+                                },
+                                "minimumBinarySizeInBytes" : {
+                                    "type" : "integer",
+                                    "default" : 4096,
+                                    "description" : "The size threshold that dictates whether binary values should be stored in the binary store. Binary values smaller than this value are stored with the node, whereas binary values with a size equal to or greater than this limit will be stored separately from the node and in the binary store, keyed by the SHA-1 hash of the value. This is a space and performance optimization that stores each unique large value only once. The default value is '4096' bytes, or 4 kilobytes."
+                                },
+                                "minimumStringSize" : {
+                                    "type" : "integer",
+                                    "description" : "The size threshold that dictates whether string values should be stored in the binary store. String values shorter than this length are stored with the node, whereas strings with a length equal to or greater than this limit will be stored separately from the node and in the binary store, keyed by the SHA-1 hash of the value. This is a space and performance optimization that stores each unique large value only once. The default value is to match the 'minimumBinarySizeInBytes' value."
+                                },
+                                "mimeTypeDetection" : {
+                                    "type": "string",
+                                    "description": "What type of mime-type detection should be performed when uploading binary values. Defaults to 'content' - i.e. reading the binary content (at least the headers) to determine the mime type",
+                                    "default": "content",
+                                    "enum": [
+                                        "none",
+                                        "content",
+                                        "name"
+                                    ]
+                                },
+                                "description" : {
+                                    "type" : "string",
+                                    "description" : "The optional description of this section of the configuration. It is unused by ModeShape."
+                                },
+                            }
+                        },
+                        {
+                            "type" : "object",
+                            "additionalProperties" : true,
+                            "properties" : {
+                                "type" : {
+                                    "type" : "string",
+                                    "description" : "The specification of a custom binary store.",
+                                    "enum" : [ "custom" ]
+                                },
+                                "classname" : {
+                                    "type" : "string",
+                                    "required" : true,
+                                    "description" : "The fully-qualified name of the 'org.modeshape.jcr.value.binary.BinaryStore' implementation class."
+                                },
+                                "classloader" : {
+                                    "type" : "string",
+                                    "description" : "The optional name of the classloader that should be used to load the BinaryStore implementation class. If empty or not provided, the classpath accessible to ModeShape will be used."
+                                },
+                                "minimumBinarySizeInBytes" : {
+                                    "type" : "integer",
+                                    "default" : 4096,
+                                    "description" : "The size threshold that dictates whether binary values should be stored in the binary store. Binary values smaller than this value are stored with the node, whereas binary values with a size equal to or greater than this limit will be stored separately from the node and in the binary store, keyed by the SHA-1 hash of the value. This is a space and performance optimization that stores each unique large value only once. The default value is '4096' bytes, or 4 kilobytes."
+                                },
+                                "minimumStringSize" : {
+                                    "type" : "integer",
+                                    "description" : "The size threshold that dictates whether string values should be stored in the binary store. String values shorter than this length are stored with the node, whereas strings with a length equal to or greater than this limit will be stored separately from the node and in the binary store, keyed by the SHA-1 hash of the value. This is a space and performance optimization that stores each unique large value only once. The default value is to match the 'minimumBinarySizeInBytes' value."
+                                },
+                                "description" : {
+                                    "type" : "string",
+                                    "description" : "The optional description of this section of the configuration. It is unused by ModeShape."
+                                },
+                            }
+                        },
                     ]
                 },
+            }
+        },
+        "clustering": {
+            "type": "object",
+            "description": "The clustering configuration. If absent, clustering will be disabled",
+            "additionalProperties": false,
+            "properties": {
+                "clusterName": {
+                    "type": "string",
+                    "default" : "ModeShape-JCR",
+                    "description": "The name of the cluster to which a JGroups channel will connect"
+                    
+                },
+                "configuration": {
+                    "type": "string",
+                    "default" : "org/modeshape/jcr/clustering/jgroups-config.xml",
+                    "description": "The path to the JGroups configuration file that should be used"
+                },
+                "description": {
+                    "type": "string",
+                    "description": "The optional description of this section of the configuration. It is unused by ModeShape."
+                }
             }
         },
         "workspaces" : {
@@ -150,6 +631,11 @@
                     "default" : true,
                     "description" : "Specifies whether users can create additional workspaces beyond the predefined, system, and default workspaces. The default value is 'true'."
                 },
+                "cacheSize" : {
+                    "type" : "integer",
+                    "default" : 10000,
+                    "description" : "The maximum number of entries the workspace cache can hold in-memory"
+                },
                 "initialContent" : {
                     "type" : "object",
                     "uniqueItems" : true,
@@ -159,7 +645,7 @@
                 "description" : {
                     "type" : "string",
                     "description" : "The optional description of this section of the configuration. It is unused by ModeShape."
-                },
+                }
             }
         },
         "externalSources" : {
@@ -180,26 +666,26 @@
                         "type" : "string",
                         "description" : "The optional name of the classloader that should be used to load the connector class. If empty or not provided, the classpath accessible to ModeShape will be used."
                     },
-                    "cacheable" : {
-                        "type" : "boolean",
-                        "default" : true,
-                        "description": "Whether documents exposed by this source should be cached by the repository or not"
-                    },
                     "queryable" : {
                         "type" : "boolean",
                         "default" : true,
                         "description" : "Optional flag which indicates whether this source's content should be indexed or not by the repository. By default, all content is queryable "
                     },
+                    "cacheable" : {
+                        "type" : "boolean",
+                        "default" : true,
+                        "description": "Whether documents exposed by this source should be cached by the repository or not"
+                    },
                     "readonly" : {
                         "type" : "boolean",
                         "default" : false,
-                        "description" : "Optional flag which indicates if an external source should support both writing and reading, or just reading. By default, an external source supports both"
+                        "description" : "Optional flag which indicates if an external source should support both writing and reading, or just reading. This flag is ignored for read-only sources and makes sense only for writable sources."
                     },
                     "projections" : {
                         "type" : "array",
                         "items" : {
                             "type" : "string",
-                            "pattern" : "(\w+):(/([a-zA-Z_0-9]/{0,1})+)\s*=>\s*([/a-zA-Z_0-9]+)"
+                            "pattern" : "(\w+):((([/]([^/=]|(\\.))+)+)|[/])\s*=>\s*((([/]([^/]|(\\.))+)+)|[/])"
                         },
                         "description" : "The expressions that describes the projection path expressions, in the format wsName:/projectedPath => externalPath"
                     },
@@ -243,7 +729,7 @@
                             "items" : {
                                 "type" : "string",
                             },
-                            "uniqueItems" : true, 
+                            "uniqueItems" : true,
                             "description" : "An array of roles provided for anonymous access. Anonymous logins will be disabled if no value or an empty value is provided."
                         },
                         "username" : {
@@ -292,527 +778,136 @@
                 }
             }
         },
-        "query" : {
+        "indexProviders" : {
+            "type" : "object",
+            "description" : "The named set of index provider configurations",
+            "required" : false,
+            "additionalProperties" : {
+                "type" : "object",
+                "additionalProperties" : true,
+                "description" : "Specification of an index provider configuration.",
+                "properties" : {
+                    "classname" : {
+                        "type" : "string",
+                        "required" : true,
+                        "description" : "The fully-qualified name of the 'org.modeshape.jcr.spi.index.provider.IndexProvider' implementation class."
+                    },
+                    "classloader" : {
+                        "type" : "string",
+                        "description" : "The optional name of the classloader that should be used to load the QueryIndexService implementation class. If empty or not provided, the classpath accessible to ModeShape will be used."
+                    },
+                    "description" : {
+                        "type" : "string",
+                        "description" : "The optional description of this section of the configuration. It is unused by ModeShape."
+                    },
+                }
+            }
+        },
+        "indexes" : {
+            "type" : "object",
+            "description" : "The specification of the indexes used in the repository.",
+            "required" : false,
+            "additionalProperties" : {
+                "type" : "object",
+                "additionalProperties" : true,
+                "description" : "Specification of a sequencer configuration.",
+                "properties" : {
+                    "description" : {
+                        "type" : "string",
+                        "description" : "The optional description of this section of the configuration. It is unused by ModeShape."
+                    },
+                    "provider" : {
+                        "type" : "string",
+                        "description" : "The name of the index provider that is responsible for this index. If the name does not match that of an index provider, the index will be disabled."
+                    },
+                    "workspaces" : {
+                        "type" : "string",
+                        "default" : "*",
+                        "description" : "The regular expression pattern that stipulates which workspaces this index is to be used for. By default, the pattern is '*', which means all workspaces. A literal string will match the exact workspace name. Any workspaces that do not match this pattern will not use this index."
+                    },
+                    "kind" : {
+                        "type" : "string",
+                        "enum" : ["unique","value","enumerated","text","nodetype"],
+                        "default" : "value",
+                        "description" : "The kind of the index."
+                    },
+                    "synchronous" : {
+                        "type" : "boolean",
+                        "default" : "true",
+                        "description" : "Whether the index is updated synchronously before the save method returns. The default is 'true'."
+                    },
+                    "nodeType" : {
+                        "type" : "string",
+                        "default" : "nt:base",
+                        "description" : "The name of the node type for which this index is define. This index will include data only from nodes that are of this type (implicitly or explicitly)."
+                    },
+                    "columns" : {
+                        "type" : "string",
+                        "pattern" : "([^(,]+)[(]([^),]+)[)](,([^(,]+)[(]([^),]+)[)])*",
+                        "description" : "A comma-separated list of column definitions, where each column definition consists of a property name and in parentheses the property type. For example, 'jcr:mixin(STRING)' is a column definition that specifies the 'jcr:mixin' property and 'STRING' type."
+                    },
+                }
+            }
+        },
+        "reindexing" : {
             "type" : "object",
             "additionalProperties" : false,
-            "description" : "The specification of the configuration options for the query system.",
+            "description" : "Reindexing behavior configuration",
             "properties" : {
-                "description" : {
-                    "type" : "string",
-                    "description" : "The optional description of this section of the configuration. It is unused by ModeShape."
-                },
-                "enabled" : {
+                "async" : {
                     "type" : "boolean",
                     "default" : true,
-                    "description" : "A boolean flag that specifies whether this repository is expected to execute searches and queries. If client applications will never perform searches or queries, then maintaining the query indexes is an unnecessary overhead, and can be disabled. Note that this is merely a hint, and that searches and queries might still work when this is set to 'false'."
+                    "description" : "Whether on startup reindexing should be performed synchronously or asynchronously"
                 },
-                "rebuildUponStartup" : {
-                    "type" : "string",
-                    "enum" : ["if_missing","always"],
+                "mode" : {
+                    "enum" : ["if_missing", "incremental"],
                     "default" : "if_missing",
-                    "description" : "DEPRECATED. See indexing/rebuildOnStartup"
+                    "description" : "Specifies whether the entire repository will be reindexed if there is at least one provider which has an out-of-date index or whether the indexes for each provider will rebuilt only from the last successful update time. This only works if the repository journal is enabled."
+                }
+            }
+        },
+        "textExtraction" : {
+            "type" : "object",
+            "additionalProperties" : false,
+            "description" : "The extractor configurations.",
+            "properties" : {
+                "threadPool" : {
+                    "type" : "string",
+                    "default" : "modeshape-workers",
+                    "description" : "Name of the thread pool that should be used for text extracting. Thread pools are named globally within a single ModeShape engine, and by default all repositories use the same thread pool for sequencing and indexing."
                 },
-                "textExtracting" : {
+                "maxPoolSize" : {
+                    "type" : "integer",
+                    "default" : 4,
+                    "description" : "The maximum number of threads that can be spawned at the same time to perform text extraction"
+                },
+                "extractors" : {
                     "type" : "object",
-                    "additionalProperties" : false,
-                    "description" : "An array of extractor configurations.",
-                    "properties" : {
-                        "threadPool" : {
-                            "type" : "string",
-                            "default" : "modeshape-workers",
-                            "description" : "Name of the thread pool that should be used for text extracting. Thread pools are named globally within a single ModeShape engine, and by default all repositories use the same thread pool for sequencing and indexing."
-                        },
-                        "maxPoolSize" : {
-                            "type" : "integer",
-                            "default" : 4,
-                            "description" : "The maximum number of threads that can be spawned at the same time to perform text extraction"
-                        },
-                        "extractors" : {
-                            "type" : "object",
-                            "description" : "The container for the list of configured text extractors",
-                            "additionalProperties" : {
-                                "type" : "object",
-                                "description" : "Specification of a text extractor configuration.",
-                                "additionalProperties" : true,
-                                "properties" : {
-                                    "classname" : {
-                                        "type" : "string",
-                                        "required" : true,
-                                        "description" : "The fully-qualified name of the 'org.modeshape.jcr.text.TextExtractor' implementation class. A shortcut for built-in extractors is to just specify the name of the class (without the package specifciation)."
-                                    },
-                                    "classloader" : {
-                                        "type" : "string",
-                                        "description" : "The optional name of the classloader that should be used to load the extract class. If empty or not provided, the classpath accessible to ModeShape will be used."
-                                    },
-                                    "name" : {
-                                        "type" : "string",
-                                        "description" : "The optional unique name of the extractor configuration, used for administration and reporting purposes. If not specified, the extractor's classname will be used."
-                                    },
-                                    "description" : {
-                                        "type" : "string",
-                                        "description" : "The optional description of this section of the configuration. It is unused by ModeShape."
-                                    }
-                                }
+                    "description" : "The container for the list of configured text extractors",
+                    "additionalProperties" : {
+                        "type" : "object",
+                        "description" : "Specification of a text extractor configuration.",
+                        "additionalProperties" : true,
+                        "properties" : {
+                            "classname" : {
+                                "type" : "string",
+                                "required" : true,
+                                "description" : "The fully-qualified name of the 'org.modeshape.jcr.text.TextExtractor' implementation class. A shortcut for built-in extractors is to just specify the name of the class (without the package specifciation)."
+                            },
+                            "classloader" : {
+                                "type" : "string",
+                                "description" : "The optional name of the classloader that should be used to load the extract class. If empty or not provided, the classpath accessible to ModeShape will be used."
+                            },
+                            "name" : {
+                                "type" : "string",
+                                "description" : "The optional unique name of the extractor configuration, used for administration and reporting purposes. If not specified, the extractor's classname will be used."
+                            },
+                            "description" : {
+                                "type" : "string",
+                                "description" : "The optional description of this section of the configuration. It is unused by ModeShape."
                             }
                         }
                     }
-                },
-                "indexStorage" : {
-                    "description" : "The specification of where and how the indexes are to be stored. The value is a single nested document, with a required 'type' property (with values of 'ram', 'filesystem', 'filesystem-master', 'filesystem-slave', 'infinispan', or 'custom') and additional properties that are dictated by the 'type' value. If not specified, 'ram' storage will be used.",
-                    "type" : [ 
-                        {
-                            "type" : "object",
-                            "description" : "The specification for storing indexes for a non-clustered repository in local memory.",
-                            "additionalProperties" : false,
-                            "properties" : {
-                                "type" : {
-                                    "type" : "string",
-                                    "enum" : ["ram"],
-                                    "required" : true,
-                                    "description" : "The specification of the in-memory storage type."
-                                },
-                                "description" : {
-                                    "type" : "string",
-                                    "description" : "The optional description of this section of the configuration. It is unused by ModeShape."
-                                },
-                            }
-                        },
-                        {
-                            "type" : "object",
-                            "description" : "The specification for storing indexes for a (clustered or non-clustered) repository on the local filesystem.",
-                            "additionalProperties" : false,
-                            "properties" : {
-                                "type" : {
-                                    "type" : "string",
-                                    "description" : "The specification of the local filesystem storage type.",
-                                    "required" : true,
-                                    "enum" : ["filesystem"]
-                                },
-                                "location" : {
-                                    "type" : "string",
-                                    "required" : true,
-                                    "description" : "The path on the file system of the directory where the indexes are to be stored."
-                                },
-                                "lockingStrategy" : {
-                                    "type" : "string",
-                                    "enum" : [ "simple", "native", "single", "none" ],
-                                    "default" : "native",
-                                    "description" : "Species the type of locking used to prevent concurrent writes to the indexes. The default locking strategy works well for most cases. If set to 'simple', a marker file will be created using the Java File API (this file may need to be manually removed if the process is terminated abormally). If set to 'native' (the default), a marker file will be created using native OS file locks (which will never need to be cleaned up). If set to 'single', an in-memory Java object is used for the lock, and therefore not useful in a clustered repository. If 'none' is used, no locking is used to prevent concurrent writes (use with caution)."
-                                },
-                                "fileSystemAccessType" : {
-                                    "type" : "string",
-                                    "enum" : [ "auto", "simple", "nio", "mmap" ],
-                                    "default" : "auto",
-                                    "description" : "Specifies the exact type of Lucene FSDirectory implementation to be used. If set to 'auto' (the default), NIOFSDirectory will be used on non Windows systems and SimpleFSDirectory will be used on Windows. If set to 'simple', then SimpleFSDirectory will be used. If set to 'nio', then NIOFSDirectory will be used. If set to 'mmap', then MMapDirectory will be used. Make sure to refer to Javadocs of these Directory implementations before changing this setting. Even though NIOFSDirectory or MMapDirectory can bring substantial performace boosts they also have constraints and limitations."
-                                },
-                                "description" : {
-                                    "type" : "string",
-                                    "description" : "The optional description of this section of the configuration. It is unused by ModeShape."
-                                },
-                            }
-                        },
-                        {
-                            "type" : "object",
-                            "description" : "The specification for storing the master (writable) indexes for a clustered repository (typically when using the JMS backend for updating indexes). Other processes in the cluster will be configured with 'filesystem-slave'. Like 'filesystem', except that a copy of the indexes is made to 'sourceLocation'.",
-                            "additionalProperties" : false,
-                            "properties" : {
-                                "type" : {
-                                    "type" : "string",
-                                    "description" : "The specification of the master filesystem storage type.",
-                                    "required" : true,
-                                    "enum" : ["filesystem-master"]
-                                },
-                                "location" : {
-                                    "type" : "string",
-                                    "required" : true,
-                                    "description" : "The path on the local file system of the directory where the indexes are to be stored for local use."
-                                },
-                                "lockingStrategy" : {
-                                    "type" : "string",
-                                    "enum" : [ "simple", "native", "single", "none" ],
-                                    "default" : "native",
-                                    "description" : "Specifies the type of locking used to prevent concurrent writes to the indexes. The default locking strategy works well for most cases. If set to 'simple', a marker file will be created using the Java File API (this file may need to be manually removed if the process is terminated abormally). If set to 'native' (the default), a marker file will be created using native OS file locks (which will never need to be cleaned up). If set to 'single', an in-memory Java object is used for the lock, and therefore not useful in a clustered repository. If 'none' is used, no locking is used to prevent concurrent writes (use with caution)."
-                                },
-                                "fileSystemAccessType" : {
-                                    "type" : "string",
-                                    "enum" : [ "auto", "simple", "nio", "mmap" ],
-                                    "default" : "auto",
-                                    "description" : "Specifies the exact type of Lucene FSDirectory implementation to be used. If set to 'auto' (the default), NIOFSDirectory will be used on non Windows systems and SimpleFSDirectory will be used on Windows. If set to 'simple', then SimpleFSDirectory will be used. If set to 'nio', then NIOFSDirectory will be used. If set to 'mmap', then MMapDirectory will be used. Make sure to refer to Javadocs of these Directory implementations before changing this setting. Even though NIOFSDirectory or MMapDirectory can bring substantial performace boosts they also have constraints and limitations."
-                                },
-                                "sourceLocation" : {
-                                    "type" : "string",
-                                    "required" : true,
-                                    "description" : "The path on the (remote) file system of the directory to which the copy is to be written. This must not be the same directory as 'location'."
-                                },
-                                "refreshInSeconds" : {
-                                    "type" : "integer",
-                                    "default" : 3600,
-                                    "minimum" : 0,
-                                    "description" : "The number of seconds specifying the frequency of copying the master index into the 'sourceLocation' directory. The copy is incremental, so it only copies the changes since the last copy. The recommended value for the refresh period is (at least) 50% higher that the time to copy the information, and defaults to 3600 seconds - 60 minutes."
-                                },
-                                "description" : {
-                                    "type" : "string",
-                                    "description" : "The optional description of this section of the configuration. It is unused by ModeShape."
-                                },
-                            }
-                        },
-                        {
-                            "type" : "object",
-                            "description" : "The specification for storing the slave (read-only) indexes for a clustered repository (typically when using the JMS backend for updating indexes). One process in the cluster will be configured with 'filesystem-master', while rest with 'filesystem-slave'.",
-                            "additionalProperties" : false,
-                            "properties" : {
-                                "type" : {
-                                    "type" : "string",
-                                    "required" : true,
-                                    "description" : "The specification of the slave filesystem storage type.",
-                                    "enum" : ["filesystem-slave"]
-                                },
-                                "location" : {
-                                    "type" : "string",
-                                    "required" : true,
-                                    "description" : "The path on the local file system of the directory where the indexes are to be stored for local use."
-                                },
-                                "lockingStrategy" : {
-                                    "type" : "string",
-                                    "enum" : [ "simple", "native", "single", "none" ],
-                                    "default" : "native",
-                                    "description" : "Species the type of locking used to prevent concurrent writes to the indexes. The default locking strategy works well for most cases. If set to 'simple', a marker file will be created using the Java File API (this file may need to be manually removed if the process is terminated abormally). If set to 'native' (the default), a marker file will be created using native OS file locks (which will never need to be cleaned up). If set to 'single', an in-memory Java object is used for the lock, and therefore not useful in a clustered repository. If 'none' is used, no locking is used to prevent concurrent writes (use with caution)."
-                                },
-                                "fileSystemAccessType" : {
-                                    "type" : "string",
-                                    "enum" : [ "auto", "simple", "nio", "mmap" ],
-                                    "default" : "auto",
-                                    "description" : "Specifies the exact type of Lucene FSDirectory implementation to be used. If set to 'auto' (the default), NIOFSDirectory will be used on non Windows systems and SimpleFSDirectory will be used on Windows. If set to 'simple', then SimpleFSDirectory will be used. If set to 'nio', then NIOFSDirectory will be used. If set to 'mmap', then MMapDirectory will be used. Make sure to refer to Javadocs of these Directory implementations before changing this setting. Even though NIOFSDirectory or MMapDirectory can bring substantial performace boosts they also have constraints and limitations."
-                                },
-                                "sourceLocation" : {
-                                    "type" : "string",
-                                    "required" : true,
-                                    "description" : "The path on the (remote) file system of the directory from which the copy is to be read. This must not be the same directory as 'location'."
-                                },
-                                "refreshInSeconds" : {
-                                    "type" : "integer",
-                                    "default" : 3600,
-                                    "minimum" : 0,
-                                    "description" : "The number of seconds specifying the frequency of copying the index in the 'location' directory into the 'sourceLocation' directory. The copy is incremental, so it only copies the changes since the last copy. The recommended value for the refresh period is (at least) 50% higher that the time to copy the information, and defaults to 3600 seconds - 60 minutes."
-                                },
-                                "copyBufferSizeInMegabytes" : {
-                                    "type" : "integer",
-                                    "exclusiveMinimum" : 0,
-                                    "default" : 16,
-                                    "description" : "The number of megabytes to move in a single low level copy instruction. The default is '16' (or 16MB)."
-                                },
-                                "retryMarkerLookup" : {
-                                    "type" : "integer",
-                                    "minimum" : 0,
-                                    "default" : 0,
-                                    "description" : "The number of times to look for the marker files in the source directory before failing, waiting 5 seconds between each try. The default is '0'."
-                                },
-                                "retryInitializePeriodInSeconds" : {
-                                    "type" : "integer",
-                                    "minimum" : 0,
-                                    "default" : 0,
-                                    "description" : "The number of seconds before retrying initialization. If the slave can't find the master index, it will try again (in the background) until it's found, without preventing the application to start. Queries performed before the index is initialized are not blocked but will return empty results. A value of '0' is used by default, signaling that initialization will fail with an exception rather than trying in the background. To prevent the application from starting without an invalid index but still control an initialization timeout, use 'retryMarkerLookup' instead."
-                                },
-                                "description" : {
-                                    "type" : "string",
-                                    "description" : "The optional description of this section of the configuration. It is unused by ModeShape."
-                                },
-                            }
-                        },
-                        {
-                            "type" : "object",
-                            "description" : "The specification for storing the indexes in a custom directory provider.",
-                            "additionalProperties" : true,
-                            "properties" : {
-                                "type" : {
-                                    "type" : "string",
-                                    "description" : "The specification of a custom index storage type.",
-                                    "required" : true,
-                                    "enum" : ["custom"]
-                                },
-                                "classname" : {
-                                    "type" : "string",
-                                    "required" : true,
-                                    "description" : "The name of the Hiberate Search 'org.hibernate.search.store.DirectoryProvider' implementation class."
-                                },
-                                "classloader" : {
-                                    "type" : "string",
-                                    "description" : "The optional name of the classloader or module that should be used to load the DirectoryProvider implementation class. If empty or not provided, the classpath accessible to ModeShape will be used."
-                                },
-                                "description" : {
-                                    "type" : "string",
-                                    "description" : "The optional description of this section of the configuration. It is unused by ModeShape."
-                                },
-                            }
-                        }
-                    ]
-                },
-                "indexing" : {
-                    "type" : "object",
-                    "description" : "The configuration settings controlling how the search indexes are created and maintained.",
-                    "patternProperties" : {
-                        "hibernate[.]search[.].*" : {
-                            "type" : "string",
-                            "required" : false,
-                            "description" : "Additional properties that follow the 'hibernate.search.*' pattern will override all other properties and will be passed directly to Hibernate Search. These are optional, and should only be used for advanced configuration."
-                        }
-                    },
-                    "properties" : {
-                        "threadPool" : {
-                            "type" : "string",
-                            "default" : "modeshape-workers",
-                            "description" : "Name of the thread pool that should be used for background re-indexing. Thread pools are named globally within a single ModeShape engine, and by default all repositories use the same thread pool for sequencing and indexing."
-                        },
-                        "analyzer" : {
-                            "type" : "string",
-                            "default" : "org.apache.lucene.analysis.standard.StandardAnalyzer",
-                            "description" : "Advanced setting that specifies the fully-qualified name of the 'org.apache.lucene.analysis.Analyzer' implementation class that should be used to extract search terms from text."
-                        },
-                        "analyzerClassloader" : {
-                            "type" : "string",
-                            "description" : "The optional name of the classloader or module that should be used to load the analyzer implementation class. If empty or not provided, the classpath accessible to ModeShape will be used."
-                        },
-                        "similarity" : {
-                            "type" : "string",
-                            "default" : "org.apache.lucene.search.DefaultSimilarity",
-                            "description" : "Advanced setting that specifies the fully-qualified name of the 'org.apache.lucene.search.Similarity' implementation class that should be used for scoring (determining the similarity of terms). The 'org.apache.lucene.search.DefaultSimilarity' class is used by default."
-                        },
-                        "batchSize" : {
-                            "type" : "integer",
-                            "default" : -1,
-                            "description" : "Advanced setting that specifies the maximum number of indexing operation batched per transaction. Once the limit is reached indexing will be triggered even though the context has not ended yet. A value of '-1' implies no maximum size."
-                        },
-                        "indexFormat" : {
-                            "type" : "string",
-                            "pattern" : "LUCENE_(3[0-9]{1,2}|CURRENT)",
-                            "default" : "LUCENE_CURRENT",
-                            "description" : "Specifies the Lucene version defining the format of the indexes. The default value is 'LUCENE_CURRENT', but for production uses it should be explicitly set to the specific Lucene version used when first creating the versions; changing this value will require a manual rebuilt of all indexes."
-                        },
-                        "readerStrategy" : {
-                            "type" : "string",
-                            "enum" : [ "shared", "not-shared" ],
-                            "default" : "shared",
-                            "description" : "Advanced setting that defines whether Lucene index readers can be shared. With the 'shared' strategy, the same IndexReader will be used (for a given Lucene index) across multiple queries and threads, provided that the IndexReader is still up-to-date. If the IndexReader is not up-to-date, a new one is opened and provided. With the 'not-shared' strategy, a new IndexReader is opened every time a query is executed, which can be expensive."
-                        },
-                        "mode" : {
-                            "type" : "string",
-                            "enum" : [ "sync", "async" ],
-                            "default" : "sync",
-                            "description" : "Specifies whether to apply the index changes synchronously or asynchronously (in separate threads). Synchronous updates have the advantage that the index is at all times in sync with the storec content. Asynchronous updates, on the other hand, can help to minimize Session.save() times since index updates are executed in the background, but may result in potential discrepancies between the saved changes and query results."
-                        },
-                        "asyncThreadPoolSize" : {
-                            "type" : "integer",
-                            "default" : 1,
-                            "minimum" : 1,
-                            "description" : "Specifies the number of threads that may be used for asynchronous application of updates. Defaults to '1', and is not used for synchronous updates."
-                        },
-                        "asyncMaxQueueSize" : {
-                            "type" : "integer",
-                            "default" : 1,
-                            "minimum" : 0,
-                            "description" : "Specifies the maximum size of the queue used for making asynchronous updates. When the queue is filled, updates block until the queue catches up. A value of '0' is the default and implies no limit to the queue size."
-                        },
-                        "rebuildOnStartup" : {
-                            "type" : "object",
-                            "description" : "Controls the behavior of index rebuilding, when the repository starts up",
-                            "additionalProperties" : false,
-                            "properties" : {
-                                "when" : {
-                                    "enum" : ["if_missing","always","never", "fail_if_missing"],
-                                    "default" : "if_missing",
-                                    "description" : "Specifies whether the indexes need to be rebuilt immediately when each ModeShape process starts up, or only missing indexes are to be rebuilt or nothing should be rebuilt"
-                                },
-                                "includeSystemContent" : {
-                                    "type" : "boolean",
-                                    "default" : false,
-                                    "description" : "Specifies if system content should be re-indexed on startup or not"
-                                },
-                                "mode" : {
-                                    "enum" : ["sync","async"],
-                                    "default" : "sync",
-                                    "description" : "Specifies if index rebuilding should be done synchronously or asynchronously"
-                                }
-                            }
-
-                        },
-                        "description" : {
-                            "type" : "string",
-                            "description" : "The optional description of this section of the configuration. It is unused by ModeShape."
-                        },
-                        "backend" : {
-                            "description" : "The specification of options for how the indexes are to be updated. The value is a single nested document, with a required 'type' property (with values of 'lucene', 'jms-backend', 'jgroups-master', 'jgroups-slave', 'blackhold', or 'custom') and additional properties that are dictated by the 'type' value. If not specified, 'lucene' storage will be used.",
-                            "type" : [ 
-                                {
-                                    "type" : "object",
-                                    "description" : "The specification for writing all updates directly to Lucene. This is the default and works well for non-clustered repositories. It can also work for clustered repositories, but requires an index storage type that supports locking.",
-                                    "additionalProperties" : false,
-                                    "properties" : {
-                                        "type" : {
-                                            "type" : "string",
-                                            "enum" : ["lucene"],
-                                            "required" : true,
-                                            "description" : "The specification of the Lucene backend for writing all updates directly to Lucene."
-                                        },
-                                        "description" : {
-                                            "type" : "string",
-                                            "description" : "The optional description of this section of the configuration. It is unused by ModeShape."
-                                        },
-                                    }
-                                },
-                                {
-                                    "type" : "object",
-                                    "description" : "The specification for pulling all index updates from a JMS queue and writing them to a local Lucene backend. Index updates originating locally are directly written to Lucene. This is only useful for clustered repositories, where other processes in the cluster are configured with 'jms-slave'. Extra properties will be used to initialize the JNDI InitialContext.",
-                                    "additionalProperties" : true,
-                                    "properties" : {
-                                        "type" : {
-                                            "type" : "string",
-                                            "enum" : ["jms-master"],
-                                            "required" : true,
-                                            "description" : "The specification of the JMS master backend."
-                                        },
-                                        "connectionFactoryJndiName" : { 
-                                            "type" : "string",
-                                            "required" : true,
-                                            "description" : "Defines the name in JNDI where the JMS connection factory can be found. The value is often '/ConnectionFactory' by default in JBoss AS.",
-                                        },
-                                        "queueJndiName" : { 
-                                            "type" : "string",
-                                            "required" : true,
-                                            "description" : "Defines the name in JNDI where JMS queue can be found. The queue will be used to post work messages.",
-                                        },
-                                        "description" : {
-                                            "type" : "string",
-                                            "description" : "The optional description of this section of the configuration. It is unused by ModeShape."
-                                        },
-                                    }
-                                },
-                                {
-                                    "type" : "object",
-                                    "description" : "The specification for sending all index updates to a JMS queue, where the master writing all updates directly to Lucene.  This is only useful for clustered repositories, where one other processes in the cluster is configured with 'jms-master'. Extra properties will be used to initialize the JNDI InitialContext.",
-                                    "additionalProperties" : true,
-                                    "properties" : {
-                                        "type" : {
-                                            "type" : "string",
-                                            "enum" : ["jms-slave"],
-                                            "required" : true,
-                                            "description" : "The specification of the Lucene backend for writing all updates directly to Lucene."
-                                        },
-                                        "connectionFactoryJndiName" : {
-                                            "type" : "string",
-                                            "required" : true,
-                                            "description" : "Defines the name in JNDI where the JMS connection factory can be found. The value is often '/ConnectionFactory' by default in JBoss AS.",
-                                        },
-                                        "queueJndiName" : {
-                                            "type" : "string",
-                                            "required" : true,
-                                            "description" : "Defines the name in JNDI where JMS queue can be found. The queue will be used to post work messages.",
-                                        },
-                                        "description" : {
-                                            "type" : "string",
-                                            "description" : "The optional description of this section of the configuration. It is unused by ModeShape."
-                                        },
-                                    }
-                                },
-                                {
-                                    "type" : "object",
-                                    "description" : "The specification for pulling all index updates from a JGroups channel and writing them to a local Lucene backend. This is only useful for clustered repositories, where other processes in the cluster are configured with 'jgroups-slave'.",
-                                    "additionalProperties" : false,
-                                    "properties" : {
-                                        "type" : {
-                                            "type" : "string",
-                                            "enum" : ["jgroups-master"],
-                                            "required" : true,
-                                            "description" : "The specification of the Lucene backend for writing all updates directly to Lucene."
-                                        },
-                                        "channelName" : { 
-                                            "type" : "string",
-                                            "required" : true,
-                                            "description" : "The name of the JGroups channel used for indexing updates."
-                                        },
-                                        "channelConfiguration" : { 
-                                            "type" : "string",
-                                            "required" : false,
-                                            "description" : "The optional JGroups channel configuration. The value should be the path to a resource file on the classpath containing the JGroups configuration."
-                                        },
-                                        "description" : {
-                                            "type" : "string",
-                                            "description" : "The optional description of this section of the configuration. It is unused by ModeShape."
-                                        },
-                                    }
-                                },
-                                {
-                                    "type" : "object",
-                                    "description" : "The specification for sending all index updates to the maste through a JGroups channel. This is only useful for clustered repositories, where one other process in the cluster is configured with 'jgroups-master'. ",
-                                    "additionalProperties" : false,
-                                    "properties" : {
-                                        "type" : {
-                                            "type" : "string",
-                                            "enum" : ["jgroups-slave"],
-                                            "required" : true,
-                                            "description" : "The specification of the Lucene backend for writing all updates directly to Lucene."
-                                        },
-                                        "channelName" : {
-                                            "type" : "string",
-                                            "required" : true,
-                                            "description" : "The name of the JGroups channel used for indexing updates."
-                                        },
-                                        "channelConfiguration" : {
-                                            "type" : "string",
-                                            "required" : false,
-                                            "description" : "The optional JGroups channel configuration. The value should be the path to a resource file on the classpath containing the JGroups configuration."
-                                        },
-                                        "description" : {
-                                            "type" : "string",
-                                            "description" : "The optional description of this section of the configuration. It is unused by ModeShape."
-                                        },
-                                    }
-                                },
-                                {
-                                    "type" : "object",
-                                    "description" : "The specification for a backend where all index updates are dropped and not processed. This may be useful during development and testing, but should never be used in a staging or production environment.",
-                                    "additionalProperties" : false,
-                                    "properties" : {
-                                        "type" : {
-                                            "type" : "string",
-                                            "enum" : ["blackhole"],
-                                            "required" : true,
-                                            "description" : "The specification of the blackhole backend."
-                                        },
-                                        "description" : {
-                                            "type" : "string",
-                                            "description" : "The optional description of this section of the configuration. It is unused by ModeShape."
-                                        },
-                                    }
-                                },
-                                {
-                                    "type" : "object",
-                                    "description" : "The specification for a custom backend processor.",
-                                    "additionalProperties" : true,
-                                    "properties" : {
-                                        "type" : {
-                                            "type" : "string",
-                                            "description" : "The specification of a custom backend processor.",
-                                            "required" : true,
-                                            "enum" : ["custom"]
-                                        },
-                                        "classname" : {
-                                            "type" : "string",
-                                            "required" : true,
-                                            "description" : "The fully-qualified name of the class that implements the 'org.hibernate.search.backend.spi.BackendQueueProcessor' interface."
-                                        },
-                                        "classloader" : {
-                                            "type" : "string",
-                                            "description" : "The optional name of the classloader or module that should be used to load the BackendQueueProcessor implementation class. If empty or not provided, the classpath accessible to ModeShape will be used."
-                                        },
-                                        "description" : {
-                                            "type" : "string",
-                                            "description" : "The optional description of this section of the configuration. It is unused by ModeShape."
-                                        },
-                                    }
-                                }
-                            ]
-                        }
-                    },
                 }
             }
         },
@@ -838,7 +933,7 @@
                 "maxPoolSize" : {
                     "type" : "integer",
                     "default" : 10,
-                    "description" : "The maximum number of threads that can be spawned at the same time to perform text extraction"
+                    "description" : "The maximum number of threads that can be spawned at the same time to perform sequencing"
                 },
                 "sequencers" : {
                     "type" : "object",
@@ -874,7 +969,7 @@
                                 "items" : {
                                     "type" : "string",
                                 },
-                                "uniqueItems" : true, 
+                                "uniqueItems" : true,
                                 "description" : "The optional MIME types for the kind of content that this sequencer configuration should process. If not specified, then the sequencer class' default MIME types will be used. Set to an empty array to forcibly allow processing content with any MIME type."
                             },
                             "description" : {
@@ -898,6 +993,11 @@
             "type" : "object",
             "description" : "The journal configuration which enables ModeShape to store a local journal of all the changes",
             "properties" : {
+                "enabled" : {
+                    "type" : "boolean",
+                    "description" : "Whether the journal should be enabled or not",
+                    "default" : true
+                },
                 "location" : {
                     "type" : "string",
                     "description" : "The folder where the journal entries are stored by ModeShape",
@@ -917,7 +1017,7 @@
                     "type" : "string",
                     "default" : "modeshape-journaling-gc",
                     "description" : "Name of the thread pool that should be used when cleaning up older journal entries"
-                } ,
+                },
                 "initialTime" : {
                     "type" : "string",
                     "default" : "00:00",

@@ -20,6 +20,7 @@ import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -28,7 +29,6 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import javax.jcr.nodetype.NodeTypeDefinition;
 import org.junit.After;
-import static org.junit.Assert.assertTrue;
 import org.junit.Before;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
@@ -43,7 +43,7 @@ public class SystemContentTest {
 
     @Before
     public void beforeEach() throws Exception {
-        config = new RepositoryConfiguration("repoName");
+        config = new RepositoryConfiguration("repoName").with(new TestingEnvironment());
         repository = new JcrRepository(config);
         repository.start();
         SessionCache systemCache = repository.createSystemSession(repository.runningState().context(), false);

@@ -1,8 +1,10 @@
 {
     "name" : "Backup Repository",
     "storage" : {
-        "cacheName" : "backupRepository",
-        "cacheConfiguration" : "config/backup-repo-config-infinispan.xml",
+        "persistence": {
+            "type": "db",
+            "connectionUrl" : "jdbc:h2:file:./target/backupArea/backupRepo/backup_db"
+        },
         "binaryStorage" : {
             "type" : "file",
             "directory": "target/backupArea/backupRepo/binaries",

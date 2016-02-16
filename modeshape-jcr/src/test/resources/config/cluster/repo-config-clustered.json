@@ -1,0 +1,36 @@
+{
+    "name" : "Clustered Repository",
+    "node-types" : ["cnd/cars.cnd", "cnd/aircraft.cnd"],
+    "workspaces" : {
+        "predefined" : ["otherWorkspace"],
+        "default" : "default",
+        "allowCreation" : true,
+        "initialContent" : {
+            "default" : "carsInitialContent.xml"
+        }
+    },
+    "monitoring" : {
+        "enabled" : false
+    },
+    "storage": {
+        "persistence": {
+            "type": "db",
+            "connectionUrl": "jdbc:h2:file:./target/clustered/db;AUTO_SERVER=TRUE"
+        },
+        "binaryStorage": {
+            "type": "file",
+            "directory": "target/clustered/binaries",
+            "minimumBinarySizeInBytes": 4096
+        }
+    },
+    "clustering" : {
+        "clusterName" : "Test cluster",
+        "configuration" : "config/cluster/jgroups-test-config.xml"
+    },
+    "security" : {
+        "anonymous" : {
+            "roles" : ["readonly","readwrite","admin"],
+            "useOnFailedLogin" : false
+        }
+    }
+}

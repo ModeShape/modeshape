@@ -27,9 +27,5 @@
             "repositoryId" : "A1",
             "projections" : [ "default:/cmis => /" ]
         }
-    },
-    "storage" : {
-        "cacheName" : "persistentRepository",
-        "cacheConfiguration" : "config/infinispan-federation-persistent.xml"
     }
 }

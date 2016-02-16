@@ -45,8 +45,6 @@ public abstract class MultiUseAbstractTest extends AbstractJcrRepositoryTest {
 
     private static final String REPO_NAME = "testRepo";
 
-    private static Environment environment;
-    private static RepositoryConfiguration config;
     protected static JcrRepository repository;
     protected static JcrSession session;
 
@@ -55,12 +53,11 @@ public abstract class MultiUseAbstractTest extends AbstractJcrRepositoryTest {
     }
 
     protected static void startRepository( RepositoryConfiguration configuration ) throws Exception {
-        environment = new TestingEnvironment();
-        if (configuration != null) {
-            config = new RepositoryConfiguration(configuration.getDocument(), configuration.getName(), environment);
-        } else {
-            config = new RepositoryConfiguration(REPO_NAME, environment);
-        }
+        TestingEnvironment environment = new TestingEnvironment();
+        RepositoryConfiguration config = configuration != null ?
+                                         new RepositoryConfiguration(configuration.getDocument(), configuration.getName(),
+                                                                     environment) :
+                                         new RepositoryConfiguration(REPO_NAME, environment);
         repository = new JcrRepository(config);
         repository.start();
         session = repository.login();
@@ -71,8 +68,6 @@ public abstract class MultiUseAbstractTest extends AbstractJcrRepositoryTest {
             TestingUtil.killRepositories(repository);
         } finally {
             repository = null;
-            config = null;
-            environment.shutdown();
         }
     }
 

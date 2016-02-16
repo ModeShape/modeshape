@@ -20,7 +20,6 @@
     <resources>
         <resource-root path="modeshape-jcr-${project.version}.jar"/>
         <resource-root path="modeshape-jbossas-subsystem-${project.version}.jar"/>
-        <resource-root path="modeshape-schematic-${project.version}.jar"/>
         <resource-root path="mapdb-${version.org.mapdb}.jar"/>
         <resource-root path="concurrentlinkedhashmap-lru-${version.com.googlecode.concurrentlinkedhashmap}.jar"/>
         <resource-root path="res"/>
@@ -31,13 +30,8 @@
         <!--The sequencers aren't listed here because they are loaded from the ModuleLoader API -->
         <module name="org.modeshape.jcr.api" export="true"/>
         <module name="org.modeshape.common" export="true"/>
-
-        <!-- ModeShape JCR dependencies (must export Infinispan so that our stored classes can be loaded )-->
-        <module name="org.infinispan" export="true" services="export" slot="${infinispan.module.slot}"/>
-
-        <!-- Include the JDBC & LevelDB modules-->
-        <module name="org.infinispan.persistence.jdbc" services="export" export="true" slot="${infinispan.module.slot}"/>
-        <module name="org.infinispan.persistence.leveldb" services="export" export="true" slot="${infinispan.module.slot}"/>
+        <module name="org.modeshape.schematic" export="true"/>
+        <module name="org.modeshape.persistence.relational" export="true" services="export"/>
 
         <module name="org.jgroups" slot="${jgroups.module.slot}"/>
 

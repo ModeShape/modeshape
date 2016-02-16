@@ -24,29 +24,31 @@ import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 import javax.jcr.Session;
-import org.infinispan.schematic.document.Changes;
-import org.infinispan.schematic.document.Document;
-import org.infinispan.schematic.document.EditableDocument;
-import org.infinispan.schematic.document.Editor;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.modeshape.common.FixFor;
 import org.modeshape.jcr.ClientLoad.Client;
 import org.modeshape.jcr.ClientLoad.ClientResultProcessor;
 import org.modeshape.jcr.ModeShapeEngine.State;
 import org.modeshape.jcr.RepositoryConfiguration.Default;
 import org.modeshape.jcr.RepositoryConfiguration.FieldName;
+import org.modeshape.schematic.document.Changes;
+import org.modeshape.schematic.document.Document;
+import org.modeshape.schematic.document.EditableDocument;
+import org.modeshape.schematic.document.Editor;
 
 public class ModeShapeEngineTest {
 
     private RepositoryConfiguration config;
     private ModeShapeEngine engine;
+    private Environment environment;
 
     @Before
     public void beforeEach() throws Exception {
-        config = RepositoryConfiguration.read("{ \"name\":\"my-repo\" }");
+        environment = new TestingEnvironment();
+        config = RepositoryConfiguration.read("{ \"name\":\"my-repo\" }").with(environment);
         engine = new ModeShapeEngine();
+
     }
 
     @After
@@ -310,7 +312,7 @@ public class ModeShapeEngineTest {
     public void shouldAllowUpdatingSequencerInformationWhenRunning() throws Exception {
         URL configUrl = getClass().getClassLoader().getResource("config/repo-config.json");
         engine.start();
-        config = RepositoryConfiguration.read(configUrl);
+        config = RepositoryConfiguration.read(configUrl).with(environment);
         JcrRepository repository = engine.deploy(config);
 
         // Obtain an editor ...
@@ -341,20 +343,5 @@ public class ModeShapeEngineTest {
         assertThat(exprs2.size(), is(2));
         assertThat((String)exprs2.get(0), is("//*.ddl"));
         assertThat((String)exprs2.get(1), is("//*.xml"));
-    }
-
-    @FixFor( "MODE-1769" )
-    @Test
-    public void shouldAllowUsingAsyncCacheStore() throws Exception {
-        URL configUrl = getClass().getClassLoader().getResource("config/repo-config-persistent-async-cache.json");
-        engine.start();
-        config = RepositoryConfiguration.read(configUrl);
-        JcrRepository repository = engine.deploy(config);
-        Session session = null;
-        try {
-            session = repository.login();
-        } finally {
-            if (session != null) session.logout();
-        }
     }
 }

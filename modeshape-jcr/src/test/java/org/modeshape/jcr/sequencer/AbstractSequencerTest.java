@@ -41,11 +41,11 @@ import javax.jcr.observation.EventListener;
 import javax.jcr.observation.EventListenerIterator;
 import javax.jcr.observation.ObservationManager;
 import org.junit.Assert;
-import org.modeshape.jcr.Environment;
 import org.modeshape.jcr.JcrLexicon;
 import org.modeshape.jcr.JcrSession;
 import org.modeshape.jcr.RepositoryConfiguration;
 import org.modeshape.jcr.SingleUseAbstractTest;
+import org.modeshape.jcr.TestingEnvironment;
 import org.modeshape.jcr.api.JcrConstants;
 import org.modeshape.jcr.api.observation.Event;
 import org.slf4j.Logger;
@@ -127,14 +127,14 @@ public abstract class AbstractSequencerTest extends SingleUseAbstractTest {
     }
 
     @Override
-    protected RepositoryConfiguration createRepositoryConfiguration( String repositoryName,
-                                                                     Environment environment ) throws Exception {
-        return RepositoryConfiguration.read(getRepositoryConfigStream(), repositoryName).with(environment);
+    protected RepositoryConfiguration createRepositoryConfiguration(String repositoryName) throws Exception {
+        RepositoryConfiguration config = RepositoryConfiguration.read(getRepositoryConfigStream(), repositoryName);
+        return config.with(new TestingEnvironment());
     }
 
     /**
      * Returns an input stream to a JSON file which will be used to configure the repository. By default, this is
-     * config/repot-config.json
+     * config/repo-config.json
      * 
      * @return a {@code InputStream} instance
      */

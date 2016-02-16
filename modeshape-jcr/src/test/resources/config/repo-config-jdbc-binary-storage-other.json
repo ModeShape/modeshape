@@ -5,7 +5,6 @@
         "allowCreation" : true
     },
     "storage" : {
-        "cacheName" : "persistentRepository",
         "binaryStorage" : {
             "type"  : "database",
             "driverClass" : "org.h2.Driver",

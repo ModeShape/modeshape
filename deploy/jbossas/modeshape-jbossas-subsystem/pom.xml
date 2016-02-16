@@ -21,6 +21,10 @@
         <dependency>
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-schematic</artifactId>
+        </dependency> 
+        <dependency>
+            <groupId>org.modeshape</groupId>
+            <artifactId>modeshape-persistence-relational</artifactId>
         </dependency>
         <dependency>
             <groupId>org.modeshape</groupId>
@@ -32,13 +36,14 @@
         </dependency>
 
         <dependency>
-            <groupId>org.infinispan</groupId>
-            <artifactId>infinispan-core</artifactId>
-        </dependency>
-
-        <dependency>
             <groupId>org.jboss.logging</groupId>
             <artifactId>jboss-logging</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        
+        <dependency>
+            <groupId>org.jgroups</groupId>
+            <artifactId>jgroups</artifactId>
             <scope>provided</scope>
         </dependency>
 

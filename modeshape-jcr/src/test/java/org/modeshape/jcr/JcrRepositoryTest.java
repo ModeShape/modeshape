@@ -86,19 +86,13 @@ import org.modeshape.jcr.security.SimplePrincipal;
 
 public class JcrRepositoryTest {
 
-    private Environment environment;
-    private RepositoryConfiguration config;
     private JcrRepository repository;
     private JcrSession session;
     protected boolean print = false;
 
     @Before
     public void beforeEach() throws Exception {
-        FileUtil.delete("target/persistent_repository");
-
-        environment = new TestingEnvironment();
-        config = new RepositoryConfiguration("repoName", environment);
-        repository = new JcrRepository(config);
+        repository = new JcrRepository(new RepositoryConfiguration("repoName", new TestingEnvironment()));
         repository.start();
         print = false;
     }
@@ -113,7 +107,6 @@ public class JcrRepositoryTest {
             }
         }
         shutdownDefaultRepository();
-        environment.shutdown();
     }
 
     private void shutdownDefaultRepository() {
@@ -122,28 +115,12 @@ public class JcrRepositoryTest {
                 TestingUtil.killRepositories(repository);
             } finally {
                 repository = null;
-                config = null;
             }
         }
     }
 
     protected TransactionManager getTransactionManager() {
         return repository.transactionManager();
-    }
-
-    @Test
-    public void shouldCreateRepositoryInstanceWithoutPassingInCacheManager() throws Exception {
-        shutdownDefaultRepository();
-        RepositoryConfiguration config = new RepositoryConfiguration("repoName");
-        repository = new JcrRepository(config);
-        repository.start();
-        try {
-            Session session = repository.login();
-            assertThat(session, is(notNullValue()));
-        } finally {
-            repository.shutdown().get(3L, TimeUnit.SECONDS);
-            JTATestUtil.clearJBossJTADefaultStoreLocation();
-        }
     }
 
     @Test
@@ -194,74 +171,6 @@ public class JcrRepositoryTest {
         // Now create a session to that workspace ...
         JcrSession session2 = repository.login("new-workspace");
         assertThat(session2.getRootNode(), is(notNullValue()));
-    }
-
-    @FixFor( {"MODE-1834", "MODE-2004"} )
-    @Test
-    public void shouldAllowCreatingNewWorkspacesByDefaultWhenUsingTransactionManagerWithOptimisticLocking() throws Exception {
-        shutdownDefaultRepository();
-
-        RepositoryConfiguration config = RepositoryConfiguration.read("config/repo-config-filesystem-jbosstxn-optimistic.json");
-        repository = new JcrRepository(config);
-        repository.start();
-
-        // Verify the workspace does not exist yet ...
-        try {
-            repository.login("new-workspace");
-        } catch (NoSuchWorkspaceException e) {
-            // expected
-        }
-        JcrSession session1 = repository.login();
-        assertThat(session1.getRootNode(), is(notNullValue()));
-        session1.getWorkspace().createWorkspace("new-workspace");
-
-        // Now create a session to that workspace ...
-        JcrSession session2 = repository.login("new-workspace");
-        assertThat(session2.getRootNode(), is(notNullValue()));
-
-        // Shut down the repository ...
-        assertThat(repository.shutdown().get(), is(true));
-
-        // Start up the repository again, this time by reading the persisted data ...
-        repository = new JcrRepository(config);
-        repository.start();
-
-        // And verify that the workspace existance was persisted properly ...
-        repository.login("new-workspace");
-    }
-
-    @FixFor( {"MODE-1834", "MODE-2004"} )
-    @Test
-    public void shouldAllowCreatingNewWorkspacesByDefaultWhenUsingTransactionManagerWithPessimisticLocking() throws Exception {
-        shutdownDefaultRepository();
-
-        RepositoryConfiguration config = RepositoryConfiguration.read("config/repo-config-filesystem-jbosstxn-pessimistic.json");
-        repository = new JcrRepository(config);
-        repository.start();
-
-        // Verify the workspace does not exist yet ...
-        try {
-            repository.login("new-workspace");
-        } catch (NoSuchWorkspaceException e) {
-            // expected
-        }
-        JcrSession session1 = repository.login();
-        assertThat(session1.getRootNode(), is(notNullValue()));
-        session1.getWorkspace().createWorkspace("new-workspace");
-
-        // Now create a session to that workspace ...
-        JcrSession session2 = repository.login("new-workspace");
-        assertThat(session2.getRootNode(), is(notNullValue()));
-
-        // Shut down the repository ...
-        assertThat(repository.shutdown().get(), is(true));
-
-        // Start up the repository again, this time by reading the persisted data ...
-        repository = new JcrRepository(config);
-        repository.start();
-
-        // And verify that the workspace existance was persisted properly ...
-        repository.login("new-workspace");
     }
 
     @Test
@@ -338,31 +247,28 @@ public class JcrRepositoryTest {
     public void shouldProvideStatisticsForAVeryLongTime() throws Exception {
         final AtomicBoolean stop = new AtomicBoolean(false);
         final JcrRepository repository = this.repository;
-        Thread worker = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                JcrSession[] openSessions = new JcrSession[100 * 6];
-                int index = 0;
-                while (!stop.get()) {
-                    try {
-                        for (int i = 0; i != 6; ++i) {
-                            JcrSession session1 = repository.login();
-                            assertThat(session1.getRootNode(), is(notNullValue()));
-                            openSessions[index++] = session1;
-                        }
-                        if (index >= openSessions.length) {
-                            for (int i = 0; i != openSessions.length; ++i) {
-                                openSessions[i].logout();
-                                openSessions[i] = null;
-                            }
-                            index = 0;
-                        }
-                        Thread.sleep(MILLISECONDS.convert(3, SECONDS));
-                    } catch (Throwable t) {
-                        t.printStackTrace();
-                        stop.set(true);
-                        break;
+        Thread worker = new Thread(() -> {
+            JcrSession[] openSessions = new JcrSession[100 * 6];
+            int index = 0;
+            while (!stop.get()) {
+                try {
+                    for (int i = 0; i != 6; ++i) {
+                        JcrSession session1 = repository.login();
+                        assertThat(session1.getRootNode(), is(notNullValue()));
+                        openSessions[index++] = session1;
                     }
+                    if (index >= openSessions.length) {
+                        for (int i = 0; i != openSessions.length; ++i) {
+                            openSessions[i].logout();
+                            openSessions[i] = null;
+                        }
+                        index = 0;
+                    }
+                    Thread.sleep(MILLISECONDS.convert(3, SECONDS));
+                } catch (Throwable t) {
+                    t.printStackTrace();
+                    stop.set(true);
+                    break;
                 }
             }
         });
@@ -744,7 +650,7 @@ public class JcrRepositoryTest {
         assertLocking(locker2, "/sessionLockedNode1", true);
         assertLocking(locker2, "/sessionLockedNode2", true);
         
-        // run threads which concurrently terminate the sessions and cleaup the locks
+        // run threads which concurrently terminate the sessions and cleanup the locks
         int nThreads = 2;
         ExecutorService executors = Executors.newFixedThreadPool(nThreads);
         List<Future<Void>> results = new ArrayList<>(nThreads);        
@@ -804,7 +710,7 @@ public class JcrRepositoryTest {
 
         RepositoryConfiguration config = null;
         config = RepositoryConfiguration.read("{ \"name\" : \"repoName\", \"workspaces\" : { \"allowCreation\" : true } }");
-        config = new RepositoryConfiguration(config.getDocument(), "repoName", environment);
+        config = new RepositoryConfiguration(config.getDocument(), "repoName", new TestingEnvironment());
         repository = new JcrRepository(config);
         repository.start();
 
@@ -1346,8 +1252,7 @@ public class JcrRepositoryTest {
     @FixFor( "MODE-2056" )
     public void shouldReturnActiveSessions() throws Exception {
         shutdownDefaultRepository();
-
-        config = new RepositoryConfiguration("repoName", environment);
+        RepositoryConfiguration config = new RepositoryConfiguration("repoName", new TestingEnvironment());
         repository = new JcrRepository(config);
         assertEquals(0, repository.getActiveSessionsCount());
 
@@ -1369,54 +1274,20 @@ public class JcrRepositoryTest {
     @Test
     public void shouldStartAndReturnStartupProblems() throws Exception {
         shutdownDefaultRepository();
-        RepositoryConfiguration config = RepositoryConfiguration.read(getClass().getClassLoader()
-                                                                                .getResourceAsStream("config/repo-config-with-startup-problems.json"),
-                                                                      "Deprecated config");
-        repository = new JcrRepository(config);
+        repository = TestingUtil.startRepositoryWithConfig("config/repo-config-with-startup-problems.json");
         Problems problems = repository.getStartupProblems();
         assertEquals("Expected 2 startup errors: " + problems.toString(), 2, problems.errorCount());
-    }
-
-    @FixFor( "MODE-2033" )
-    @Test
-    public void shouldClearStartupProblemsOnRestart() throws Exception {
-        shutdownDefaultRepository();
-        RepositoryConfiguration config = RepositoryConfiguration.read(getClass().getClassLoader()
-                                                                                .getResourceAsStream("config/repo-config-with-startup-problems.json"),
-                                                                      "Deprecated config");
-        repository = new JcrRepository(config);
-        Problems problems = repository.getStartupProblems();
-        assertEquals("Invalid startup problems:" + problems.toString(), 2, problems.size());
         repository.shutdown().get();
         problems = repository.getStartupProblems();
         assertEquals("Invalid startup problems:" + problems.toString(), 2, problems.size());
     }
 
-    @FixFor( "MODE-2033" )
-    @Test
-    public void shouldReturnStartupProblemsAfterStarting() throws Exception {
-        shutdownDefaultRepository();
-        RepositoryConfiguration config = RepositoryConfiguration.read(getClass().getClassLoader()
-                                                                                .getResourceAsStream(
-                                                                                        "config/repo-config-with-startup-problems.json"),
-                                                                      "Deprecated config");
-        repository = new JcrRepository(config);
-        repository.start();
-        Problems problems = repository.getStartupProblems();
-        assertEquals("Expected 2 startup errors: " + problems.toString(), 2, problems.errorCount());
-    }
-
     @FixFor( "MODE-1863" )
     @Test
     public void shouldStartupWithJournalingEnabled() throws Exception {
-        FileUtil.delete("target/journal");
+        TestingUtil.waitUntilFolderCleanedUp("target/persistent_repository");
         shutdownDefaultRepository();
-        RepositoryConfiguration config = RepositoryConfiguration.read(getClass().getClassLoader()
-                                                                                .getResourceAsStream(
-                                                                                        "config/repo-config-journaling.json"),
-                                                                      "Deprecated config");
-        repository = new JcrRepository(config);
-        repository.start();
+        repository = TestingUtil.startRepositoryWithConfig("config/repo-config-journaling.json");
 
         // add some nodes
         JcrSession session1 = repository.login();
@@ -1466,11 +1337,7 @@ public class JcrRepositoryTest {
     @FixFor( "MODE-2140" )
     public void shouldNotAllowNodeTypeRemovalWithQueryPlaceholderConfiguration() throws Exception {
         shutdownDefaultRepository();
-        FileUtil.delete("target/indexes");
-        RepositoryConfiguration config = RepositoryConfiguration.read(getClass().getClassLoader()
-                                                                                .getResource(
-                                                                                        "config/repo-config-query-placeholder.json"));
-        repository = new JcrRepository(config);
+        repository = TestingUtil.startRepositoryWithConfig("config/repo-config-query-placeholder.json");
         String namespaceName = "admb";
         String namespaceUri = "http://www.admb.be/modeshape/admb/1.0";
         String nodeTypeName = "test";
@@ -1612,12 +1479,8 @@ public class JcrRepositoryTest {
     public void shouldStartRepositoryWithCustomSettingsForLocalIndexProvider() throws Exception {
         shutdownDefaultRepository();
         FileUtil.delete("target/local_index_custom_settings_test_repository");
-        RepositoryConfiguration config = RepositoryConfiguration.read(getClass().getClassLoader()
-                                                                                .getResource(
-                                                                                        "config/local-index-provider-with-custom-settings.json"));
-        repository = new JcrRepository(config);
+        repository = TestingUtil.startRepositoryWithConfig("config/local-index-provider-with-custom-settings.json");
         repository.start();
-        repository.shutdown();
     }
 
     @Test(expected = RepositoryException.class)
@@ -1625,6 +1488,15 @@ public class JcrRepositoryTest {
     public void shouldNotAllowIncrementalIndexingIfJournalIsNotEnabled() throws Exception {
         session = createSession();
         session.getWorkspace().reindexSince(System.currentTimeMillis());
+    }
+    
+    
+    @Test(expected = RuntimeException.class)
+    @FixFor( "MODE-2528" )
+    public void shouldNotStartRepositoryWithInvalidPersistence() throws Exception {
+        shutdownDefaultRepository();
+        repository = TestingUtil.startRepositoryWithConfig("config/repo-config-invalid-persistence.json");
+        repository.start();
     }
 
     protected void nodeExists( Session session,
@@ -1706,5 +1578,4 @@ public class JcrRepositoryTest {
         }
         return (AccessControlList)acm.getPolicies(absPath)[0];
     }
-
 }

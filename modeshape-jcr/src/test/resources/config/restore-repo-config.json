@@ -1,8 +1,10 @@
 {
     "name" : "Restore Repository",
     "storage" : {
-        "cacheName" : "restoreRepository",
-        "cacheConfiguration" : "config/restore-repo-config-infinispan.xml",
+        "persistence": {
+            "type": "db",
+            "connectionUrl" : "jdbc:h2:file:./target/backupArea/restoreRepo/restore_db"
+        },
         "binaryStorage" : {
             "type" : "file",
             "directory": "target/backupArea/restoreRepo/binaries",

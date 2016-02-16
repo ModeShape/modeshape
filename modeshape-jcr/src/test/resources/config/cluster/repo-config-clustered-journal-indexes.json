@@ -1,0 +1,42 @@
+{
+    "name" : "Clustered Repository with journaling and indexes",
+    "workspaces" : {
+        "predefined" : ["otherWorkspace"],
+        "default" : "default",
+        "allowCreation" : true
+    },
+    "monitoring" : {
+        "enabled" : false
+    },
+    "storage" : {
+        "persistence" : {
+            "type" : "db",
+            "connectionUrl": "jdbc:h2:file:./target/clustered/db;AUTO_SERVER=TRUE"
+        }
+    },
+    "clustering" : {
+        "clusterName" : "ModeShape-test-cluster",
+        "configuration" : "config/cluster/jgroups-test-config.xml"
+    },
+    "journaling" : {
+        "location" : "target/clustered/journal/${clusterNode}"
+    },
+    "reindexing" : {
+        "async" : false,
+        "mode" : "if_missing"
+    },
+    "indexProviders" : {
+        "local" : {
+            "classname" : "org.modeshape.jcr.index.local.LocalIndexProvider",
+            "directory" : "target/clustered/indexes/${clusterNode}"
+        }
+    },
+    "indexes" : {
+        "titleIndex" : {
+            "kind" : "value",
+            "provider" : "local",
+            "nodeType" : "mix:title",
+            "columns" : "jcr:title(STRING)"
+        }
+    }
+}

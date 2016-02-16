@@ -26,24 +26,17 @@ import java.io.OutputStream;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 import javax.jcr.RepositoryException;
 import javax.transaction.SystemException;
-import org.infinispan.Cache;
-import org.infinispan.schematic.Schematic;
-import org.infinispan.schematic.SchematicEntry;
-import org.infinispan.schematic.document.Document;
-import org.infinispan.schematic.document.EditableArray;
-import org.infinispan.schematic.document.EditableDocument;
-import org.infinispan.schematic.document.Json;
 import org.modeshape.common.annotation.NotThreadSafe;
 import org.modeshape.common.collection.Problems;
 import org.modeshape.common.collection.SimpleProblems;
@@ -53,7 +46,6 @@ import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.FileUtil;
 import org.modeshape.common.util.IoUtil;
 import org.modeshape.common.util.NamedThreadFactory;
-import org.modeshape.jcr.InfinispanUtil.Sequence;
 import org.modeshape.jcr.JcrRepository.RunningState;
 import org.modeshape.jcr.api.BackupOptions;
 import org.modeshape.jcr.api.RestoreOptions;
@@ -64,6 +56,12 @@ import org.modeshape.jcr.value.BinaryKey;
 import org.modeshape.jcr.value.BinaryValue;
 import org.modeshape.jcr.value.binary.BinaryStore;
 import org.modeshape.jcr.value.binary.BinaryStoreException;
+import org.modeshape.schematic.Schematic;
+import org.modeshape.schematic.SchematicEntry;
+import org.modeshape.schematic.document.Document;
+import org.modeshape.schematic.document.EditableArray;
+import org.modeshape.schematic.document.EditableDocument;
+import org.modeshape.schematic.document.Json;
 
 /**
  * A service used to generate backups from content and restore repository content from backups.
@@ -212,13 +210,13 @@ public class BackupService {
         protected final File backupDirectory;
         protected final File changeDirectory;
         protected final File binaryDirectory;
-        protected final org.modeshape.jcr.cache.document.LocalDocumentStore documentStore;
+        protected final LocalDocumentStore documentStore;
         protected final BinaryStore binaryStore;
         protected final SimpleProblems problems;
         private final String backupLocation;
 
         protected Activity( File backupDirectory,
-                            org.modeshape.jcr.cache.document.LocalDocumentStore documentStore,
+                            LocalDocumentStore documentStore,
                             BinaryStore binaryStore,
                             RepositoryCache repositoryCache ) {
             this.backupDirectory = backupDirectory;
@@ -259,7 +257,7 @@ public class BackupService {
         protected final BackupOptions options;
 
         protected BackupActivity( File backupDirectory,
-                                  org.modeshape.jcr.cache.document.LocalDocumentStore documentStore,
+                                  LocalDocumentStore documentStore,
                                   BinaryStore binaryStore,
                                   RepositoryCache repositoryCache,
                                   BackupOptions options) {
@@ -302,7 +300,7 @@ public class BackupService {
         }
 
         protected void writeToContentArea( SchematicEntry document, BackupDocumentWriter contentWriter ) {
-            contentWriter.write(document.asDocument());
+            contentWriter.write(document.source());
         }
 
         protected void writeToContentArea( BinaryKey key,
@@ -332,10 +330,10 @@ public class BackupService {
             }
         }
 
-        protected void writeToChangedArea( SchematicEntry document, BackupDocumentWriter changesWriter ) {
+        protected void writeToChangedArea( SchematicEntry entry, BackupDocumentWriter changesWriter ) {
             LOGGER.debug("Writing document to change area of backup for {0} repository at {1}", repositoryName(),
                          backupLocation());
-            changesWriter.write(document.asDocument());
+            changesWriter.write(entry.source());
         }
 
         protected void writeToChangedArea( Iterable<BinaryKey> unusedBinaries ) {
@@ -383,35 +381,32 @@ public class BackupService {
                 // Create the runnable that watches the changedDocumentQueue (which can be populated by multiple threads)
                 // and writes out the changed documents. Note that we only use a single thread to pull from the queue
                 final CountDownLatch changesLatch = new CountDownLatch(1);
-                this.changedDocumentWorker.submit(new Runnable() {
-                    @Override
-                    public void run() {
-                        try {
-                            while (continueWritingChangedDocuments.get()) {
-                                // Poll for a changed document, but wait at most 1 second ...
-                                NodeKey key = changedDocumentQueue.poll(1L, TimeUnit.SECONDS);
-                                if (key != null) {
-                                    // Write out the document to the changed area ...
-                                    SchematicEntry entry = documentStore.get(key.toString());
-                                    writeToChangedArea(entry, changesWriter);
-                                }
-                            }
-                        } catch (InterruptedException e) {
-                            Thread.interrupted();
-                        }
-
-                        // Continue to drain whatever is still in the queue, but never block ...
-                        while (!changedDocumentQueue.isEmpty()) {
-                            // Poll for a changed document, but at most only
-                            NodeKey key = changedDocumentQueue.poll();
+                this.changedDocumentWorker.submit(() -> {
+                    try {
+                        while (continueWritingChangedDocuments.get()) {
+                            // Poll for a changed document, but wait at most 1 second ...
+                            NodeKey key = changedDocumentQueue.poll(1L, TimeUnit.SECONDS);
                             if (key != null) {
                                 // Write out the document to the changed area ...
                                 SchematicEntry entry = documentStore.get(key.toString());
                                 writeToChangedArea(entry, changesWriter);
                             }
                         }
-                        changesLatch.countDown();
+                    } catch (InterruptedException e) {
+                        Thread.interrupted();
                     }
+
+                    // Continue to drain whatever is still in the queue, but never block ...
+                    while (!changedDocumentQueue.isEmpty()) {
+                        // Poll for a changed document, but at most only
+                        NodeKey key = changedDocumentQueue.poll();
+                        if (key != null) {
+                            // Write out the document to the changed area ...
+                            SchematicEntry entry = documentStore.get(key.toString());
+                            writeToChangedArea(entry, changesWriter);
+                        }
+                    }
+                    changesLatch.countDown();
                 });
                 // PHASE 0:
                 // Register a listener with the repository to start start recording the documents as they exist when the
@@ -423,17 +418,14 @@ public class BackupService {
                 try {
                     // PHASE 1:
                     // Perform the backup of the repository cache content ...
-                    int counter = 0;
-                    Sequence<String> sequence = InfinispanUtil.getAllKeys(documentStore.localCache());
-                    while (true) {
-                        String key = sequence.next();
-                        if (key == null) break;
+                    AtomicInteger counter = new AtomicInteger();
+                    documentStore.keys().forEach(key -> {
                         SchematicEntry entry = documentStore.get(key);
                         if (entry != null) {
                             writeToContentArea(entry, contentWriter);
-                            ++counter;
-                        }
-                    }
+                            counter.incrementAndGet();
+                        }                        
+                    });
                     LOGGER.debug("Wrote {0} documents to {1}", counter, backupDirectory.getAbsolutePath());
 
                     // PHASE 2:
@@ -541,7 +533,7 @@ public class BackupService {
         @Override
         public Problems execute() {
             // run the restore as a transactional unit so that if anything fails the entire changes are rolled back...            
-            repositoryCache.runInTransaction(this::restore, 0);
+            documentStore.runInTransaction(this::restore, 0, RepositoryCache.REPOSITORY_INFO_KEY);
             return problems;
         }
 
@@ -571,31 +563,7 @@ public class BackupService {
         }
 
         public void removeExistingDocuments() {
-            Cache<String, SchematicEntry> cache = documentStore.localCache();
-            try {
-                // Try a simple clear ...
-                cache.clear();
-            } catch (UnsupportedOperationException e) {
-                // Otherwise, we have to do it by key ...
-                try {
-                    Sequence<String> keySequence = InfinispanUtil.getAllKeys(cache);
-                    while (true) {
-                        String key = keySequence.next();
-                        if (key == null) break;
-                        cache.remove(key);
-                    }
-                } catch (InterruptedException e2) {
-                    Thread.interrupted();
-                    I18n msg = JcrI18n.interruptedWhilePerformingBackup;
-                    this.problems.addError(msg, repositoryName(), backupLocation(), e2.getMessage());
-                } catch (CancellationException e2) {
-                    this.problems.addError(JcrI18n.backupOperationWasCancelled, repositoryName(), backupLocation(),
-                                           e2.getMessage());
-                } catch (ExecutionException e2) {
-                    I18n msg = JcrI18n.problemObtainingDocumentsToBackup;
-                    this.problems.addError(msg, repositoryName(), backupLocation(), e2.getMessage());
-                }
-            }
+            documentStore.removeAll();
         }
 
         public void restoreBinaryFiles() {

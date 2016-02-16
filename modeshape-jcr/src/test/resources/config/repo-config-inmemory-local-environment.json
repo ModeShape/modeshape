@@ -1,7 +1,7 @@
 {
     "name" : "Repository",
     "storage" : {
-        "cacheName" : "inmemoryRepository",
+        "persistence" : "db"
     },
     "workspaces" : {
         "default" : "default",

@@ -16,7 +16,7 @@
 
 package org.modeshape.jcr.spi.federation;
 
-import org.infinispan.schematic.document.Document;
+import org.modeshape.schematic.document.Document;
 
 /**
  * Interface that should be implemented by {@link Connector}(s) that want to expose children of

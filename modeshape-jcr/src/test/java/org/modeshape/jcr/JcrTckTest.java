@@ -16,7 +16,6 @@
 
 package org.modeshape.jcr;
 
-import org.modeshape.common.util.FileUtil;
 import junit.framework.Test;
 import junit.framework.TestSuite;
 
@@ -32,7 +31,7 @@ public class JcrTckTest {
      * @return a new instance of {@link TestSuite} which contains the exact same tests as {@link org.apache.jackrabbit.test.JCRTestSuite}.
      */
     public static Test suite() {
-        FileUtil.delete("target/tck_journal");
+        TestingUtil.waitUntilFolderCleanedUp("target/tck_journal");
         return JcrTckSuites.defaultSuiteInline();
     }
 }

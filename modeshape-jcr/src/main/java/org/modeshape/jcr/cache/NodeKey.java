@@ -18,7 +18,7 @@ package org.modeshape.jcr.cache;
 import java.io.Serializable;
 import java.util.Comparator;
 import java.util.UUID;
-import org.infinispan.schematic.SchematicDb;
+import org.modeshape.schematic.SchematicDb;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.util.ObjectUtil;
 import org.modeshape.common.util.SecureHash;

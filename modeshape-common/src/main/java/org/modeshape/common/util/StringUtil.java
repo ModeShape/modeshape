@@ -577,6 +577,16 @@ public class StringUtil {
      */
     public static boolean isBlank( String str ) {
         return str == null || str.trim().isEmpty();
+    } 
+    
+    /**
+     * Returns true if the given string is not null and does not represents the empty string
+     * 
+     * @param str the string; may be null or empty
+     * @return true if the string is not null and not empty, false otherwise
+     */
+    public static boolean notBlank( String str ) {
+        return !isBlank(str);
     }
 
     /**

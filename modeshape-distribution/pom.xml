@@ -29,6 +29,11 @@
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-schematic</artifactId>
         </dependency>
+        
+        <dependency>
+            <groupId>org.modeshape</groupId>
+            <artifactId>modeshape-persistence-relational</artifactId>
+        </dependency>
 
         <!-- 
         Both 'modeshape-jcr' and 'modeshape-extractor-tika' depend on Tika, but have different transitive dependencies
@@ -74,7 +79,7 @@
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-sequencer-msoffice</artifactId>
         </dependency>
-
+        
         <dependency>
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-sequencer-text</artifactId>
@@ -134,13 +139,6 @@
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-jbossas-subsystem</artifactId>
         </dependency>
-
-        <dependency>
-            <groupId>org.infinispan</groupId>
-            <artifactId>infinispan-as-embedded-modules</artifactId>
-            <type>zip</type>
-        </dependency>
-
     </dependencies>
 
     <profiles>
@@ -250,7 +248,6 @@
                               <link>http://www.slf4j.org/apidocs/</link>
                               <link>http://www.day.com/maven/javax.jcr/javadocs/jcr-2.0/</link>
                               <link>http://api.mongodb.org/java/${version.org.mongodb.mongo-java-driver}/</link>
-                              <link>https://docs.jboss.org/infinispan/7.0/apidocs/</link>
                             </links>
                             <groups>
                               <group>

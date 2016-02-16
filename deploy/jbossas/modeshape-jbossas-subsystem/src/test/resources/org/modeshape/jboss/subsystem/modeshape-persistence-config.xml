@@ -1,0 +1,7 @@
+<subsystem xmlns="urn:jboss:domain:modeshape:3.0">
+    <repository name="sample">
+       <db-persistence url="jdbc:h2:mem:modeshape;DB_CLOSE_DELAY=0;" compress="false" create-on-start="false" datasource-jndi="name"
+                       driver="org.h2.Driver" drop-on-exit="false" fetch-size="1000" password="s" pool-size="11" table-name="MODESHAPE_REPOSITORY"
+                       username="sa"/>
+    </repository>
+</subsystem>

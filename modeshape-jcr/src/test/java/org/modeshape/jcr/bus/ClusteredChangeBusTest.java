@@ -57,13 +57,16 @@ public class ClusteredChangeBusTest extends AbstractChangeBusTest {
 
     @Override
     public void afterEach() {
-        for (ChangeBus bus : buses) {
-            bus.shutdown();
+        try {
+            for (ChangeBus bus : buses) {
+                bus.shutdown();
+            }
+            for (ClusteringService clusteringService : clusteringServices) {
+                clusteringService.shutdown();
+            }
+        } finally {
+            executorService.shutdownNow();
         }
-        for (ClusteringService clusteringService : clusteringServices) {
-            clusteringService.shutdown();
-        }
-        executorService.shutdownNow();
     }
 
     @Test

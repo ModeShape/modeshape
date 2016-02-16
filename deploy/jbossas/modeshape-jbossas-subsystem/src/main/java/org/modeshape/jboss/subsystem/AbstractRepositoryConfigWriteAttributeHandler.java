@@ -15,10 +15,6 @@
  */
 package org.modeshape.jboss.subsystem;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
 import javax.jcr.RepositoryException;
 import org.jboss.as.controller.AbstractWriteAttributeHandler;
 import org.jboss.as.controller.AttributeDefinition;
@@ -119,43 +115,5 @@ public abstract class AbstractRepositoryConfigWriteAttributeHandler extends Abst
                                    ModelNode newValue ) throws RepositoryException, OperationFailedException {
         repositoryService.changeField(defn, newValue);
         return true;
-    }
-
-    /**
-     * Take the supplied arrays of AttributeDefinition arrays and merge them into a single array of uniquely-named
-     * AttributeDefinition instances.
-     * 
-     * @param modelAttributeArrays the arrays of definition arrays
-     * @return the uniquely-named definitions
-     */
-    protected static AttributeDefinition[] unique( AttributeDefinition[]... modelAttributeArrays ) {
-        Set<String> names = new HashSet<String>();
-        List<AttributeDefinition> defns = new ArrayList<AttributeDefinition>();
-        for (AttributeDefinition[] array : modelAttributeArrays) {
-            for (AttributeDefinition defn : array) {
-                if (names.add(defn.getName())) {
-                    defns.add(defn);
-                }
-            }
-        }
-        return defns.toArray(new AttributeDefinition[defns.size()]);
-    }
-
-    protected static AttributeDefinition[] allBut( AttributeDefinition[] definitions,
-                                                   String... excluded ) {
-        Set<String> excludedNames = new HashSet<String>();
-        for (String excludedName : excluded) {
-            excludedNames.add(excludedName);
-        }
-        boolean foundExcluded = false;
-        List<AttributeDefinition> defns = new ArrayList<AttributeDefinition>();
-        for (AttributeDefinition defn : definitions) {
-            if (excludedNames.contains(defn.getName())) {
-                foundExcluded = true;
-                continue;
-            }
-            defns.add(defn);
-        }
-        return foundExcluded ? defns.toArray(new AttributeDefinition[defns.size()]) : definitions;
     }
 }

@@ -5,6 +5,12 @@
         "default" : "default",
         "allowCreation" : true
     },
+    "storage" : {
+        "persistence" : {
+            "type" : "db",
+            "dropOnExit" : true
+        }
+    },
     "journaling": {
         "location": "target/tck_journal",
         "asyncWritesEnabled": false

@@ -26,6 +26,7 @@
         <module>modeshape-jcr-api</module>
         <module>modeshape-common</module>
         <module>modeshape-schematic</module>
+        <module>persistence</module>
         <module>modeshape-jcr</module>
         <module>modeshape-unit-test</module>
         <module>sequencers</module>
@@ -61,17 +62,6 @@
 	</properties>
 
 	<profiles>
-		<!-- 
-		  This profile is used to run the build plus the JCR TCK tests
-			and must be activated manually, as in "mvn ... -Pjcr-tck ..."
-		-->
-		<profile>
-			<id>jcr-tck</id>
-			<modules>
-				<module>modeshape-jcr-tck</module>
-			</modules>
-		</profile>
-		
 		<!-- 
 		  This profile is used to run the build plus the integration tests
 			and must be activated manually, as in "mvn ... -Pintegration ..."

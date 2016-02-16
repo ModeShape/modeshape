@@ -15,8 +15,8 @@
  */
 package org.modeshape.jboss.service;
 
-import org.infinispan.schematic.Schematic;
-import org.infinispan.schematic.document.EditableDocument;
+import org.modeshape.schematic.Schematic;
+import org.modeshape.schematic.document.EditableDocument;
 import org.modeshape.jcr.RepositoryConfiguration;
 
 /**

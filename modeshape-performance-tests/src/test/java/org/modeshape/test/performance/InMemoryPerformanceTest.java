@@ -29,8 +29,8 @@ import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.Workspace;
-import org.infinispan.schematic.document.Document;
-import org.infinispan.schematic.document.Json;
+import org.modeshape.schematic.document.Document;
+import org.modeshape.schematic.document.Json;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -47,7 +47,6 @@ public class InMemoryPerformanceTest {
     private static final String SMALL_STRING_VALUE = "The quick brown fox jumped over the moon. What? ";
 
     private static final Stopwatch STARTUP = new Stopwatch();
-    private static final Stopwatch INFINISPAN_STARTUP = new Stopwatch();
     private static final Stopwatch MODESHAPE_STARTUP = new Stopwatch();
 
     private static final int MANY_NODES_COUNT = 10000;
@@ -70,9 +69,7 @@ public class InMemoryPerformanceTest {
         Document configDoc = Json.read(configStream);
 
         STARTUP.start();
-        INFINISPAN_STARTUP.start();
         config = new RepositoryConfiguration(configDoc, configFileName);
-        INFINISPAN_STARTUP.stop();
 
         MODESHAPE_STARTUP.start();
         engine = new ModeShapeEngine();
@@ -99,7 +96,6 @@ public class InMemoryPerformanceTest {
 
     @AfterClass
     public static void afterAll() throws Exception {
-        System.out.println("Infinispan (CacheManager) startup time: " + INFINISPAN_STARTUP.getSimpleStatistics());
         System.out.println("ModeShape startup time:                 " + MODESHAPE_STARTUP.getSimpleStatistics());
         System.out.println("Total startup time:                     " + STARTUP.getSimpleStatistics());
     }
@@ -205,6 +201,42 @@ public class InMemoryPerformanceTest {
     @Test
     public void shouldAllowSmallSubgraph() throws Exception {
         repeatedlyCreateSubgraph(5, 2, 10, 7, false, true);
+    }
+
+    @Performance
+    @Test
+    public void shouldAllowCreatingMillionNodeSubgraphUsingMultipleSaves() throws Exception {
+        repeatedlyCreateSubgraph(1, 2, 100, 0, false, true);
+    }
+
+    @Performance
+    @Test
+    public void shouldAllowCreatingManyManyUnstructuredNodesWithNoSameNameSiblings() throws Exception {
+        System.out.print("Iterating ");
+        // Each iteration adds another node under the root and creates the many nodes under that node ...
+        Node node = session.getRootNode().addNode("testNode");
+        session.save();
+
+        Stopwatch sw = new Stopwatch();
+        Stopwatch total = new Stopwatch();
+        try {
+            total.start();
+            for (int i = 0; i != 50; ++i) {
+                System.out.print(".");
+                int count = 100;
+                sw.start();
+                for (int j = 0; j != count; ++j) {
+                    node.addNode("childNode" + j);
+                }
+                session.save();
+                sw.stop();
+            }
+            total.stop();
+        } finally {
+            System.out.println();
+            System.out.println(total.getDetailedStatistics());
+            System.out.println(sw.getDetailedStatistics());
+        }
     }
 
     protected void repeatedlyCreateSubgraph( int samples,

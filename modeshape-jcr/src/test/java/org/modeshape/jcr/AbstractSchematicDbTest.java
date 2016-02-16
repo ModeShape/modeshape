@@ -17,6 +17,7 @@ package org.modeshape.jcr;
 
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 import java.io.File;
@@ -24,23 +25,22 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
+import java.util.concurrent.Callable;
+import javax.transaction.SystemException;
 import javax.transaction.TransactionManager;
-import org.infinispan.configuration.cache.ConfigurationBuilder;
-import org.infinispan.configuration.global.GlobalConfigurationBuilder;
-import org.infinispan.manager.DefaultCacheManager;
-import org.infinispan.manager.EmbeddedCacheManager;
-import org.infinispan.schematic.Schematic;
-import org.infinispan.schematic.SchematicDb;
-import org.infinispan.schematic.TestUtil;
-import org.infinispan.schematic.document.Document;
-import org.infinispan.schematic.document.Json;
-import org.infinispan.transaction.LockingMode;
-import org.infinispan.transaction.lookup.DummyTransactionManagerLookup;
 import org.junit.After;
 import org.junit.Before;
 import org.modeshape.common.logging.Logger;
+import org.modeshape.jcr.api.txn.TransactionManagerLookup;
 import org.modeshape.jcr.cache.document.TestRepositoryEnvironment;
+import org.modeshape.jcr.txn.DefaultTransactionManagerLookup;
 import org.modeshape.jcr.txn.Transactions;
+import org.modeshape.persistence.relational.RelationalDbConfig;
+import org.modeshape.schematic.Schematic;
+import org.modeshape.schematic.SchematicDb;
+import org.modeshape.schematic.document.Document;
+import org.modeshape.schematic.document.Json;
+import org.modeshape.schematic.internal.document.BasicDocument;
 
 /**
  * An abstract base class for unit tests that require an testable SchematicDb instance.
@@ -50,42 +50,36 @@ public abstract class AbstractSchematicDbTest {
     protected SchematicDb schematicDb;
     protected RepositoryEnvironment repoEnv;
 
-    private EmbeddedCacheManager cm;
     private Logger logger;
 
     @Before
     public void beforeEach() {
         logger = Logger.getLogger(getClass());
-        GlobalConfigurationBuilder globalConfigurationBuilder = new GlobalConfigurationBuilder();
-        globalConfigurationBuilder.globalJmxStatistics().disable().allowDuplicateDomains(true);
-        ConfigurationBuilder configurationBuilder = new ConfigurationBuilder();
-        configurationBuilder.invocationBatching().enable().transaction()
-                            .transactionManagerLookup(new DummyTransactionManagerLookup()).lockingMode(LockingMode.PESSIMISTIC);
-
-        cm = new DefaultCacheManager(globalConfigurationBuilder.build(), configurationBuilder.build(), true);
-        // Now create the SchematicDb ...
-        schematicDb = Schematic.get(cm, "documents");
-        TransactionManager tm = schematicDb.getCache().getAdvancedCache().getTransactionManager();
-        repoEnv = new TestRepositoryEnvironment(tm);
+        // default to an in-memory h2
+        schematicDb = Schematic.getDb(testConfiguration());
+        schematicDb.start();
+        TransactionManagerLookup txManagerLookup = new DefaultTransactionManagerLookup();
+        TransactionManager txManager = txManagerLookup.getTransactionManager();
+        assertNotNull("Was not able to locate a transaction manager in the test classpath", txManager);
+        repoEnv = new TestRepositoryEnvironment(txManager, schematicDb);
     }
 
     @After
     public void afterEach() {
         try {
-            TestUtil.killCacheContainers(cm);
+            schematicDb.stop();
         } finally {
             schematicDb = null;
             repoEnv = null;
         }
     }
+    
+    protected Document testConfiguration() {
+        return new BasicDocument(Schematic.TYPE_FIELD, "db", RelationalDbConfig.DROP_ON_EXIT, true);     
+    }
 
     protected Transactions transactions() {
         return repoEnv.getTransactions();
-    }
-    
-    
-    protected EmbeddedCacheManager cacheManager() {
-        return cm;
     }
 
     protected Logger logger() {
@@ -99,13 +93,13 @@ public abstract class AbstractSchematicDbTest {
      * @param stream the stream containing the JSON data Document
      */
     protected void loadJsonDocuments( InputStream stream ) {
-        try {
+        runInTransaction(() -> {
             Document document = Json.read(stream);
             List<?> data = document.getArray("data");
             if (data != null) {
                 for (Object value : data) {
                     if (value instanceof Document) {
-                        Document dataDoc = (Document)value;
+                        Document dataDoc = (Document) value;
                         // Get the key ...
                         Document content = dataDoc.getDocument("content");
                         Document metadata = dataDoc.getDocument("metadata");
@@ -114,9 +108,8 @@ public abstract class AbstractSchematicDbTest {
                     }
                 }
             }
-        } catch (IOException e) {
-            throw new AssertionError(e);
-        }
+            return null;
+        });
     }
 
     protected InputStream resource( String resourcePath ) {
@@ -139,5 +132,25 @@ public abstract class AbstractSchematicDbTest {
         }
         assertThat(stream, is(notNullValue()));
         return stream;
+    }
+    
+    protected <V> V runInTransaction(Callable<V> operation) {
+        Transactions transactions = transactions();
+        try {
+            try {
+                transactions.begin();
+                V result = operation.call();
+                transactions.commit();
+                return result;
+            } catch (RuntimeException re) {
+                transactions.rollback();
+                throw re;
+            } catch (Throwable t) {
+                transactions.rollback();
+                throw new RuntimeException(t);
+            }
+        } catch (SystemException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

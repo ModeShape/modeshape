@@ -17,15 +17,16 @@
 package org.modeshape.jcr.cache.document;
 
 import java.util.Collection;
-import org.infinispan.schematic.SchematicEntry;
-import org.infinispan.schematic.document.Document;
-import org.infinispan.schematic.document.EditableDocument;
 import org.modeshape.jcr.cache.DocumentStoreException;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.binary.ExternalBinaryValue;
+import org.modeshape.schematic.SchematicEntry;
+import org.modeshape.schematic.annotation.RequiresTransaction;
+import org.modeshape.schematic.document.Document;
+import org.modeshape.schematic.document.EditableDocument;
 
 /**
- * A store which persists/retrieves documents.
+ * A store which persists/retrieves documents in a JCR context.
  *
  * @author Horia Chiorean (hchiorea@redhat.com)
  */
@@ -37,6 +38,8 @@ public interface DocumentStore {
      * @param key the key or identifier for the document
      * @return the entry, or null if there was no document with the supplied key
      * @throws DocumentStoreException if there is a problem retrieving the document
+     * 
+     * @see org.modeshape.schematic.SchematicDb#get(String) 
      */
     public SchematicEntry get( String key );
 
@@ -47,9 +50,11 @@ public interface DocumentStore {
      * @param document the document that is to be stored
      * @return the existing entry for the supplied key, or null if there was no entry and the put was successful
      * @throws DocumentStoreException if there is a problem storing the document
+     * 
+     * @see org.modeshape.schematic.SchematicDb#putIfAbsent(String, Document) 
      */
-    public SchematicEntry storeDocument( String key,
-                                         Document document );
+    @RequiresTransaction
+    public SchematicEntry storeIfAbsent(String key, Document document);
 
     /**
      * Updates the content of the document at the given key with the given document.
@@ -59,9 +64,8 @@ public interface DocumentStore {
      * @param sessionNode the {@link SessionNode} instance which contains the changes that caused the update
      * @throws DocumentStoreException if there is a problem updating the document
      */
-    public void updateDocument( String key,
-                                Document document,
-                                SessionNode sessionNode );
+    @RequiresTransaction
+    public void updateDocument( String key, Document document, SessionNode sessionNode );
 
     /**
      * Generates a new key which will be assigned to a new child document when it is being added to its parent.
@@ -90,6 +94,7 @@ public interface DocumentStore {
      * @return true if the documents were locked, or false if not all of the documents could be locked
      * @throws IllegalStateException if no active transaction can be detected when the locking is attempted
 |    */
+    @RequiresTransaction
     public boolean lockDocuments( Collection<String> keys );   
     
     /**
@@ -104,6 +109,7 @@ public interface DocumentStore {
      * @return true if the documents were locked, or false if not all of the documents could be locked
      * @throws IllegalStateException if no active transaction can be detected when the locking is attempted
     */
+    @RequiresTransaction
     public boolean lockDocuments( String... keys );
 
     /**
@@ -116,9 +122,12 @@ public interface DocumentStore {
      *
      * @param key the key or identifier for the document
      * @param createIfMissing true if a new entry should be created and added to the database if an existing entry does not exist
-     * @return true if a document was removed, or false if there was no document with that key
-     * @throws DocumentStoreException if there is a problem removing the document
+     * @return a {@link EditableDocument} instance if either a document exists at the given key or a new one was created and added
+     * successfully. If a document does not already exist and cannot be created, then this will return {@code null} 
+     * 
+     * @see org.modeshape.schematic.SchematicDb#editContent(String, boolean) 
      */
+    @RequiresTransaction
     public EditableDocument edit( String key, boolean createIfMissing );
 
     /**
@@ -133,7 +142,10 @@ public interface DocumentStore {
      * @param key the key or identifier for the document
      * @return true if a document was removed, or false if there was no document with that key
      * @throws DocumentStoreException if there is a problem removing the document
+     * 
+     * @see org.modeshape.schematic.SchematicDb#remove(String) 
      */
+    @RequiresTransaction
     public boolean remove( String key );
 
     /**
@@ -141,6 +153,8 @@ public interface DocumentStore {
      *
      * @param key the key or identifier for the document
      * @return true if the database contains an entry with this key, or false otherwise
+     * 
+     * @see org.modeshape.schematic.SchematicDb#containsKey(String) 
      */
     public boolean containsKey( String key );
 
@@ -159,7 +173,7 @@ public interface DocumentStore {
     public String getLocalSourceKey();
 
     /**
-     * Returns a local store instance which will use the local Infinispan cache to store/retrieve information.
+     * Returns a local store instance which is used to persist internal repository information.
      *
      * @return a non-null {@link LocalDocumentStore} instance.
      */
@@ -179,7 +193,6 @@ public interface DocumentStore {
                                             String sourceName,
                                             String externalPath,
                                             String alias );
-
     /**
      * Returns a document representing a block of children, that has the given key.
      *

@@ -21,8 +21,8 @@ import org.modeshape.jcr.NodeTypes;
 import org.modeshape.jcr.RepositoryEnvironment;
 import org.modeshape.jcr.locking.LockingService;
 import org.modeshape.jcr.locking.StandaloneLockingService;
-import org.modeshape.jcr.txn.NoClientTransactions;
 import org.modeshape.jcr.txn.Transactions;
+import org.modeshape.schematic.SchematicDb;
 
 /**
  * {@link org.modeshape.jcr.RepositoryEnvironment} implementation used by tests.
@@ -34,9 +34,9 @@ public class TestRepositoryEnvironment implements RepositoryEnvironment {
     private final Transactions transactions;
     private final LockingService lockingService;
     
-    public TestRepositoryEnvironment(TransactionManager txMgr) {
+    public TestRepositoryEnvironment(TransactionManager txMgr, SchematicDb db) {
         CheckArg.isNotNull(txMgr, "txMgr");
-        this.transactions = new NoClientTransactions(txMgr);
+        this.transactions = new Transactions(txMgr, db);
         this.lockingService = new StandaloneLockingService();
     }
     

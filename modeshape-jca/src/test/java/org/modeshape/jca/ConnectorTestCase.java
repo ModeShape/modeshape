@@ -64,6 +64,7 @@ public class ConnectorTestCase {
         // Set embedded to null
         embedded = null;
     }
+    
     @Test
     public void testGetConnection() throws Throwable {
         Context context = null;

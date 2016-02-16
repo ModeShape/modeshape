@@ -35,8 +35,10 @@ public class MappedAttributeDefinitionBuilder extends AbstractAttributeDefinitio
     private List<String> configPath;
 
     protected MappedAttributeDefinitionBuilder( String attributeName,
-                                                ModelType type ) {
+                                                ModelType type,
+                                                String...pathToField) {
         super(attributeName, type);
+        configPath = Collections.unmodifiableList(Arrays.asList(pathToField));
     }
 
     @Override
@@ -69,11 +71,6 @@ public class MappedAttributeDefinitionBuilder extends AbstractAttributeDefinitio
         return super.setFlags(flags);
     }
     
-    protected MappedAttributeDefinitionBuilder setFieldPathInRepositoryConfiguration( String... pathToField ) {
-        configPath = Collections.unmodifiableList(Arrays.asList(pathToField));
-        return this;
-    }
-
     @Override
     public MappedAttributeDefinitionBuilder setAccessConstraints( AccessConstraintDefinition... constraints ) {
         return super.setAccessConstraints(constraints);
@@ -85,12 +82,7 @@ public class MappedAttributeDefinitionBuilder extends AbstractAttributeDefinitio
     }
 
     @Override
-    public SimpleAttributeDefinition build() {
-        if (configPath != null) {
-            return new MappedSimpleAttributeDefinition(this, configPath);    
-        } else {
-            // use the ctr which takes a builder to try and minimize the impact of ctr signature changes between versions
-            return new SimpleAttributeDefinition(this) {};
-        }
+    public MappedSimpleAttributeDefinition build() {
+        return new MappedSimpleAttributeDefinition(this, configPath);
     }
 }

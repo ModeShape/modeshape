@@ -17,11 +17,11 @@ package org.modeshape.jcr.index.elasticsearch.client;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import org.infinispan.schematic.DocumentFactory;
-import org.infinispan.schematic.document.Document;
-import org.infinispan.schematic.document.EditableDocument;
-import org.infinispan.schematic.document.Json;
-import org.infinispan.schematic.internal.document.BasicArray;
+import org.modeshape.schematic.DocumentFactory;
+import org.modeshape.schematic.document.Document;
+import org.modeshape.schematic.document.EditableDocument;
+import org.modeshape.schematic.document.Json;
+import org.modeshape.schematic.internal.document.BasicArray;
 
 /**
  * Json document used for exchange data with Elasticsearch engine.

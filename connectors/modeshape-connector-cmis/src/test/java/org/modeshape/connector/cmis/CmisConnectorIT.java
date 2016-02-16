@@ -15,9 +15,9 @@
  */
 package org.modeshape.connector.cmis;
 
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -41,7 +41,6 @@ import org.apache.log4j.Logger;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.modeshape.common.util.FileUtil;
 import org.modeshape.jcr.MultiUseAbstractTest;
 import org.modeshape.jcr.RepositoryConfiguration;
 import org.modeshape.jcr.api.Workspace;
@@ -63,7 +62,6 @@ public class CmisConnectorIT extends MultiUseAbstractTest {
 
     @BeforeClass
     public static void beforeAll() throws Exception {
-        FileUtil.delete("target/federation_persistent_repository");
         RepositoryConfiguration config = RepositoryConfiguration.read("config/repository-1.json");
         startRepository(config);
 

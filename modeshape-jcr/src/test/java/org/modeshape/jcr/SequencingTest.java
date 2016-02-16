@@ -24,15 +24,15 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 import java.io.InputStream;
 import javax.jcr.Node;
-import org.infinispan.schematic.Schematic;
-import org.infinispan.schematic.document.Document;
-import org.infinispan.schematic.document.EditableDocument;
-import org.infinispan.schematic.document.Json;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
 import org.modeshape.common.collection.Problems;
 import org.modeshape.jcr.RepositoryConfiguration.FieldName;
 import org.modeshape.jcr.sequencer.AbstractSequencerTest;
+import org.modeshape.schematic.Schematic;
+import org.modeshape.schematic.document.Document;
+import org.modeshape.schematic.document.EditableDocument;
+import org.modeshape.schematic.document.Json;
 
 /**
  * Tests of various sequencing configurations.
@@ -48,7 +48,7 @@ public class SequencingTest extends AbstractSequencerTest {
     @Override
     protected void startRepositoryWithConfiguration( Document doc ) throws Exception {
         stopRepository();
-        config = new RepositoryConfiguration(doc, REPO_NAME, environment);
+        RepositoryConfiguration config = new RepositoryConfiguration(doc, REPO_NAME).with(new TestingEnvironment());
         repository = new JcrRepository(config);
         repository.start();
         session = repository.login();
@@ -59,7 +59,7 @@ public class SequencingTest extends AbstractSequencerTest {
     @Override
     protected void startRepositoryWithConfiguration( InputStream configInputStream ) throws Exception {
         stopRepository();
-        config = RepositoryConfiguration.read(configInputStream, REPO_NAME).with(environment);
+        RepositoryConfiguration config = RepositoryConfiguration.read(configInputStream, REPO_NAME).with(new TestingEnvironment());
         Problems problems = config.validate();
         if (problems.hasProblems()) {
             System.out.println(problems);
@@ -177,8 +177,7 @@ public class SequencingTest extends AbstractSequencerTest {
 
     @Test
     public void shouldSupportVariousPropertyTypes() throws Exception {
-        startRepositoryWithConfiguration(getClass().getClassLoader()
-                                                   .getResourceAsStream("config/repo-config-property-types.json"));
+        startRepositoryWithConfigurationFrom("config/repo-config-property-types.json");
         session.getRootNode().addNode("shouldTriggerSequencer");
         session.save();
         assertNotNull(getOutputNode("/shouldTriggerSequencer/" + TestSequencersHolder.DERIVED_NODE_NAME));

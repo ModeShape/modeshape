@@ -23,10 +23,8 @@ import java.io.File;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.modeshape.common.util.FileUtil;
 import org.modeshape.connector.filesystem.FileSystemConnector;
 import org.modeshape.jcr.Connectors.PathMappings;
 import org.modeshape.jcr.spi.federation.Connector;
@@ -46,24 +44,15 @@ public class ConnectorsTest extends SingleUseAbstractTest {
     @Before
     @Override
     public void beforeEach() throws Exception {
-        // We're using a Repository configuration that persists content, so clean it up ...
-        FileUtil.delete("target/federation_persistent_repository");
         // And make sure that the 'generated-surefire' directory exists (it often doesn't when running in Eclipse)
         // and create an empty 'tmp' directory underneath it ...
         new File("target/generated-surefire/tmp").mkdirs();
         // Now start the repository ...
-        startRepositoryWithConfiguration(resource("config/repo-config-filesystem-federation-with-persistence.json"));
+        startRepositoryWithConfigurationFrom("config/repo-config-filesystem-federation-with-persistence.json");
         printMessage("Started repository...");
         connectors = repository().runningState().connectors();
     }
-
-    @After
-    @Override
-    public void afterEach() throws Exception {
-        super.afterEach();
-        FileUtil.delete("target/federation_persistent_repository");
-    }
-
+    
     @Test
     public void shouldObtainPathMappingsForConnectorAndResolvePathsCorrectly() {
         Connector conn = connectors.getConnectorForSourceName("targetDirectory");

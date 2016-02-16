@@ -15,7 +15,6 @@
  */
 package org.modeshape.jcr;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.security.AccessControlContext;
@@ -24,16 +23,13 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.WeakHashMap;
-import java.util.concurrent.Callable;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -49,6 +45,7 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.regex.Matcher;
+import java.util.stream.Collectors;
 import javax.jcr.AccessDeniedException;
 import javax.jcr.Credentials;
 import javax.jcr.LoginException;
@@ -64,15 +61,6 @@ import javax.security.auth.login.LoginContext;
 import javax.transaction.SystemException;
 import javax.transaction.Transaction;
 import javax.transaction.TransactionManager;
-import org.infinispan.Cache;
-import org.infinispan.manager.CacheContainer;
-import org.infinispan.schematic.Schematic;
-import org.infinispan.schematic.SchematicDb;
-import org.infinispan.schematic.document.Array;
-import org.infinispan.schematic.document.Changes;
-import org.infinispan.schematic.document.Editor;
-import org.infinispan.schematic.document.Path;
-import org.infinispan.schematic.internal.document.Paths;
 import org.jgroups.Channel;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.collection.Problems;
@@ -128,12 +116,17 @@ import org.modeshape.jcr.security.AuthenticationProviders;
 import org.modeshape.jcr.security.EnvironmentAuthenticationProvider;
 import org.modeshape.jcr.security.JaasProvider;
 import org.modeshape.jcr.security.SecurityContext;
-import org.modeshape.jcr.txn.SynchronizedTransactions;
 import org.modeshape.jcr.txn.Transactions;
 import org.modeshape.jcr.value.NamespaceRegistry;
 import org.modeshape.jcr.value.ValueFactories;
 import org.modeshape.jcr.value.binary.BinaryStore;
 import org.modeshape.jmx.RepositoryStatisticsBean;
+import org.modeshape.schematic.SchematicDb;
+import org.modeshape.schematic.document.Array;
+import org.modeshape.schematic.document.Changes;
+import org.modeshape.schematic.document.Editor;
+import org.modeshape.schematic.document.Path;
+import org.modeshape.schematic.internal.document.Paths;
 
 /**
  *
@@ -285,8 +278,6 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
      *
      * @return a {@link Problems} instance which may contains errors and warnings raised by various components; may be empty if
      *         nothing unusual happened during start but never {@code null}
-     * @throws FileNotFoundException if the Infinispan configuration file is specified but could not be found
-     * @throws IOException if there is a problem with the specified Infinispan configuration file
      * @throws Exception if there is a problem with underlying resource setup
      */
     public Problems getStartupProblems() throws Exception {
@@ -300,8 +291,6 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
     /**
      * Start this repository instance.
      *
-     * @throws FileNotFoundException if the Infinispan configuration file is specified but could not be found
-     * @throws IOException if there is a problem with the specified Infinispan configuration file
      * @throws Exception if there is a problem with underlying resource setup
      */
     void start() throws Exception {
@@ -331,8 +320,6 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
      * {@link RepositoryConfiguration#validate(Changes)}.
      *
      * @param changes the changes for the configuration
-     * @throws FileNotFoundException if the Infinispan configuration file is changed but could not be found
-     * @throws IOException if there is a problem with the specified Infinispan configuration file
      * @throws Exception if there is a problem with underlying resources
      * @see ModeShapeEngine#update(String, Changes)
      */
@@ -708,7 +695,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         return workspaceName;
     }
 
-    protected static class ConfigurationChange implements org.infinispan.schematic.document.Editor.Observer {
+    protected static class ConfigurationChange implements Editor.Observer {
 
         private final Path SECURITY_PATH = Paths.path(FieldName.SECURITY);
         private final Path SEQUENCING_PATH = Paths.path(FieldName.SEQUENCING);
@@ -895,21 +882,12 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         descriptors.put(Repository.REPOSITORY_NAME, repositoryName());
     }
 
-    Collection<Cache<?, ?>> caches() {
-        RunningState running = runningState.get();
-        if (running == null) return Collections.emptyList();
-
-        List<Cache<?, ?>> caches = new ArrayList<Cache<?, ?>>();
-        LocalDocumentStore localDocumentStore = running.documentStore().localStore();
-        caches.add(localDocumentStore.localCache());
-        return caches;
-    }
-
     @Immutable
     protected class RunningState {
 
         private final RepositoryConfiguration config;
         private final DocumentStore documentStore;
+        private final SchematicDb schematicDb;
         private final AuthenticationProviders authenticators;
         private final Credentials anonymousCredentialsIfSuppliedCredentialsFail;
         private final String defaultWorkspaceName;
@@ -1011,6 +989,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                         warn(JcrI18n.storageRelatedConfigurationChangesWillTakeEffectAfterShutdown, getName());
                     }
                     // reuse the existing storage-related components ...
+                    this.schematicDb = other.schematicDb;
                     this.cache = other.cache;
                     this.context = other.context;
                     this.connectors = other.connectors;
@@ -1050,23 +1029,24 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                     this.journal = other.journal;
                     this.lockingService = other.lockingService;
                 } else {
-                    // find the Schematic database and Infinispan Cache ...
-                    CacheContainer container = config.getContentCacheContainer();
-                    String cacheName = config.getCacheName();
+                    // find the Schematic database
+                    this.schematicDb = environment().getDb(config.getPersistenceConfiguration());
+                    this.txMgrLookup = config.getTransactionManagerLookup();
+                    this.txnMgr = this.txMgrLookup.getTransactionManager();
+                    this.transactions = createTransactions(this.txnMgr, schematicDb);
+
                     List<Component> connectorComponents = config.getFederation().getConnectors(this.problems);
                     Map<String, List<RepositoryConfiguration.ProjectionConfiguration>> preconfiguredProjectionsByWorkspace = config.getFederation()
                                                                                                                                    .getProjectionsByWorkspace();
                     Set<String> extSources = config.getFederation().getExternalSources();
                     this.connectors = new Connectors(this, connectorComponents, extSources, preconfiguredProjectionsByWorkspace);                    
-                    logger.debug("Loading cache '{0}' from cache container {1}", cacheName, container);
-                    SchematicDb database = Schematic.get(container, cacheName);
-
+                   
                     RepositoryConfiguration.Clustering clustering = config.getClustering();
                     if (clustering.isEnabled()) {
                         final String clusterName = clustering.getClusterName();
                         Channel channel = environment().getChannel(clusterName);
                         if (channel != null) {
-                            this.clusteringService = ClusteringService.startStandalone(channel);
+                            this.clusteringService = ClusteringService.startStandalone(clusterName, channel);
                         } else {
                             this.clusteringService = ClusteringService.startStandalone(clusterName, clustering.getConfiguration());        
                         }
@@ -1075,11 +1055,11 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                     }
                     this.lockingService = this.clusteringService != null ? this.clusteringService : new StandaloneLockingService();
                     this.lockingService.setLockTimeout(config.getLockTimeoutMillis());
-                    this.txnMgr = database.transactionManager();
-                    this.txMgrLookup = config.getTransactionManagerLookup(); 
-                    this.transactions = createTransactions(cacheName, this.txnMgr, database);
-
+                  
                     suspendExistingUserTransaction();
+                    
+                    // Start the database
+                    this.schematicDb.start();
 
                     // Set up the binary store ...
                     BinaryStorage binaryStorageConfig = config.getBinaryStorage();
@@ -1123,7 +1103,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                     // Set up the document store and environment
                     final RepositoryEnvironment repositoryEnvironment = new JcrRepositoryEnvironment(transactions, lockingService,
                                                                                                      journalId());
-                    LocalDocumentStore localStore = new LocalDocumentStore(database, repositoryEnvironment);
+                    LocalDocumentStore localStore = new LocalDocumentStore(schematicDb, repositoryEnvironment);
                     this.documentStore = connectors.hasConnectors() ? new FederatedDocumentStore(connectors, localStore) : localStore;
 
                     // Set up the repository cache ...
@@ -1231,22 +1211,24 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 this.nodeTypesImporter = new NodeTypesImporter(config.getNodeTypes(), this);
 
             } catch (Throwable t) {
-                shutdown(true);
-                tempContext.terminateAllPools(0, TimeUnit.MILLISECONDS);
-                // resume any user transaction that may have been suspended earlier
-                resumeExistingUserTransaction();
+                try {
+                    shutdown(true);
+                    tempContext.terminateAllPools(0, TimeUnit.MILLISECONDS);
+                    // resume any user transaction that may have been suspended earlier
+                    resumeExistingUserTransaction();
+                } catch (Exception e) {
+                    logger.debug(e, "Additional exceptions while attempting to shutdown and rollback...");
+                }
                 throw (t instanceof Exception) ? (Exception)t : new RuntimeException(t);
             }
         }
         
-        protected Transactions createTransactions(String cacheName,
-                                                  TransactionManager txnMgr,
+        protected Transactions createTransactions(TransactionManager txnMgr,
                                                   SchematicDb db) {
             if (txnMgr == null) {
-                throw new ConfigurationException(JcrI18n.repositoryCannotBeStartedWithoutTransactionalSupport.text(getName(),
-                                                                                                                   cacheName));
+                throw new ConfigurationException(JcrI18n.repositoryCannotBeStartedWithoutTransactionalSupport.text(getName()));
             }
-            return new SynchronizedTransactions(txnMgr, db.getCache());
+            return new Transactions(txnMgr, db);
         }
 
         /**
@@ -1270,14 +1252,11 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
 
                 if (repositoryCache().isInitializingRepository()) {
                     // import initial content for each of the workspaces; this has to be done after the running state has started
-                    this.cache.runOneTimeSystemInitializationOperation(new Callable<Void>() {
-                        @Override
-                        public Void call() throws Exception {
-                            for (String workspaceName : repositoryCache().getWorkspaceNames()) {
-                                initialContentImporter().importInitialContent(workspaceName);
-                            }
-                            return null;
+                    this.cache.runOneTimeSystemInitializationOperation(() -> {
+                        for (String workspaceName : repositoryCache().getWorkspaceNames()) {
+                            initialContentImporter().importInitialContent(workspaceName);
                         }
+                        return null;
                     });
                 }
 
@@ -1305,8 +1284,12 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                     }
                 });
             } catch (Throwable t) {
-                doShutdown(true);
-                resumeExistingUserTransaction();
+                try {
+                    doShutdown(true);
+                    resumeExistingUserTransaction();
+                } catch (Exception e) {
+                    logger.debug(e, "Additional errors while attempting to shutdown and rollback...");
+                }
                 throw t instanceof Exception ? (Exception)t : new RuntimeException(t);
             }
         }
@@ -1552,7 +1535,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
             // Set up any custom AuthenticationProvider classes ...
             for (Component component : securityConfig.getCustomProviders(problems())) {
                 try {
-                    AuthenticationProvider provider = component.createInstance(getClass().getClassLoader());
+                    AuthenticationProvider provider = component.createInstance();
                     authenticators = authenticators.with(provider);
                     if (provider instanceof AnonymousProvider) {
                         Object value = component.getDocument().get(FieldName.USE_ANONYMOUS_ON_FAILED_LOGINS);
@@ -1646,6 +1629,10 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
             if (this.clusteringService != null) {
                 this.clusteringService.shutdown();
             }
+            
+            if (lockingService != clusteringService) {
+                lockingService.shutdown();
+            }
 
             // shutdown the event bus
             if (this.changeBus != null) {
@@ -1695,6 +1682,11 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
 
             // Shutdown the environment's resources.
             this.environment().shutdown();
+            
+            // shutdown the db...
+            if (this.schematicDb != null) {
+                this.schematicDb.stop();
+            }
         }
 
         protected void bindIntoJndi() {
@@ -1787,30 +1779,29 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 logger.debug("Starting lock cleanup in the '{0}' repository", repositoryName());
             }
 
-            Set<String> activeSessionIds = new HashSet<String>();
+            Set<String> activeSessionIds = new HashSet<>();
             try {
                 // Get the IDs for the active sessions ...
                 Lock lock = this.activeSessionLock.writeLock();
                 try {
                     lock.lock();
-                    Iterator<Map.Entry<JcrSession, Object>> iter = this.activeSessions.entrySet().iterator();
-                    while (iter.hasNext()) {
-                        JcrSession session = iter.next().getKey();
-                        if (session.isLive()) activeSessionIds.add(session.sessionId());
+                    activeSessionIds = this.activeSessions.keySet()
+                                                          .stream()
+                                                          .filter(JcrSession::isLive)
+                                                          .map(JcrSession::sessionId)
+                                                          .collect(Collectors.toSet());
+                    this.lockManager().cleanupLocks(activeSessionIds);
+                    if (logger.isDebugEnabled()) {
+                        logger.debug("Finishing lock cleanup in the '{0}' repository", repositoryName());
                     }
                 } finally {
                     lock.unlock();
                 }
-
-                this.lockManager().cleanupLocks(activeSessionIds);
-                if (logger.isDebugEnabled()) {
-                    logger.debug("Finishing lock cleanup in the '{0}' repository", repositoryName());
-                }
             } catch (TimeoutException te) {
-                // some locks could not be obtained in ISPN while trying to execute the job
+                // some locks could not be obtained trying to execute the job
                 // just log the exception since the transaction should've rolled back and we'll retry this job anyway later on
                 if (logger.isDebugEnabled()) {
-                    logger.debug(te, "A timeout occurred in ISPN while attempting to clean the JCR locks for the sessions: {0}",
+                    logger.debug(te, "A timeout occurred while attempting to clean the JCR locks for the sessions: {0}",
                                  activeSessionIds);
                 }
             } catch (Throwable e) {

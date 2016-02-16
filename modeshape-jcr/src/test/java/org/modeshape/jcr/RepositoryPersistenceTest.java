@@ -35,9 +35,9 @@ import javax.jcr.Session;
 import javax.jcr.nodetype.NodeType;
 import javax.jcr.query.Query;
 import javax.jcr.query.QueryResult;
+import org.junit.Before;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
-import org.modeshape.common.util.FileUtil;
 import org.modeshape.common.util.IoUtil;
 import org.modeshape.jcr.api.JcrTools;
 import org.modeshape.jcr.api.NamespaceRegistry;
@@ -47,22 +47,21 @@ import org.modeshape.jcr.api.NamespaceRegistry;
  */
 public class RepositoryPersistenceTest extends MultiPassAbstractTest {
 
+    @Before
+    public void before() {
+        TestingUtil.waitUntilFolderCleanedUp("target/persistent_repository");            
+    }
+    
     @Test
     public void shouldPersistBinariesAcrossRestart() throws Exception {
-        String repositoryConfigFile = "config/repo-config-persistent-cache.json";
-        File persistentFolder = new File("target/persistent_repository");
-        // remove all persisted content ...
-        FileUtil.delete(persistentFolder);
+        String repositoryConfigFile = "config/repo-config-binaries-fs.json";
         assertDataPersistenceAcrossRestarts(repositoryConfigFile);
     }
 
     @FixFor( "MODE-2212" )
     @Test
     public void shouldPersistGeneratedNamespacesAcrossRestart() throws Exception {
-        String repositoryConfigFile = "config/repo-config-persistent-cache.json";
-        File persistentFolder = new File("target/persistent_repository");
-        // remove all persisted content ...
-        FileUtil.delete(persistentFolder);
+        String repositoryConfigFile = "config/repo-config-binaries-fs.json";
 
         startRunStop(repository -> {
             Session session = repository.login();

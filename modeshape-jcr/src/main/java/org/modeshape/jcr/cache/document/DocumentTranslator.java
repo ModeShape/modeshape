@@ -30,15 +30,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
-import org.infinispan.schematic.DocumentFactory;
-import org.infinispan.schematic.Schematic;
-import org.infinispan.schematic.SchematicEntry;
-import org.infinispan.schematic.document.Binary;
-import org.infinispan.schematic.document.Document;
-import org.infinispan.schematic.document.Document.Field;
-import org.infinispan.schematic.document.EditableArray;
-import org.infinispan.schematic.document.EditableDocument;
-import org.infinispan.schematic.document.Null;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.text.NoOpEncoder;
 import org.modeshape.common.text.TextDecoder;
@@ -76,6 +67,15 @@ import org.modeshape.jcr.value.binary.BinaryStoreException;
 import org.modeshape.jcr.value.binary.EmptyBinaryValue;
 import org.modeshape.jcr.value.binary.ExternalBinaryValue;
 import org.modeshape.jcr.value.binary.InMemoryBinaryValue;
+import org.modeshape.schematic.DocumentFactory;
+import org.modeshape.schematic.Schematic;
+import org.modeshape.schematic.SchematicEntry;
+import org.modeshape.schematic.document.Binary;
+import org.modeshape.schematic.document.Document;
+import org.modeshape.schematic.document.Document.Field;
+import org.modeshape.schematic.document.EditableArray;
+import org.modeshape.schematic.document.EditableDocument;
+import org.modeshape.schematic.document.Null;
 
 /**
  * A utility class that encapsulates all the logic for reading from and writing to {@link Document} instances.
@@ -1526,7 +1526,7 @@ public class DocumentTranslator implements DocumentConstants {
         if (schematicEntry == null) {
             return null;
         }
-        return new BucketedChildReferences.Bucket(bucketId, schematicEntry.getContent(), this);
+        return new BucketedChildReferences.Bucket(bucketId, schematicEntry.content(), this);
     }
     
     protected void addChildrenToBuckets( EditableDocument parentDoc,

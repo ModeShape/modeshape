@@ -72,4 +72,12 @@ public interface LockingService {
      * @param lockTimeoutMillis a number of milliseconds; must be positive 
      */
     void setLockTimeout(long lockTimeoutMillis);
+
+    /**
+     * Shuts down this locking service.
+     * 
+     * @return {@code true} if the service was shutdown successfully or {@code false} if the service was already shutdown prior
+     * to this call.
+     */
+    boolean shutdown();
 }

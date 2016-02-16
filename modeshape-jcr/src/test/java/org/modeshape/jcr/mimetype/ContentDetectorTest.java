@@ -16,16 +16,16 @@
 
 package org.modeshape.jcr.mimetype;
 
-import static org.junit.Assert.assertEquals;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import java.io.IOException;
 import java.io.InputStream;
 import org.apache.tika.mime.MediaType;
 import org.junit.Test;
 import org.modeshape.jcr.InMemoryTestBinary;
-import org.modeshape.jcr.TestingEnvironment;
+import org.modeshape.jcr.LocalEnvironment;
 
 /**
  * Unit test for {@link ContentDetector}
@@ -34,7 +34,7 @@ import org.modeshape.jcr.TestingEnvironment;
  */
 public class ContentDetectorTest {
 
-    private static final MimeTypeDetector DETECTOR = new ContentDetector(new TestingEnvironment());
+    private static final MimeTypeDetector DETECTOR = new ContentDetector(new LocalEnvironment());
 
     private static final String TXT_FILE = "mimetype/modeshape.txt";
     private static final String PDF_FILE = "mimetype/modeshape_gs.pdf";

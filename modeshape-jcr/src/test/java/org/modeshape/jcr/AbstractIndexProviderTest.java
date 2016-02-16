@@ -54,7 +54,7 @@ public abstract class AbstractIndexProviderTest extends SingleUseAbstractTest {
     @Override
     public void beforeEach() throws Exception {
         // We're using a Repository configuration that persists content, so clean it up ...
-        FileUtil.delete(storageDir());
+        TestingUtil.waitUntilFolderCleanedUp(storageDir());
 
         // Now start the repository ...
         startRepositoryWithConfiguration(repositoryConfiguration());

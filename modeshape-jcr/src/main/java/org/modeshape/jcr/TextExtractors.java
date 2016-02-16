@@ -62,7 +62,7 @@ public final class TextExtractors {
              getConfiguredExtractors(repository, extracting));
     }
 
-    protected void shutdown() {
+    public void shutdown() {
         this.active = false;
         this.extractors.clear();
         this.extractingQueue.shutdown();
@@ -129,10 +129,10 @@ public final class TextExtractors {
     private static List<TextExtractor> getConfiguredExtractors( JcrRepository.RunningState repository,
                                                                 RepositoryConfiguration.TextExtraction extracting ) {
         List<Component> extractorComponents = extracting.getTextExtractors(repository.problems());
-        List<TextExtractor> extractors = new ArrayList<TextExtractor>(extractorComponents.size());
+        List<TextExtractor> extractors = new ArrayList<>(extractorComponents.size());
         for (Component component : extractorComponents) {
             try {
-                TextExtractor extractor = component.createInstance(TextExtractors.class.getClassLoader());
+                TextExtractor extractor = component.createInstance();
                 extractor.setLogger(ExtensionLogger.getLogger(extractor.getClass()));
                 extractors.add(extractor);
             } catch (Throwable t) {

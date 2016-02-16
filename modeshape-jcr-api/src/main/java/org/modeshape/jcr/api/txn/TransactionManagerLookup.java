@@ -43,7 +43,6 @@ public interface TransactionManagerLookup {
      * Searches for a transaction manager instance. 
      * 
      * @return a {@link TransactionManager} instance; never {@code null}
-     * @throws Exception if no transaction manager is available or any other unexpected error occurs
      */
-    TransactionManager getTransactionManager() throws Exception;
+    TransactionManager getTransactionManager();
 }

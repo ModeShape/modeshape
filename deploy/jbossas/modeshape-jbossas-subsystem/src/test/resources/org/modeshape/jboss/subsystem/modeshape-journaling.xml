@@ -1,21 +1,12 @@
 <subsystem xmlns="urn:jboss:domain:modeshape:3.0">
-  <repository name="sample"
-              cache-name="sample" 
-              cache-config="modeshape.xml"
-              jndi-name="jcr/local/sample">
+  <repository name="sample" jndi-name="jcr/local/sample">
     <journaling async-writes="true" journal-gc-initial-time="12:12" journal-gc-thread-pool="gc-pool" max-days-to-keep-records="1"
                 journal-path="target" journal-relative-to="."/>
   </repository>    
-  <repository name="sample2"
-              cache-name="sample2" 
-              cache-config="modeshape.xml"
-              jndi-name="jcr/local/sample2">
+  <repository name="sample2" jndi-name="jcr/local/sample2">
     <journaling journal-path="target" journal-relative-to="." enabled="false"/>
   </repository>
-  <repository name="sample3"
-              cache-name="sample3" 
-              cache-config="modeshape.xml"
-              jndi-name="jcr/local/sample3">
+  <repository name="sample3" jndi-name="jcr/local/sample3">
     <journaling journal-path="target" journal-relative-to="." enabled="true"/>
   </repository>
 </subsystem>

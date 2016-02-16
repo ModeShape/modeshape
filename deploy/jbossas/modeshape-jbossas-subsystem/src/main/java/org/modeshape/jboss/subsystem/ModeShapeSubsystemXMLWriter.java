@@ -76,9 +76,6 @@ public class ModeShapeSubsystemXMLWriter implements XMLStreamConstants, XMLEleme
 
         // Repository attributes ...
 
-        ModelAttributes.CACHE_NAME.marshallAsAttribute(repository, false, writer);
-        ModelAttributes.CACHE_CONFIG.marshallAsAttribute(repository, false, writer);
-        ModelAttributes.CONFIG_RELATIVE_TO.marshallAsAttribute(repository, false, writer);
         ModelAttributes.JNDI_NAME.marshallAsAttribute(repository, false, writer);
         ModelAttributes.ENABLE_MONITORING.marshallAsAttribute(repository, false, writer);
         ModelAttributes.SECURITY_DOMAIN.marshallAsAttribute(repository, false, writer);
@@ -101,6 +98,7 @@ public class ModeShapeSubsystemXMLWriter implements XMLStreamConstants, XMLEleme
         ModelAttributes.REPOSITORY_MODULE_DEPENDENCIES.marshallAsAttribute(repository, false, writer);
 
         // Nested elements ...
+        writePersistence(writer, repository);
         writeNodeTypes(writer, repository);
         writeWorkspaces(writer, repository);
         writeJournaling(writer, repository);
@@ -113,6 +111,27 @@ public class ModeShapeSubsystemXMLWriter implements XMLStreamConstants, XMLEleme
         writeExternalSources(writer, repository);
         writeTextExtraction(writer, repository);
         writer.writeEndElement();
+    }
+
+    private void writePersistence(XMLExtendedStreamWriter writer, ModelNode repository) throws XMLStreamException {
+
+        String dbPersistence = Attribute.DB_PERSISTENCE.getLocalName();
+        if (has(repository, dbPersistence)) {
+            startIfNeeded(writer, Element.DB_PERSISTENCE, false);
+            ModelNode persistence = repository.get(dbPersistence).get(dbPersistence);
+            ModelAttributes.TABLE_NAME.marshallAsAttribute(persistence, false, writer);
+            ModelAttributes.CREATE_ON_START.marshallAsAttribute(persistence, false, writer);
+            ModelAttributes.DROP_ON_EXIT.marshallAsAttribute(persistence, false, writer);
+            ModelAttributes.CONNECTION_URL.marshallAsAttribute(persistence, false, writer);
+            ModelAttributes.DRIVER.marshallAsAttribute(persistence, false, writer);
+            ModelAttributes.USERNAME.marshallAsAttribute(persistence, false, writer);
+            ModelAttributes.PASSWORD.marshallAsAttribute(persistence, false, writer);
+            ModelAttributes.COMPRESS.marshallAsAttribute(persistence, false, writer);
+            ModelAttributes.FETCH_SIZE.marshallAsAttribute(persistence, false, writer);
+            ModelAttributes.POOL_SIZE.marshallAsAttribute(persistence, false, writer);
+            ModelAttributes.PERSISTENCE_DS_JNDI_NAME.marshallAsAttribute(persistence, false, writer);
+            writer.writeEndElement();
+        }
     }
 
     private void writeNodeTypes( XMLExtendedStreamWriter writer,

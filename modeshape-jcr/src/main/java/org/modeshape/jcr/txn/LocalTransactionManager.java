@@ -25,7 +25,7 @@ import javax.transaction.Status;
 import javax.transaction.SystemException;
 import javax.transaction.Transaction;
 import javax.transaction.TransactionManager;
-import org.infinispan.schematic.document.ThreadSafe;
+import org.modeshape.schematic.annotation.ThreadSafe;
 import org.modeshape.common.annotation.Immutable;
 
 /**
