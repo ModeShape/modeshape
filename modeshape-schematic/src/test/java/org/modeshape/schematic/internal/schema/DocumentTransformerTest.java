@@ -18,6 +18,7 @@ package org.modeshape.schematic.internal.schema;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.IsSame.sameInstance;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import java.io.InputStream;
 import org.junit.Before;
@@ -65,7 +66,7 @@ public class DocumentTransformerTest {
 
     protected static InputStream resource( String resourcePath ) {
         InputStream result = SchemaValidationTest.class.getClassLoader().getResourceAsStream(resourcePath);
-        assert result != null : "Could not find resource \"" + resourcePath + "\"";
+        assertNotNull("Could not find resource \"" + resourcePath + "\"", result);
         return result;
     }
 

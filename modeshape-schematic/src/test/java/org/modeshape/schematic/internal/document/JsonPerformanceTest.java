@@ -15,6 +15,8 @@
  */
 package org.modeshape.schematic.internal.document;
 
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -80,16 +82,18 @@ public class JsonPerformanceTest {
     public void shouldReadSmallTestDocumentToAndFromBson() throws Exception {
         testReadingJsonThenWritingBsonThenReadingBson(getSmallTestData(), 200, false, true);
     }
-
+    
+    @Test
     public static String getLargeTestData() throws Exception {
         String result = read("sample-large-performance.json");
-        assert result.length() != 0;
+        assertTrue(result.length() != 0);
         return result;
     }
-
+    
+    @Test
     public static String getSmallTestData() throws Exception {
         String result = read("sample-small-performance.json");
-        assert result.length() != 0;
+        assertTrue(result.length() != 0);
         return result;
     }
 
@@ -166,7 +170,7 @@ public class JsonPerformanceTest {
                                     int numberOfRuns,
                                     final boolean getValue,
                                     final boolean introspectStringValues ) throws Exception {
-        assert testData != null;
+        assertNotNull(testData);
         final JsonReader reader = new JsonReader();
         final AtomicReference<Exception> error = new AtomicReference<Exception>();
         final String key = "key";
@@ -208,7 +212,7 @@ public class JsonPerformanceTest {
                                                                   int numberOfRuns,
                                                                   final boolean getValue,
                                                                   final boolean introspectStringValues ) throws Exception {
-        assert testData != null;
+        assertNotNull(testData);
         // Read the JSON into in-memory ...
         Document doc = new JsonReader().read(testData, introspectStringValues);
 

@@ -21,13 +21,13 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.zip.GZIPInputStream;
-import org.modeshape.schematic.document.Document;
-import org.modeshape.schematic.document.DocumentSequence;
-import org.modeshape.schematic.document.Json;
 import org.modeshape.common.annotation.NotThreadSafe;
 import org.modeshape.common.collection.Problems;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.StringUtil;
+import org.modeshape.schematic.document.Document;
+import org.modeshape.schematic.document.DocumentSequence;
+import org.modeshape.schematic.document.Json;
 
 /**
  * A utility that writes {@link Document} instances to one or more sequential files in a backup directory.
@@ -71,7 +71,7 @@ public final class BackupDocumentReader {
                         // No more files to read ...
                         return null;
                     }
-                    documents = Json.readMultiple(stream);
+                    documents = Json.readMultiple(stream, false);
                 }
                 try {
                     Document doc = documents.nextDocument();

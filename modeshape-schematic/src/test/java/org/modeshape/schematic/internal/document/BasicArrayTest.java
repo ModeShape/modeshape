@@ -15,6 +15,7 @@
  */
 package org.modeshape.schematic.internal.document;
 
+import static org.junit.Assert.assertEquals;
 import java.util.Iterator;
 import java.util.List;
 import org.junit.Before;
@@ -35,16 +36,16 @@ public class BasicArrayTest {
     @Test
     public void shouldReturnProperSubarray() {
         List<?> subArray = array.subList(3, 8);
-        assert (Integer)subArray.get(0) == 3;
-        assert (Integer)subArray.get(1) == 4;
-        assert (Integer)subArray.get(2) == 5;
-        assert (Integer)subArray.get(3) == 6;
-        assert (Integer)subArray.get(4) == 7;
+        assertEquals(3, ((Integer)subArray.get(0)).intValue());
+        assertEquals(4, ((Integer)subArray.get(1)).intValue());
+        assertEquals(5, ((Integer)subArray.get(2)).intValue());
+        assertEquals(6, ((Integer)subArray.get(3)).intValue());
+        assertEquals(7, ((Integer)subArray.get(4)).intValue());
 
         Iterator<?> iter = subArray.iterator();
         int value = 3;
         while (iter.hasNext()) {
-            assert (Integer)iter.next() == value++;
+            assertEquals(value++, ((Integer)iter.next()).intValue());
         }
     }
 
@@ -53,7 +54,7 @@ public class BasicArrayTest {
         BasicArray array2 = new BasicArray(array.size());
         array2.addAllValues(array);
         for (int i = 0; i != 10; ++i) {
-            assert (Integer)array2.get(i) == i;
+            assertEquals(i, ((Integer)array2.get(i)).intValue());
         }
     }
 
@@ -62,7 +63,7 @@ public class BasicArrayTest {
         BasicArray array2 = new BasicArray(5);
         array2.addAllValues(array.subList(3, 8));
         for (int i = 0; i != 5; ++i) {
-            assert (Integer)array2.get(i) == (i + 3);
+            assertEquals(i + 3, ((Integer)array2.get(i)).intValue());
         }
     }
 }

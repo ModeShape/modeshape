@@ -15,6 +15,8 @@
  */
 package org.modeshape.schematic.internal.document;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import java.io.StringReader;
 import java.util.Calendar;
 import java.util.Date;
@@ -58,73 +60,73 @@ public class JsonReaderParserTest {
     @Test
     public void shouldParseValueAsNullGivenNoContent() throws Exception {
         value = parser("").parseValue();
-        assert Null.matches(value);
+        assertTrue(Null.matches(value));
     }
 
     @Test
     public void shouldParseValueAsNullGivenNullLiteral() throws Exception {
         value = parser("null").parseValue();
-        assert Null.matches(value);
+        assertTrue(Null.matches(value));
     }
 
     @Test
     public void shouldParseValueAsNullGivenNullLiteralWithIncorrectCase() throws Exception {
         value = parser("nULl").parseValue();
-        assert Null.matches(value);
+        assertTrue(Null.matches(value));
     }
 
     @Test
     public void shouldParseValueGivenTrueBooleanLiteral() throws Exception {
         value = parser("true").parseValue();
-        assert Boolean.TRUE.equals(value);
+        assertTrue(Boolean.TRUE.equals(value));
     }
 
     @Test
     public void shouldParseValueGivenFalseBooleanLiteral() throws Exception {
         value = parser("false").parseValue();
-        assert Boolean.FALSE.equals(value);
+        assertTrue(Boolean.FALSE.equals(value));
     }
 
     @Test
     public void shouldParseValueGivenTrueBooleanLiteralWithIncorrectCase() throws Exception {
         value = parser("TrUe").parseValue();
-        assert Boolean.TRUE.equals(value);
+        assertTrue(Boolean.TRUE.equals(value));
     }
 
     @Test
     public void shouldParseValueGivenFalseBooleanLiteralWithIncorrectCase() throws Exception {
         value = parser("fAlSE").parseValue();
-        assert Boolean.FALSE.equals(value);
+        assertTrue(Boolean.FALSE.equals(value));
     }
 
     @Test
     public void shouldParseValueGivenIntegerValues() throws Exception {
-        assert new Integer(0).equals(parser("0").parseValue());
-        assert new Integer(-1).equals(parser("-1").parseValue());
-        assert new Integer(1).equals(parser("1").parseValue());
-        assert new Integer(123456).equals(parser("123456").parseValue());
-        assert new Integer(Integer.MAX_VALUE).equals(parser("" + Integer.MAX_VALUE).parseValue());
-        assert new Integer(Integer.MIN_VALUE).equals(parser("" + Integer.MIN_VALUE).parseValue());
+        assertEquals(0, parser("0").parseValue());
+        assertEquals(-1, parser("-1").parseValue());
+        assertEquals(1, parser("1").parseValue());
+        assertEquals(123456, parser("123456").parseValue());
+        assertEquals(Integer.MAX_VALUE, parser("" + Integer.MAX_VALUE).parseValue());
+        assertEquals(Integer.MIN_VALUE, parser("" + Integer.MIN_VALUE).parseValue());
     }
 
     @Test
     public void shouldParseValueGivenLongValues() throws Exception {
-        assert new Long(Integer.MAX_VALUE + 1L).equals(parser("" + (Integer.MAX_VALUE + 1L)).parseValue());
-        assert new Long(Integer.MIN_VALUE - 1L).equals(parser("" + (Integer.MIN_VALUE - 1L)).parseValue());
-        assert new Long(Long.MAX_VALUE).equals(parser("" + Long.MAX_VALUE).parseValue());
-        assert new Long(Long.MIN_VALUE).equals(parser("" + Long.MIN_VALUE).parseValue());
+        assertEquals(Integer.MAX_VALUE + 1L, parser("" + (Integer.MAX_VALUE + 1L)).parseValue());
+        assertEquals(Integer.MIN_VALUE - 1L, parser("" + (Integer.MIN_VALUE - 1L)).parseValue());
+        assertEquals(Long.MAX_VALUE, parser("" + Long.MAX_VALUE).parseValue());
+        assertEquals(Long.MIN_VALUE, parser("" + Long.MIN_VALUE).parseValue());
     }
 
     @Test
     public void shouldParseValueGivenDoubleValues() throws Exception {
-        assert new Double(0.1d).equals(parser("0.1").parseValue());
-        assert new Double(1.0d).equals(parser("1.0").parseValue());
-        assert new Double(-1.0d).equals(parser("-1.0").parseValue());
-        assert new Double(-1000.0d).equals(parser("-1.0e3").parseValue());
-        assert new Double((double)Float.MAX_VALUE + 1f).equals(parser("" + ((double)Float.MAX_VALUE + 1f)).parseValue());
-        assert new Double((double)Float.MIN_VALUE - 1f).equals(parser("" + ((double)Float.MIN_VALUE - 1f)).parseValue());
-        assert new Double(Double.MAX_VALUE).equals(parser("" + Double.MAX_VALUE).parseValue());
-        assert new Double(Double.MIN_VALUE).equals(parser("" + Double.MIN_VALUE).parseValue());
+        assertEquals(0.1d, parser("0.1").parseValue());
+        assertEquals(1.0d, parser("1.0").parseValue());
+        assertEquals(-1.0d, parser("-1.0").parseValue());
+        assertEquals(-1000.0d, parser("-1.0e3").parseValue());
+        assertEquals((double) Float.MAX_VALUE + 1f, parser("" + ((double) Float.MAX_VALUE + 1f)).parseValue());
+        assertEquals((double) Float.MIN_VALUE - 1f, parser("" + ((double) Float.MIN_VALUE - 1f)).parseValue());
+        assertEquals(Double.MAX_VALUE, parser("" + Double.MAX_VALUE).parseValue());
+        assertEquals(Double.MIN_VALUE, parser("" + Double.MIN_VALUE).parseValue());
     }
 
     @Test
@@ -175,14 +177,14 @@ public class JsonReaderParserTest {
     public void shouldParseDocumentWithUuid() throws Exception {
         UUID obj = UUID.randomUUID();
         value = parser(writer.write(obj)).parseValue();
-        assert obj.equals(value);
+        assertEquals(obj, value);
     }
 
     @Test
     public void shouldParseDocumentWithObjectId() throws Exception {
         ObjectId obj = new ObjectId(300, 200, 9, 15);
         value = parser(writer.write(obj)).parseValue();
-        assert obj.equals(value);
+        assertEquals(obj, value);
     }
 
     @Test
@@ -190,14 +192,14 @@ public class JsonReaderParserTest {
         Date obj = now();
         String dateDoc = writer.write(obj);
         value = parser(dateDoc).parseValue();
-        assert value instanceof Date;
+        assertTrue(value instanceof Date);
     }
 
     @Test
     public void shouldParseDocumentWithCode() throws Exception {
         Code obj = new Code("foo");
         value = parser(writer.write(obj)).parseValue();
-        assert obj.equals(value);
+        assertEquals(obj, value);
     }
 
     @Test
@@ -208,7 +210,7 @@ public class JsonReaderParserTest {
         // print = true;
         // print(str);
         value = parser(writer.write(obj)).parseValue();
-        assert obj.equals(value);
+        assertEquals(obj, value);
     }
 
     @Test
@@ -216,43 +218,42 @@ public class JsonReaderParserTest {
         byte[] bytes = new byte[] {0x13, 0x22, 0x53, 0x00};
         Binary obj = new Binary(Bson.BinaryType.MD5, bytes);
         value = parser(writer.write(obj)).parseValue();
-        assert obj.equals(value);
+        assertEquals(obj, value);
     }
 
     @Test
     public void shouldParseIsoFormat() throws Exception {
         value = Bson.getDateParsingFormatter().parse("2011-06-14T16:05:11GMT+00:00");
-        assert value instanceof Date;
         Date date = (Date)value;
-        assert date.after(date(2011, 06, 13));
-        assert date.before(date(2011, 06, 16));
+        assertTrue(date.after(date(2011, 06, 13)));
+        assertTrue(date.before(date(2011, 06, 16)));
     }
 
     @Test
     public void shouldParseMsDateFormat() throws Exception {
         value = JsonReader.DATE_VALUE_MATCHER.parseValue("\\/Date(2011-06-14T16:05:11GMT+00:00)\\/");
-        assert value instanceof Date;
+        assertTrue(value instanceof Date);
         Date date = (Date)value;
-        assert date.after(date(2011, 06, 13));
-        assert date.before(date(2011, 06, 16));
+        assertTrue(date.after(date(2011, 06, 13)));
+        assertTrue(date.before(date(2011, 06, 16)));
     }
 
     @Test
     public void shouldParseMsDateFormatWithSpaces() throws Exception {
         value = JsonReader.DATE_VALUE_MATCHER.parseValue("\\/Date( 2011-06-14T16:05:11GMT+00:00 )\\/");
-        assert value instanceof Date;
+        assertTrue(value instanceof Date);
         Date date = (Date)value;
-        assert date.after(date(2011, 06, 13));
-        assert date.before(date(2011, 06, 16));
+        assertTrue(date.after(date(2011, 06, 13)));
+        assertTrue(date.before(date(2011, 06, 16)));
     }
 
     @Test
     public void shouldParseEscapedDateFormat() throws Exception {
         value = JsonReader.DATE_VALUE_MATCHER.parseValue("/Date(2011-06-14T16:05:11GMT+00:00)/");
-        assert value instanceof Date;
+        assertTrue(value instanceof Date);
         Date date = (Date)value;
-        assert date.after(date(2011, 06, 13));
-        assert date.before(date(2011, 06, 16));
+        assertTrue(date.after(date(2011, 06, 13)));
+        assertTrue(date.before(date(2011, 06, 16)));
     }
 
     protected Date date( int year,
@@ -268,35 +269,45 @@ public class JsonReaderParserTest {
     @Test
     public void shouldParseEscapedDateFormatWithSpaces() throws Exception {
         value = JsonReader.DATE_VALUE_MATCHER.parseValue("/Date( 2011-06-14T16:05:11GMT+00:00 )/");
-        assert value instanceof Date;
+        assertTrue(value instanceof Date);
         Date date = (Date)value;
-        assert date.after(date(2011, 06, 13));
-        assert date.before(date(2011, 06, 16));
+        assertTrue(date.after(date(2011, 06, 13)));
+        assertTrue(date.before(date(2011, 06, 16)));
     }
 
     @Test
     public void shouldEvaluateIsoDateWithGmtTimeZone() throws Exception {
         value = JsonReader.DATE_VALUE_MATCHER.parseValue("2011-06-14T16:05:11GMT+00:00");
-        assert value instanceof Date;
+        assertTrue(value instanceof Date);
         Date date = (Date)value;
-        assert date.after(date(2011, 06, 13));
-        assert date.before(date(2011, 06, 16));
+        assertTrue(date.after(date(2011, 06, 13)));
+        assertTrue(date.before(date(2011, 06, 16)));
     }
 
     @Test
     public void shouldEvaluateIsoDateWithZuluTimeZone() throws Exception {
         value = JsonReader.DATE_VALUE_MATCHER.parseValue("2011-06-14T16:05:11Z");
-        assert value instanceof Date;
+        assertTrue(value instanceof Date);
         Date date = (Date)value;
-        assert date.after(date(2011, 06, 13));
-        assert date.before(date(2011, 06, 16));
+        assertTrue(date.after(date(2011, 06, 13)));
+        assertTrue(date.before(date(2011, 06, 16)));
     }
 
     @Test
     public void shouldParseIsoDateWithZuluTimeZone() throws Exception {
         Date date = now();
         value = JsonReader.DATE_VALUE_MATCHER.parseValue(Bson.getDateFormatter().format(date));
-        assert value instanceof Date;
+        assertTrue(value instanceof Date);
+    }
+    
+    @Test
+    public void dateMatcherShouldPreserveBackslashEscapeChars() throws Exception {
+        String value1 = "one\\backslash";
+        assertEquals(value1, JsonReader.DATE_VALUE_MATCHER.parseValue(value1));
+        String value2 = "two\\\\backslashes";
+        assertEquals(value2, JsonReader.DATE_VALUE_MATCHER.parseValue(value2));
+        String value3 = "three\\\\\\backslashes";
+        assertEquals(value3, JsonReader.DATE_VALUE_MATCHER.parseValue(value3));
     }
 
     protected void print( Object object ) {
@@ -314,9 +325,9 @@ public class JsonReaderParserTest {
                                 Object value ) {
         Object actual = bson.get(name);
         if (value == null) {
-            assert Null.matches(actual);
+            assertTrue(Null.matches(actual));
         } else {
-            assert value.equals(actual);
+            assertEquals(value, actual);
         }
     }
 }

@@ -403,7 +403,7 @@ public class JsonReader {
                         fieldName = tokens.nextString();
                         break;
                 }
-                // Now look for any of the following delimieters: ':', "->", or "=>"
+                // Now look for any of the following delimiters: ':', "->", or "=>"
                 tokens.nextFieldDelim();
 
                 // Now look for a value ...
@@ -964,7 +964,6 @@ public class JsonReader {
                                 // This was the last character, so we're done ...
                                 sb.append(c);
                                 break;
-                            case '\\':
                             case '/': // optional
                             case '\b':
                             case '\f':

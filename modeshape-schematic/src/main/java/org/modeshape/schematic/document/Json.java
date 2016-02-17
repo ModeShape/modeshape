@@ -276,12 +276,13 @@ public class Json {
 
     /**
      * Return a {@link DocumentSequence} that can be used to pull multiple documents from the stream.
-     * 
+     *
+     * @param introspectStringValues true if the string values should be examined for common patterns, or false otherwise
      * @param stream the input stream; may not be null
      * @return the sequence that can be used to get one or more Document instances from a single input
      */
-    public static DocumentSequence readMultiple( InputStream stream ) {
-        return SHARED_READER.readMultiple(stream);
+    public static DocumentSequence readMultiple( InputStream stream, boolean introspectStringValues ) {
+        return SHARED_READER.readMultiple(stream, introspectStringValues);
     }
 
     /**

@@ -15,7 +15,9 @@
  */
 package org.modeshape.schematic.internal.document;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -93,7 +95,7 @@ public class BsonReadingAndWritingTest {
             System.out.println(json);
             System.out.flush();
         }
-        assert expected.equals(json);
+        assertEquals(expected, json);
     }
 
     @Test
@@ -363,7 +365,7 @@ public class BsonReadingAndWritingTest {
 
     protected void assertRoundtrip( Document input,
                                     boolean compareToOtherImpls ) {
-        assert input != null;
+        assertNotNull(input);
         Document output = writeThenRead(input, compareToOtherImpls);
         if (print) {
             System.out.println("********************************************************************************");
@@ -414,7 +416,7 @@ public class BsonReadingAndWritingTest {
                 if (!fromMongo.equals(result)) {
                     System.out.println("from Schematic: " + result);
                     System.out.println("from Mongo:     " + fromMongo);
-                    assert false : "Document read from bytes written by Mongo did not match expected document: " + result;
+                    fail("Document read from bytes written by Mongo did not match expected document: " + result);
                 }
 
                 if (print) {
@@ -540,7 +542,7 @@ public class BsonReadingAndWritingTest {
         if (!sb1.equals(sb2)) {
             System.out.println(name1 + " size: " + padLeft(s1, 3) + " content: " + sb1);
             System.out.println(name2 + " size: " + padLeft(s2, 3) + " content: " + sb2);
-            assert false;
+            fail();
         }
     }
 
