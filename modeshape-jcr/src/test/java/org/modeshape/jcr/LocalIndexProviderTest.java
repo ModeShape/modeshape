@@ -21,6 +21,13 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -29,12 +36,15 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.regex.Pattern;
 import javax.jcr.Node;
 import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
 import javax.jcr.query.Row;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
+import org.modeshape.common.util.FileUtil;
 import org.modeshape.jcr.api.index.IndexManager;
 import org.modeshape.jcr.api.query.Query;
 import org.modeshape.jcr.query.engine.IndexPlanners;
@@ -692,23 +702,55 @@ public class LocalIndexProviderTest extends AbstractIndexProviderTest {
         // print = true;
         registerValueIndex("ref1", "nt:unstructured", "", null, "ref1", PropertyType.STRING);
         registerValueIndex("ref2", "nt:unstructured", "", null, "ref2", PropertyType.STRING);
+        registerValueIndex("file", "nt:file", "", null, "unused", PropertyType.STRING);
         
         Node newNode1 = session.getRootNode().addNode("nodeWithSysName", "nt:unstructured");
-        // session1.save(); // THIS IS CAUSING the node not being indexed
 
         final String uuId1 = "cccccccccccccccccccccc-0000-1111-1234-123456789abcd";
         newNode1.setProperty("ref1", uuId1);
         newNode1.setProperty("ref2", uuId1);
 
         session.save();
-
         printMessage("Nodes Created ...");
-
+        
         // Shutdown the repository and restart it ...
         stopRepository();
         printMessage("Stopped repository. Restarting ...");
+        
+        assertStorageLocationUnchangedAfterRestart();
+    }
+
+    protected void assertStorageLocationUnchangedAfterRestart() throws Exception {
+        // register the total size and last modified timestamp of the place where indexes are stored for the default provider..
+        File indexesDir = new File("target/persistent_repository/indexes/local");
+        assertTrue(indexesDir.exists() && indexesDir.isDirectory() && indexesDir.canRead());
+        long size = FileUtil.size(indexesDir.getPath());
+        final AtomicLong lastModifiedDate = lastModifiedFileTime(indexesDir, ".*\\.db");
+
         startRepository();
+       
         printMessage("Repository restart complete");
+
+        // and now check that the storage folder is unchanged
+        assertTrue(indexesDir.exists() && indexesDir.isDirectory() && indexesDir.canRead());
+        assertEquals(size, FileUtil.size(indexesDir.getPath()));
+        assertEquals(lastModifiedDate.get(), lastModifiedFileTime(indexesDir, ".*\\.db").get());
+    }
+
+    protected AtomicLong lastModifiedFileTime(File indexesDir, String nameRegex) throws IOException {
+        final AtomicLong lastModifiedDate = new AtomicLong(0);
+        final Pattern pattern = Pattern.compile(nameRegex);
+        Files.walkFileTree(indexesDir.toPath(), new SimpleFileVisitor<Path>() {
+            @Override
+            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+                long lastModified = attrs.lastModifiedTime().toMillis();
+                if (lastModifiedDate.get() < lastModified  && pattern.matcher(file.getFileName().toString()).matches()) {
+                    lastModifiedDate.set(lastModified);
+                }
+                return super.visitFile(file, attrs);
+            }
+        });
+        return lastModifiedDate;
     }
 
     @FixFor( "MODE-2292" )

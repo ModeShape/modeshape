@@ -30,6 +30,7 @@ import org.apache.lucene.document.Field;
 import org.apache.lucene.document.IntField;
 import org.apache.lucene.document.LongField;
 import org.apache.lucene.document.StringField;
+import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexWriter;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.annotation.ThreadSafe;
@@ -131,7 +132,12 @@ public abstract class LuceneIndex implements ProvidedIndex<Object> {
 
     @Override
     public boolean requiresReindexing() {
-        return writer.numDocs() <= 0;
+        try {
+            return !DirectoryReader.indexExists(writer.getDirectory());
+        } catch (IOException e) {
+            logger.debug(e, "cannot determine if lucene index exists...");
+            return false;
+        }
     }
 
     public void commit() {

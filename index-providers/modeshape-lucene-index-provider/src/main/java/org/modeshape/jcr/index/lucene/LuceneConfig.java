@@ -87,11 +87,9 @@ public final class LuceneConfig {
         try {
             Directory directory = directory(directoryClass, workspaceName, indexName);
             IndexWriter indexWriter = new IndexWriter(directory, newIndexWriterConfig());
-            if (!DirectoryReader.indexExists(directory)) {
-                indexWriter.commit();
-            } else {
+            if (DirectoryReader.indexExists(directory)) {
                 readLatestCommitTime(indexWriter);
-            }
+            } 
             return indexWriter;
         } catch (IOException e) {
             throw new LuceneIndexException("Cannot create index writer", e);

@@ -899,8 +899,7 @@ class RepositoryIndexManager implements IndexManager, NodeTypes.Listener {
     }
 
     static interface ScanOperation {
-        public void scan( String workspace,
-                          Path path );
+        public void scan(String workspace, Path path, IndexWriter writer );
     }
 
     /**
@@ -947,27 +946,15 @@ class RepositoryIndexManager implements IndexManager, NodeTypes.Listener {
             for (Map.Entry<String, PathToScan> entry : pathsToScanByWorkspace.entries()) {
                 String workspaceName = entry.getKey();
                 PathToScan pathToScan = entry.getValue();
-                try {
-                    for (IndexingCallback callback : pathToScan) {
-                        try {
-                            callback.beforeIndexing();
-                        } catch (RuntimeException e) {
-                            Logger.getLogger(getClass()).error(e, JcrI18n.errorIndexing, pathToScan.path(), workspaceName,
-                                                               e.getMessage());
-                        }
-                    }
-                    operation.scan(workspaceName, pathToScan.path());
-                } catch (RuntimeException e) {
-                    Logger.getLogger(getClass())
-                          .error(e, JcrI18n.errorIndexing, pathToScan.path(), workspaceName, e.getMessage());
-                } finally {
-                    for (IndexingCallback callback : pathToScan) {
-                        try {
-                            callback.afterIndexing();
-                        } catch (RuntimeException e) {
-                            Logger.getLogger(getClass()).error(e, JcrI18n.errorIndexing, pathToScan.path(), workspaceName,
-                                                               e.getMessage());
-                        }
+                for (IndexingCallback callback : pathToScan) {
+                    callback.beforeIndexing();
+                    try {
+                        operation.scan(workspaceName, pathToScan.path(), callback.writer());
+                    } catch (Exception e) {
+                        Logger.getLogger(getClass()).error(e, JcrI18n.errorIndexing, pathToScan.path(), workspaceName,
+                                                           e.getMessage());
+                    } finally {
+                        callback.afterIndexing();
                     }
                 }
             }

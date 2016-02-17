@@ -1081,10 +1081,11 @@ public abstract class IndexProvider {
         byName.put(indexName, index);
     }
     
-    private void scanWorkspace( IndexFeedback feedback,
-                                final IndexDefinition defn,
-                                final String workspaceName,
-                                final ManagedIndex managedIndex ) {
+    private void scanWorkspace(IndexFeedback feedback,
+                               final IndexDefinition defn,
+                               final String workspaceName,
+                               final ManagedIndex managedIndex, 
+                               final NodeTypes.Supplier nodeTypesSupplier) {
         feedback.scan(workspaceName, new IndexFeedback.IndexingCallback() {
             @SuppressWarnings( "synthetic-access" )
             @Override
@@ -1101,6 +1102,40 @@ public abstract class IndexProvider {
                 managedIndex.enable(true);
                 logger().debug("Enabled index '{0}' from provider '{1}' in workspace '{2}' after reindexing has completed",
                                defn.getName(), defn.getProviderName(), workspaceName);
+            }
+
+            @Override
+            public IndexWriter writer() {
+                return new IndexWriter() {
+                    @Override
+                    public boolean canBeSkipped() {
+                        return false;
+                    }
+
+                    @Override
+                    public void clearAllIndexes() {
+                        managedIndex.clearAllData();
+                    }
+
+                    @Override
+                    public boolean add(String workspace, NodeKey key, Path path, Name primaryType, Set<Name> mixinTypes,
+                                       Properties properties) {
+                        boolean queryable = nodeTypesSupplier.getNodeTypes().isQueryable(primaryType, mixinTypes);
+                        return managedIndex.getIndexChangeAdapter().reindex(workspace, key, path, primaryType, mixinTypes, properties,
+                                                                     queryable);
+                    }
+
+                    @Override
+                    public boolean remove(String workspace, NodeKey key) {
+                        managedIndex.getIndexChangeAdapter().clearDataFor(key);                        
+                        return true;
+                    }
+
+                    @Override
+                    public void commit(String workspace) {
+                        managedIndex.getIndexChangeAdapter().index().commit();
+                    }
+                };
             }
         });
     }
@@ -1233,7 +1268,7 @@ public abstract class IndexProvider {
         logger().debug("Index provider '{0}' is creating index in workspace '{1}': {2}", getName(), workspaceName, defn);
         ManagedIndex index = builder.build();
         if (index.requiresReindexing()) {
-            scanWorkspace(feedback, defn, workspaceName, index);
+            scanWorkspace(feedback, defn, workspaceName, index, nodeTypesSupplier);
         }
         return index;
     }
@@ -1277,7 +1312,7 @@ public abstract class IndexProvider {
         existingIndex.shutdown(true);
         ManagedIndex index = builder.build();
         if (index.requiresReindexing()) {
-            scanWorkspace(feedback, updatedDefn, workspaceName, index);
+            scanWorkspace(feedback, updatedDefn, workspaceName, index, nodeTypesSupplier);
         }
         return index;    
     }

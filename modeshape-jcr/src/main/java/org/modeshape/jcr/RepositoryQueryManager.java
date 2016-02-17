@@ -343,11 +343,10 @@ class RepositoryQueryManager implements ChangeSetListener {
     protected void reindexIfNeeded( boolean async, final boolean includeSystemContent ) {
         final ScanningRequest request = toBeScanned.drain();
         if (!request.isEmpty()) {
-            final IndexWriter writer = indexManager.getIndexWriterForProviders(request.providerNames());
             final RepositoryCache repoCache = runningState.repositoryCache();
-            scan(async, writer, () -> {
+            scan(async, () -> {
                 // Scan each of the workspace-path pairs ...
-                ScanOperation op = (workspaceName, path) -> {
+                ScanOperation op = (workspaceName, path, writer) -> {
                     NodeCache workspaceCache = repoCache.getWorkspaceCache(workspaceName);
                     if (workspaceCache != null) {
                         // The workspace is still valid ...
@@ -420,6 +419,21 @@ class RepositoryQueryManager implements ChangeSetListener {
                 } catch (Exception e) {
                     throw new RuntimeException();
                 }
+            }
+        }
+    } 
+    
+    private void scan( boolean async,
+                       Callable<Void> callable ) {
+        if (async) {
+            asyncReindexingResult = indexingExecutorService.submit(callable);
+        } else {
+            try {
+                callable.call();
+            } catch (RuntimeException e) {
+                throw e;
+            } catch (Exception e) {
+                throw new RuntimeException();
             }
         }
     }
