@@ -15,6 +15,7 @@
  */
 package org.infinispan.schematic.internal.io;
 
+import static org.junit.Assert.fail;
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import org.junit.After;
@@ -128,7 +129,7 @@ public class BsonDataOutputTest {
         if (!sb1.toString().equals(sb2.toString())) {
             System.out.println(name1 + " size: " + s1 + " content: " + sb1);
             System.out.println(name2 + " size: " + s2 + " content: " + sb2);
-            assert false;
+            fail();
         }
     }
 

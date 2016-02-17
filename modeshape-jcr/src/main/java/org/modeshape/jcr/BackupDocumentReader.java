@@ -71,7 +71,7 @@ public final class BackupDocumentReader {
                         // No more files to read ...
                         return null;
                     }
-                    documents = Json.readMultiple(stream);
+                    documents = Json.readMultiple(stream, false);
                 }
                 try {
                     Document doc = documents.nextDocument();

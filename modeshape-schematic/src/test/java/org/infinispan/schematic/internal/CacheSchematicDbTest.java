@@ -15,6 +15,8 @@
  */
 package org.infinispan.schematic.internal;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import java.io.InputStream;
 import org.infinispan.AdvancedCache;
 import org.infinispan.configuration.cache.ConfigurationBuilder;
@@ -58,7 +60,7 @@ public class CacheSchematicDbTest {
 
     protected static InputStream resource( String resourcePath ) {
         InputStream result = SchemaValidationTest.class.getClassLoader().getResourceAsStream(resourcePath);
-        assert result != null : "Could not find resource \"" + resourcePath + "\"";
+        assertNotNull("Could not find resource \"" + resourcePath + "\"", result);
         return result;
     }
 
@@ -70,10 +72,10 @@ public class CacheSchematicDbTest {
         String key = "can be anything";
         db.put(key, doc);
         SchematicEntry entry = db.get(key);
-        assert entry != null : "Should have found the entry";
+        assertNotNull("Should have found the entry", entry);
         Document read = entry.getContent();
-        assert read != null;
-        assert "value1".equals(read.getString("k1"));
-        assert 2 == read.getInteger("k2");
+        assertNotNull(read);
+        assertEquals("value1", read.getString("k1"));
+        assertEquals(2, read.getInteger("k2").intValue());
     }
 }
