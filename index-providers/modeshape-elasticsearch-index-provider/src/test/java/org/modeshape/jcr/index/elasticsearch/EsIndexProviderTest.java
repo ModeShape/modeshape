@@ -53,11 +53,11 @@ public class EsIndexProviderTest extends LocalIndexProviderTest {
         esNode =  NodeBuilder.nodeBuilder().settings(localSettings).local(false).build().start();
 
     }
-    
+
     @AfterClass
     public static void tearDownClass() {
-            esNode.close();
-            FileUtil.delete("target/data");
+        esNode.close();
+        FileUtil.delete("target/data");
     }
     
     @Override
@@ -127,5 +127,9 @@ public class EsIndexProviderTest extends LocalIndexProviderTest {
         //This test case is excluded due to local ES node failre after
         //client disconnection
     }
-    
+
+    @Override
+    protected void assertStorageLocationUnchangedAfterRestart() throws Exception {
+        //nothing to assert, ES does not store indexes locally....
+    }
 }

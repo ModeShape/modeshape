@@ -32,6 +32,8 @@ public interface IndexFeedback {
         void beforeIndexing();
 
         void afterIndexing();
+        
+        IndexWriter writer();
     }
 
     /**

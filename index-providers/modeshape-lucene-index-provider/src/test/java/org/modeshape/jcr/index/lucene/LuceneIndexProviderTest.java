@@ -15,13 +15,18 @@
  */
 package org.modeshape.jcr.index.lucene;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import java.io.File;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
 import javax.jcr.Node;
 import javax.jcr.PropertyType;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
+import org.modeshape.common.util.FileUtil;
 import org.modeshape.jcr.LocalIndexProviderTest;
 import org.modeshape.jcr.api.JcrTools;
 import org.modeshape.jcr.api.index.IndexDefinition;
@@ -145,5 +150,35 @@ public class LuceneIndexProviderTest extends LocalIndexProviderTest {
        
         Query query = jcrSql2Query("select [jcr:path] from [nt:resource] as n where contains(n.*,'the quick jumps')");
         validateQuery().rowCount(1L).hasNodesAtPaths("/node/jcr:content").useIndex("textIndex").validate(query, query.execute());
+    }
+
+    @FixFor("MODE-2565")
+    @Override
+    @Test
+    public void shouldNotReindexOnStartup() throws Exception {
+        super.shouldNotReindexOnStartup();
+    }
+
+    @Override
+    protected void assertStorageLocationUnchangedAfterRestart() throws Exception {
+        // register the total size and last modified timestamp of the place where indexes are stored for the default provider..
+        File indexesDir1 = new File("target/persistent_repository/indexes/lucene_primary/default/ref1");
+        assertTrue(indexesDir1.exists() && indexesDir1.isDirectory() && indexesDir1.canRead());
+        long sizeDir1 = FileUtil.size(indexesDir1.getPath());
+        final AtomicLong lastModifiedDateDir1 = lastModifiedFileTime(indexesDir1, "_0.*");
+
+        File indexesDir2 = new File("target/persistent_repository/indexes/lucene_primary/default/ref2");
+        assertTrue(indexesDir2.exists() && indexesDir2.isDirectory() && indexesDir2.canRead());
+        long sizeDir2 = FileUtil.size(indexesDir1.getPath());
+        final AtomicLong lastModifiedDateDir2 = lastModifiedFileTime(indexesDir2, "_0.*");
+
+        startRepository();
+        printMessage("Repository restart complete");
+
+        // and now check that the storage folder is unchanged
+        assertEquals(sizeDir1, FileUtil.size(indexesDir1.getPath()));
+        assertEquals(lastModifiedDateDir1.get(), lastModifiedFileTime(indexesDir1, "_0.*").get());
+        assertEquals(sizeDir2, FileUtil.size(indexesDir2.getPath()));
+        assertEquals(lastModifiedDateDir2.get(), lastModifiedFileTime(indexesDir2, "_0.*").get());
     }
 }
