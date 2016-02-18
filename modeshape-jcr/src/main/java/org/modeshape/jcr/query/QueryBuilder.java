@@ -597,7 +597,7 @@ public class QueryBuilder {
      * @throws IllegalArgumentException if the row limit is not a positive integer
      */
     public QueryBuilder limit( int rowLimit ) {
-        this.limit.withRowLimit(rowLimit);
+        this.limit = limit.withRowLimit(rowLimit);
         return this;
     }
 
@@ -609,7 +609,7 @@ public class QueryBuilder {
      * @throws IllegalArgumentException if the row limit is a negative integer
      */
     public QueryBuilder offset( int offset ) {
-        this.limit.withOffset(offset);
+        this.limit = limit.withOffset(offset);
         return this;
     }
 
