@@ -45,7 +45,6 @@ import javax.transaction.NotSupportedException;
 import javax.transaction.SystemException;
 import javax.transaction.TransactionManager;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
 import org.modeshape.common.statistic.Stopwatch;
@@ -92,17 +91,6 @@ public class RepositoryBackupAndRestoreTest extends SingleUseAbstractTest {
         super.beforeEach();
     }
 
-    @Test
-    @Ignore( "Comment out when generating and writing export files" )
-    public void testExporting() throws Exception {
-        print = true;
-        String path = "/backupAndRestoreTestContent";
-        populateRepositoryContent(session(), path);
-        FileOutputStream stream = new FileOutputStream("src/test/resources/io/generated-3-system-view.xml");
-        session().exportSystemView(path, stream, false, false);
-        stream.close();
-    }
-    
     @Test
     @FixFor( "MODE-2440" )
     public void shouldBackupRepositoryWhichIncludesBinaryValuesCompressed() throws Exception {
