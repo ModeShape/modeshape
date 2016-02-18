@@ -45,6 +45,10 @@ public class WorkspaceCacheTest extends AbstractNodeCacheTest {
     @Override
     protected void shutdownCache( NodeCache cache ) {
         super.shutdownCache(cache);
-        executor.shutdown();
+        try {
+            changeBus.shutdown();
+        } finally {
+            executor.shutdownNow();    
+        }
     }
 }
