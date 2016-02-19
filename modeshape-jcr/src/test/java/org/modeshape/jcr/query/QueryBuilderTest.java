@@ -20,6 +20,7 @@ import static org.junit.Assert.assertThat;
 import org.hamcrest.Matcher;
 import org.junit.Before;
 import org.junit.Test;
+import org.modeshape.common.FixFor;
 import org.modeshape.jcr.ExecutionContext;
 import org.modeshape.jcr.query.model.QueryCommand;
 import org.modeshape.jcr.query.model.Visitors;
@@ -1460,5 +1461,14 @@ public class QueryBuilderTest {
                        .length("nodes", "column")
                        .end()
                        .query();
+        assertThatSql(query, is("SELECT * FROM table AS nodes ORDER BY SCORE(nodes) ASC NULLS LAST, LENGTH(nodes.column) DESC NULLS FIRST"));
+                                                             
+    }
+    
+    @Test
+    @FixFor("MODE-2564")
+    public void shouldBuildQueryWithLimitAndOffset() {
+        query = builder.selectStar().fromAllNodes().limit(10).offset(5).query();
+        assertThatSql(query, is("SELECT * FROM [__ALLNODES__] LIMIT 10 OFFSET 5"));        
     }
 }
