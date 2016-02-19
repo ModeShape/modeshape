@@ -699,4 +699,29 @@ public class SingleColumnIndexSearchTest extends AbstractLuceneIndexSearchTest {
         long searchTime = TimeUnit.MILLISECONDS.convert(duration, TimeUnit.NANOSECONDS);
         System.out.println(Thread.currentThread().getName() + ": (" + index.getName() + ") Total time to search " + nodeKeys.size() + " nodes: " + searchTime/1000d + " seconds");
     }
+
+    @Test
+    public void shouldSearchForLikeConstraintContainingSpaceAmpersand() throws Exception {
+        List<String> nodeKeys = indexNodes(STRING_PROP, "Law & Order - S01E01");
+
+        // & works if there is not leading space
+        Constraint constraint = propertyValue(STRING_PROP, LIKE, "%&%");
+        validateCardinality(constraint, 1);
+        validateFilterResults(constraint, 1, false, nodeKeys.get(0));
+
+        // works if there is just a space
+        constraint = propertyValue(STRING_PROP, LIKE, "% %");
+        validateCardinality(constraint, 1);
+        validateFilterResults(constraint, 1, false, nodeKeys.get(0));
+
+        // & fails if there is a leading space
+        constraint = propertyValue(STRING_PROP, LIKE, "% &%");
+        validateCardinality(constraint, 1);
+        validateFilterResults(constraint, 1, false, nodeKeys.get(0));
+
+        // & fails if there is a trailing space
+        constraint = propertyValue(STRING_PROP, LIKE, "%& %");
+        validateCardinality(constraint, 1);
+        validateFilterResults(constraint, 1, false, nodeKeys.get(0));
+    }
 }
