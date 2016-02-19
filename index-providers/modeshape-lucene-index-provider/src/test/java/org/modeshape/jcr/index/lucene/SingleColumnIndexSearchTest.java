@@ -41,6 +41,7 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.modeshape.common.FixFor;
 import org.modeshape.jcr.api.query.qom.Operator;
 import org.modeshape.jcr.api.value.DateTime;
 import org.modeshape.jcr.query.model.Constraint;
@@ -699,5 +700,31 @@ public class SingleColumnIndexSearchTest extends AbstractLuceneIndexSearchTest {
         long duration = System.nanoTime() - start;
         long searchTime = TimeUnit.MILLISECONDS.convert(duration, TimeUnit.NANOSECONDS);
         System.out.println(Thread.currentThread().getName() + ": (" + index.getName() + ") Total time to search " + nodeKeys.size() + " nodes: " + searchTime/1000d + " seconds");
+    }
+
+    @Test
+    @FixFor( "MODE-2567" )
+    public void shouldSearchForLikeConstraintContainingSpaceAmpersand() throws Exception {
+        List<String> nodeKeys = indexNodes(STRING_PROP, "Law & Order - S01E01");
+
+        // no leading or trailing space
+        Constraint constraint = propertyValue(STRING_PROP, LIKE, "%&%");
+        validateCardinality(constraint, 1);
+        validateFilterResults(constraint, 1, false, nodeKeys.get(0));
+
+        // leading space
+        constraint = propertyValue(STRING_PROP, LIKE, "% &%");
+        validateCardinality(constraint, 1);
+        validateFilterResults(constraint, 1, false, nodeKeys.get(0));
+
+        // trailing space
+        constraint = propertyValue(STRING_PROP, LIKE, "%& %");
+        validateCardinality(constraint, 1);
+        validateFilterResults(constraint, 1, false, nodeKeys.get(0));
+
+        // part of a larger search string
+        constraint = propertyValue(STRING_PROP, LIKE, "%Law & Order%");
+        validateCardinality(constraint, 1);
+        validateFilterResults(constraint, 1, false, nodeKeys.get(0));
     }
 }
