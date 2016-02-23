@@ -149,43 +149,6 @@
             <activation>
                 <activeByDefault>false</activeByDefault>
             </activation>
-           <dependencies>
-               <!--
-                    List of artifacts which must be built first when running the assembly
-               -->
-               <!--The client artifact is produced during the assembly profile, by the modeshape-jdbc profile -->
-               <dependency>
-                   <groupId>org.modeshape</groupId>
-                   <artifactId>${client.artifactId}</artifactId>
-                   <version>${project.version}</version>
-               </dependency>
-               <dependency>
-                   <groupId>org.modeshape.demo</groupId>
-                   <artifactId>modeshape-embedded-repo-demo</artifactId>
-                   <version>${project.version}</version>
-               </dependency>
-               <dependency>
-                   <groupId>org.modeshape.demo</groupId>
-                   <artifactId>modeshape-sequencers-demo</artifactId>
-                   <version>${project.version}</version>
-               </dependency>
-                <!-- 
-                Hack: Need to include these 'provided' dependencies and force 'compile' scope, because of a JavaDoc plugin issue;
-                see http://jira.codehaus.org/browse/MJAVADOC-340 and other workarounds below
-                -->
-                <dependency>
-                  <groupId>org.mongodb</groupId>
-                  <artifactId>mongo-java-driver</artifactId>
-                  <version>${mongo.driver.version}</version>
-                  <scope>compile</scope>
-                </dependency>
-                <dependency>
-                    <groupId>org.wildfly.core</groupId>
-                    <artifactId>wildfly-controller</artifactId>
-                    <version>${version.org.wildfly.core}</version>
-                    <scope>compile</scope>
-                </dependency>
-            </dependencies>
             <build>
                 <plugins>
                     <plugin>
@@ -199,6 +162,73 @@
                         <version>${version.javadoc.plugin}</version>
                                 
                         <configuration>
+                            <!-- JDK 8 turn off doclint -->
+                            <additionalparam>-Xdoclint:none</additionalparam>
+                            <!-- 
+                                Maven JavaDoc doesn't handle provided dependencies so all these have to be explicitly added
+                            -->
+                            <additionalDependencies>
+                                <additionalDependency>
+                                    <groupId>org.slf4j</groupId>
+                                    <artifactId>slf4j-api</artifactId>
+                                    <version>${slf4j.api.version}</version>
+                                </additionalDependency>
+                                <additionalDependency>
+                                    <groupId>log4j</groupId>
+                                    <artifactId>log4j</artifactId>
+                                    <version>${log4j.version}</version>
+                                </additionalDependency>
+                                <additionalDependency>
+                                    <groupId>javax.servlet</groupId>
+                                    <artifactId>javax.servlet-api</artifactId>
+                                    <version>${javax.servlet.version}</version>
+                                </additionalDependency>
+                                <additionalDependency>
+                                    <groupId>org.jboss.spec.javax.security.jacc</groupId>
+                                    <artifactId>jboss-jacc-api_1.5_spec</artifactId>
+                                    <version>${javax.jacc.version}</version>
+                                </additionalDependency>
+                                <additionalDependency>
+                                    <groupId>org.mongodb</groupId>
+                                    <artifactId>mongo-java-driver</artifactId>
+                                    <version>${mongo.driver.version}</version>
+                                </additionalDependency>
+                                <additionalDependency>
+                                    <groupId>org.jboss.spec.javax.resource</groupId>
+                                    <artifactId>jboss-connector-api_1.7_spec</artifactId>
+                                    <version>${org.jboss.spec.javax.resource.connector-api.version}</version>
+                                </additionalDependency>
+                                <additionalDependency>
+                                    <groupId>org.wildfly.core</groupId>
+                                    <artifactId>wildfly-controller</artifactId>
+                                    <version>${version.org.wildfly.core}</version>
+                                </additionalDependency>
+                                <additionalDependency>
+                                    <groupId>org.wildfly.core</groupId>
+                                    <artifactId>wildfly-subsystem-test-framework</artifactId>
+                                    <version>${version.org.wildfly.core}</version>
+                                </additionalDependency>
+                                <additionalDependency>
+                                    <groupId>org.wildfly</groupId>
+                                    <artifactId>wildfly-naming</artifactId>
+                                    <version>${version.org.wildfly}</version>
+                                </additionalDependency>
+                                <additionalDependency>
+                                    <groupId>org.wildfly</groupId>
+                                    <artifactId>wildfly-security</artifactId>
+                                    <version>${version.org.wildfly}</version>
+                                </additionalDependency>
+                                <additionalDependency>
+                                    <groupId>com.datastax.cassandra</groupId>
+                                    <artifactId>cassandra-driver-core</artifactId>
+                                    <version>${cassandra-cql-driver}</version>
+                                </additionalDependency>
+                                <additionalDependency>
+                                    <groupId>org.picketbox</groupId>
+                                    <artifactId>picketbox-bare</artifactId>
+                                    <version>${picketbox.version}</version>
+                                </additionalDependency>
+                            </additionalDependencies>
                             <includeDependencySources>true</includeDependencySources>
                             <failOnError>true</failOnError>
                             <dependencySourceIncludes>
@@ -207,7 +237,6 @@
                             </dependencySourceIncludes>
                             <dependencySourceExcludes>
                                 <!-- But want to exclude modules like demos and tests -->
-                                <dependencySourceExclude>org.modeshape.demo:*</dependencySourceExclude>
                                 <dependencySourceExclude>org.modeshape:modeshape-integration-tests:*</dependencySourceExclude>
                                 <dependencySourceExclude>org.modeshape:modeshape-jbossas-integration-tests:*</dependencySourceExclude>
                                 <dependencySourceExclude>org.modeshape:*:test:*</dependencySourceExclude>
@@ -220,7 +249,7 @@
                               <link>http://www.slf4j.org/apidocs/</link>
                               <link>http://www.day.com/maven/javax.jcr/javadocs/jcr-2.0/</link>
                               <link>http://api.mongodb.org/java/${mongo.driver.version}/</link>
-                              <link>https://docs.jboss.org/infinispan/6.0/apidocs/</link>
+                              <link>https://docs.jboss.org/infinispan/7.0/apidocs/</link>
                             </links>
                             <groups>
                               <group>
@@ -260,7 +289,7 @@
                                 <packages>org.modeshape.web*</packages>
                               </group>
                               <group>
-                                <title>ModeShape Subsystem for AS7</title>
+                                <title>ModeShape Subsystem for JBoss AS</title>
                                 <packages>org.modeshape.jboss.*</packages>
                               </group>
                             </groups>
