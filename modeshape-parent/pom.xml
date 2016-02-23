@@ -343,7 +343,7 @@
         <cargo.container>jetty9x</cargo.container>
         <maven.codehaus.cargo.plugin.version>1.4.6</maven.codehaus.cargo.plugin.version>
         <version.jar.plugin>2.4</version.jar.plugin>
-        <version.javadoc.plugin>2.9</version.javadoc.plugin>
+        <version.javadoc.plugin>2.10.3</version.javadoc.plugin>
         <version.bundle.plugin>2.3.7</version.bundle.plugin>
         <version.failsafe.plugin>2.13</version.failsafe.plugin>
         <version.gwt.maven.plugin>2.5.1</version.gwt.maven.plugin>
@@ -918,12 +918,6 @@
                     <goals>
                         <goal>jar-no-fork</goal>
                     </goals>
-                    </execution>
-                    <execution>
-                        <id>attach-test-sources</id>
-                        <goals>
-                            <goal>test-jar-no-fork</goal>
-                        </goals>
                     </execution>
                 </executions>
             </plugin>

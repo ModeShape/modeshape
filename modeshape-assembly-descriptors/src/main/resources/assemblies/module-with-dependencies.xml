@@ -25,17 +25,9 @@
     <fileSets>
         <fileSet>
             <directory>${project.build.directory}</directory>
-            <outputDirectory>/tests</outputDirectory>
-            <includes>
-                <include>${project.artifactId}-${project.version}-tests.jar</include>
-            </includes>
-        </fileSet>
-        <fileSet>
-            <directory>${project.build.directory}</directory>
-            <outputDirectory>/sources</outputDirectory>
+            <outputDirectory>/</outputDirectory>
             <includes>
                 <include>${project.artifactId}-${project.version}-sources.jar</include>
-                <include>${project.artifactId}-${project.version}-test-sources.jar</include>
             </includes>
         </fileSet>
         <!--
