@@ -100,7 +100,6 @@
             <modules>
                 <module>modeshape-jca-rar</module>
                 <module>modeshape-client</module>
-                <module>demos</module>
                 <module>integration</module>
             </modules>
         </profile>

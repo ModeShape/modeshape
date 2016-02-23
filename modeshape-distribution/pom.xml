@@ -147,74 +147,6 @@
             <activation>
                 <activeByDefault>false</activeByDefault>
             </activation>
-           <dependencies>
-               <!--
-                    List of artifacts which must be built first when running the assembly
-               -->
-               <!--The client artifact is produced during the assembly profile, by the modeshape-jdbc profile -->
-               <dependency>
-                   <groupId>org.modeshape</groupId>
-                   <artifactId>${client.artifactId}</artifactId>
-                   <version>${project.version}</version>
-               </dependency>
-               <dependency>
-                   <groupId>org.modeshape.demo</groupId>
-                   <artifactId>modeshape-embedded-repo-demo</artifactId>
-                   <version>${project.version}</version>
-               </dependency>
-               <dependency>
-                   <groupId>org.modeshape.demo</groupId>
-                   <artifactId>modeshape-sequencers-demo</artifactId>
-                   <version>${project.version}</version>
-               </dependency>
-               <!-- 
-                  Provided dependencies in Maven ARE NOT transitive. Therefore, for the javadoc plugin to fully resolve the 
-                  classpath when generating the JavaDoc, we need to overwrite the non-test 'provided' dependencies to 'compile'
-               -->
-               <dependency>
-                   <groupId>org.wildfly.core</groupId>
-                   <artifactId>wildfly-controller</artifactId>
-                   <scope>compile</scope>
-               </dependency>
-               <dependency>
-                   <groupId>org.wildfly</groupId>
-                   <artifactId>wildfly-naming</artifactId>
-                   <scope>compile</scope>
-               </dependency>
-               <dependency>
-                   <groupId>org.wildfly</groupId>
-                   <artifactId>wildfly-security</artifactId>
-                   <scope>compile</scope>
-               </dependency>
-               <dependency>
-                   <groupId>org.picketbox</groupId>
-                   <artifactId>picketbox-bare</artifactId>
-                   <scope>compile</scope>
-               </dependency>
-               <dependency>
-                   <groupId>com.datastax.cassandra</groupId>
-                   <artifactId>cassandra-driver-core</artifactId>
-                   <scope>compile</scope>
-               </dependency>
-               <dependency>
-                   <groupId>org.mongodb</groupId>
-                   <artifactId>mongo-java-driver</artifactId>
-                   <scope>compile</scope>
-               </dependency>
-               <!--
-                  The logging deps are required by modeshape-common  
-               -->
-               <dependency>
-                   <groupId>org.slf4j</groupId>
-                   <artifactId>slf4j-api</artifactId>
-                   <scope>compile</scope>
-               </dependency>
-               <dependency>
-                   <groupId>log4j</groupId>
-                   <artifactId>log4j</artifactId>
-                   <scope>compile</scope>
-               </dependency>
-           </dependencies>
             <build>
                 <plugins>
                     <plugin>
@@ -227,6 +159,73 @@
                         <artifactId>maven-javadoc-plugin</artifactId>
                         <version>${version.javadoc.plugin}</version>                         
                         <configuration>
+                            <!-- JDK 8 turn off doclint -->
+                            <additionalparam>-Xdoclint:none</additionalparam>
+                            <!-- 
+                                Maven JavaDoc doesn't handle provided dependencies so all these have to be explicitly added
+                            -->
+                            <additionalDependencies>
+                                <additionalDependency>
+                                    <groupId>org.slf4j</groupId>
+                                    <artifactId>slf4j-api</artifactId>
+                                    <version>${version.org.slf4j}</version>
+                                </additionalDependency>
+                                <additionalDependency>
+                                    <groupId>log4j</groupId>
+                                    <artifactId>log4j</artifactId>
+                                    <version>${version.log4j}</version>
+                                </additionalDependency>
+                                <additionalDependency>
+                                    <groupId>org.jboss.spec.javax.servlet</groupId>
+                                    <artifactId>jboss-servlet-api_3.1_spec</artifactId>
+                                    <version>${version.org.jboss.spec.javax.servlet.jboss-servlet-api_3.1_spec}</version>
+                                </additionalDependency>
+                                <additionalDependency>
+                                    <groupId>org.jboss.spec.javax.security.jacc</groupId>
+                                    <artifactId>jboss-jacc-api_1.5_spec</artifactId>
+                                    <version>${version.org.jboss.spec.javax.security.jacc}</version>
+                                </additionalDependency>
+                                <additionalDependency>
+                                    <groupId>org.mongodb</groupId>
+                                    <artifactId>mongo-java-driver</artifactId>
+                                    <version>${version.org.mongodb.mongo-java-driver}</version>
+                                </additionalDependency>
+                                <additionalDependency>
+                                    <groupId>org.jboss.spec.javax.resource</groupId>
+                                    <artifactId>jboss-connector-api_1.7_spec</artifactId>
+                                    <version>${version.org.jboss.spec.javax.resource.jboss-connector-api_1.7_spec}</version>
+                                </additionalDependency>
+                                <additionalDependency>
+                                    <groupId>org.wildfly.core</groupId>
+                                    <artifactId>wildfly-controller</artifactId>
+                                    <version>${version.org.wildfly.core}</version>
+                                </additionalDependency>
+                                <additionalDependency>
+                                    <groupId>org.wildfly.core</groupId>
+                                    <artifactId>wildfly-subsystem-test-framework</artifactId>
+                                    <version>${version.org.wildfly.core}</version>
+                                </additionalDependency>
+                                <additionalDependency>
+                                    <groupId>org.wildfly</groupId>
+                                    <artifactId>wildfly-naming</artifactId>
+                                    <version>${version.org.wildfly}</version>
+                                </additionalDependency>
+                                <additionalDependency>
+                                    <groupId>org.wildfly</groupId>
+                                    <artifactId>wildfly-security</artifactId>
+                                    <version>${version.org.wildfly}</version>
+                                </additionalDependency>
+                                <additionalDependency>
+                                    <groupId>com.datastax.cassandra</groupId>
+                                    <artifactId>cassandra-driver-core</artifactId>
+                                    <version>${version.com.datastax.cassandra}</version>
+                                </additionalDependency>
+                                <additionalDependency>
+                                    <groupId>org.picketbox</groupId>
+                                    <artifactId>picketbox-bare</artifactId>
+                                    <version>${version.org.picketbox}</version>
+                                </additionalDependency>
+                            </additionalDependencies>
                             <includeDependencySources>true</includeDependencySources>
                             <failOnError>true</failOnError>
                             <dependencySourceIncludes>
@@ -234,8 +233,7 @@
                                 <dependencySourceInclude>org.modeshape:*</dependencySourceInclude>
                             </dependencySourceIncludes>
                             <dependencySourceExcludes>
-                                <!-- But want to exclude modules like demos and tests -->
-                                <dependencySourceExclude>org.modeshape.demo:*</dependencySourceExclude>
+                                <!-- But want to exclude certain artifacts and modules -->
                                 <dependencySourceExclude>org.modeshape:modeshape-integration-tests:*</dependencySourceExclude>
                                 <dependencySourceExclude>org.modeshape:modeshape-jbossas-integration-tests:*</dependencySourceExclude>
                                 <dependencySourceExclude>org.modeshape:*:test:*</dependencySourceExclude>
@@ -287,11 +285,11 @@
                                 <packages>org.modeshape.web*</packages>
                               </group>
                               <group>
-                                <title>ModeShape Subsystem for AS7</title>
+                                <title>ModeShape Subsystem for JBoss AS</title>
                                 <packages>org.modeshape.jboss.*</packages>
                               </group>
                             </groups>
-                            <excludePackageNames>org.modeshape.test*:org.modeshape.demo*</excludePackageNames>
+                            <excludePackageNames>org.modeshape.test*</excludePackageNames>
                             <attach>false</attach>
                             <useStandardDocletOptions>true</useStandardDocletOptions>
                             <charset>UTF-8</charset>

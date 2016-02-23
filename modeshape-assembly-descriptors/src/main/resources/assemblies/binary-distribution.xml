@@ -26,6 +26,10 @@
         
         <!-- Additional Modules (included in the modules dir) -->
         <fileSet>
+            <directory>../persistence/modeshape-persistence-relational/target/${binary.dist.name}</directory>
+            <outputDirectory>./modules/modeshape-persistence-relational</outputDirectory>
+        </fileSet>
+        <fileSet>
             <directory>../connectors/modeshape-connector-cmis/target/${binary.dist.name}</directory>
             <outputDirectory>./modules/modeshape-connector-cmis</outputDirectory>
         </fileSet>
@@ -132,16 +136,6 @@
         <fileSet>
             <directory>../web/modeshape-webdav/target/${binary.dist.name}</directory>
             <outputDirectory>./modules/modeshape-webdav</outputDirectory>
-        </fileSet>
-        
-        <!--Examples-->
-        <fileSet>
-            <directory>../demos/embedded-repo/target/${binary.dist.name}</directory>
-            <outputDirectory>./examples</outputDirectory>
-        </fileSet>
-        <fileSet>
-            <directory>../demos/sequencers/target/${binary.dist.name}</directory>
-            <outputDirectory>./examples</outputDirectory>
         </fileSet>
         
         <!--Client-->
