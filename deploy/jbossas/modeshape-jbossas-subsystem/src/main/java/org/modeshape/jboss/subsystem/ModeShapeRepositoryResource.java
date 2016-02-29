@@ -30,12 +30,7 @@ public class ModeShapeRepositoryResource extends SimpleResourceDefinition {
         super(ModeShapeExtension.REPOSITORY_PATH, ModeShapeExtension.getResourceDescriptionResolver(ModelKeys.REPOSITORY),
               AddRepository.INSTANCE, RemoveRepository.INSTANCE);
     }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see org.jboss.as.controller.SimpleResourceDefinition#registerAttributes(org.jboss.as.controller.registry.ManagementResourceRegistration)
-     */
+    
     @Override
     public void registerAttributes( ManagementResourceRegistration resourceRegistration ) {
         super.registerAttributes(resourceRegistration);

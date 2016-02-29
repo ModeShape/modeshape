@@ -40,28 +40,21 @@ class RemoveWebApp extends AbstractRemoveStepHandler {
     protected void performRemove( OperationContext context,
                                   ModelNode operation,
                                   ModelNode model ) throws OperationFailedException {
-        if (!requiresRuntime(context)) {
-            //we need to skip the execution of this handler if it does not require a "runtime mode", because its corresponding
-            //AddWebApp handler only deploys the webapp in runtime mode, so there's nothing to clean up.
-            //Runtime mode is something that seems to be required only for "normal" servers, as opposed to domain controllers,
-            //admin-mode servers and the likes. A standalone or a host in a group of servers will be considered "normal".
-            return;
+        // we should only execute the remove if we performed the AddWebApp step...
+        boolean shouldRemove = requiresRuntime(context) &&  model.isDefined();
+        if (shouldRemove) {
+            AddressContext addressContext = AddressContext.forOperation(operation);
+            String webappName = addressContext.lastPathElementValue();
+
+            PathAddress deploymentAddress = PathAddress.pathAddress(PathElement.pathElement(ModelDescriptionConstants.DEPLOYMENT, webappName));
+            ModelNode deploymentOp = Util.createOperation(ModelDescriptionConstants.DEPLOYMENT, deploymentAddress);
+
+            ImmutableManagementResourceRegistration rootResourceRegistration = context.getRootResourceRegistration();
+            OperationStepHandler removeDeploymentHandler = rootResourceRegistration.getOperationHandler(deploymentAddress,
+                                                                                                        ModelDescriptionConstants.REMOVE);
+            context.addStep(deploymentOp, removeDeploymentHandler, OperationContext.Stage.MODEL);
         }
-
-        if (!model.isDefined()) {
-            //the model hasn't been defined, which means the Add Step did not succeed
-            return;
-        }
-        AddressContext addressContext = AddressContext.forOperation(operation);
-        String webappName = addressContext.lastPathElementValue();
-
-        PathAddress deploymentAddress = PathAddress.pathAddress(PathElement.pathElement(ModelDescriptionConstants.DEPLOYMENT, webappName));
-        ModelNode deploymentOp = Util.createOperation(ModelDescriptionConstants.DEPLOYMENT, deploymentAddress);
-
-        ImmutableManagementResourceRegistration rootResourceRegistration = context.getRootResourceRegistration();
-        OperationStepHandler removeDeploymentHandler = rootResourceRegistration.getOperationHandler(deploymentAddress, ModelDescriptionConstants.REMOVE);
-        context.addStep(deploymentOp, removeDeploymentHandler, OperationContext.Stage.MODEL);
-
+        // always make sure to call the base class... 
         super.performRemove(context, operation, model);
     }
 }

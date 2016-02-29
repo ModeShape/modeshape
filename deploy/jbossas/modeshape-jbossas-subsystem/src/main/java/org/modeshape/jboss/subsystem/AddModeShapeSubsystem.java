@@ -15,12 +15,10 @@
  */
 package org.modeshape.jboss.subsystem;
 
-import java.util.List;
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
-import org.jboss.as.controller.ServiceVerificationHandler;
 import org.jboss.as.naming.ManagedReferenceInjector;
 import org.jboss.as.naming.ServiceBasedNamingStore;
 import org.jboss.as.naming.deployment.ContextNames;
@@ -51,16 +49,11 @@ class AddModeShapeSubsystem extends AbstractAddStepHandler {
     @Override
     protected void performRuntime( final OperationContext context,
                                    final ModelNode operation,
-                                   final ModelNode model,
-                                   final ServiceVerificationHandler verificationHandler,
-                                   final List<ServiceController<?>> newControllers ) {
-        initializeModeShapeEngine(context, operation, model, newControllers);
+                                   final ModelNode model) {
+        initializeModeShapeEngine(context);
     }
 
-    private void initializeModeShapeEngine( final OperationContext context,
-                                            final ModelNode operation,
-                                            ModelNode model,
-                                            final List<ServiceController<?>> newControllers ) {
+    private void initializeModeShapeEngine( final OperationContext context) {
         ServiceTarget target = context.getServiceTarget();
 
         final JBossLifeCycleListener shutdownListener = new JBossLifeCycleListener();
@@ -69,17 +62,15 @@ class AddModeShapeSubsystem extends AbstractAddStepHandler {
 
         // Engine service
         ServiceBuilder<ModeShapeEngine> engineBuilder = target.addService(ModeShapeServiceNames.ENGINE, engine);
-        engineBuilder.setInitialMode(ServiceController.Mode.ACTIVE);
-        ServiceController<ModeShapeEngine> controller = engineBuilder.install();
+        ServiceController<ModeShapeEngine> controller =  engineBuilder.setInitialMode(ServiceController.Mode.ACTIVE).install();
         controller.getServiceContainer().addTerminateListener(shutdownListener);
-        newControllers.add(controller);
-
+        
         // JNDI Binding
         final ReferenceFactoryService<ModeShapeEngine> referenceFactoryService = new ReferenceFactoryService<ModeShapeEngine>();
         final ServiceName referenceFactoryServiceName = ModeShapeServiceNames.ENGINE.append("reference-factory"); //$NON-NLS-1$
         final ServiceBuilder<?> referenceBuilder = target.addService(referenceFactoryServiceName, referenceFactoryService);
         referenceBuilder.addDependency(ModeShapeServiceNames.ENGINE, ModeShapeEngine.class, referenceFactoryService.getInjector());
-        referenceBuilder.setInitialMode(ServiceController.Mode.ACTIVE);
+        referenceBuilder.setInitialMode(ServiceController.Mode.ACTIVE).install();
 
         final ContextNames.BindInfo bindInfo = ContextNames.bindInfoFor(ModeShapeJndiNames.JNDI_BASE_NAME);
         final BinderService binderService = new BinderService(bindInfo.getBindName());
@@ -90,11 +81,7 @@ class AddModeShapeSubsystem extends AbstractAddStepHandler {
         binderBuilder.addDependency(bindInfo.getParentContextServiceName(),
                                     ServiceBasedNamingStore.class,
                                     binderService.getNamingStoreInjector());
-        binderBuilder.setInitialMode(ServiceController.Mode.ACTIVE);
-
         Logger.getLogger(getClass()).debugv("Binding ModeShape to JNDI name {0}", bindInfo.getAbsoluteJndiName());
-
-        newControllers.add(referenceBuilder.install());
-        newControllers.add(binderBuilder.install());
+        binderBuilder.setInitialMode(ServiceController.Mode.ACTIVE).install();
     }
 }

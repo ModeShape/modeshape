@@ -196,8 +196,7 @@
         <version.org.jboss.ironjacamar>1.0.13.Final</version.org.jboss.ironjacamar>
         <version.com.datastax.cassandra>2.0.0-rc2</version.com.datastax.cassandra>
         <version.org.apache.cassandra>2.0.3</version.org.apache.cassandra>
-
-        <version.org.hsqldb>2.3.2</version.org.hsqldb>
+        
         <version.com.h2>1.4.191</version.com.h2>
         <version.postgresql.9>9.2-1002.jdbc4</version.postgresql.9>
         <version.postgresql.8>8.4-702.jdbc4</version.postgresql.8>
@@ -206,15 +205,15 @@
         <version.com.microsoft.sqlserver>4.0.2206</version.com.microsoft.sqlserver>
        
         <!--Properties which must be used when installing locally a server ZIP distribution -->
-        <version.org.wildfly>9.0.0.Final</version.org.wildfly>
-        <version.org.wildfly.core>1.0.0.Final</version.org.wildfly.core>
-        <jboss.server.root.folder>wildfly-9.0.0.Final</jboss.server.root.folder>
+        <version.org.wildfly>10.0.0.Final</version.org.wildfly>
+        <version.org.wildfly.core>2.0.10.Final</version.org.wildfly.core>
+        <jboss.server.root.folder>wildfly-10.0.0.Final</jboss.server.root.folder>
 
         <!--The root folder under EAP/AS where the ModeShape & related modules should be placed-->
         <jboss.kit.modules.location>modules</jboss.kit.modules.location>
 
         <!-- The id of the maven distribution which is building the current kit -->
-        <jboss.kit.distribution.id>jboss-wf9-dist</jboss.kit.distribution.id>
+        <jboss.kit.distribution.id>jboss-wf-dist</jboss.kit.distribution.id>
         
         <!--The name of binary distribution folder-->
         <binary.dist.name>binary-dist</binary.dist.name>
@@ -320,33 +319,6 @@
                 <dataSource.url>jdbc:h2:mem:modeshape;DB_CLOSE_DELAY=-1</dataSource.url>
                 <dataSource.username>sa</dataSource.username>
                 <dataSource.password/>
-            </properties>
-        </profile>
-
-        <!-- The HSQLDB test environment -->
-        <profile>
-            <id>hsqldb</id>
-            <activation>
-                <property>
-                    <name>database</name>
-                    <value>hsqldb</value>
-                </property>
-            </activation>
-            <dependencies>
-                <dependency>
-                    <!--Must be JDBC 4 (Java 6) compliant-->
-                    <groupId>org.hsqldb</groupId>
-                    <artifactId>hsqldb</artifactId>
-                    <version>${version.org.hsqldb}</version>
-                    <scope>test</scope>
-                </dependency>
-            </dependencies>
-            <properties>
-                <database>hsqldb</database>
-                <dataSource.driverClassName>org.hsqldb.jdbcDriver</dataSource.driverClassName>
-                <dataSource.url>jdbc:hsqldb:mem:modeshape</dataSource.url>
-                <dataSource.username>sa</dataSource.username>
-                <dataSource.password />
             </properties>
         </profile>
 

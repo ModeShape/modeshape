@@ -19,7 +19,6 @@ import java.util.ArrayList;
 import java.util.List;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.SimpleAttributeDefinition;
-import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.modeshape.common.util.StringUtil;
 import org.modeshape.jcr.api.monitor.DurationMetric;
@@ -40,7 +39,7 @@ public final class ModelMetrics {
         final Window[] windows = Window.values();
         final ValueMetric[] valueMetrics = ValueMetric.values();
         final DurationMetric[] durationMetrics = DurationMetric.values();
-        ALL_METRICS = new ArrayList<MetricAttributeDefinition>(windows.length * (valueMetrics.length + durationMetrics.length));
+        ALL_METRICS = new ArrayList<>(windows.length * (valueMetrics.length + durationMetrics.length));
 
         for (final Window window : windows) {
             for (final DurationMetric metric : durationMetrics) {
@@ -112,7 +111,7 @@ public final class ModelMetrics {
          * @param name the attribute name (cannot be <code>null</code> or empty)
          */
         protected MetricAttributeDefinition( final String name ) {
-            super(name, new ModelNode(0), ModelType.DOUBLE, false);
+            super(name, ModelType.DOUBLE, true);
         }
 
         /**

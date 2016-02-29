@@ -21,7 +21,6 @@ import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
-import org.jboss.as.controller.ServiceVerificationHandler;
 import org.jboss.as.controller.services.path.RelativePathService;
 import org.jboss.as.naming.ManagedReferenceFactory;
 import org.jboss.as.naming.ServiceBasedNamingStore;
@@ -117,9 +116,7 @@ public class AddRepository extends AbstractAddStepHandler {
     @Override
     protected void performRuntime( final OperationContext context,
                                    final ModelNode operation,
-                                   final ModelNode model,
-                                   final ServiceVerificationHandler verificationHandler,
-                                   final List<ServiceController<?>> newControllers ) throws OperationFailedException {
+                                   final ModelNode model) throws OperationFailedException {
 
         final ServiceTarget target = context.getServiceTarget();
         final AddressContext addressContext = AddressContext.forOperation(operation);
@@ -273,11 +270,8 @@ public class AddRepository extends AbstractAddStepHandler {
 
         // Add dependency to the data directory ...
         ServiceName dataDirServiceName = ModeShapeServiceNames.dataDirectoryServiceName(repositoryName);
-        ServiceController<String> dataDirServiceController = RelativePathService.addService(dataDirServiceName,
-                                                                                            "modeshape/" + repositoryName,
-                                                                                            ModeShapeExtension.JBOSS_DATA_DIR_VARIABLE,
-                                                                                            target);
-        newControllers.add(dataDirServiceController);
+        RelativePathService.addService(dataDirServiceName, "modeshape/" + repositoryName, 
+                                       ModeShapeExtension.JBOSS_DATA_DIR_VARIABLE, target);
         repositoryServiceBuilder.addDependency(dataDirServiceName, String.class, repositoryService.getDataDirectoryPathInjector());
 
         // Add the default binary storage service which will provide the binary configuration
@@ -301,11 +295,11 @@ public class AddRepository extends AbstractAddStepHandler {
         monitorBuilder.setInitialMode(ServiceController.Mode.ACTIVE);
 
         // Now add the controller for the RepositoryService ...
-        newControllers.add(repositoryServiceBuilder.install());
-        newControllers.add(referenceBuilder.install());
-        newControllers.add(binderBuilder.install());
-        newControllers.add(binaryStorageBuilder.install());
-        newControllers.add(monitorBuilder.install());
+        repositoryServiceBuilder.install();
+        referenceBuilder.install();
+        binderBuilder.install();
+        binaryStorageBuilder.install();
+        monitorBuilder.install();
     }
 
     private void parseClustering(String clusterName, String clusterConfig, EditableDocument configDoc)  {

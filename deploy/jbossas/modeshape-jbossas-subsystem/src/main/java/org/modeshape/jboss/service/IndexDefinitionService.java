@@ -18,10 +18,6 @@ package org.modeshape.jboss.service;
 import java.util.List;
 import java.util.Properties;
 import javax.jcr.RepositoryException;
-import org.modeshape.schematic.Schematic;
-import org.modeshape.schematic.document.Changes;
-import org.modeshape.schematic.document.EditableDocument;
-import org.modeshape.schematic.document.Editor;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
@@ -35,6 +31,10 @@ import org.modeshape.jcr.ModeShapeEngine;
 import org.modeshape.jcr.NoSuchRepositoryException;
 import org.modeshape.jcr.RepositoryConfiguration;
 import org.modeshape.jcr.RepositoryConfiguration.FieldName;
+import org.modeshape.schematic.Schematic;
+import org.modeshape.schematic.document.Changes;
+import org.modeshape.schematic.document.EditableDocument;
+import org.modeshape.schematic.document.Editor;
 
 public class IndexDefinitionService implements Service<JcrRepository> {
 
@@ -107,11 +107,7 @@ public class IndexDefinitionService implements Service<JcrRepository> {
         // Update the deployed repository's configuration with these changes
         try {
             engine.update(this.repositoryName, changes);
-        } catch (ConfigurationException e) {
-            throw new StartException(e);
-        } catch (NoSuchRepositoryException e) {
-            throw new StartException(e);
-        } catch (RepositoryException e) {
+        } catch (ConfigurationException | RepositoryException e) {
             throw new StartException(e);
         }
     }
