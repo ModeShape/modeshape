@@ -17,35 +17,71 @@ package org.modeshape.jcr.cache.document;
 
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
-import java.io.InputStream;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import javax.transaction.TransactionManager;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.modeshape.jcr.RepositoryEnvironment;
+import org.modeshape.jcr.TestingEnvironment;
+import org.modeshape.jcr.TestingUtil;
+import org.modeshape.jcr.api.txn.TransactionManagerLookup;
+import org.modeshape.jcr.txn.DefaultTransactionManagerLookup;
+import org.modeshape.jcr.txn.Transactions;
 import org.modeshape.schematic.Schematic;
+import org.modeshape.schematic.SchematicDb;
 import org.modeshape.schematic.SchematicEntry;
 import org.modeshape.schematic.document.Document;
 import org.modeshape.schematic.document.EditableDocument;
 import org.modeshape.schematic.internal.annotation.FixFor;
-import org.modeshape.schematic.internal.schema.SchemaValidationTest;
 
-public class LocalDocumentStoreTest extends AbstractDocumentStoreTest {
-
-    private volatile boolean print = false;
+public class LocalDocumentStoreTest {
+    
+    private boolean print = false;
+    private RepositoryEnvironment repoEnv;
+    private LocalDocumentStore localStore;
+    private SchematicDb db;
 
     @Before
-    public void beforeEach() {
-        print = false;
+    public void beforeTest() throws Exception {
+        // create a default in-memory db....
+        db = Schematic.getDb(new TestingEnvironment().defaultPersistenceConfiguration());
+        db.start();
+        TransactionManagerLookup txLookup = new DefaultTransactionManagerLookup();
+        TransactionManager tm = txLookup.getTransactionManager();
+        assertNotNull("Cannot find a transaction manager", tm);
+        repoEnv = new TestRepositoryEnvironment(tm, db);
+        localStore = new LocalDocumentStore(db, repoEnv);
     }
 
-    protected static InputStream resource( String resourcePath ) {
-        InputStream result = SchemaValidationTest.class.getClassLoader().getResourceAsStream(resourcePath);
-        assert result != null : "Could not find resource \"" + resourcePath + "\"";
-        return result;
+    @After
+    public void afterTest() {
+        try {
+            db.stop();
+        } finally {
+            try {
+                TestingUtil.killTransaction(transactions().getTransactionManager());
+            } finally {
+                repoEnv = null;
+            }
+        }
+    }
+
+    protected Transactions transactions() {
+        return repoEnv.getTransactions();
+    }
+
+    protected void runInTransaction(Runnable operation) {
+        localStore.runInTransaction(() -> {
+            operation.run();
+            return null;
+        }, 0);
     }
 
     @Test

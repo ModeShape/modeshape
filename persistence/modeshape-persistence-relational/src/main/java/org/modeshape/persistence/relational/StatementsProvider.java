@@ -25,9 +25,12 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.modeshape.common.database.DatabaseType;
 import org.modeshape.common.logging.Logger;
@@ -51,6 +54,7 @@ public final class StatementsProvider {
     private static final String UPDATE_CONTENT = "update_content";
     private static final String REMOVE_CONTENT = "remove_content";
     private static final String REMOVE_ALL_CONTENT = "remove_all_content";
+    private static final String GET_MULTIPLE = "get_multiple";
 
     private final Map<String, String> statements = new HashMap<>();
     private final String tableName;
@@ -103,6 +107,45 @@ public final class StatementsProvider {
             }
         }
     }
+
+    /**
+     * Batch loads multiple content elements from the DB, for the given set of ids.
+     * <p>
+     * Depending on the type of DB, if a very large number of IDs is used this may have side effects:
+     *  <ul>
+     *     <li>MySQL: limited by the max_allowed_packet value.</li>
+     *     <li>SQL Server: "limited by 65,536 * Network Packet Size" (which defaults to 4K).</li>
+     *     <li>Oracle has an expression limit of 1000 values.</li>
+     *     <li>PostgreSQL apparently slows dramatically with lots of values.</li>
+     *  </ul>
+     * </p>
+     * 
+     * @param connection a {@link Connection} instance, never {@code null}
+     * @param ids a {@link Set} of ids for which to load content
+     * @param function a {@link Function} which will process the returned result set; may not be {@code null}
+     * @param <T> the return type of the processing function
+     * @return a value representing the result of the processing
+     * @throws SQLException if anything unexpected fails
+     */
+    protected <T> T load(Connection connection, Set<String> ids, Function<ResultSet, T> function) throws SQLException {
+        logDebug("Loading ids {0} from {1}", ids.toString(), tableName);
+        String params = ids.stream().map(id -> "?").collect(Collectors.joining(","));
+        String statementString = statements.get(GET_MULTIPLE).replaceAll("#", params);
+        try (PreparedStatement ps = connection.prepareStatement(statementString)) {
+            AtomicInteger counter = new AtomicInteger(1);
+            ids.forEach(id -> {
+                try {
+                    ps.setString(counter.getAndIncrement(), id);
+                } catch (SQLException e) {
+                    throw new RelationalProviderException(e);
+                }
+            });
+            try (ResultSet rs = ps.executeQuery()) {
+                return function.apply(rs);
+            }
+        }
+    }
+    
 
     protected BatchUpdate batchUpdate(Connection connection) {
         return new BatchUpdate(connection);

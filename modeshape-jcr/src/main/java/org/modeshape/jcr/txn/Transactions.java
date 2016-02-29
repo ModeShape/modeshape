@@ -394,13 +394,6 @@ public class Transactions {
          * @throws SystemException If the transaction service fails in an unexpected way.
          */
         void rollback() throws IllegalStateException, SecurityException, SystemException;
-
-        /**
-         * Indicates that a set of exclusive locks have been obtained for the given ids.
-         * 
-         * @param ids a set of ids, never null.
-         */
-        void locksObtained(Set<String> ids);
     }
 
     /**
@@ -424,11 +417,6 @@ public class Transactions {
 
         protected void started() {
             Transactions.this.listener.txStarted(id);
-        }
-
-        @Override
-        public void locksObtained(Set<String> ids) {
-            Transactions.this.listener.locksObtained(id, ids);            
         }
 
         @Override
@@ -663,11 +651,6 @@ public class Transactions {
     protected class RollbackOnlyTransaction implements Transaction {
 
         protected RollbackOnlyTransaction() {
-        }
-
-        @Override
-        public void locksObtained(Set<String> ids) {
-            //nothing
         }
 
         @Override

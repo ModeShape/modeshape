@@ -81,9 +81,7 @@ public class RelationalDbTransactionsTest extends AbstractRelationalDbTest {
         int entriesPerThread = 100;
         ExecutorService executors = Executors.newFixedThreadPool(threadsCount);
         print = false;
-        if (print) {
-            System.out.printf("Starting the run of " + threadsCount + " threads with " + entriesPerThread + " insertions per thread...");
-        }
+        print("Starting the run of " + threadsCount + " threads with " + entriesPerThread + " insertions per thread...");
         long startTime = System.nanoTime();
         List<Future<List<String>>> results = IntStream.range(0, threadsCount)
                                                       .mapToObj(value -> insertMultipleEntries(entriesPerThread, executors))
@@ -138,7 +136,6 @@ public class RelationalDbTransactionsTest extends AbstractRelationalDbTest {
             db.put(ourEntry.id(), ourEntry.content());
             db.txCommitted(txId);
             syncBarrier.await();
-            syncBarrier.reset();
             
             Document ourDocument = db.getEntry(ourEntry.id()).content();
             Document otherDocument = db.getEntry(otherEntry.id()).content();
@@ -151,77 +148,83 @@ public class RelationalDbTransactionsTest extends AbstractRelationalDbTest {
             // rollback the tx
             db.txRolledback(txId);
             syncBarrier.await();
-            syncBarrier.reset();
             
             // and check that the visible documents are unchanged
             assertEquals(ourDocument, db.getEntry(ourEntry.id()).content());
             assertEquals(otherDocument, db.getEntry(otherEntry.id()).content());
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        } 
-    }   
+        } catch (RuntimeException re) {
+            syncBarrier.reset();
+            throw re;
+        } catch (Throwable t) {
+            t.printStackTrace();
+            syncBarrier.reset();
+            throw new RuntimeException(t);
+        }
+    }
 
     private void changeAndCommit(SchematicEntry ourEntry, SchematicEntry otherEntry, CyclicBarrier syncBarrier) {
         try {
             String txId = UUID.randomUUID().toString();
-            
+
             // start a tx and write the first entry
             db.txStarted(txId);
             db.put(ourEntry.id(), ourEntry.content());
-            syncBarrier.await();
-            syncBarrier.reset();         
-           
+
             // now both transactions should've written something without committing so test changes are not visible
             assertTrue(db.containsKey(ourEntry.id()));
             assertFalse(db.containsKey(otherEntry.id()));
-            
+
             // make some changes to ourEntry
             BasicDocument updatedDoc = new BasicDocument();
             db.put(ourEntry.id(), updatedDoc);
-         
+
             // check that the changes are only visible to ourselves... 
             Document actualDocument = db.getEntry(ourEntry.id()).content();
             assertTrue(db.containsKey(ourEntry.id()));
             assertFalse(db.containsKey(otherEntry.id()));
             assertEquals(updatedDoc, actualDocument);
-
-            // and wait for the other tx to make its own changes....
             syncBarrier.await();
-            syncBarrier.reset();
+            // and wait for the other tx to make its own changes....
             // now commit
             db.txCommitted(txId);
             syncBarrier.await();
-            syncBarrier.reset();
-            
+
             // check that outside changes are visible...
             assertTrue(db.containsKey(otherEntry.id()));
             Document otherDocument = db.getEntry(otherEntry.id()).content();
             assertEquals(updatedDoc, otherDocument);
-           
+
             // start a new tx
             txId = UUID.randomUUID().toString();
-            
+
             db.txStarted(txId);
             // remove entry entry
             db.remove(ourEntry.id());
             // and wait for the other tx to remove
             syncBarrier.await();
-            syncBarrier.reset();
+
             // check that changes are not yet visible...            
             assertFalse(db.containsKey(ourEntry.id()));
             assertTrue(db.containsKey(otherEntry.id()));
-            
+
+            // and wait for the other tx to remove
+            syncBarrier.await();
+
             // commit the new tx
             db.txCommitted(txId);
             // and wait for the other tx to remove
             syncBarrier.await();
-            syncBarrier.reset();
 
             // check that changes are not now visible...            
             assertFalse(db.containsKey(ourEntry.id()));
             assertFalse(db.containsKey(otherEntry.id()));
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+        } catch (RuntimeException re) {
+            syncBarrier.reset();
+            throw re;
+        } catch (Throwable t) {
+            t.printStackTrace();
+            syncBarrier.reset();
+            throw new RuntimeException(t);
         }
     }
 }

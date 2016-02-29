@@ -35,12 +35,10 @@ import org.modeshape.jcr.api.txn.TransactionManagerLookup;
 import org.modeshape.jcr.cache.document.TestRepositoryEnvironment;
 import org.modeshape.jcr.txn.DefaultTransactionManagerLookup;
 import org.modeshape.jcr.txn.Transactions;
-import org.modeshape.persistence.relational.RelationalDbConfig;
 import org.modeshape.schematic.Schematic;
 import org.modeshape.schematic.SchematicDb;
 import org.modeshape.schematic.document.Document;
 import org.modeshape.schematic.document.Json;
-import org.modeshape.schematic.internal.document.BasicDocument;
 
 /**
  * An abstract base class for unit tests that require an testable SchematicDb instance.
@@ -56,7 +54,7 @@ public abstract class AbstractSchematicDbTest {
     public void beforeEach() {
         logger = Logger.getLogger(getClass());
         // default to an in-memory h2
-        schematicDb = Schematic.getDb(testConfiguration());
+        schematicDb = Schematic.getDb(new TestingEnvironment().defaultPersistenceConfiguration());
         schematicDb.start();
         TransactionManagerLookup txManagerLookup = new DefaultTransactionManagerLookup();
         TransactionManager txManager = txManagerLookup.getTransactionManager();
@@ -72,10 +70,6 @@ public abstract class AbstractSchematicDbTest {
             schematicDb = null;
             repoEnv = null;
         }
-    }
-    
-    protected Document testConfiguration() {
-        return new BasicDocument(Schematic.TYPE_FIELD, "db", RelationalDbConfig.DROP_ON_EXIT, true);     
     }
 
     protected Transactions transactions() {

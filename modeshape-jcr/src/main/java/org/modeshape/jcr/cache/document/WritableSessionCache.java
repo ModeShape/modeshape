@@ -120,12 +120,17 @@ public class WritableSessionCache extends AbstractSessionCache {
     private static final int MAX_REPEAT_FOR_LOCK_ACQUISITION_TIMEOUT = 4;
     private static final long PAUSE_TIME_BEFORE_REPEAT_FOR_LOCK_ACQUISITION_TIMEOUT = 50L;
 
+    /**
+     * Both the following maps holds some state based on ModeShape TX IDs which are UUIDs so we need to make them static because
+     * ModeShape transactions can be nested.
+     */
+    private final static ConcurrentHashMap<String, Transactions.TransactionFunction> COMPLETE_FUNCTION_BY_TX_ID = new ConcurrentHashMap<>();
+    private final static ConcurrentHashMap<String, Set<String>> LOCKED_KEYS_BY_TX_ID = new ConcurrentHashMap<>();
+
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
     private final Transactions txns;
     private final RepositoryEnvironment repositoryEnvironment;
-    private final ConcurrentHashMap<String, Transactions.TransactionFunction> completeTxFunctionByTxId = new ConcurrentHashMap<>();
     private final TransactionalWorkspaceCaches txWorkspaceCaches;
-    private final ConcurrentHashMap<String, Set<String>> lockedKeysByTxId;
     private Map<NodeKey, SessionNode> changedNodes;
     private Set<NodeKey> replacedNodes;
     private LinkedHashSet<NodeKey> changedNodesInOrder;
@@ -158,7 +163,7 @@ public class WritableSessionCache extends AbstractSessionCache {
         this.repositoryEnvironment = repositoryEnvironment;
         assert txWorkspaceCaches != null;
         this.txWorkspaceCaches = txWorkspaceCaches;
-        this.lockedKeysByTxId = new ConcurrentHashMap<>();
+      
         checkForTransaction();        
     }
 
@@ -411,14 +416,11 @@ public class WritableSessionCache extends AbstractSessionCache {
                 Transaction modeshapeTx = transactions.currentTransaction();
                 if (modeshapeTx != null) {
                     String txId = modeshapeTx.id();
-                    if (!completeTxFunctionByTxId.containsKey(txId)) {
-                        // create and register the complete transaction function only once
-                        Transactions.TransactionFunction completeFunction = () -> completeTransaction(txId);
-                        if (completeTxFunctionByTxId.putIfAbsent(txId, completeFunction) == null) {
-                            // we only want 1 completion function per tx id
-                            modeshapeTx.uponCompletion(completeFunction);
-                        }
-                    }
+                    COMPLETE_FUNCTION_BY_TX_ID.computeIfAbsent(txId, transactionId -> {
+                        Transactions.TransactionFunction completeFunction = () -> completeTransaction(transactionId);
+                        modeshapeTx.uponCompletion(completeFunction);
+                        return completeFunction;
+                    });
                 }
             } else {
                 // There is no active transaction, so just use the shared workspace cache ...
@@ -438,11 +440,8 @@ public class WritableSessionCache extends AbstractSessionCache {
         // reset the ws cache to the shared (global one)
         setWorkspaceCache(sharedWorkspaceCache());
         // and clear some tx specific data
-        Set<String> lockedKeys = lockedKeysByTxId.remove(txId);
-        if (lockedKeys != null) {
-            lockedKeys.clear();
-        }
-        completeTxFunctionByTxId.remove(txId);
+        LOCKED_KEYS_BY_TX_ID.remove(txId);
+        COMPLETE_FUNCTION_BY_TX_ID.remove(txId);
     }
 
     protected final void logChangesBeingSaved( Iterable<NodeKey> firstNodesInOrder,
@@ -1537,7 +1536,7 @@ public class WritableSessionCache extends AbstractSessionCache {
         Transaction modeshapeTx = repositoryEnvironment.getTransactions().currentTransaction();
         assert modeshapeTx != null;
         String txId = modeshapeTx.id();
-        Set<String> lockedKeysForTx = lockedKeysByTxId.computeIfAbsent(txId, id -> new LinkedHashSet<>());
+        Set<String> lockedKeysForTx = LOCKED_KEYS_BY_TX_ID.computeIfAbsent(txId, id -> new LinkedHashSet<>());
         if (keysToLock.removeAll(lockedKeysForTx)) {
             if (LOGGER.isDebugEnabled()) {
                 LOGGER.debug("The keys {0} have been locked previously as part of the transaction {1}; skipping them...",
@@ -1569,20 +1568,9 @@ public class WritableSessionCache extends AbstractSessionCache {
                                        " retry attempts.");
         }
         lockedKeysForTx.addAll(keysToLock);
-        // tell the transaction that we now have exclusive locks on a number of keys...
-        modeshapeTx.locksObtained(keysToLock);
-        // and go to the document store to load into the cache the latest "persisted" version of these nodes only 
-        // if we haven't locked them previously and they aren't new (new nodes should have a unique UUID which should be 
-        // uncontended
-        keysToLock.stream()
-                  .filter(this::shouldLoadFreshFromDocumentStore)
-                  .forEach(workspaceCache::loadFromDocumentStore);
-    }
-    
-    private boolean shouldLoadFreshFromDocumentStore(String key) {
-        NodeKey nodeKey = new NodeKey(key);
-        SessionNode node = changedNodes.get(nodeKey);
-        return (node != null && !node.isNew()) || (replacedNodes != null && replacedNodes.contains(nodeKey));
+        // now that we've locked the keys, load all of the from the document store
+        // note that some of the keys may be new but it's important to pass the entire set down to the document store
+        workspaceCache.loadFromDocumentStore(keysToLock);
     }
     
     private Set<String> keysToLockForNode(NodeKey key) {

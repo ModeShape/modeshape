@@ -23,7 +23,9 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.SecureHash.Algorithm;
 import org.modeshape.common.util.StringUtil;
@@ -267,6 +269,21 @@ public class FederatedDocumentStore implements DocumentStore {
             }
         }
         return null;
+    }
+
+    @Override
+    public List<SchematicEntry> load(Set<String> keys) {
+        Map<Boolean, List<String>> keysByLocality = keys.stream().collect(Collectors.groupingBy(this::isLocalSource));
+        List<String> localKeys = keysByLocality.get(Boolean.TRUE);
+        List<SchematicEntry> docsByKey = localKeys == null ? new ArrayList<>() : localStore().load(new HashSet<>(localKeys));
+        List<String> externalKeys = keysByLocality.get(Boolean.FALSE);
+        if (externalKeys != null) {
+            docsByKey.addAll(externalKeys.stream()
+                                         .map(this::get)
+                                         .filter(Objects::nonNull)
+                                         .collect(Collectors.toList()));       
+        }
+        return docsByKey;
     }
 
     private EditableDocument updateCaching(Connector connector,

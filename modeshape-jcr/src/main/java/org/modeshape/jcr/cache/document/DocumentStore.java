@@ -17,6 +17,8 @@
 package org.modeshape.jcr.cache.document;
 
 import java.util.Collection;
+import java.util.List;
+import java.util.Set;
 import org.modeshape.jcr.cache.DocumentStoreException;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.binary.ExternalBinaryValue;
@@ -42,6 +44,14 @@ public interface DocumentStore {
      * @see org.modeshape.schematic.SchematicDb#get(String) 
      */
     public SchematicEntry get( String key );
+
+    /**
+     * Loads a set of entries from the document store. This should always return the latest persisted view of the entries.
+     * 
+     * @param keys a {@link Set} of document keys; may not be null
+     * @return a {@link Set} of {@link SchematicEntry entries}; never {@code null} 
+     */
+    public List<SchematicEntry> load(Set<String> keys);
 
     /**
      * Store the supplied document at the given key.

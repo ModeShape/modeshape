@@ -67,6 +67,7 @@ public class RelationalDbTest extends AbstractRelationalDbTest {
         
         //simulate a new transaction
         db.txStarted("1");
+        db.get(idToUpdate);
         db.put(idToUpdate, updatedDocument);
         assertEquals(updatedDocument, db.getEntry(idToUpdate).content());
         db.txCommitted("1");
