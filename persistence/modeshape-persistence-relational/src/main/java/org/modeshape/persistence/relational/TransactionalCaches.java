@@ -15,6 +15,7 @@
  */
 package org.modeshape.persistence.relational;
 
+import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -41,18 +42,14 @@ public final class TransactionalCaches {
         }
     };
     
-    private final Map<String, ReadWriteCache> cachesByTxId;
+    private final Map<String, TransactionalCache> cachesByTxId;
     
     protected TransactionalCaches() {
         this.cachesByTxId = new ConcurrentHashMap<>();
     }    
 
-    protected void flushReadCache(Set<String> ids) {
-        cacheForTransaction().flushReadCache(ids);
-    }
-    
     protected Document search(String key) {
-        ReadWriteCache cache = cacheForTransaction();
+        TransactionalCache cache = cacheForTransaction();
         Document doc = cache.getFromWriteCache(key);
         if (doc != null) {
             return doc;
@@ -61,8 +58,7 @@ public final class TransactionalCaches {
     }
     
     protected boolean hasBeenRead(String key) {
-        ReadWriteCache cache = cacheForTransaction();
-        return cache.readCache().containsKey(key);
+        return cacheForTransaction().readCache().containsKey(key);
     }
 
     protected Document getForWriting(String key) {
@@ -74,15 +70,14 @@ public final class TransactionalCaches {
     }
 
     protected Document putForWriting(String key, Document doc) {
-        ReadWriteCache readWriteCache = cacheForTransaction();
-        return readWriteCache.putForWriting(key, doc);
+        return cacheForTransaction().putForWriting(key, doc);
     }
     
     protected Set<String> documentKeys() {
-        ReadWriteCache readWriteCache = cacheForTransaction();
-        return readWriteCache.writeCache().entrySet()
+        TransactionalCache transactionalCache = cacheForTransaction();
+        return transactionalCache.writeCache().entrySet()
                              .stream()
-                             .filter(entry -> !readWriteCache.isRemoved(entry.getKey()))
+                             .filter(entry -> !transactionalCache.isRemoved(entry.getKey()))
                              .map(Map.Entry::getKey)
                              .collect(Collectors.toSet());
     }
@@ -96,8 +91,15 @@ public final class TransactionalCaches {
     }
 
     protected void remove(String key) {
-        ReadWriteCache readWriteCache = cacheForTransaction();
-        readWriteCache.remove(key);
+        cacheForTransaction().remove(key);
+    }
+    
+    protected boolean isNew(String key) {
+        return cacheForTransaction().isNew(key);
+    }
+    
+    protected void putNew(String key) {
+        cacheForTransaction().putNew(key);
     }
     
     protected void clearCache() {
@@ -107,15 +109,16 @@ public final class TransactionalCaches {
         });
     }
 
-    private ReadWriteCache cacheForTransaction() {
-        return cachesByTxId.computeIfAbsent(TransactionsHolder.requireActiveTransaction(), ReadWriteCache::new);
+    private TransactionalCache cacheForTransaction() {
+        return cachesByTxId.computeIfAbsent(TransactionsHolder.requireActiveTransaction(), TransactionalCache::new);
     }
 
-    private static class ReadWriteCache {
+    private static class TransactionalCache {
         private final ConcurrentMap<String, Document> read = new ConcurrentHashMap<>();
         private final ConcurrentMap<String, Document> write = new ConcurrentHashMap<>();
+        private final Set<String> newIds = Collections.newSetFromMap(new ConcurrentHashMap<>());
 
-        protected ReadWriteCache(String txId) {
+        protected TransactionalCache(String txId) {
         }
 
         protected Document getFromReadCache(String id) {
@@ -127,7 +130,7 @@ public final class TransactionalCaches {
         }
         
         protected void putForReading(String id, Document doc) {
-            read.putIfAbsent(id, doc);
+            read.put(id, doc);
         }
         
         protected Document putForWriting(String id, Document doc) {
@@ -136,6 +139,14 @@ public final class TransactionalCaches {
                 write.putIfAbsent(id, doc.clone());
             }
             return write.get(id);
+        }
+        
+        protected void putNew(String id) {
+            newIds.add(id);
+        }
+        
+        protected boolean isNew(String id) {
+            return newIds.contains(id);
         }
         
         protected boolean isRemoved(String id) {
@@ -157,17 +168,7 @@ public final class TransactionalCaches {
         protected void clear() {
             read.clear();
             write.clear();
-        }
-        
-        protected void flushReadCache(String id) {
-            read.remove(id);
-        }
-        
-        protected void flushReadCache(Set<String> ids) {
-            if (read.isEmpty()) {
-                return;
-            }
-            ids.stream().forEach(this::flushReadCache);
+            newIds.clear();
         }
     }
 }

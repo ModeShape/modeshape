@@ -19,6 +19,7 @@ import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
 import java.util.EnumSet;
+import java.util.concurrent.TimeUnit;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import javax.sql.DataSource;
@@ -79,7 +80,7 @@ public final class DataSourceManager {
         ds.setUsername(userName);
         ds.setPassword(password);
         ds.setMaximumPoolSize(config.poolSize());
-        ds.setIdleTimeout(10000); //10sec
+        ds.setIdleTimeout(TimeUnit.MINUTES.toMillis(1));
         dataSource = ds;
 
         return dataSource;

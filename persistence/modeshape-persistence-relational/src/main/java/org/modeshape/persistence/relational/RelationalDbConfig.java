@@ -49,7 +49,7 @@ public final class RelationalDbConfig {
     protected static final String DEFAULT_PASSWORD = "";
     protected static final String DEFAULT_TABLE_NAME = "MODESHAPE_REPOSITORY";
     protected static final int DEFAULT_FETCH_SIZE = 1000;
-    protected static final int DEFAULT_POOL_SIZE = 1000;
+    protected static final int DEFAULT_POOL_SIZE = 50;
   
     private final boolean createOnStart;
     private final boolean dropOnExit;

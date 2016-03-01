@@ -26,6 +26,7 @@ import static org.modeshape.schematic.document.Json.ReservedField.REGEX_PATTERN;
 import static org.modeshape.schematic.document.Json.ReservedField.SCOPE;
 import static org.modeshape.schematic.document.Json.ReservedField.TIMESTAMP;
 import static org.modeshape.schematic.document.Json.ReservedField.UUID;
+import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
@@ -56,7 +57,7 @@ public class CompactJsonWriter implements JsonWriter {
     @Override
     public void write( Object object,
                        OutputStream stream ) throws IOException {
-        Writer writer = new OutputStreamWriter(stream, Json.UTF8);
+        Writer writer = new BufferedWriter(new OutputStreamWriter(stream, Json.UTF8));
         write(object, writer);
         writer.flush();
     }

@@ -25,9 +25,11 @@ import java.io.OutputStream;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -35,6 +37,8 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
@@ -169,12 +173,18 @@ public class RelationalDb implements SchematicDb {
         if (cachedDocument != null) {
             logDebug("Getting {0} from cache; value {1}", key, cachedDocument);
             return cachedDocument != TransactionalCaches.REMOVED ? cachedDocument : null;
+        } else if (transactionalCaches.isNew(key)) {
+            return null;
         }
+
         // if it's not in the cache, bring one from the DB using a TL connection
         Document doc = runWithConnection(connection -> statements.getById(connection, key, this::readDocument), false);
         if (doc != null) {
             // store for further reading...
             transactionalCaches.putForReading(key, doc);
+        } else {
+            // mark the key as new
+            transactionalCaches.putNew(key);
         }
         return doc;
     }
@@ -185,14 +195,50 @@ public class RelationalDb implements SchematicDb {
                 return null;
             }
             InputStream binaryStream = resultSet.getBinaryStream(1);
-            try (InputStream contentStream = config.compress() ? 
-                                             new GZIPInputStream(binaryStream) : 
-                                             new BufferedInputStream(binaryStream)) {
-                return Json.read(contentStream, false);    
-            }
+            return documentFromStream(binaryStream);
         } catch (Exception e) {
             throw new RelationalProviderException(e);
         } 
+    }
+
+    private Document documentFromStream(InputStream binaryStream) throws IOException {
+        try (InputStream contentStream = config.compress() ? 
+                                         new GZIPInputStream(binaryStream) : 
+                                         new BufferedInputStream(binaryStream)) {
+            return Json.read(contentStream, false);    
+        }
+    }
+
+    @Override
+    public List<SchematicEntry> load(Set<String> keys) {
+        if (keys.isEmpty()) {
+            return Collections.emptyList();
+        }
+        boolean hasActiveTransaction = TransactionsHolder.hasActiveTransaction();
+        Set<String> loadedIds = new HashSet<>();
+        Function<ResultSet, List<SchematicEntry>> entriesLoader = resultSet -> {
+            List<SchematicEntry> entries = new ArrayList<>();
+            Document doc;
+            while ((doc = readDocument(resultSet)) != null) {
+                final Document copy = doc;
+                SchematicEntry entry = () -> copy;
+                String id = entry.id();
+                loadedIds.add(id);
+                entries.add(entry);
+                if (hasActiveTransaction) {
+                    //always cache it to mark it as "existing"
+                    transactionalCaches.putForReading(id, doc);
+                }
+            }
+            return entries;
+        };
+        List<SchematicEntry> result = runWithConnection(connection -> statements.load(connection, keys, entriesLoader), true);
+        if (hasActiveTransaction) {
+            // if there's an active transaction make sure we also mark all the keys which were not found in the DB as 'new'
+            // to prevent further DB lookups
+            keys.stream().filter(((Predicate<String>)loadedIds::contains).negate()).forEach(transactionalCaches::putNew);
+        }
+        return result;
     }
 
     @Override
@@ -277,15 +323,16 @@ public class RelationalDb implements SchematicDb {
         if (cachedDocument != null) {
             // if it's in the cache, just return based on the cached info
             return cachedDocument != TransactionalCaches.REMOVED;
+        } else if (transactionalCaches.isNew(key)) {
+            return false;
         }
         // otherwise it's not in the cache, so look in the DB
-        return runWithConnection(connection -> statements.contentExists(connection, key), true);
-    }
-
-    @Override
-    public void locksObtained(String txId, Set<String> ids) {
-        logDebug("Transaction {0} now has exclusive locks on {1}. Flushing local cache...", txId, ids);
-        transactionalCaches.flushReadCache(ids);
+        boolean existsInDB = runWithConnection(connection -> statements.contentExists(connection, key), true);
+        if (!existsInDB) {
+            // it's not in the DB, so mark it as such
+            transactionalCaches.putNew(key);
+        }
+        return existsInDB;
     }
 
     @Override
@@ -331,10 +378,7 @@ public class RelationalDb implements SchematicDb {
                 if (TransactionalCaches.REMOVED == document) {
                     batchUpdate.remove(key);
                 } else {
-                    // if the key is in our read cache OR it's in the DB we must perform an update
-                    // otherwise we should do an insert
-                    // this is a slight optimization over going to the db each time
-                    boolean update = transactionalCaches.hasBeenRead(key) || statements.contentExists(tlConnection, key);
+                    boolean update = transactionalCaches.hasBeenRead(key);
                     if (update) {
                         batchUpdate.update(key, writeDocument(document));
                     } else {

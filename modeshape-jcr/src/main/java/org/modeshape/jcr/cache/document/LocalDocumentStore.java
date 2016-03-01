@@ -23,11 +23,9 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.function.BiFunction;
-import java.util.stream.Stream;
 import javax.transaction.NotSupportedException;
 import javax.transaction.SystemException;
 import org.modeshape.common.SystemFailureException;
-import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.jcr.RepositoryEnvironment;
 import org.modeshape.jcr.locking.LockingService;
@@ -47,8 +45,6 @@ import org.modeshape.schematic.document.EditableDocument;
  * @author Horia Chiorean (hchiorea@redhat.com)
  */
 public class LocalDocumentStore implements DocumentStore {
-    
-    private static final Logger LOGGER = Logger.getLogger(LocalDocumentStore.class);
 
     private final SchematicDb database;
     private final RepositoryEnvironment repoEnv;
@@ -75,12 +71,17 @@ public class LocalDocumentStore implements DocumentStore {
     /**
      * Returns all the keys which are held by this store.
      * 
-     * @return a {@link Stream} of keys, never {@code null}
+     * @return a {@link Set} of keys, never {@code null}
      */
     public Set<String> keys() {
         return database.keys();    
     }
 
+    @Override
+    public List<SchematicEntry> load(Set<String> keys) {
+        return database.load(keys);
+    }
+    
     @Override
     public SchematicEntry get( String key ) {
         return database.getEntry(key);

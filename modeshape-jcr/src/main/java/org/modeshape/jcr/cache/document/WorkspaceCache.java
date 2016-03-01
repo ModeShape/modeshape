@@ -16,6 +16,7 @@
 package org.modeshape.jcr.cache.document;
 
 import java.util.Iterator;
+import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.jcr.ExecutionContext;
@@ -329,17 +330,19 @@ public class WorkspaceCache implements DocumentCache {
             throw new WorkspaceNotFoundException(JcrI18n.workspaceHasBeenDeleted.text(getWorkspaceName()));
         }
     }
-    
-    protected void loadFromDocumentStore(String key) {
-        Document document = documentFor(key);
-        if (document != null) {
+
+    protected void loadFromDocumentStore(Set<String> keys) {
+        this.nodesByKey.clear();
+        this.documentStore.load(keys).forEach(entry -> {
+            String key = entry.id();
+            Document document = entry.content();
             NodeKey nodeKey = new NodeKey(key);
             this.nodesByKey.put(nodeKey, new LazyCachedNode(nodeKey, document));
             if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug("Read a fresh copy from the document store for '{0}' and stored it in the tx ws cache as '{1}'", 
+                LOGGER.debug("Read a fresh copy from the document store for '{0}' and stored it in the tx ws cache as '{1}'",
                              key, document);
             }
-        }
+        });
     }
 
     /**

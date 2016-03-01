@@ -23,6 +23,8 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CountDownLatch;
@@ -419,13 +421,22 @@ public class BackupService {
                     // PHASE 1:
                     // Perform the backup of the repository cache content ...
                     AtomicInteger counter = new AtomicInteger();
-                    documentStore.keys().forEach(key -> {
-                        SchematicEntry entry = documentStore.get(key);
-                        if (entry != null) {
-                            writeToContentArea(entry, contentWriter);
-                            counter.incrementAndGet();
-                        }                        
-                    });
+                    Set<String> keys = documentStore.keys();
+                    // load keys in batches of 1000
+                    int batchSize = 1000;  
+                    Set<String> keysSubSet = new HashSet<>();
+                    for (String key : keys) {
+                        keysSubSet.add(key);
+                        if (counter.incrementAndGet() % batchSize == 0) {
+                            documentStore.load(keysSubSet).forEach(entry -> writeToContentArea(entry, contentWriter));
+                            keysSubSet.clear();
+                        }
+                    }
+                    if (!keysSubSet.isEmpty()) {
+                        documentStore.load(keysSubSet).forEach(entry -> writeToContentArea(entry, contentWriter));
+                        counter.addAndGet(keysSubSet.size());
+                    }
+                    
                     LOGGER.debug("Wrote {0} documents to {1}", counter, backupDirectory.getAbsolutePath());
 
                     // PHASE 2:

@@ -15,6 +15,7 @@
  */
 package org.modeshape.schematic;
 
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Stream;
 import org.modeshape.schematic.annotation.RequiresTransaction;
@@ -64,6 +65,19 @@ public interface SchematicDb extends TransactionListener, Lifecycle {
      * @return the document, or null if there was no document with the supplied key
      */
     Document get( String key );
+
+    /**
+     * Loads a set of documents from the DB returning the corresponding schematic entries.
+     * 
+     * <p>
+     * If this method is called within an existing transaction, it should <b>not take into account</b> the transient transactional 
+     * context (i.e. any local but not yet committed changes) and should always return the latest persisted information.
+     * </p>
+     * 
+     * @param keys a {@link Set} of keys; never {@code null}
+     * @return a {@link List} of {@link SchematicEntry entries}; never {@code null} 
+     */
+    List<SchematicEntry> load(Set<String> keys);
     
     /**
      * Stores the supplied schematic entry under the given key. If an entry already exists with the same key, it should be

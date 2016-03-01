@@ -39,7 +39,7 @@ public abstract class AbstractRelationalDbTest {
     protected static final Document DEFAULT_CONTENT ;
 
     protected RelationalDb db;
-    protected boolean print;
+    protected boolean print = true;
     
     static {
         try {
@@ -88,5 +88,11 @@ public abstract class AbstractRelationalDbTest {
     protected List<SchematicEntry> randomEntries(int sampleSize) throws Exception {
         return IntStream.range(0, sampleSize).mapToObj(i -> SchematicEntry.create(
                 UUID.randomUUID().toString(), DEFAULT_CONTENT)).collect(Collectors.toList());
+    }
+    
+    protected void print(String s) {
+        if (print) {
+            System.out.println(Thread.currentThread().getName() + ": " + s);
+        }
     }
 }
