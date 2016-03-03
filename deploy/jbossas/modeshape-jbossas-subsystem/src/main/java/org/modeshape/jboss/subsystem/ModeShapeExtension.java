@@ -19,6 +19,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUB
 import java.util.List;
 import org.jboss.as.controller.Extension;
 import org.jboss.as.controller.ExtensionContext;
+import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.SubsystemRegistration;
 import org.jboss.as.controller.descriptions.StandardResourceDescriptionResolver;
@@ -64,8 +65,8 @@ public class ModeShapeExtension implements Extension {
     @Override
     public void initialize( ExtensionContext context ) {
         final SubsystemRegistration registration = context.registerSubsystem(SUBSYSTEM_NAME,
-                                                                             MANAGEMENT_API_MAJOR_VERSION,
-                                                                             MANAGEMENT_API_MINOR_VERSION);
+                                                                             ModelVersion.create(MANAGEMENT_API_MAJOR_VERSION,
+                                                                                                 MANAGEMENT_API_MINOR_VERSION));
 
         registration.registerXMLElementWriter(new ModeShapeSubsystemXMLWriter());
         // ModeShape system, with children repositories.

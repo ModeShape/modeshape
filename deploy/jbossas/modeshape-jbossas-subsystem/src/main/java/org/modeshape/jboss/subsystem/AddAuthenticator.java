@@ -18,13 +18,11 @@ package org.modeshape.jboss.subsystem;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADDRESS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPERATION_HEADERS;
-import java.util.List;
 import java.util.Properties;
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
-import org.jboss.as.controller.ServiceVerificationHandler;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
 import org.jboss.msc.service.ServiceBuilder;
@@ -59,9 +57,7 @@ public class AddAuthenticator extends AbstractAddStepHandler {
     @Override
     protected void performRuntime( final OperationContext context,
                                    final ModelNode operation,
-                                   final ModelNode model,
-                                   final ServiceVerificationHandler verificationHandler,
-                                   final List<ServiceController<?>> newControllers ) {
+                                   final ModelNode model) {
 
         ServiceTarget target = context.getServiceTarget();
         Properties props = new Properties();
@@ -103,8 +99,6 @@ public class AddAuthenticator extends AbstractAddStepHandler {
         authenticatorBuilder.addDependency(ModeShapeServiceNames.repositoryServiceName(repositoryName),
                                            JcrRepository.class,
                                            authenticatorService.getJcrRepositoryInjector());
-        authenticatorBuilder.setInitialMode(ServiceController.Mode.ACTIVE);
-        ServiceController<JcrRepository> controller = authenticatorBuilder.install();
-        newControllers.add(controller);
+        authenticatorBuilder.setInitialMode(ServiceController.Mode.ACTIVE).install();
     }
 }

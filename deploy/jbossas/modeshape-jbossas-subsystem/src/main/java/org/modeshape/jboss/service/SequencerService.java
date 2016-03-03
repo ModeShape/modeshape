@@ -108,19 +108,13 @@ public class SequencerService implements Service<JcrRepository> {
         // Update the deployed repository's configuration with these changes
         try {
             engine.update(this.repositoryName, changes);
-        } catch (ConfigurationException e) {
-            throw new StartException(e);
-        } catch (NoSuchRepositoryException e) {
-            throw new StartException(e);
-        } catch (RepositoryException e) {
+        } catch (ConfigurationException | RepositoryException e) {
             throw new StartException(e);
         }
     }
 
     @Override
     public void stop( StopContext arg0 ) {
-        // TODO Auto-generated method stub
-
     }
 
     /**

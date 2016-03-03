@@ -80,8 +80,6 @@ public abstract class ModeShapeMetricHandler extends AbstractRuntimeOnlyHandler 
                     }
                 }
             }
-
-            context.stepCompleted();
         } catch (final Exception e) {
             throw new OperationFailedException(e);
         }
