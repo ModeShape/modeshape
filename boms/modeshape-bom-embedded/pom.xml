@@ -52,8 +52,13 @@
         <version.javax.jcr>2.0</version.javax.jcr>
         <version.org.jboss.spec.javax.transaction.jboss-transaction-api_1.1_spec>1.0.1.Final</version.org.jboss.spec.javax.transaction.jboss-transaction-api_1.1_spec>
         <version.org.jgroups>3.6.7.Final</version.org.jgroups>
+        <version.com.h2>1.4.191</version.com.h2>
         <version.com.zaxxer.HikariCP>2.4.3</version.com.zaxxer.HikariCP>
+        <version.com.googlecode.concurrentlinkedhashmap>1.4.2</version.com.googlecode.concurrentlinkedhashmap>
+        <version.org.slf4j>1.7.2</version.org.slf4j>
+        <version.log4j>1.2.17</version.log4j>
         <version.org.picketbox>4.0.21.Final</version.org.picketbox>
+        <version.org.jboss.logging>3.1.0.GA</version.org.jboss.logging>
         <version.com.atomikos>3.8.0</version.com.atomikos>
         <version.org.jboss.jbossts.jta>5.1.0.Final</version.org.jboss.jbossts.jta>
         <version.org.mongodb.mongo-java-driver>2.14.0</version.org.mongodb.mongo-java-driver>
@@ -187,6 +192,12 @@
                 <groupId>org.modeshape</groupId>
                 <artifactId>modeshape-sequencer-images</artifactId>
                 <version>${project.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>xerces</groupId>
+                        <artifactId>xercesImpl</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.modeshape</groupId>
@@ -298,10 +309,46 @@
                 <version>${project.version}</version>
                 <scope>test</scope>
             </dependency>
+            
+            <!-- 
+                Used by logging (optional)
+            -->
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-api</artifactId>
+                <version>${version.org.slf4j}</version>
+               <optional>true</optional>
+            </dependency>
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-log4j12</artifactId>
+                <version>${version.org.slf4j}</version>
+                <optional>true</optional>
+            </dependency>
+            <dependency>
+                <groupId>log4j</groupId>
+                <artifactId>log4j</artifactId>
+                <version>${version.log4j}</version>
+                <optional>true</optional>
+            </dependency>
 
             <!-- 
-                Connection pool used by the ModeShape relational provider
+                Cache used by modeshape-jcr
             -->
+            <dependency>
+                <groupId>com.googlecode.concurrentlinkedhashmap</groupId>
+                <artifactId>concurrentlinkedhashmap-lru</artifactId>
+                <version>${version.com.googlecode.concurrentlinkedhashmap}</version>
+            </dependency>
+
+            <!-- 
+                Used by the relational persistence provider
+            -->
+            <dependency>
+                <groupId>com.h2database</groupId>
+                <artifactId>h2</artifactId>
+                <version>${version.com.h2}</version>
+            </dependency>
             <dependency>
                 <groupId>com.zaxxer</groupId>
                 <artifactId>HikariCP</artifactId>
@@ -381,6 +428,12 @@
                     </exclusion>
                 </exclusions>
             </dependency>
+            <dependency>
+                <groupId>org.jboss.logging</groupId>
+                <artifactId>jboss-logging</artifactId>
+                <version>${version.org.jboss.logging}</version>
+                <optional>true</optional>
+            </dependency>
             <!--
                 Transaction Managers
             -->
@@ -388,17 +441,19 @@
                 <groupId>com.atomikos</groupId>
                 <artifactId>transactions</artifactId>
                 <version>${version.com.atomikos}</version>
+                <optional>true</optional>
             </dependency>
             <dependency>
                 <groupId>com.atomikos</groupId>
                 <artifactId>transactions-jta</artifactId>
                 <version>${version.com.atomikos}</version>
+                <optional>true</optional>
             </dependency>
             <dependency>
                 <groupId>org.jboss.narayana.jta</groupId>
                 <artifactId>narayana-jta</artifactId>
                 <version>${version.org.jboss.jbossts.jta}</version>
-                <scope>test</scope>
+                <optional>true</optional>
                 <exclusions>
                     <exclusion>
                         <artifactId>commons-httpclient</artifactId>

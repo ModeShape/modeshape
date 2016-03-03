@@ -46,7 +46,6 @@ import org.jgroups.Address;
 import org.jgroups.Channel;
 import org.jgroups.ChannelListener;
 import org.jgroups.JChannel;
-import org.jgroups.MergeView;
 import org.jgroups.Message;
 import org.jgroups.ReceiverAdapter;
 import org.jgroups.View;
@@ -500,11 +499,6 @@ public abstract class ClusteringService implements org.modeshape.jcr.locking.Loc
         public void viewAccepted( View newView ) {
             LOGGER.trace("{0} Members of '{1}' cluster have changed: {2}, total count: {3}", channel.getAddress(), clusterName(), 
                          newView, newView.getMembers().size());
-            if (newView instanceof MergeView) {
-                LOGGER.trace("Received a merged view in cluster {0}. Releasing all locks...", clusterName());
-                // see JGroups docs in case of a cluster split-merge case
-                lockService.unlockAll();
-            }
             membersInCluster.set(newView.getMembers().size());
             if (LOGGER.isDebugEnabled()) {
                 if (membersInCluster.get() > 1) {

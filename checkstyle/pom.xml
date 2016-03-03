@@ -33,7 +33,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-checkstyle-plugin</artifactId>
-                <version>2.15</version>
+                <version>2.17</version>
             </plugin>
             <!-- 
             This is not deployed into a Maven repository. It is merely installed into the local Maven repository
@@ -53,7 +53,7 @@
         <dependency>
             <groupId>com.puppycrawl.tools</groupId>
             <artifactId>checkstyle</artifactId>
-            <version>6.7</version>
+            <version>6.15</version>
             <exclusions>
                 <exclusion>
                     <groupId>com.sun</groupId>
