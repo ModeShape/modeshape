@@ -143,6 +143,15 @@
                         <password>sa</password>
                     </security>
                 </datasource>
+                <datasource jndi-name="java:jboss/datasources/sampleDS" pool-name="sampleDS"
+                            enabled="true" use-java-context="true" jta="false">
+                    <connection-url>jdbc:h2:${jboss.server.data.dir}/modeshape/sample/db;AUTO_SERVER=true</connection-url>
+                    <driver>h2</driver>
+                    <security>
+                        <user-name>sa</user-name>
+                        <password>sa</password>
+                    </security>
+                </datasource>
                 <drivers>
                     <driver name="h2" module="com.h2database.h2">
                         <xa-datasource-class>org.h2.jdbcx.JdbcDataSource</xa-datasource-class>
@@ -261,9 +270,8 @@
             <!-- A clustered sample repository. All content, binary values,
                  and indexes are stored within the server's data directory. This is the simplest way to configure a repository
                  that uses defaults for everything; feel free to change and specify other configuration options.  -->
-            <repository name="sample" anonymous-roles="admin"
-                        cluster-name="sample-cluster" cluster-stack="tcp">
-                <db-persistence url="jdbc:h2:${jboss.server.data.dir}/modeshape/sample/db;AUTO_SERVER=true"/>
+            <repository name="sample" anonymous-roles="admin" cluster-name="sample-cluster" cluster-stack="tcp">
+                <db-persistence datasource-jndi="java:jboss/datasources/sampleDS"/>
                 <file-binary-storage path="modeshape/sample/binaries" relative-to="${jboss.server.data.dir}"/>
             </repository>
         </subsystem>

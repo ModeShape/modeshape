@@ -3,7 +3,7 @@
     <parent>
         <groupId>org.jboss</groupId>
         <artifactId>jboss-parent</artifactId>
-        <version>19</version>
+        <version>20</version>
         <relativePath></relativePath>
     </parent>
 
@@ -55,16 +55,6 @@
             <timezone>-6</timezone>
         </developer>
         <developer>
-            <name>Van Halbert</name>
-            <id>vhalbert@redhat.com</id>
-            <email>vhalbert@redhat.com</email>
-            <organization>JBoss, a division of Red Hat</organization>
-            <roles>
-                <role>Developer</role>
-            </roles>
-            <timezone>-6</timezone>
-        </developer>
-        <developer>
             <name>Horia Chiorean</name>
             <id>hchiorea@redhat.com</id>
             <email>hchiorea@redhat.com</email>
@@ -101,11 +91,6 @@
         <jcr.repository.vendor>${project.organization.name}</jcr.repository.vendor>
         <jcr.repository.vendor.url>http://www.modeshape.org</jcr.repository.vendor.url>
         <jcr.repository.name>ModeShape</jcr.repository.name>
-
-        <!-- Instruct the build to use only UTF-8 encoding for source code -->
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <maven.compiler.source>1.8</maven.compiler.source>
-        <maven.compiler.target>1.8</maven.compiler.target>
         
         <!--
               These are properties used in the database profiles. Must initialize
@@ -145,7 +130,6 @@
         <version.org.jgroups>3.6.7.Final</version.org.jgroups>
         <jgroups.module.slot>main</jgroups.module.slot>
         
-        <version.com.mchange.c3p0>0.9.5</version.com.mchange.c3p0>
         <version.org.jboss.logging>3.2.1.Final</version.org.jboss.logging>
         <version.com.sun.xml.bind>2.2.11</version.com.sun.xml.bind>
         <version.org.jboss.spec.javax.servlet.jboss-servlet-api_3.1_spec>1.0.0.Final</version.org.jboss.spec.javax.servlet.jboss-servlet-api_3.1_spec>
@@ -207,15 +191,11 @@
         <!--Properties which must be used when installing locally a server ZIP distribution -->
         <version.org.wildfly>10.0.0.Final</version.org.wildfly>
         <version.org.wildfly.core>2.0.10.Final</version.org.wildfly.core>
-        <jboss.server.root.folder>wildfly-10.0.0.Final</jboss.server.root.folder>
 
-        <!--The root folder under EAP/AS where the ModeShape & related modules should be placed-->
-        <jboss.kit.modules.location>modules</jboss.kit.modules.location>
-
-        <!-- The id of the maven distribution which is building the current kit -->
-        <jboss.kit.distribution.id>jboss-wf-dist</jboss.kit.distribution.id>
+        <!-- The id of the maven distribution which is building the current wf kit -->
+        <wf.dist.id>jboss-wf-dist</wf.dist.id>
         
-        <!--The name of binary distribution folder-->
+        <!--The name of binary distribution -->
         <binary.dist.name>binary-dist</binary.dist.name>
 
         <!--
@@ -1512,6 +1492,12 @@
                 <groupId>com.drewnoakes</groupId>
                 <artifactId>metadata-extractor</artifactId>
                 <version>${version.com.drewnoakes.metadata-extractor}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>xerces</groupId>
+                        <artifactId>xercesImpl</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <!--Java sequencer-->
             <dependency>

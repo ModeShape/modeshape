@@ -236,10 +236,10 @@
                                     <groupId>org.modeshape</groupId>
                                     <artifactId>modeshape-distribution</artifactId>
                                     <version>${project.version}</version>
-                                    <classifier>${jboss.kit.distribution.id}</classifier>
+                                    <classifier>${wf.dist.id}</classifier>
                                     <type>zip</type>
                                     <overWrite>true</overWrite>
-                                    <outputDirectory>${project.build.directory}/${jboss.server.root.folder}</outputDirectory>
+                                    <outputDirectory>${project.build.directory}/wildfly-${version.org.wildfly}</outputDirectory>
                                 </artifactItem>
                             </artifactItems>
                         </configuration>
@@ -272,7 +272,7 @@
                             <goal>copy-resources</goal>
                         </goals>
                         <configuration>
-                            <outputDirectory>${project.build.directory}/${jboss.server.root.folder}/${jboss.kit.modules.location}</outputDirectory>
+                            <outputDirectory>${project.build.directory}/wildfly-${version.org.wildfly}/modules</outputDirectory>
                             <overwrite>true</overwrite>
                             <resources>
                                 <resource>
@@ -292,7 +292,7 @@
                             <goal>copy-resources</goal>
                         </goals>
                         <configuration>
-                            <outputDirectory>${project.build.directory}/${jboss.server.root.folder}/modules/org/es-test/2.1.0</outputDirectory>
+                            <outputDirectory>${project.build.directory}/wildfly-${version.org.wildfly}/modules/org/es-test/2.1.0</outputDirectory>
                             <overwrite>true</overwrite>
                             <resources>
                                 <resource>
@@ -331,7 +331,7 @@
                             <goal>copy-resources</goal>
                         </goals>
                         <configuration>
-                            <outputDirectory>${project.build.directory}/${jboss.server.root.folder}</outputDirectory>
+                            <outputDirectory>${project.build.directory}/wildfly-${version.org.wildfly}</outputDirectory>
                             <overwrite>true</overwrite>
                             <resources>
                                 <resource>
