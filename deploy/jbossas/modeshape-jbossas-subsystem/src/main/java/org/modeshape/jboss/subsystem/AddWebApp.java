@@ -29,6 +29,7 @@ import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
+import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
 import org.jboss.logging.Logger;
 import org.jboss.modules.Module;
@@ -47,7 +48,7 @@ class AddWebApp extends AbstractAddStepHandler {
     @Override
     protected void populateModel( OperationContext context,
                                   ModelNode operation,
-                                  org.jboss.as.controller.registry.Resource resource ) throws OperationFailedException {
+                                  Resource resource ) throws OperationFailedException {
         if (!requiresRuntime(context)) {
             //we need to skip the execution of this handler if it does not require a "runtime mode". Runtime mode is something
             //that seems to be required only for "normal" servers, as opposed to domain controllers, admin-mode servers and
@@ -118,10 +119,4 @@ class AddWebApp extends AbstractAddStepHandler {
                                   ModelNode model ) {
         // We've overridden the code that calls this method, so we don't want to do anything here
     }
-
-    @Override
-    protected boolean requiresRuntimeVerification() {
-        return false;
-    }
-
 }

@@ -31,8 +31,7 @@ class ModeShapeWebAppResource extends SimpleResourceDefinition {
     private ModeShapeWebAppResource() {
         super(ModeShapeExtension.WEBAPP_PATH,
               ModeShapeExtension.getResourceDescriptionResolver(ModelKeys.WEBAPP),
-              AddWebApp.INSTANCE,
-              RemoveWebApp.INSTANCE);
+              AddWebApp.INSTANCE, RemoveWebApp.INSTANCE);
     }
 
     @Override

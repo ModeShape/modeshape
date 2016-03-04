@@ -15,20 +15,18 @@
  */
 package org.modeshape.jboss.subsystem;
 
-import java.util.List;
-import org.modeshape.schematic.document.EditableDocument;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.services.path.RelativePathService;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceBuilder;
-import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
 import org.modeshape.jboss.service.BinaryStorage;
 import org.modeshape.jboss.service.BinaryStorageService;
 import org.modeshape.jcr.RepositoryConfiguration.FieldName;
 import org.modeshape.jcr.RepositoryConfiguration.FieldValue;
+import org.modeshape.schematic.document.EditableDocument;
 
 /**
  * 
@@ -75,12 +73,11 @@ public class AddFileBinaryStorage extends AbstractAddBinaryStorage {
     }
 
     @Override
-    protected void addControllersAndDependencies( String repositoryName,
-                                                  BinaryStorageService service,
-                                                  ServiceBuilder<BinaryStorage> builder,
-                                                  List<ServiceController<?>> newControllers,
-                                                  ServiceTarget target,
-                                                  String binariesStoreName ) {
+    protected void addControllersAndDependencies(String repositoryName,
+                                                 BinaryStorageService service,
+                                                 ServiceBuilder<BinaryStorage> builder,
+                                                 ServiceTarget target,
+                                                 String binariesStoreName) {
         if (binaryStoragePathInDataDirectory != null) {
             // Add a controller that creates the required directory ...
             ServiceName storageDirectoryServiceName = binariesStoreName != null ?
@@ -88,10 +85,9 @@ public class AddFileBinaryStorage extends AbstractAddBinaryStorage {
                                                                                                               binariesStoreName)
                                                                                   :
                                                       ModeShapeServiceNames.binaryStorageDirectoryServiceName(repositoryName);
-            newControllers.add(RelativePathService.addService(storageDirectoryServiceName,
-                                                              binaryStoragePathInDataDirectory,
-                                                              ModeShapeExtension.JBOSS_DATA_DIR_VARIABLE,
-                                                              target));
+            RelativePathService.addService(storageDirectoryServiceName, binaryStoragePathInDataDirectory,
+                                           ModeShapeExtension.JBOSS_DATA_DIR_VARIABLE,
+                                           target);
             // and add dependency on this path ...
             builder.addDependency(storageDirectoryServiceName, String.class, service.getBinaryStorageBasePathInjector());
         }

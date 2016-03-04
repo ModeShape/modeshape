@@ -27,7 +27,7 @@
              -->
             <dependency>
                 <groupId>org.wildfly.bom</groupId>
-                <artifactId>jboss-javaee-7.0-wildfly-with-tools</artifactId>
+                <artifactId>wildfly-javaee7-with-tools</artifactId>
                 <version>${version.org.wildfly}</version>
                 <type>pom</type>
                 <scope>import</scope>
@@ -145,10 +145,10 @@
                                     <groupId>org.modeshape</groupId>
                                     <artifactId>modeshape-distribution</artifactId>
                                     <version>${project.version}</version>
-                                    <classifier>${jboss.kit.distribution.id}</classifier>
+                                    <classifier>${wf.dist.id}</classifier>
                                     <type>zip</type>
                                     <overWrite>false</overWrite>
-                                    <outputDirectory>${project.build.directory}/${jboss.server.root.folder}</outputDirectory>
+                                    <outputDirectory>${project.build.directory}/wildfly-${version.org.wildfly}</outputDirectory>
                                 </artifactItem>
                             </artifactItems>
                         </configuration>
@@ -170,11 +170,11 @@
                             <goal>copy-resources</goal>
                         </goals>
                         <configuration>
-                            <outputDirectory>${project.build.directory}/${jboss.server.root.folder}</outputDirectory>
+                            <outputDirectory>${project.build.directory}/wildfly-${version.org.wildfly}</outputDirectory>
                             <overwrite>true</overwrite>
                             <resources>
                                 <resource>
-                                    <directory>src/main/resources/kit/jboss-wf9</directory>
+                                    <directory>src/main/resources</directory>
                                     <filtering>false</filtering>
                                     <includes>
                                         <include>standalone/**</include>

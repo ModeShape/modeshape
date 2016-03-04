@@ -27,7 +27,6 @@ import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
-import org.jboss.as.controller.ServiceVerificationHandler;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
 import org.jboss.logging.Logger;
@@ -76,9 +75,7 @@ public class AddSource extends AbstractAddStepHandler {
     @Override
     protected void performRuntime( final OperationContext context,
                                    final ModelNode operation,
-                                   final ModelNode model,
-                                   final ServiceVerificationHandler verificationHandler,
-                                   final List<ServiceController<?>> newControllers ) {
+                                   final ModelNode model) {
 
         ServiceTarget target = context.getServiceTarget();
 
@@ -135,9 +132,7 @@ public class AddSource extends AbstractAddStepHandler {
         sourceServiceBuilder.addDependency(ModeShapeServiceNames.repositoryServiceName(repositoryName),
                                        JcrRepository.class,
                                        sourceService.getJcrRepositoryInjector());
-        sourceServiceBuilder.setInitialMode(ServiceController.Mode.ACTIVE);
-        ServiceController<JcrRepository> controller = sourceServiceBuilder.install();
-        newControllers.add(controller);
+        sourceServiceBuilder.setInitialMode(ServiceController.Mode.ACTIVE).install();
     }
 
     private Object propertyValue(Property property) {

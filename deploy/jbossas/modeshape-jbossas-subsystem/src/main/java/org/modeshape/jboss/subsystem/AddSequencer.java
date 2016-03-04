@@ -25,7 +25,6 @@ import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
-import org.jboss.as.controller.ServiceVerificationHandler;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
 import org.jboss.logging.Logger;
@@ -64,9 +63,7 @@ public class AddSequencer extends AbstractAddStepHandler {
     @Override
     protected void performRuntime( final OperationContext context,
                                    final ModelNode operation,
-                                   final ModelNode model,
-                                   final ServiceVerificationHandler verificationHandler,
-                                   final List<ServiceController<?>> newControllers ) {
+                                   final ModelNode model) {
 
         ServiceTarget target = context.getServiceTarget();
 
@@ -116,9 +113,7 @@ public class AddSequencer extends AbstractAddStepHandler {
         sequencerBuilder.addDependency(ModeShapeServiceNames.repositoryServiceName(repositoryName),
                                        JcrRepository.class,
                                        sequencerService.getJcrRepositoryInjector());
-        sequencerBuilder.setInitialMode(ServiceController.Mode.ACTIVE);
-        ServiceController<JcrRepository> controller = sequencerBuilder.install();
-        newControllers.add(controller);
+        sequencerBuilder.setInitialMode(ServiceController.Mode.ACTIVE).install();
     }
 
     private void ensureClassLoadingPropertyIsSet( Properties sequencerProperties ) {

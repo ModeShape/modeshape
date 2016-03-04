@@ -56,7 +56,7 @@
         <jboss.snapshots.repo.url>https://repository.jboss.org/nexus/content/repositories/snapshots/</jboss.snapshots.repo.url>
 
         <version.javax.jcr>2.0</version.javax.jcr>
-        <version.org.wildfly>9.0.0.Final</version.org.wildfly>
+        <version.org.wildfly>10.0.0.Final</version.org.wildfly>
         <version.org.jboss.spec.jboss-javaee-7.0>1.0.3.Final</version.org.jboss.spec.jboss-javaee-7.0>
     </properties>
 
@@ -99,15 +99,15 @@
             -->
             <dependency>
                 <groupId>org.wildfly.bom</groupId>
-                <artifactId>jboss-javaee-7.0-wildfly-with-tools</artifactId>
+                <artifactId>wildfly-javaee7-with-tools</artifactId>
                 <version>${version.org.wildfly}</version>
                 <type>pom</type>
                 <scope>import</scope>
-            </dependency>   
-            
+            </dependency>
+
             <dependency>
                 <groupId>org.wildfly.bom</groupId>
-                <artifactId>jboss-javaee-7.0-wildfly</artifactId>
+                <artifactId>wildfly-javaee7</artifactId>
                 <version>${version.org.wildfly}</version>
                 <type>pom</type>
                 <scope>import</scope>

@@ -16,7 +16,6 @@
 package org.modeshape.jboss.subsystem;
 
 import java.util.List;
-import org.modeshape.schematic.document.EditableDocument;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.dmr.ModelNode;
@@ -28,6 +27,7 @@ import org.modeshape.common.util.StringUtil;
 import org.modeshape.jboss.service.BinaryStorage;
 import org.modeshape.jboss.service.CompositeBinaryStorageService;
 import org.modeshape.jcr.RepositoryConfiguration;
+import org.modeshape.schematic.document.EditableDocument;
 
 public class AddCompositeBinaryStorage extends AbstractAddBinaryStorage {
 
@@ -45,13 +45,12 @@ public class AddCompositeBinaryStorage extends AbstractAddBinaryStorage {
     }
 
     @Override
-    protected void createBinaryStorageService( OperationContext context,
-                                               ModelNode model,
-                                               List<ServiceController<?>> newControllers,
-                                               ServiceTarget target,
-                                               String repositoryName,
-                                               EditableDocument binaries,
-                                               ServiceName serviceName ) throws OperationFailedException {
+    protected void createBinaryStorageService(OperationContext context,
+                                              ModelNode model,
+                                              ServiceTarget target,
+                                              String repositoryName,
+                                              EditableDocument binaries,
+                                              ServiceName serviceName) throws OperationFailedException {
         CompositeBinaryStorageService service = new CompositeBinaryStorageService(repositoryName, binaries);
         ServiceBuilder<BinaryStorage> builder = target.addService(serviceName, service);
 
@@ -66,8 +65,7 @@ public class AddCompositeBinaryStorage extends AbstractAddBinaryStorage {
             }
         }
 
-        builder.setInitialMode(ServiceController.Mode.ACTIVE);
-        newControllers.add(builder.install());
+        builder.setInitialMode(ServiceController.Mode.ACTIVE).install();
     }
 
     @Override

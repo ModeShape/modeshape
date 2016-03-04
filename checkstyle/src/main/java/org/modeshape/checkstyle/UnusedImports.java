@@ -22,7 +22,6 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import com.puppycrawl.tools.checkstyle.Utils;
 import com.puppycrawl.tools.checkstyle.api.DetailAST;
 import com.puppycrawl.tools.checkstyle.api.FileContents;
 import com.puppycrawl.tools.checkstyle.api.FullIdent;
@@ -32,7 +31,8 @@ import com.puppycrawl.tools.checkstyle.checks.imports.UnusedImportsCheck;
 import com.puppycrawl.tools.checkstyle.checks.javadoc.InvalidJavadocTag;
 import com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocTag;
 import com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocTags;
-import com.puppycrawl.tools.checkstyle.checks.javadoc.JavadocUtils;
+import com.puppycrawl.tools.checkstyle.utils.CommonUtils;
+import com.puppycrawl.tools.checkstyle.utils.JavadocUtils;
 
 /**
  * This is a specialization of the {@link UnusedImportsCheck} that fixes a couple of problems, including correctly processing
@@ -56,7 +56,7 @@ public class UnusedImports extends UnusedImportsCheck {
      * (.*?)(?:\s+|#|\$)(.*)
      * </pre>
      */
-    private static final Pattern LINK_VALUE_IN_TEXT_PATTERN = Utils.createPattern("(.*?)(?:\\s+|#|\\$)(.*)");
+    private static final Pattern LINK_VALUE_IN_TEXT_PATTERN = CommonUtils.createPattern("(.*?)(?:\\s+|#|\\$)(.*)");
     /**
      * A regular expression for finding the class name (group 1) and the method parameters (group 2) within a JavaDoc "@link"
      * reference.
@@ -65,7 +65,7 @@ public class UnusedImports extends UnusedImportsCheck {
      * ([\w.]+)(?:\#?\w+)?(?:\(([^\)]+)\))?.*
      * </pre>
      */
-    private static final Pattern PARTS_OF_CLASS_OR_REFERENCE_PATTERN = Utils.createPattern(
+    private static final Pattern PARTS_OF_CLASS_OR_REFERENCE_PATTERN = CommonUtils.createPattern(
             "([\\w.]+)(?:\\#?\\w+)?(?:\\(([^\\)]+)\\))?.*");
     /**
      * A regular expression for finding the first classname referenced in a "@link" reference.
@@ -74,7 +74,7 @@ public class UnusedImports extends UnusedImportsCheck {
      * \{\@link\s+([^}]*)
      * </pre>
      */
-    private static final Pattern LINK_VALUE_PATTERN = Utils.createPattern("\\{\\@link\\s+([^}]*)");
+    private static final Pattern LINK_VALUE_PATTERN = CommonUtils.createPattern("\\{\\@link\\s+([^}]*)");
 
     private boolean collect = false;
     private boolean processJavaDoc = false;
@@ -155,7 +155,7 @@ public class UnusedImports extends UnusedImportsCheck {
         print("tag: ", tag);
 
         if (tag.canReferenceImports()) {
-            String identifier = tag.getArg1();
+            String identifier = tag.getFirstArg();
             print("Found identifier: ", identifier);
             referenced.add(identifier);
             // Find the link to classes or methods ...
@@ -170,7 +170,7 @@ public class UnusedImports extends UnusedImportsCheck {
                 processClassOrMethodReference(methodCall);
             }
         } else if (tag.isParamTag()) {
-            String paramText = tag.getArg1();
+            String paramText = tag.getFirstArg();
             print("Found parameter text: ", paramText);
             // Find the links to classe
             Matcher paramsMatcher = LINK_VALUE_PATTERN.matcher(paramText);
@@ -180,7 +180,7 @@ public class UnusedImports extends UnusedImportsCheck {
                 processClassOrMethodReference(linkValue);
             }
         } else if (tag.isReturnTag()) {
-            String returnText = tag.getArg1();
+            String returnText = tag.getFirstArg();
             print("Found return text: ", returnText);
             // Find the links to classe
             Matcher paramsMatcher = LINK_VALUE_PATTERN.matcher(returnText);
@@ -245,8 +245,8 @@ public class UnusedImports extends UnusedImportsCheck {
     public void finishTree( DetailAST aRootAST ) {
         // loop over all the imports to see if referenced.
         for (final FullIdent imp : imports) {
-            if (!referenced.contains(Utils.baseClassname(imp.getText()))) {
-                print("imp.getText(): " + Utils.baseClassname(imp.getText()));
+            if (!referenced.contains(CommonUtils.baseClassName(imp.getText()))) {
+                print("imp.getText(): " + CommonUtils.baseClassName(imp.getText()));
                 print("referenced: " + referenced);
                 log(imp.getLineNo(), imp.getColumnNo(), "import.unused", imp.getText());
             }

@@ -15,14 +15,10 @@
  */
 package org.modeshape.jboss.subsystem;
 
-import java.util.List;
-import org.modeshape.schematic.Schematic;
-import org.modeshape.schematic.document.EditableDocument;
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
-import org.jboss.as.controller.ServiceVerificationHandler;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceController;
@@ -31,6 +27,8 @@ import org.jboss.msc.service.ServiceTarget;
 import org.modeshape.jboss.service.BinaryStorage;
 import org.modeshape.jboss.service.BinaryStorageService;
 import org.modeshape.jcr.RepositoryConfiguration.FieldName;
+import org.modeshape.schematic.Schematic;
+import org.modeshape.schematic.document.EditableDocument;
 
 public abstract class AbstractAddBinaryStorage extends AbstractAddStepHandler {
 
@@ -48,9 +46,7 @@ public abstract class AbstractAddBinaryStorage extends AbstractAddStepHandler {
     @Override
     protected void performRuntime( final OperationContext context,
                                    final ModelNode operation,
-                                   final ModelNode model,
-                                   final ServiceVerificationHandler verificationHandler,
-                                   final List<ServiceController<?>> newControllers ) throws OperationFailedException {
+                                   final ModelNode model) throws OperationFailedException {
 
         ServiceTarget target = context.getServiceTarget();
 
@@ -77,16 +73,15 @@ public abstract class AbstractAddBinaryStorage extends AbstractAddStepHandler {
             context.removeService(serviceName);
         }
 
-        createBinaryStorageService(context, model, newControllers, target, repositoryName, binaries, serviceName);
+        createBinaryStorageService(context, model, target, repositoryName, binaries, serviceName);
     }
 
-    protected void createBinaryStorageService( OperationContext context,
-                                               ModelNode model,
-                                               List<ServiceController<?>> newControllers,
-                                               ServiceTarget target,
-                                               String repositoryName,
-                                               EditableDocument binaries,
-                                               ServiceName serviceName ) throws OperationFailedException {
+    protected void createBinaryStorageService(OperationContext context,
+                                              ModelNode model,
+                                              ServiceTarget target,
+                                              String repositoryName,
+                                              EditableDocument binaries,
+                                              ServiceName serviceName) throws OperationFailedException {
         // Now create the new service ...
         BinaryStorageService service = BinaryStorageService.createWithConfiguration(binaries);
         ServiceBuilder<BinaryStorage> builder = target.addService(serviceName, service);
@@ -94,9 +89,8 @@ public abstract class AbstractAddBinaryStorage extends AbstractAddStepHandler {
         // Add dependencies to the various data directories ...
         String binariesStoreName = binaries.containsField(FieldName.BINARY_STORE_NAME) ? binaries.getString(FieldName.BINARY_STORE_NAME)
                                      : null;
-        addControllersAndDependencies(repositoryName, service, builder, newControllers, target, binariesStoreName);
-        builder.setInitialMode(ServiceController.Mode.ACTIVE);
-        newControllers.add(builder.install());
+        addControllersAndDependencies(repositoryName, service, builder, target, binariesStoreName);
+        builder.setInitialMode(ServiceController.Mode.ACTIVE).install();
     }
 
     protected abstract void writeBinaryStorageConfiguration( String repositoryName,
@@ -126,11 +120,10 @@ public abstract class AbstractAddBinaryStorage extends AbstractAddStepHandler {
     }
 
     @SuppressWarnings( "unused" )
-    protected void addControllersAndDependencies( String repositoryName,
-                                                  BinaryStorageService service,
-                                                  ServiceBuilder<BinaryStorage> builder,
-                                                  List<ServiceController<?>> newControllers,
-                                                  ServiceTarget target,
-                                                  String binariesStoreName ) throws OperationFailedException {
+    protected void addControllersAndDependencies(String repositoryName,
+                                                 BinaryStorageService service,
+                                                 ServiceBuilder<BinaryStorage> builder,
+                                                 ServiceTarget target,
+                                                 String binariesStoreName) throws OperationFailedException {
     }
 }

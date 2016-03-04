@@ -359,7 +359,7 @@
                                     <finalName>modeshape-${project.version}</finalName>
                                     <attach>true</attach>
                                     <descriptorRefs>
-                                        <descriptorRef>${jboss.kit.distribution.id}</descriptorRef>
+                                        <descriptorRef>${wf.dist.id}</descriptorRef>
                                     </descriptorRefs>
                                 </configuration>
                             </execution>
@@ -387,7 +387,7 @@
                             <!--This must be attached so that it's resolved by the integration tests modules-->
                             <attach>true</attach>
                             <descriptorRefs>
-                                <descriptorRef>${jboss.kit.distribution.id}</descriptorRef>
+                                <descriptorRef>${wf.dist.id}</descriptorRef>
                             </descriptorRefs>
                         </configuration>
                     </plugin>
