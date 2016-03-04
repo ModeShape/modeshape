@@ -30,35 +30,51 @@ public class FTQueryTest extends SingleUseAbstractTest {
 
     @Test
     public void shouldDemonstrateStrictMatching() throws Exception {
-        // Register some namespaces ...
+
         NamespaceRegistry namespaceRegistry = session.getWorkspace().getNamespaceRegistry();
         namespaceRegistry.registerNamespace("sramp", "http://s-ramp.org/xmlns/2010/s-ramp");
 
-        // Add some artifact nodes.
         session = repository.login();
         Node rootNode = session.getRootNode();
 
-        // Node - Artifact A
         Node artifactA = rootNode.addNode("artifact-a", "nt:unstructured");
-        artifactA.setProperty("sramp:title", "The class");
+        artifactA.setProperty("sramp:title", "foo");
+
+        Node artifactB = rootNode.addNode("artifact-b", "nt:unstructured");
+        String titles[] = {"foo", "bar"};
+        artifactB.setProperty("sramp:title", titles);
+
+        Node artifactC = rootNode.addNode("artifact-c", "nt:unstructured");
+        artifactC.setProperty("sramp:name", "foo");
 
         session.save();
         session.logout();
 
-        // Now it's time to do some querying.
         session = repository.login();
 
-        String query = "class";
+        //Let's test full-text search language
+        String query = "foo";
+        assertJcrFTQuery(query, 3);
+
+        query = "bar";
         assertJcrFTQuery(query, 1);
 
-        query = "classes";
-        assertJcrFTQuery(query, 0);
+        //Let's test equivalent JCR-SQL2 constructs
+        query = "SELECT * from [nt:unstructured] as r where contains(r.*, 'foo')";
+        assertJcrSql2Query(query, 3);
 
-        query = "lass";
-        assertJcrFTQuery(query, 0);
+        query = "SELECT * from [nt:unstructured] as r where contains(r.*, 'bar')";
+        assertJcrSql2Query(query, 1);
 
-        query = "ass";
-        assertJcrFTQuery(query, 0);
+        //Let's try more specific full-text JCR-SQL2 constructs
+        query = "SELECT * from [nt:unstructured] as r where contains(r.[sramp:name], 'foo')";
+        assertJcrSql2Query(query, 1);
+
+        query = "SELECT * from [nt:unstructured] as r where contains(r.[sramp:title], 'foo')";
+        assertJcrSql2Query(query, 2);
+
+        query = "SELECT * from [nt:unstructured] as r where contains(r.[sramp:title], 'bar')";
+        assertJcrSql2Query(query, 1);
 
         session.logout();
     }
