@@ -7,9 +7,7 @@
     },
     "storage" : {
         "persistence": {
-            "type": "db",
-            "connectionUrl": "jdbc:h2:mem:jca_test;DB_CLOSE_DELAY=0",
-            "dropOnExit": true
+            "type": "mem"
         }
     },
     "security" : {

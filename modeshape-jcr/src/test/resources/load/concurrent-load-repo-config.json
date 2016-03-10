@@ -8,9 +8,7 @@
     },
     "storage" : {
         "persistence" : {
-            "type" : "db",
-            "dropOnExit" : true,
-            "threadPoolSize" : 25000
+            "type" : "mem"
         },
         "binaryStorage" : {
             "type" : "file",

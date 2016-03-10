@@ -15,6 +15,7 @@
  */
 package org.modeshape.schematic.internal.document;
 
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -44,7 +45,7 @@ public class IncrementalDocumentEditor extends ObservableDocumentEditor implemen
     
     private static final long serialVersionUID = 1L;
     
-    private final List<Operation> operations;
+    private transient final List<Operation> operations;
 
     public IncrementalDocumentEditor(MutableDocument document,
                                      List<Operation> operations) {
@@ -54,7 +55,7 @@ public class IncrementalDocumentEditor extends ObservableDocumentEditor implemen
 
     @Override
     public Changes getChanges() {
-        return new DocumentChanges(operations);
+        return new DocumentChanges(operations != null ? operations : Collections.emptyList());
     }
 
     @Override

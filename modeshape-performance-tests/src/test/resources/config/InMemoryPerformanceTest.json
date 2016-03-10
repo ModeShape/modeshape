@@ -2,9 +2,7 @@
     "name" : "In Memory Repository",
     "storage" : {
         "persistence" : {
-            "type" : "db",
-            "connectionUrl" : "jdbc:h2:mem:perf_test;DB_CLOSE_DELAY=0",
-            "dropOnExit" : true
+            "type" : "mem"
         }
     },
     "workspaces" : {

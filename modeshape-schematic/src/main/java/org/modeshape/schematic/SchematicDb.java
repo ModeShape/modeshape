@@ -93,13 +93,18 @@ public interface SchematicDb extends TransactionListener, Lifecycle {
      *
      * @param key the key or identifier for the document
      * @param createIfMissing true if a new entry should be created and added to the database if an existing entry does not exist
-     * @return the entry, or null if there was no document with the supplied key and a new one could not be created
+     * @return the content document, or null if there was no document with the supplied key and a new one could not be created
      */
     @RequiresTransaction
     EditableDocument editContent(String key, boolean createIfMissing);
 
     /**
      * Store the supplied content at the given key.
+     * 
+     * <p>
+     *     Depending on the actual implementation, this may or may not be thread-safe. ModeShape never assumes this is thread-safe
+     *     when calling it.
+     * </p>
      *
      * @param key the key or identifier for the content
      * @param content the content that is to be stored

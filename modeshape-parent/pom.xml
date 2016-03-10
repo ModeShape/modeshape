@@ -296,7 +296,7 @@
             <properties>
                 <database>h2</database>
                 <dataSource.driverClassName>org.h2.Driver</dataSource.driverClassName>
-                <dataSource.url>jdbc:h2:mem:modeshape;DB_CLOSE_DELAY=-1</dataSource.url>
+                <dataSource.url>jdbc:h2:file:./target/perf_test/db</dataSource.url>
                 <dataSource.username>sa</dataSource.username>
                 <dataSource.password/>
             </properties>
@@ -886,6 +886,11 @@
             <dependency>
                 <groupId>org.modeshape</groupId>
                 <artifactId>modeshape-persistence-relational</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-persistence-file</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

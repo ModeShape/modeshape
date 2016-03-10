@@ -2,8 +2,8 @@
     "name" : "Backup Repository",
     "storage" : {
         "persistence": {
-            "type": "db",
-            "connectionUrl" : "jdbc:h2:file:./target/backupArea/backupRepo/backup_db"
+            "type": "file",
+            "path" : "target/backupArea/backupRepo/backup_db"
         },
         "binaryStorage" : {
             "type" : "file",

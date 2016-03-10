@@ -2,8 +2,8 @@
     "name": "Persistent repo no indexes",
     "storage": {
         "persistence" : {
-            "type" : "db",
-            "connectionUrl": "jdbc:h2:file:./target/persistent_repository/db;AUTO_SERVER=TRUE"
+            "type" : "file",
+            "path": "target/persistent_repository"
         },
         "binaryStorage": {
             "type": "file",

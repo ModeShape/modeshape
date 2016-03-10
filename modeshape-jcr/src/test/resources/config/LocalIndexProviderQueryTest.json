@@ -2,9 +2,7 @@
     "name" : "Test Repository",
     "storage" : {
         "persistence" : {
-            "type" : "db",
-            "connectionUrl" : "jdbc:h2:mem:local_index_provider_test;DB_CLOSE_DELAY=0",
-            "dropOnExit" : true
+            "type" : "mem"
         }
     },
     "indexProviders" : {

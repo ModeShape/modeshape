@@ -2,8 +2,8 @@
     "name": "Persistent repo predefined workspaces",
     "storage": {
         "persistence" : {
-            "type" : "db",
-            "connectionUrl": "jdbc:h2:file:./target/persistent_repository/db"
+            "type" : "file",
+            "path": "target/persistent_repository/db"
         }
     },
     "workspaces": {

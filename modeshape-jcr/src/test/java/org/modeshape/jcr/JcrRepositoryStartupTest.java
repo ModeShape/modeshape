@@ -77,7 +77,6 @@ public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
     
     @Before
     public void before() throws Exception {
-        // c3p0 is async, so it might take a bit until we can do this....
         TestingUtil.waitUntilFolderCleanedUp("target/persistent_repository");
     }
 

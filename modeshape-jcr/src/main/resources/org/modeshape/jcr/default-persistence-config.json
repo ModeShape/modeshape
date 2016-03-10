@@ -1,8 +1,4 @@
 //Default configuration file for repositories which are missing the persistence section
 {
-    "type": "db",
-    "connectionUrl": "jdbc:h2:mem:modeshape;DB_CLOSE_DELAY=0;MVCC=TRUE",
-    "driver": "org.h2.Driver",
-    "username": "sa",
-    "password": ""
+    "type": "mem"
 }
