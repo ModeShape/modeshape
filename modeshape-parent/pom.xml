@@ -296,7 +296,7 @@
             <properties>
                 <database>h2</database>
                 <dataSource.driverClassName>org.h2.Driver</dataSource.driverClassName>
-                <dataSource.url>jdbc:h2:file:./target/perf_test/db</dataSource.url>
+                <dataSource.url>jdbc:h2:file:./target/db</dataSource.url>
                 <dataSource.username>sa</dataSource.username>
                 <dataSource.password/>
             </properties>

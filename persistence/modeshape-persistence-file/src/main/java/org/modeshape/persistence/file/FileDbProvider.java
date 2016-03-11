@@ -27,10 +27,11 @@ import org.modeshape.schematic.document.Document;
  * @since 5.0
  */
 public class FileDbProvider implements SchematicDbProvider<FileDb> {
-    
+
+    public static final String TYPE_MEM = "mem";
+    public static final String TYPE_FILE = "file";
+
     protected static final String PATH_PARAM = "path"; 
-    protected static final String TYPE_MEM = "mem"; 
-    protected static final String TYPE_FILE = "file"; 
     
     private static final Logger LOGGER = Logger.getLogger(FileDbProvider.class);
 

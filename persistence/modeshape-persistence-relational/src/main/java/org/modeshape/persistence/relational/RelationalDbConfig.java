@@ -73,7 +73,7 @@ public final class RelationalDbConfig {
         this.dropOnExit = propertyAsBoolean(document, DROP_ON_EXIT, false);
         this.tableName = document.getString(TABLE_NAME, DEFAULT_TABLE_NAME);
         this.fetchSize = propertyAsInt(document, FETCH_SIZE, DEFAULT_FETCH_SIZE);
-        this.compress = propertyAsBoolean(document, COMPRESS, true);
+        this.compress = propertyAsBoolean(document, COMPRESS, false);
         this.poolSize = propertyAsInt(document, POOL_SIZE, DEFAULT_POOL_SIZE);
     }
 

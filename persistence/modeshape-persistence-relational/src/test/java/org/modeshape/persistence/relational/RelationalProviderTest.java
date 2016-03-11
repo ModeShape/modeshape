@@ -45,7 +45,7 @@ public class RelationalProviderTest {
         assertFalse(config.dropOnExit());
         assertEquals(RelationalDbConfig.DEFAULT_TABLE_NAME, config.tableName());
         assertEquals(RelationalDbConfig.DEFAULT_FETCH_SIZE, config.fetchSize());
-        assertTrue(config.compress());
+        assertFalse(config.compress());
         
         DataSourceManager dsManager = db.dsManager();
         assertNotNull(dsManager);

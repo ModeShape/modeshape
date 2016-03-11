@@ -7,9 +7,6 @@
         "allowCreation" : true
     },
     "storage" : {
-        "persistence" : {
-            "type" : "mem"
-        },
         "binaryStorage" : {
             "type" : "file",
             "directory": "../modeshape-jcr/target/concurrent_load_non_clustered/binary/",

@@ -15,7 +15,10 @@
  */
 package org.modeshape.jcr;
 
+import java.util.UUID;
+import org.modeshape.persistence.relational.RelationalDbConfig;
 import org.modeshape.schematic.document.Document;
+import org.modeshape.schematic.document.EditableDocument;
 
 /**
  * {@link Environment} implementation used for testing.
@@ -27,5 +30,14 @@ public class TestingEnvironment extends LocalEnvironment {
     @Override
     public Document defaultPersistenceConfiguration() {
         return super.defaultPersistenceConfiguration();
+    }
+    
+    protected Document dbPersistenceConfiguration() {
+        EditableDocument config = super.defaultPersistenceConfiguration().edit(false);
+        //use a random mem db each time, to avoid possible conflicts....
+        config.setString(RepositoryConfiguration.FieldName.TYPE, RelationalDbConfig.ALIAS1 + UUID.randomUUID().toString() + ";DB_CLOSE_DELAY=0");
+        config.setString(RelationalDbConfig.CONNECTION_URL, "jdbc:h2:mem:" + UUID.randomUUID().toString() + ";DB_CLOSE_DELAY=0");
+        config.setBoolean(RelationalDbConfig.DROP_ON_EXIT, true);
+        return config;
     }
 }

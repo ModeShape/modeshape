@@ -18,11 +18,11 @@ package org.modeshape.jcr;
 import java.util.Optional;
 import org.jgroups.Channel;
 import org.modeshape.common.annotation.ThreadSafe;
+import org.modeshape.persistence.file.FileDbProvider;
 import org.modeshape.schematic.Schematic;
 import org.modeshape.schematic.SchematicDb;
 import org.modeshape.schematic.document.Document;
-import org.modeshape.schematic.document.Json;
-import org.modeshape.schematic.document.ParsingException;
+import org.modeshape.schematic.internal.document.BasicDocument;
 
 /**
  * A basic environment in which a repository operates. The logical names supplied to these methods are typically obtained directly
@@ -37,11 +37,7 @@ public interface Environment {
      * @return a {@link Document} instance, never {@code null}
      */
     default Document defaultPersistenceConfiguration() {
-        try {
-            return Json.read(getClassLoader(this).getResource("org/modeshape/jcr/default-persistence-config.json"));
-        } catch (ParsingException e) {
-            throw new RuntimeException(e);
-        }
+        return new BasicDocument(RepositoryConfiguration.FieldName.TYPE, FileDbProvider.TYPE_MEM);
     }
 
     /**
