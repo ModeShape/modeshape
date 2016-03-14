@@ -209,6 +209,8 @@
         <version.org.wildfly.plugings.wildfly-maven-plugin>1.0.2.Final</version.org.wildfly.plugings.wildfly-maven-plugin>
         <version.elasticsearch>2.1.0</version.elasticsearch>
         <version.jna>4.1.0</version.jna>
+        <version.jboss.aesh>0.66.4</version.jboss.aesh>
+        <version.sshd-core>0.9.0</version.sshd-core>
         <!--The name of the modeshape-client artifact used by tools-->
         <client.artifactId>modeshape-client</client.artifactId>
 
@@ -1048,6 +1050,11 @@
            <dependency>
                 <groupId>org.modeshape</groupId>
                 <artifactId>modeshape-jbossas-subsystem</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-shell</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -2009,6 +2016,19 @@
                 <version>${version.commons-naming}</version>
                 <scope>test</scope>
             </dependency>
+            
+            <!-- Shell console dependecy-->
+            <dependency>
+                <groupId>org.jboss.aesh</groupId>
+                <artifactId>aesh</artifactId>
+                <version>${version.jboss.aesh}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.sshd</groupId>
+                <artifactId>sshd-core</artifactId>
+                <version>${version.sshd-core}</version>
+            </dependency>
+            
         </dependencies>
     </dependencyManagement>
 
