@@ -127,7 +127,7 @@
         <version.org.jboss.spec.javax.transaction.jboss-transaction-api_1.1_spec>1.0.1.Final</version.org.jboss.spec.javax.transaction.jboss-transaction-api_1.1_spec>
         <version.com.googlecode.concurrentlinkedhashmap>1.4.2</version.com.googlecode.concurrentlinkedhashmap>
         <!--Make sure the jgroups version is the same as the one used by ISPN -->
-        <version.org.jgroups>3.6.7.Final</version.org.jgroups>
+        <version.org.jgroups>3.6.8.Final</version.org.jgroups>
         <jgroups.module.slot>main</jgroups.module.slot>
         
         <version.org.jboss.logging>3.2.1.Final</version.org.jboss.logging>
@@ -206,6 +206,7 @@
         <!-- Make sure the version of the bundle plugin is at least this, otherwise it will fork like crazy...-->
         <version.bundle.plugin>3.0.0</version.bundle.plugin>
         <version.gwt.maven.plugin>2.5.1</version.gwt.maven.plugin>
+        <version.org.wildfly.plugings.wildfly-maven-plugin>1.0.2.Final</version.org.wildfly.plugings.wildfly-maven-plugin>
         <version.elasticsearch>2.1.0</version.elasticsearch>
         <version.jna>4.1.0</version.jna>
         <!--The name of the modeshape-client artifact used by tools-->
@@ -687,6 +688,11 @@
                     <groupId>org.codehaus.mojo</groupId>
                     <artifactId>gwt-maven-plugin</artifactId>
                     <version>${version.gwt.maven.plugin}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.wildfly.plugins</groupId>
+                    <artifactId>wildfly-maven-plugin</artifactId>
+                    <version>${version.org.wildfly.plugings.wildfly-maven-plugin}</version>
                 </plugin>
             </plugins>
         </pluginManagement>

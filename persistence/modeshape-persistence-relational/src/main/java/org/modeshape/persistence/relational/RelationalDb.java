@@ -28,6 +28,7 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.modeshape.common.database.DatabaseType;
@@ -172,19 +173,20 @@ public class RelationalDb implements SchematicDb {
 
     @Override
     public List<SchematicEntry> load(Set<String> keys) {
-        List<Document> documents = runWithConnection(connection -> statements.load(connection, new ArrayList<>(keys)), true);
-        List<SchematicEntry> results = new ArrayList<>(documents.size());
         boolean hasActiveTransaction = TransactionsHolder.hasActiveTransaction();
-        documents.stream().forEach(document -> {
+        Function<Document, SchematicEntry> documentParser = document -> {
             SchematicEntry entry = () -> document;
             String id = entry.id();
-            results.add(entry);
             if (hasActiveTransaction) {
                 //always cache it to mark it as "existing"
                 transactionalCaches.putForReading(id, document);
                 keys.remove(id);
             }
-        });
+            return entry;
+        };
+        List<SchematicEntry> results = runWithConnection(connection -> statements.load(connection, new ArrayList<>(keys),
+                                                                                       documentParser),
+                                                         true);
         
         if (hasActiveTransaction) {
             // if there's an active transaction make sure we also mark all the keys which were not found in the DB as 'new'
@@ -316,15 +318,9 @@ public class RelationalDb implements SchematicDb {
         });
 
         try {
-            if (!toInsert.isEmpty()) {
-                batchUpdate.insert(toInsert);
-            }
-            if (!toUpdate.isEmpty()) {
-                batchUpdate.update(toUpdate);                
-            }
-            if (!toRemove.isEmpty()) {
-                batchUpdate.remove(toRemove);    
-            }
+            batchUpdate.insert(toInsert);
+            batchUpdate.update(toUpdate);
+            batchUpdate.remove(toRemove);
         } catch (SQLException e) {
             throw new RelationalProviderException(e);
         }
@@ -392,7 +388,7 @@ public class RelationalDb implements SchematicDb {
     }
   
     private Map<String, String> loadStatementsResource() {
-        try (InputStream fileStream = statementsFile(dsManager.dbType())) {
+        try (InputStream fileStream = loadStatementsFile(dsManager.dbType())) {
             Properties statements = new Properties();
             statements.load(fileStream);
             return statements.entrySet().stream().collect(Collectors.toMap(entry -> entry.getKey().toString(),
@@ -404,7 +400,7 @@ public class RelationalDb implements SchematicDb {
         }
     }
     
-    private InputStream statementsFile(DatabaseType dbType) {
+    private InputStream loadStatementsFile( DatabaseType dbType ) {
         String filePrefix = RelationalDb.class.getPackage().getName().replaceAll("\\.", "/") + "/" + dbType.nameString().toLowerCase();
         // first search for a file matching the major.minor version....
         String majorMinorFile = filePrefix + String.format("_%s.%s_database.properties", dbType.majorVersion(), dbType.minorVersion());

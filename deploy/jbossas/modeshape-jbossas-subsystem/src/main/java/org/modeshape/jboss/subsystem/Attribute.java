@@ -34,6 +34,7 @@ public enum Attribute {
     CACHE_SIZE("cache-size"),
     CLASSNAME("classname"),
     DB_PERSISTENCE("db-persistence"),
+    FS_PERSISTENCE("file-persistence"),
     TABLE_NAME("table-name"),
     CREATE_ON_START("create-on-start"),
     DROP_ON_EXIT("drop-on-exit"),

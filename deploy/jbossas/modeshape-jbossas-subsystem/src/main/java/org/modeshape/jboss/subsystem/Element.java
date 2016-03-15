@@ -49,6 +49,7 @@ public enum Element {
     WORKSPACES("workspaces"),
     JOURNALING("journaling"),
     DB_PERSISTENCE("db-persistence"),
+    FILE_PERSISTENCE("file-persistence"),
     PERSISTENCE_TYPE("type"),
     INITIAL_CONTENT("initial-content"),
     NODE_TYPES("node-types"),

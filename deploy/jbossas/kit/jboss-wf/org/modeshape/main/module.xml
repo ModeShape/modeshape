@@ -32,6 +32,7 @@
         <module name="org.modeshape.common" export="true"/>
         <module name="org.modeshape.schematic" export="true"/>
         <module name="org.modeshape.persistence.relational" export="true" services="export"/>
+        <module name="org.modeshape.persistence.file" export="true" services="export"/>
 
         <module name="org.jgroups" slot="${jgroups.module.slot}"/>
 

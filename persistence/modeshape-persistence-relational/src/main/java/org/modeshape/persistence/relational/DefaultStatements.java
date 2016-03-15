@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
@@ -113,21 +114,22 @@ public class DefaultStatements implements Statements {
     }
     
     @Override
-    public List<Document> load( Connection connection, List<String> ids ) throws SQLException {
+    public <R> List<R> load( Connection connection, List<String> ids, Function<Document, R> parser ) throws SQLException {
         if (logger.isDebugEnabled()) {
             logger.debug("Loading ids {0} from {1}", ids.toString(), config.tableName());
         }
         String getMultipleStatement = statements.get(GET_MULTIPLE);
         int batchLoadSize = batchLoadSize();
-        List<Document> results = new ArrayList<>();
+        List<R> results = new ArrayList<>();
         runBatchOperation(connection, getMultipleStatement, ids, batchLoadSize,
                           ( dbConnection, statement, startIdx1, endIdx1, data ) -> results.addAll(loadIDs(dbConnection, statement,
                                                                                                          startIdx1, endIdx1,
-                                                                                                          ids)));
+                                                                                                          ids, parser)));
         return results;
     }
                     
-    private List<Document> loadIDs( Connection connection, String statement, int startIdx, int endIdx, List<String> ids ) throws SQLException {
+    private <R> List<R> loadIDs( Connection connection, String statement, int startIdx, int endIdx, List<String> ids,
+                                 Function<Document, R> parser) throws SQLException {
         List<String> sublist = ids.subList(startIdx, endIdx);
         String params = sublist.stream().map(id -> "?").collect(Collectors.joining(","));
         String statementString = statement.replaceAll("#", params);
@@ -138,9 +140,10 @@ public class DefaultStatements implements Statements {
             }
             
             try (ResultSet rs = ps.executeQuery()) {
-                List<Document> results = new ArrayList<>();
+                List<R> results = new ArrayList<>();
                 while (rs.next()) {
-                    results.add(readDocument(rs.getBinaryStream(1)));
+                    Document document = readDocument(rs.getBinaryStream(1));
+                    results.add(parser.apply(document));
                 }
                 return results;
             }

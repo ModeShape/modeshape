@@ -35,6 +35,11 @@ public class ModeShapeServiceNames {
         return ServiceName.of(ServiceName.JBOSS, "modeshape", repositoryName, "db-persistence", type);
     }
 
+    public static ServiceName persistenceFSServiceName(String repositoryName,
+                                                       String type) {
+        return ServiceName.of(ServiceName.JBOSS, "modeshape", repositoryName, "fs-persistence", type);
+    }
+
     public static ServiceName sourceServiceName( String repositoryName,
                                                  String sourceName ) {
         return ServiceName.of(ServiceName.JBOSS, "modeshape", repositoryName, "external-sources", sourceName);

@@ -30,11 +30,11 @@ public class FileDbProviderTest {
     
     @Test
     public void shouldReturnDBBasedOnType() {
-        Assert.assertNotNull(provider.getDB(FileDbProvider.TYPE_MEM, null));        
-        Assert.assertNotNull(provider.getDB(FileDbProvider.TYPE_FILE, new BasicDocument(FileDbProvider.PATH_PARAM, "path")));        
+        Assert.assertNotNull(provider.getDB(FileDbProvider.TYPE_MEM, new BasicDocument()));        
+        Assert.assertNotNull(provider.getDB(FileDbProvider.TYPE_FILE, new BasicDocument(FileDbProvider.PATH_FIELD, "path")));        
     }
     
-    @Test(expected = FileProviderException.class)
+    @Test(expected = NullPointerException.class)
     public void shouldFailIfPathNotProvided() throws Exception {
         provider.getDB(FileDbProvider.TYPE_FILE, new BasicDocument());        
     }

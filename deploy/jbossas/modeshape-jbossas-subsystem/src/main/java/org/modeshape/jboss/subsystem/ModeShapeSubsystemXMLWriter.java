@@ -126,10 +126,19 @@ public class ModeShapeSubsystemXMLWriter implements XMLStreamConstants, XMLEleme
             ModelAttributes.DRIVER.marshallAsAttribute(persistence, false, writer);
             ModelAttributes.USERNAME.marshallAsAttribute(persistence, false, writer);
             ModelAttributes.PASSWORD.marshallAsAttribute(persistence, false, writer);
-            ModelAttributes.COMPRESS.marshallAsAttribute(persistence, false, writer);
+            ModelAttributes.DB_COMPRESS.marshallAsAttribute(persistence, false, writer);
             ModelAttributes.FETCH_SIZE.marshallAsAttribute(persistence, false, writer);
             ModelAttributes.POOL_SIZE.marshallAsAttribute(persistence, false, writer);
             ModelAttributes.PERSISTENCE_DS_JNDI_NAME.marshallAsAttribute(persistence, false, writer);
+            writer.writeEndElement();
+        }
+        
+        String filePersistence = Attribute.FS_PERSISTENCE.getLocalName();
+        if (has(repository, filePersistence)) {
+            startIfNeeded(writer, Element.FILE_PERSISTENCE, false);
+            ModelNode persistence = repository.get(filePersistence).get(filePersistence);
+            ModelAttributes.FS_PATH.marshallAsAttribute(persistence, false, writer);
+            ModelAttributes.FS_COMPRESS.marshallAsAttribute(persistence, false, writer);
             writer.writeEndElement();
         }
     }

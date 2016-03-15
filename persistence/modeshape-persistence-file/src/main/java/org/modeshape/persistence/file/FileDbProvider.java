@@ -16,7 +16,6 @@
 package org.modeshape.persistence.file;
 
 import org.modeshape.common.logging.Logger;
-import org.modeshape.common.util.StringUtil;
 import org.modeshape.schematic.SchematicDbProvider;
 import org.modeshape.schematic.document.Document;
 
@@ -30,23 +29,21 @@ public class FileDbProvider implements SchematicDbProvider<FileDb> {
 
     public static final String TYPE_MEM = "mem";
     public static final String TYPE_FILE = "file";
-
-    protected static final String PATH_PARAM = "path"; 
+    public static final String PATH_FIELD = "path";
+    public static final String COMPRESS_FIELD = "compress";
     
     private static final Logger LOGGER = Logger.getLogger(FileDbProvider.class);
 
     @Override
     public FileDb getDB( String type, Document configuration ) {
         if (TYPE_MEM.equalsIgnoreCase(type)) {
-            LOGGER.debug("Returning new in-memory schematic DB");
-            return new FileDb(null);
+            LOGGER.debug("Returning new in-memory schematic DB...");
+            return FileDb.inMemory(configuration.getBoolean(COMPRESS_FIELD, false));
         } else if (TYPE_FILE.equalsIgnoreCase(type)) {
-            String path = configuration.getString(PATH_PARAM);
-            if (StringUtil.isBlank(path)) {
-                throw new FileProviderException("The 'path' configuration parameter is required by the FS persistence provider");
-            }
-            LOGGER.debug("Returning new FS schematic DB which will store data at '{0}'", path);
-            return new FileDb(path);
+            boolean compress = configuration.getBoolean(COMPRESS_FIELD, true);
+            String path = configuration.getString(PATH_FIELD, null);
+            LOGGER.debug("Returning new disk schematic DB at {0}...", path);
+            return FileDb.onDisk(compress, path);
         }
         return null;
     }

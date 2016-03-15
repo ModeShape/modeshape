@@ -30,6 +30,7 @@ import org.h2.mvstore.MVStore;
 import org.h2.mvstore.db.TransactionStore;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.FileUtil;
+import org.modeshape.common.util.StringUtil;
 import org.modeshape.schematic.SchematicDb;
 import org.modeshape.schematic.SchematicEntry;
 import org.modeshape.schematic.document.Document;
@@ -48,22 +49,33 @@ public class FileDb implements SchematicDb {
     private final static ThreadLocal<String> ACTIVE_TX_ID = new InheritableThreadLocal<>();
     private final static String REPOSITORY_CONTENT = "modeshape_data";
 
-    private final String location;
-    private final ConcurrentMap<String, TransactionStore.TransactionMap<String, Document>> transactionalContentById;
+    private final boolean compress;
+    private final String path;
+    
+    private final ConcurrentMap<String, TransactionStore.TransactionMap<String, Document>> transactionalContentById = new ConcurrentHashMap<>();
 
     private MVStore store;
     private TransactionStore txStore; 
     private TransactionStore.TransactionMap<String, Document> persistedContent;
     
-    protected FileDb( String location ) {
-        this.location = location;
-        this.transactionalContentById = new ConcurrentHashMap<>();
+    protected static FileDb inMemory(boolean compress) {
+        return new FileDb(null, compress);
+    }    
+
+    protected static FileDb onDisk(boolean compress, String path) {
+        path = Objects.requireNonNull(path, "The 'path' configuration parameter is required by the FS persistence provider");
+        return new FileDb(path, compress);
+    }    
+    
+    private FileDb( String path, boolean compress ) {
+        this.path = path;
+        this.compress = compress;
     }
 
     @Override
     public String id() {
         String prefix = "modeshape-file-persistence";
-        return location == null ? prefix : prefix + "_" + location;
+        return path == null ? prefix : prefix + "_" + path;
     }
 
     @Override
@@ -110,7 +122,6 @@ public class FileDb implements SchematicDb {
     public EditableDocument editContent( String key, boolean createIfMissing ) {
         TransactionStore.TransactionMap<String, Document> txContent = transactionalContent(true);
         Document existingTxDoc = txContent.get(key);
-        Document existingPersistedDoc = persistedContent.get(key);        
         if (existingTxDoc == null && createIfMissing) {
             existingTxDoc = SchematicEntry.create(key).source();
             txContent.put(key, existingTxDoc);            
@@ -118,8 +129,10 @@ public class FileDb implements SchematicDb {
         
         if (existingTxDoc == null) {
             return null;
-        } else if (existingTxDoc == existingPersistedDoc) {
-            // if it's the same instance, make sure the tx map has a clone of it
+        } 
+        
+        if (!txContent.isSameTransaction(key)) {
+            // this transaction is processing this key for the first time, so we need to clone it
             existingTxDoc = existingTxDoc.clone();
             txContent.put(key, existingTxDoc);
         }
@@ -154,32 +167,35 @@ public class FileDb implements SchematicDb {
     public void start() {
         MVStore.Builder builder = new MVStore.Builder();
         builder.autoCommitDisabled();
-        builder.compress();
-        if (location != null) {
-            File file = new File(location);
+        if (compress) {
+            builder.compress();    
+        }
+        if (!StringUtil.isBlank(path)) {
+            File file = new File(path);
             if (!file.exists() || !file.isDirectory() || !file.canRead()) {
                 FileUtil.delete(file);
                 try {
-                    Files.createDirectories(Paths.get(location));
+                    Files.createDirectories(Paths.get(path));
                 } catch (IOException e) {
                     throw new FileProviderException(e);
                 }
             }
-            builder.fileName(location + "/" + FILENAME);
+            builder.fileName(path + "/" + FILENAME);
         }
         this.store = builder.open();
         this.txStore = new TransactionStore(store);
         this.txStore.init();
         // start a new transaction (which has READ_COMMITTED isolation) which will give us the view of the latest persisted data
-        this.persistedContent = this.txStore.begin().openMap(REPOSITORY_CONTENT);
+        TransactionStore.Transaction tx = this.txStore.begin();
+        this.persistedContent = tx.openMap(REPOSITORY_CONTENT);
+        tx.rollback();
     }
 
     @Override
     public void stop() {
-        // close the tx store
-        this.txStore.close();
-        // and the main store
-        this.store.closeImmediately();
+        this.txStore.getOpenTransactions().forEach(TransactionStore.Transaction::rollback);
+        // close the store
+        this.store.close();
     }
 
     @Override
@@ -199,7 +215,6 @@ public class FileDb implements SchematicDb {
         try {
             TransactionStore.TransactionMap<String, Document> txContent = this.transactionalContentById.remove(id);
             TransactionStore.Transaction tx = txContent.getTransaction();
-            
             tx.commit();
         } finally {
             ACTIVE_TX_ID.remove();

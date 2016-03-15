@@ -33,6 +33,7 @@ import org.modeshape.jcr.ModeShapeRoles;
 import org.modeshape.jcr.RepositoryConfiguration;
 import org.modeshape.jcr.RepositoryConfiguration.FieldName;
 import org.modeshape.jcr.api.index.IndexDefinition.IndexKind;
+import org.modeshape.persistence.file.FileDbProvider;
 import org.modeshape.persistence.relational.RelationalDbConfig;
 
 /**
@@ -785,7 +786,7 @@ public class ModelAttributes {
                     .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                     .build();
 
-    public static final MappedSimpleAttributeDefinition COMPRESS =
+    public static final MappedSimpleAttributeDefinition DB_COMPRESS =
             new MappedAttributeDefinitionBuilder(Attribute.COMPRESS.getLocalName(), ModelType.BOOLEAN,
                                                  FieldName.STORAGE, FieldName.PERSISTENCE, RelationalDbConfig.COMPRESS)
                     .setXmlName(Attribute.COMPRESS.getLocalName())
@@ -858,6 +859,22 @@ public class ModelAttributes {
                     .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                     .build();
 
+    public static final MappedSimpleAttributeDefinition FS_PATH =
+            new MappedAttributeDefinitionBuilder(Attribute.PATH.getLocalName(), ModelType.STRING, 
+                                                 FieldName.STORAGE, FieldName.PERSISTENCE, FileDbProvider.PATH_FIELD)
+                    .setAllowExpression(true)
+                    .setAllowNull(true)
+                    .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+                    .build();
+    
+    public static final MappedSimpleAttributeDefinition FS_COMPRESS =
+            new MappedAttributeDefinitionBuilder(Attribute.COMPRESS.getLocalName(), ModelType.BOOLEAN,
+                                                 FieldName.STORAGE, FieldName.PERSISTENCE, FileDbProvider.COMPRESS_FIELD)
+                    .setAllowExpression(true)
+                    .setAllowNull(true)
+                    .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+                    .build();
+
     public static final AttributeDefinition[] SUBSYSTEM_ATTRIBUTES = {};
 
     public static final AttributeDefinition[] WEBAPP_ATTRIBUTES = {EXPLODED};
@@ -897,7 +914,8 @@ public class ModelAttributes {
     public static final AttributeDefinition[] SEQUENCER_ATTRIBUTES = {PATH_EXPRESSIONS, SEQUENCER_CLASSNAME, MODULE, PROPERTIES};
     public static final AttributeDefinition[] PERSISTENCE_DB_ATTRIBUTES = { TABLE_NAME, CREATE_ON_START, DROP_ON_EXIT,
                                                                             FETCH_SIZE, CONNECTION_URL, DRIVER, USERNAME, PASSWORD,
-                                                                            PERSISTENCE_DS_JNDI_NAME, COMPRESS, POOL_SIZE };
+                                                                            PERSISTENCE_DS_JNDI_NAME, DB_COMPRESS, POOL_SIZE }; 
+    public static final AttributeDefinition[] PERSISTENCE_FS_ATTRIBUTES = { FS_PATH, FS_COMPRESS};
     public static final AttributeDefinition[] SOURCE_ATTRIBUTES = { PROJECTIONS, CONNECTOR_CLASSNAME, READONLY, CACHEABLE,
                                                                     QUERYABLE, MODULE, PROPERTIES, EXPOSE_AS_WORKSPACE};
     public static final AttributeDefinition[] TEXT_EXTRACTOR_ATTRIBUTES = {TEXT_EXTRACTOR_CLASSNAME, MODULE, PROPERTIES};

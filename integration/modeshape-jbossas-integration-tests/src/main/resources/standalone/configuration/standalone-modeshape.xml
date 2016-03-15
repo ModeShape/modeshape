@@ -189,6 +189,24 @@
                         <password>sa</password>
                     </security>
                 </datasource>
+                 <datasource jndi-name="java:jboss/datasources/ModeshapeClusterDS1" pool-name="ModeshapeClusterDS1"
+                            enabled="true" use-java-context="true" jta="false">
+                    <connection-url>jdbc:h2:${jboss.server.data.dir}/modeshape/clustered_ex1/db;AUTO_SERVER=true</connection-url>
+                    <driver>h2</driver>
+                    <security>
+                        <user-name>sa</user-name>
+                        <password>sa</password>
+                    </security>
+                </datasource>
+                 <datasource jndi-name="java:jboss/datasources/ModeshapeClusterDS2" pool-name="ModeshapeClusterDS2"
+                            enabled="true" use-java-context="true" jta="false">
+                    <connection-url>jdbc:h2:${jboss.server.data.dir}/modeshape/clustered_ex2/db;AUTO_SERVER=true</connection-url>
+                    <driver>h2</driver>
+                    <security>
+                        <user-name>sa</user-name>
+                        <password>sa</password>
+                    </security>
+                </datasource>
 
                 <drivers>
                     <driver name="h2" module="com.h2database.h2">
@@ -312,14 +330,12 @@
             <webapp name="modeshape-rest.war"/>
             <webapp name="modeshape-webdav.war"/>
 
-            <!-- A sample repository with content stored in H2 memory -->
-            <repository name="sample" anonymous-roles="admin">
-                <db-persistence url="jdbc:h2:mem:sample_db" drop-on-exit="true"/>
-            </repository>
+            <!-- A sample repository with content stored in memory -->
+            <repository name="sample" anonymous-roles="admin"/>
             
             <!-- A second sample repository that defines additional non-default components such as extra workspaces and sequencers. -->
             <repository name="artifacts" anonymous-roles="admin" >
-                <db-persistence url="jdbc:h2:file:${jboss.server.data.dir}/modeshape/store/artifacts/db"/>
+                <file-persistence path="${jboss.server.data.dir}/modeshape/store/artifacts"/>
                 <!-- Define 3 workspaces to exist upon startup -->
                 <workspaces default-workspace="default" allow-workspace-creation="false">
                     <workspace name="default">
@@ -413,7 +429,6 @@
                 <file-binary-storage mime-type-detection="content"/>
             </repository>
             <repository name="preconfiguredRepository" anonymous-roles="admin" event-bus-size="2048">
-                <db-persistence drop-on-exit="true" url="jdbc:h2:mem:preconfigured_db" />
                 <workspaces>
                         <workspace name="default"/>
                         <workspace name="other"/>
@@ -431,7 +446,6 @@
                     </node-types>
             </repository>
             <repository name="federatedRepository" anonymous-roles="admin">
-                <db-persistence drop-on-exit="true" url="jdbc:h2:mem:federated_db"/>
                 <workspaces allow-workspace-creation="true" default-workspace="default">
                     <workspace name="default"/>
                     <workspace name="other"/>
@@ -466,36 +480,34 @@
                 <db-binary-storage data-source-jndi-name="java:jboss/datasources/ExampleDS" mime-type-detection="none"/>
             </repository>
             <repository name="transient" anonymous-roles="admin" >
-                <db-persistence drop-on-exit="true" url="jdbc:h2:mem:transient_db"/>
                 <transient-binary-storage min-string-size="100" mime-type-detection="none"/>
             </repository>
             <repository name="repo-clustered1"
                         anonymous-roles="admin"
                         cluster-name="modeshape-wf-it1"
                         cluster-config="${jboss.server.config.dir}/modeshape/jgroups-test-config.xml">
-                <db-persistence url="jdbc:h2:${jboss.server.data.dir}/modeshape/clustered_ex1/db;AUTO_SERVER=true"/>
+                <db-persistence datasource-jndi="java:jboss/datasources/ModeshapeClusterDS1"/>
             </repository>
             <repository name="repo-clustered2"
                         anonymous-roles="admin"
                         cluster-name="modeshape-wf-it1"
                         cluster-config="${jboss.server.config.dir}/modeshape/jgroups-test-config.xml">
-                <db-persistence url="jdbc:h2:${jboss.server.data.dir}/modeshape/clustered_ex1/db;AUTO_SERVER=true"/>
+                <db-persistence datasource-jndi="java:jboss/datasources/ModeshapeClusterDS1"/>
             </repository>
          
             <repository name="repo-clustered3"
                         anonymous-roles="admin"
                         cluster-name="modeshape-wf-it2"
                         cluster-stack="tcp">
-                <db-persistence url="jdbc:h2:${jboss.server.data.dir}/modeshape/clustered_ex2/db;AUTO_SERVER=true"/>
+                <db-persistence datasource-jndi="java:jboss/datasources/ModeshapeClusterDS2"/>
             </repository>
             <repository name="repo-clustered4" 
                         anonymous-roles="admin"
                         cluster-name="modeshape-wf-it2"
                         cluster-stack="tcp">
-                <db-persistence url="jdbc:h2:${jboss.server.data.dir}/modeshape/clustered_ex2/db;AUTO_SERVER=true"/>
+                <db-persistence datasource-jndi="java:jboss/datasources/ModeshapeClusterDS2"/>
             </repository>
             <repository name="compositeBinaryStoreRepository" anonymous-roles="admin">
-                <db-persistence drop-on-exit="true" url="jdbc:h2:mem:composite_binary"/>
                 <composite-binary-storage min-value-size="100">
                     <file-binary-storage store-name="fs1"
                                          path="modeshape/compositeBinaryStoreRepository/binaries/fs1"
@@ -507,25 +519,17 @@
                 </composite-binary-storage>
             </repository>
             <repository name="journalingRepository" anonymous-roles="admin">
-                <db-persistence drop-on-exit="true" url="jdbc:h2:mem:journaling_db"/>
                 <journaling max-days-to-keep-records="15" async-writes="false"/>
             </repository>
-            <repository name="anonymousRepository" anonymous-roles="">
-                <db-persistence drop-on-exit="true" url="jdbc:h2:mem:anon"/>
-            </repository>
-            <repository name="defaultAnonymousRepository">
-                <db-persistence drop-on-exit="true" url="jdbc:h2:mem:default_anon"/>
-            </repository>
+            <repository name="anonymousRepository" anonymous-roles=""/>
+            <repository name="defaultAnonymousRepository"/>
             <repository name="optimizationRepository"
                         document-optimization-child-count-target="10"
                         document-optimization-child-count-tolerance="10"
                         document-optimization-initial-time="02:00"
                         document-optimization-interval="24"
-                        document-optimization-thread-pool="modeshape-opt">
-                <db-persistence drop-on-exit="true" url="jdbc:h2:mem:optimization_repo"/>
-            </repository>
+                        document-optimization-thread-pool="modeshape-opt"/>
             <repository name="customAuthenticatorRepository">
-                <db-persistence drop-on-exit="true" url="jdbc:h2:mem:custom_auth"/>
                 <authenticators>
                     <authenticator classname="org.modeshape.test.integration.CustomAuthenticationProvider" 
                                    module="deployment.security-test.war"
@@ -533,12 +537,10 @@
                 </authenticators>
             </repository>
             <repository name="reindexingRepository" anonymous-roles="admin">
-                <db-persistence drop-on-exit="true" url="jdbc:h2:mem:reindexing_repo"/>
                 <reindexing mode="incremental" async="false"/>
                 <journaling max-days-to-keep-records="15" async-writes="false"/>
             </repository>    
             <repository name="externalDependenciesRepository" anonymous-roles="admin" depends-on="deployment.external-dependencies.war">
-                <db-persistence drop-on-exit="true" url="jdbc:h2:mem:external_dep"/>
                 <workspaces default-workspace="default" allow-workspace-creation="false">
                     <workspace name="default">
                         <initial-content>config/initial-content-cars.xml</initial-content>
@@ -550,7 +552,6 @@
             </repository>
 
             <repository name="repo-with-es-index" anonymous-roles="admin">
-                <db-persistence drop-on-exit="true" url="jdbc:h2:mem:es_repo" />
                 <workspaces allow-workspace-creation="true" default-workspace="default">
                     <workspace name="default"/>
                     <initial-content>initial-content-default.xml</initial-content>

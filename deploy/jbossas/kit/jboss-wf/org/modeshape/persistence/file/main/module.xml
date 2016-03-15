@@ -16,10 +16,10 @@
   ~ See the License for the specific language governing permissions and
   ~ limitations under the License.
 -->
-<module xmlns="urn:jboss:module:1.3" name="org.modeshape.persistence.relational">
+<module xmlns="urn:jboss:module:1.3" name="org.modeshape.persistence.file">
     <resources>
-        <resource-root path="modeshape-persistence-relational-${project.version}.jar" />
-        <resource-root path="HikariCP-${version.com.zaxxer.HikariCP}.jar" />
+        <resource-root path="modeshape-persistence-file-${project.version}.jar" />
+        <resource-root path="h2-${version.com.h2}.jar" />
     </resources>
 
     <dependencies>

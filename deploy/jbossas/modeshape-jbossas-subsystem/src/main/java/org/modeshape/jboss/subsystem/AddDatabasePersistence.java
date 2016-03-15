@@ -15,7 +15,7 @@
  */
 package org.modeshape.jboss.subsystem;
 
-import static org.modeshape.jboss.subsystem.ModelAttributes.COMPRESS;
+import static org.modeshape.jboss.subsystem.ModelAttributes.DB_COMPRESS;
 import static org.modeshape.jboss.subsystem.ModelAttributes.CONNECTION_URL;
 import static org.modeshape.jboss.subsystem.ModelAttributes.CREATE_ON_START;
 import static org.modeshape.jboss.subsystem.ModelAttributes.DRIVER;
@@ -103,9 +103,9 @@ public class AddDatabasePersistence extends AbstractAddStepHandler {
         if (jndi.isDefined()) {
             persistenceConfig.setString(PERSISTENCE_DS_JNDI_NAME.getFieldName(), jndi.asString());
         }
-        ModelNode compress = COMPRESS.resolveModelAttribute(context, operation);
+        ModelNode compress = DB_COMPRESS.resolveModelAttribute(context, operation);
         if (compress.isDefined()) {
-            persistenceConfig.setBoolean(COMPRESS.getFieldName(), compress.asBoolean());
+            persistenceConfig.setBoolean(DB_COMPRESS.getFieldName(), compress.asBoolean());
         }
         ModelNode poolSize = POOL_SIZE.resolveModelAttribute(context, operation);
         if (poolSize.isDefined()) {

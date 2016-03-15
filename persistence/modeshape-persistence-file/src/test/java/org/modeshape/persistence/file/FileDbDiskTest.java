@@ -19,16 +19,25 @@ import org.modeshape.schematic.AbstractSchematicDBTest;
 import org.modeshape.schematic.SchematicDb;
 
 /**
- * Unit test for {@link FileDb} when data is only stored in memory
+ * Unit test for {@link FileDb} when data is only stored on disk.
  * 
  * @author Horia Chiorean (hchiorea@redhat.com)
  */
-public class DBMemTest extends AbstractSchematicDBTest {
+public class FileDbDiskTest extends AbstractSchematicDBTest {
     
-    private static final SchematicDb DB = new FileDb(null);
+    private static final SchematicDb DB = FileDb.onDisk(false, "target/fstest");
 
     @Override
     protected SchematicDb getDb() throws Exception {
         return DB;
+    }
+
+    @Override
+    public void after() throws Exception {
+        simulateTransaction(() -> {
+            db.removeAll();
+            return null;
+        });
+        super.after();
     }
 }
