@@ -222,6 +222,10 @@ public class ModeShapeSubsystemXMLReader_3_0 implements XMLStreamConstants, XMLE
                     persistence = parseDBPersistence(reader, repositoryName);
                     break;
                 }
+                case FILE_PERSISTENCE: {
+                    persistence = parseFilePersistence(reader, repositoryName);
+                    break;
+                }
                 case WORKSPACES:
                     parseWorkspaces(reader, address, repository);
                     break;
@@ -342,7 +346,7 @@ public class ModeShapeSubsystemXMLReader_3_0 implements XMLStreamConstants, XMLE
                         ModelAttributes.FETCH_SIZE.parseAndSetParameter(attrValue, persistence, reader);
                         break;
                     case COMPRESS:
-                        ModelAttributes.COMPRESS.parseAndSetParameter(attrValue, persistence, reader);
+                        ModelAttributes.DB_COMPRESS.parseAndSetParameter(attrValue, persistence, reader);
                         break;
                     case PERSISTENCE_DS_JNDI:
                         ModelAttributes.PERSISTENCE_DS_JNDI_NAME.parseAndSetParameter(attrValue, persistence, reader);
@@ -364,6 +368,39 @@ public class ModeShapeSubsystemXMLReader_3_0 implements XMLStreamConstants, XMLE
 
         requireNoElements(reader);
         
+        return persistence;
+    }
+
+    private ModelNode parseFilePersistence(XMLExtendedStreamReader reader, String repositoryName) throws XMLStreamException {
+        final ModelNode persistence = new ModelNode();
+        persistence.get(OP).set(ADD);
+
+        if (reader.getAttributeCount() > 0) {
+            for (int i = 0; i < reader.getAttributeCount(); i++) {
+                String attrName = reader.getAttributeLocalName(i);
+                String attrValue = reader.getAttributeValue(i);
+                Attribute attribute = Attribute.forName(attrName);
+                switch (attribute) {
+                    case PATH:
+                        ModelAttributes.FS_PATH.parseAndSetParameter(attrValue, persistence, reader);
+                        break;
+                    case COMPRESS:
+                        ModelAttributes.FS_COMPRESS.parseAndSetParameter(attrValue, persistence, reader);
+                        break;
+                    default:
+                        throw ParseUtils.unexpectedAttribute(reader, i);
+                }
+            }
+        }
+
+        String fsPersistenceKey = Attribute.FS_PERSISTENCE.getLocalName();
+        persistence.get(OP_ADDR)
+                   .add(SUBSYSTEM, ModeShapeExtension.SUBSYSTEM_NAME)
+                   .add(ModelKeys.REPOSITORY, repositoryName)
+                   .add(fsPersistenceKey, fsPersistenceKey);
+
+        requireNoElements(reader);
+
         return persistence;
     }
 

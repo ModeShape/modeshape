@@ -54,7 +54,7 @@ import org.modeshape.jcr.api.Repository;
  */
 @SuppressWarnings( "deprecation" )
 @RunWith( Arquillian.class )
-public class JBossASKitTest {
+public class JBossASKitIT {
 
     @Resource( mappedName = "java:/datasources/ModeShapeDS" )
     private DataSource modeshapeDS;

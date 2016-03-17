@@ -17,8 +17,9 @@
 package org.modeshape.jcr.journal;
 
 import static org.junit.Assert.assertTrue;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -34,47 +35,39 @@ import org.modeshape.jcr.clustering.ClusteringService;
  */
 public class ClusteredJournalTest extends LocalJournalTest {
 
-    private ClusteredJournal defaultJournal;
-    private List<ClusteringService> clusteringServices = new ArrayList<ClusteringService>();
+    private static List<ClusteringService> clusteringServices;
 
     @BeforeClass
     public static void beforeClass() throws Exception {
         ClusteringHelper.bindJGroupsToLocalAddress();
+        clusteringServices = IntStream.range(0, 4)
+                                      .mapToObj(i -> ClusteringService.startStandalone("journal-cluster",
+                                                                                       "config/cluster/jgroups-test-config.xml"))
+                                      .collect(Collectors.toList());
     }
 
     @AfterClass
-    public static void afterClass() throws Exception {
+    public static void afterClass() throws Exception {       
+        clusteringServices.forEach(ClusteringService::shutdown);
         ClusteringHelper.removeJGroupsBindings();
     }
 
     @Override
-    public void before() throws Exception {
-        this.defaultJournal = startNewJournal("target/default_clustered_journal", "default-journal-cluster");
-        insertTestRecords();
-    }
-
-    @Override
-    protected ChangeJournal journal() {
-        return defaultJournal;
+    protected ChangeJournal journal() throws Exception {
+        return startNewJournal("target/default_clustered_journal", 0, 0);
     }
 
     @Override
     protected LocalJournal localJournal() {
-        return defaultJournal.localJournal();
+        return ((ClusteredJournal) journal).localJournal();
     }
 
-    @Override
-    public void after() {
-        super.after();
-        for (ClusteringService clusteringService : clusteringServices) {
-            clusteringService.shutdown();
-        }
-    }
 
     @Test
     public void shouldReconcileDeltaInCluster() throws Exception {
         // shut down the default journal
-        after();
+        journal.shutdown();
+        
         ClusteredJournal journal1 = null; 
         ClusteredJournal journal2 = null; 
         ClusteredJournal journal3 = null; 
@@ -82,14 +75,14 @@ public class ClusteredJournalTest extends LocalJournalTest {
 
         try {
             // start a journal
-            journal1 = startNewJournal("target/clustered_journal_1", "journal-cluster-1");
+            journal1 = startNewJournal("target/clustered_journal_1", 0, 0);
             assertTrue(journal1.started());
             // add 2 record to the 1st journal
             journal1.addRecords(new JournalRecord(TestChangeSet.create(journal1.journalId(), 1)));
             journal1.addRecords(new JournalRecord(TestChangeSet.create(journal1.journalId(), 1)));
 
             // start another journal
-            journal2 = startNewJournal("target/clustered_journal_2", "journal-cluster-1");
+            journal2 = startNewJournal("target/clustered_journal_2", 1, 1);
             assertTrue(journal2.started());
             // check that the 2nd journal has received all the changes from the 1st (they haven't seen each other yet)
             Assert.assertEquals(2, journal2.allRecords(false).size());
@@ -116,13 +109,13 @@ public class ClusteredJournalTest extends LocalJournalTest {
             Assert.assertEquals(4, journal2.allRecords(false).size());
 
             // start a fresh 3rd journal and check that it gets up-to-date 
-            journal3 = startNewJournal("target/clustered_journal_3", "journal-cluster-1");
+            journal3 = startNewJournal("target/clustered_journal_3", 2, 1);
             assertTrue(journal3.started());
             Assert.assertEquals(4, journal3.allRecords(false).size());
             
             //shutdown 1 and 3 and start a 4th journal
             journal1.shutdown();
-            journal4 = startNewJournal("target/clustered_journal_4", "journal-cluster-1");
+            journal4 = startNewJournal("target/clustered_journal_4", 3, 1);
             assertTrue(journal4.started());
             Assert.assertEquals(4, journal4.allRecords(false).size());
         } finally {
@@ -143,14 +136,13 @@ public class ClusteredJournalTest extends LocalJournalTest {
     }
 
     private ClusteredJournal startNewJournal( String fileLocation,
-                                              String clusterName ) throws Exception {
-        ClusteringService clusteringService = ClusteringService.startStandalone(clusterName,
-                                                                                "config/cluster/jgroups-test-config.xml");
-        clusteringServices.add(clusteringService);
-
+                                              int clusterServiceIdx,
+                                              int maxReconciliationWaitTimeMinutes) throws Exception {
+        
         FileUtil.delete(fileLocation);
         LocalJournal localJournal = new LocalJournal(fileLocation);
-        ClusteredJournal clusteredJournal = new ClusteredJournal(localJournal, clusteringService);
+        ClusteredJournal clusteredJournal = new ClusteredJournal(localJournal, clusteringServices.get(clusterServiceIdx), 
+                                                                 maxReconciliationWaitTimeMinutes);
         clusteredJournal.start();
 
         return clusteredJournal;

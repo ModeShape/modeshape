@@ -19,6 +19,7 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import java.io.File;
@@ -95,6 +96,12 @@ public class RepositoryPersistenceTest extends MultiPassAbstractTest {
             session.logout();
         }, repositoryConfigFile);
 
+    }
+    
+    @Test
+    public void shouldPersistDataUsingDB() throws Exception {
+        // make sure the DB is clean (empty) when running this test; there is no effective teardown
+        assertDataPersistenceAcrossRestarts("config/db/repo-config-jdbc.json");
     }
 
     private void assertDataPersistenceAcrossRestarts( String repositoryConfigFile ) throws Exception {
@@ -174,14 +181,16 @@ public class RepositoryPersistenceTest extends MultiPassAbstractTest {
                 assertThat(binary.getSize(), is(testFileSizesInBytes.get(name)));
             }
 
+            
+            session.getNode("/testNode").remove();
+            session.save();
+
+            query = session.getWorkspace().getQueryManager().createQuery("SELECT * FROM [nt:file]", Query.JCR_SQL2);
+            results = query.execute();
+            assertFalse(results.getNodes().hasNext());
+            
             session.logout();
         }, repositoryConfigFile);
-    }
-
-    @Test
-    public void shouldPersistDataUsingDB() throws Exception {
-        // make sure the DB is clean (empty) when running this test; there is no effective teardown
-        assertDataPersistenceAcrossRestarts("config/db/repo-config-jdbc.json");
     }
 
     protected File getFile( String resourcePath ) throws URISyntaxException {

@@ -2,8 +2,8 @@
     "name" : "Restore Repository",
     "storage" : {
         "persistence": {
-            "type": "db",
-            "connectionUrl" : "jdbc:h2:file:./target/backupArea/restoreRepo/restore_db"
+            "type": "file",
+            "path" : "target/backupArea/restoreRepo/restore_db"
         },
         "binaryStorage" : {
             "type" : "file",

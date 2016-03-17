@@ -30,6 +30,10 @@
             <outputDirectory>./modules/modeshape-persistence-relational</outputDirectory>
         </fileSet>
         <fileSet>
+            <directory>../persistence/modeshape-persistence-file/target/${binary.dist.name}</directory>
+            <outputDirectory>./modules/modeshape-persistence-file</outputDirectory>
+        </fileSet>
+        <fileSet>
             <directory>../connectors/modeshape-connector-cmis/target/${binary.dist.name}</directory>
             <outputDirectory>./modules/modeshape-connector-cmis</outputDirectory>
         </fileSet>

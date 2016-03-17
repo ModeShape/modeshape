@@ -20,9 +20,11 @@ import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.ExecutorService;
@@ -31,10 +33,15 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.IntStream;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.PathNotFoundException;
+import javax.jcr.RepositoryException;
 import javax.jcr.Session;
+import javax.jcr.query.Query;
+import javax.jcr.query.QueryManager;
+import javax.jcr.query.QueryResult;
 import javax.jcr.version.VersionManager;
 import javax.transaction.HeuristicMixedException;
 import javax.transaction.HeuristicRollbackException;
@@ -523,6 +530,75 @@ public class TransactionsTest extends SingleUseAbstractTest {
             fail("should fail");
         } catch (PathNotFoundException e) {
             // expected
+        }
+    }
+
+    @Test
+    @FixFor( "MODE-2558" )
+    public void shouldNotCorruptDataWhenConcurrentlyWritingAndQuerying() throws Exception {
+        int threadCount = 150;
+        IntStream.range(0, threadCount).parallel().forEach(this::insertAndQueryNodes);
+    }
+
+    private void insertAndQueryNodes(int i) {
+        Session session = null;
+
+        try {
+            startTransaction();
+            session = repository.login();
+            createNode("/", UUID.randomUUID().toString(), session);
+            commitTransaction();
+            
+            
+            session = repository.login();
+            QueryManager queryManager = session.getWorkspace().getQueryManager();
+            Query query = queryManager.createQuery("SELECT node.* FROM [mix:title] AS node", Query.JCR_SQL2);
+            QueryResult result = query.execute();
+            assertTrue(result.getNodes().getSize() > 0);
+            session.logout();
+        } catch (Exception e) {
+            if (e instanceof RuntimeException) {
+                throw (RuntimeException)e;
+            } else {
+                throw new RuntimeException(e);
+            }
+        } finally {
+            if (session != null) {
+                session.logout();
+                session = null;
+            }
+        }
+    }
+
+    private Node createNode(String parentNodePath, String uuid, Session session) throws RepositoryException {
+
+        String nodeLevelOneName = uuid.substring(0, 2);
+        String nodeLevelOnePath = parentNodePath + "/" + nodeLevelOneName;
+
+        String nodeLevelTwoName = uuid.substring(2, 4);
+        String nodeLevelTwoPath = nodeLevelOnePath + "/" + nodeLevelTwoName;
+
+        String nodeLevelThreeName = uuid.substring(4, 6);
+        String nodeLevelThreePath = nodeLevelTwoPath + "/" + nodeLevelThreeName;
+
+        addLevel(parentNodePath, nodeLevelOneName, nodeLevelOnePath, session);
+        addLevel(nodeLevelOnePath, nodeLevelTwoName, nodeLevelTwoPath, session);
+        addLevel(nodeLevelTwoPath, nodeLevelThreeName, nodeLevelThreePath, session);
+        session.save();
+
+        Node parent = session.getNode(parentNodePath);
+        Node node = parent.addNode(uuid);
+        node.addMixin("mix:title");
+        node.setProperty("jcr:title", "test");
+        session.save();
+
+        return node;
+    }
+
+    private void addLevel(String currentNodeLevelPath, String nextNodeLevelName, String nextNodeLevelPath, Session session) throws RepositoryException {
+        if (!session.nodeExists(nextNodeLevelPath)) {
+            Node parentNode = session.getNode(currentNodeLevelPath);
+            parentNode.addNode(nextNodeLevelName);
         }
     }
 

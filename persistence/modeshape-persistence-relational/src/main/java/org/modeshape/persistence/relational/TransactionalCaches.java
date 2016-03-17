@@ -15,6 +15,7 @@
  */
 package org.modeshape.persistence.relational;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
@@ -101,12 +102,20 @@ public final class TransactionalCaches {
     protected void putNew(String key) {
         cacheForTransaction().putNew(key);
     }
+
+    protected void putNew(Collection<String> keys) {
+        cacheForTransaction().putNew(keys);
+    }
     
     protected void clearCache() {
         cachesByTxId.computeIfPresent(TransactionsHolder.requireActiveTransaction(), (id, readWriteCache) -> {
             readWriteCache.clear();
             return null;
         });
+    }
+    
+    protected void stop() {
+        cachesByTxId.clear();
     }
 
     private TransactionalCache cacheForTransaction() {
@@ -143,6 +152,10 @@ public final class TransactionalCaches {
         
         protected void putNew(String id) {
             newIds.add(id);
+        }
+           
+        protected void putNew(Collection<String> ids) {
+            newIds.addAll(ids);
         }
         
         protected boolean isNew(String id) {

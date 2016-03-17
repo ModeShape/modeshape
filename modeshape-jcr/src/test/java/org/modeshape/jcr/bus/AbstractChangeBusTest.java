@@ -51,7 +51,7 @@ public abstract class AbstractChangeBusTest {
     protected static final String WORKSPACE1 = "ws1";
     protected static final String WORKSPACE2 = "ws2";
 
-    private ChangeBus changeBus;
+    protected ChangeBus changeBus;
 
     @Before
     public void beforeEach() throws Exception {
@@ -70,40 +70,40 @@ public abstract class AbstractChangeBusTest {
     public void shouldNotAllowTheSameListenerTwice() throws Exception {
         TestListener listener1 = new TestListener();
 
-        assertTrue(getChangeBus().register(listener1));
-        assertFalse(getChangeBus().register(listener1));
+        assertTrue(changeBus.register(listener1));
+        assertFalse(changeBus.register(listener1));
 
         TestListener listener2 = new TestListener();
-        assertTrue(getChangeBus().register(listener2));
-        assertFalse(getChangeBus().register(listener2));
+        assertTrue(changeBus.register(listener2));
+        assertFalse(changeBus.register(listener2));
 
-        assertFalse(getChangeBus().register(null));
+        assertFalse(changeBus.register(null));
     }
 
     @Test
     public void shouldAllowListenerRemoval() throws Exception {
         TestListener listener1 = new TestListener();
 
-        assertTrue(getChangeBus().register(listener1));
-        assertTrue(getChangeBus().unregister(listener1));
+        assertTrue(changeBus.register(listener1));
+        assertTrue(changeBus.unregister(listener1));
 
         TestListener listener2 = new TestListener();
-        assertFalse(getChangeBus().unregister(listener2));
+        assertFalse(changeBus.unregister(listener2));
     }
 
     @Test
     public void shouldNotifyAllRegisteredListenersKeepingEventOrder() throws Exception {
         TestListener listener1 = new TestListener(4);
-        getChangeBus().register(listener1);
+        changeBus.register(listener1);
 
         TestListener listener2 = new TestListener(4);
-        getChangeBus().register(listener2);
+        changeBus.register(listener2);
 
-        getChangeBus().notify(new TestChangeSet(WORKSPACE1));
-        getChangeBus().notify(new TestChangeSet(WORKSPACE1));
+        changeBus.notify(new TestChangeSet(WORKSPACE1));
+        changeBus.notify(new TestChangeSet(WORKSPACE1));
 
-        getChangeBus().notify(new TestChangeSet(WORKSPACE2));
-        getChangeBus().notify(new TestChangeSet(WORKSPACE2));
+        changeBus.notify(new TestChangeSet(WORKSPACE2));
+        changeBus.notify(new TestChangeSet(WORKSPACE2));
 
         assertChangesDispatched(listener1);
         assertChangesDispatched(listener2);
@@ -111,19 +111,19 @@ public abstract class AbstractChangeBusTest {
 
     @Test
     public void shouldOnlyDispatchEventsAfterListenerRegistration() throws Exception {
-        getChangeBus().notify(new TestChangeSet(WORKSPACE1));
+        changeBus.notify(new TestChangeSet(WORKSPACE1));
 
         TestListener listener1 = new TestListener(4);
-        getChangeBus().register(listener1);
+        changeBus.register(listener1);
 
-        getChangeBus().notify(new TestChangeSet(WORKSPACE1));
-        getChangeBus().notify(new TestChangeSet(WORKSPACE1));
+        changeBus.notify(new TestChangeSet(WORKSPACE1));
+        changeBus.notify(new TestChangeSet(WORKSPACE1));
 
         TestListener listener2 = new TestListener(2);
-        getChangeBus().register(listener2);
+        changeBus.register(listener2);
 
-        getChangeBus().notify(new TestChangeSet(WORKSPACE2));
-        getChangeBus().notify(new TestChangeSet(WORKSPACE2));
+        changeBus.notify(new TestChangeSet(WORKSPACE2));
+        changeBus.notify(new TestChangeSet(WORKSPACE2));
 
         assertChangesDispatched(listener1);
         assertChangesDispatched(listener2);
@@ -132,10 +132,10 @@ public abstract class AbstractChangeBusTest {
     @Test
     public void shouldDispatchEventsIfWorkspaceNameIsMissing() throws Exception {
         TestListener listener = new TestListener(2);
-        getChangeBus().register(listener);
+        changeBus.register(listener);
 
-        getChangeBus().notify(new TestChangeSet(null));
-        getChangeBus().notify(new TestChangeSet(null));
+        changeBus.notify(new TestChangeSet(null));
+        changeBus.notify(new TestChangeSet(null));
 
         assertChangesDispatched(listener);
     }
@@ -143,19 +143,19 @@ public abstract class AbstractChangeBusTest {
     @Test
     public void shouldNotDispatchEventsAfterListenerRemoval() throws Exception {
         TestListener listener1 = new TestListener(3);
-        getChangeBus().register(listener1);
+        changeBus.register(listener1);
 
         TestListener listener2 = new TestListener(2);
-        getChangeBus().register(listener2);
+        changeBus.register(listener2);
 
-        getChangeBus().notify(new TestChangeSet(WORKSPACE1));
-        getChangeBus().notify(new TestChangeSet(WORKSPACE2));
+        changeBus.notify(new TestChangeSet(WORKSPACE1));
+        changeBus.notify(new TestChangeSet(WORKSPACE2));
         Thread.sleep(50);
 
-        getChangeBus().unregister(listener2);
+        changeBus.unregister(listener2);
         Thread.sleep(50);
 
-        getChangeBus().notify(new TestChangeSet(WORKSPACE2));
+        changeBus.notify(new TestChangeSet(WORKSPACE2));
 
         assertChangesDispatched(listener1);
         assertChangesDispatched(listener2);
@@ -164,13 +164,13 @@ public abstract class AbstractChangeBusTest {
     @Test
     public void shouldNotDispatchEventsIfShutdown() throws Exception {
         TestListener listener = new TestListener(1);
-        getChangeBus().register(listener);
-        getChangeBus().notify(new TestChangeSet(WORKSPACE1));
+        changeBus.register(listener);
+        changeBus.notify(new TestChangeSet(WORKSPACE1));
 
         Thread.sleep(50);
 
-        getChangeBus().shutdown();
-        getChangeBus().notify(new TestChangeSet(WORKSPACE2));
+        changeBus.shutdown();
+        changeBus.notify(new TestChangeSet(WORKSPACE2));
         assertChangesDispatched(listener);
     }
 
@@ -201,17 +201,13 @@ public abstract class AbstractChangeBusTest {
         for (int i = 0; i < listenerCount; i++) {
             AbstractChangeBusTest.TestListener listener = new AbstractChangeBusTest.TestListener(expectedEventsCount, 500);
             listeners.add(listener);
-            getChangeBus().register(listener);
+            changeBus.register(listener);
         }
 
         for (int i = 0; i < eventCount; i++) {
-            getChangeBus().notify(new AbstractChangeBusTest.TestChangeSet());
+            changeBus.notify(new AbstractChangeBusTest.TestChangeSet());
         }
         return listeners;
-    }
-
-    protected ChangeBus getChangeBus() throws Exception {
-        return changeBus;
     }
 
     protected void assertChangesDispatched( TestListener listener ) {

@@ -38,7 +38,10 @@
         <dependency>
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-persistence-relational</artifactId>
-            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.modeshape</groupId>
+            <artifactId>modeshape-persistence-file</artifactId>
         </dependency>
         <!--Event bus clustering. Note the scope in the parent (provided) - this should be optional from a MS perspective -->
         <dependency>

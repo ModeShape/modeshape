@@ -1,0 +1,5 @@
+# Overwrite some attributes from the default installation so we can run tests
+/subsystem=security/security-domain=modeshape-security/authentication=classic:remove()
+/subsystem=security/security-domain=modeshape-security/authentication=classic:add( \
+    login-modules=[{"code" => "UsersRoles", "flag" => "required","module-options" => [ ("usersProperties"=>"${jboss.server.config.dir}/modeshape-users.properties"), ("rolesProperties"=>"${jboss.server.config.dir}/modeshape-roles.properties")]}] \
+)

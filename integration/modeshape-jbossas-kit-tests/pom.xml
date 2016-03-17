@@ -119,6 +119,30 @@
 
         <plugins>
             <plugin>
+                <!-- Don't run regular unit tests, we'll run them as integration tests via failsafe...-->
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <skip>true</skip>
+                </configuration>
+            </plugin>
+            <!-- Run the tests as integration tests-->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>integration-test</goal>
+                            <goal>verify</goal>
+                        </goals>
+                        <configuration>
+                            <skip>${skipTests}</skip>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>
                 <executions>
@@ -182,6 +206,43 @@
                                 </resource>
                             </resources>
                         </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <!-- 
+               Use the JBOSS AS plugin to fire up the server and run the CLI scripts which install the ModeShape DV kit
+           -->
+            <plugin>
+                <groupId>org.wildfly.plugins</groupId>
+                <artifactId>wildfly-maven-plugin</artifactId>
+                <configuration>
+                    <jbossHome>${project.build.directory}/wildfly-${version.org.wildfly}</jbossHome>
+                    <serverConfig>standalone-modeshape.xml</serverConfig>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>prepare-server</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>start</goal>
+                            <goal>execute-commands</goal>
+                        </goals>
+                        <configuration>
+                            <execute-commands>
+                                <scripts>
+                                    <!-- run a script to overwrite some default security values for testing -->
+                                    <script>src/test/resources/ModeShape-standalone.cli</script>
+                                </scripts>
+                            </execute-commands>
+                        </configuration>
+                    </execution>
+                    <!-- stop the server after configuring it, so that Arquillian can start it up later -->
+                    <execution>
+                        <id>stop-server</id>
+                        <phase>pre-integration-test</phase>
+                        <goals>
+                            <goal>shutdown</goal>
+                        </goals>
                     </execution>
                 </executions>
             </plugin>

@@ -48,6 +48,7 @@ public class ModeShapeExtension implements Extension {
     static final PathElement SEQUENCER_PATH = PathElement.pathElement(ModelKeys.SEQUENCER);
     static final PathElement INDEX_PROVIDER_PATH = PathElement.pathElement(ModelKeys.INDEX_PROVIDER);
     static final PathElement DB_PERSISTENCE_PATH = PathElement.pathElement(Attribute.DB_PERSISTENCE.getLocalName());
+    static final PathElement FS_PERSISTENCE_PATH = PathElement.pathElement(Attribute.FS_PERSISTENCE.getLocalName());
     static final PathElement INDEX_DEFINITION_PATH = PathElement.pathElement(ModelKeys.INDEX);
     static final PathElement SOURCE_PATH = PathElement.pathElement(ModelKeys.SOURCE);
     static final PathElement TEXT_EXTRACTOR_PATH = PathElement.pathElement(ModelKeys.TEXT_EXTRACTOR);
@@ -80,6 +81,7 @@ public class ModeShapeExtension implements Extension {
         
         // Persistence submodel
         repositorySubmodel.registerSubModel(ModeShapeDbPersistenceResource.INSTANCE);
+        repositorySubmodel.registerSubModel(ModeShapeFilePersistenceResource.INSTANCE);
 
         // Sequencer submodel
         repositorySubmodel.registerSubModel(ModeShapeSequencerResource.INSTANCE);

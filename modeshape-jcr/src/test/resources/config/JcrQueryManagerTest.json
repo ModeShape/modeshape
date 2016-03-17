@@ -2,8 +2,7 @@
     "name" : "Test Repository",
     "storage" : {
         "persistence" : {
-            "type" : "db",
-            "dropOnExit" : true
+            "type" : "mem"
         }
     },
     "indexes" : {

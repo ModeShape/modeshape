@@ -20,8 +20,6 @@
     <resources>
         <resource-root path="modeshape-persistence-relational-${project.version}.jar" />
         <resource-root path="HikariCP-${version.com.zaxxer.HikariCP}.jar" />
-        <!-- The version of H2 from WF is old and bug-ridden (deadlocks) so we should use the latest -->
-        <resource-root path="h2-${version.com.h2}.jar" />
     </resources>
 
     <dependencies>

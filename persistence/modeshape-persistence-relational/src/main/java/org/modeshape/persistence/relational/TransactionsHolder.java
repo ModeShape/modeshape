@@ -27,7 +27,7 @@ public final class TransactionsHolder {
     /**
      * Thread local holder for the current active transaction id.
      */
-    private static final ThreadLocal<String> ACTIVE_TX_ID = new InheritableThreadLocal<>();
+    private static final ThreadLocal<String> ACTIVE_TX_ID = new ThreadLocal<>();
 
     private TransactionsHolder() {
     }

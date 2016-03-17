@@ -18,6 +18,7 @@ package org.modeshape.jcr.cache.document;
 import javax.transaction.TransactionManager;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.jcr.NodeTypes;
+import org.modeshape.jcr.RepositoryConfiguration;
 import org.modeshape.jcr.RepositoryEnvironment;
 import org.modeshape.jcr.locking.LockingService;
 import org.modeshape.jcr.locking.StandaloneLockingService;
@@ -37,7 +38,7 @@ public class TestRepositoryEnvironment implements RepositoryEnvironment {
     public TestRepositoryEnvironment(TransactionManager txMgr, SchematicDb db) {
         CheckArg.isNotNull(txMgr, "txMgr");
         this.transactions = new Transactions(txMgr, db);
-        this.lockingService = new StandaloneLockingService();
+        this.lockingService = new StandaloneLockingService(RepositoryConfiguration.Default.LOCK_TIMEOUT);
     }
     
     @Override

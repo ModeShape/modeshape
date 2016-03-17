@@ -61,7 +61,7 @@ public class ConcurrentNodeLoadTest {
     public void beforeEach() throws Exception {
         FileUtil.delete("target/concurrent_load_non_clustered");
         print = false;
-        config = RepositoryConfiguration.read("load/concurrent-load-repo-config.json");
+        config = RepositoryConfiguration.read("load/concurrent-load-repo-config.json").with(new TestingEnvironment());
         engine = new ModeShapeEngine();
     }
 

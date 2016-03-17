@@ -35,6 +35,11 @@
             <artifactId>modeshape-persistence-relational</artifactId>
         </dependency>
 
+        <dependency>
+            <groupId>org.modeshape</groupId>
+            <artifactId>modeshape-persistence-file</artifactId>
+        </dependency>
+
         <!-- 
         Both 'modeshape-jcr' and 'modeshape-extractor-tika' depend on Tika, but have different transitive dependencies
         (due to exclusions). Therefore, depend on this directly to pull in all transitive dependencies defined in the parent POM.

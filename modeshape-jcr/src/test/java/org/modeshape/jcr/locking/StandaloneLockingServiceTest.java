@@ -18,10 +18,18 @@ package org.modeshape.jcr.locking;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import java.util.Arrays;
-import java.util.Collections;
+import static org.junit.Assert.fail;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import org.junit.Before;
 import org.junit.Test;
 
 /**
@@ -30,77 +38,122 @@ import org.junit.Test;
  * @author Horia Chiorean (hchiorea@redhat.com)
  */
 public class StandaloneLockingServiceTest {
-
-    @Test
-    public void shouldLockSingleLock() {
-        LockingService service = newLockingService();
-        String lockName = "test";
-        assertTrue(service.tryLock(lockName));
-        assertTrue(service.unlock(lockName).isEmpty());
-    }
-
-    @Test
-    public void shouldLockMultipleLocks() {
-        LockingService service = newLockingService();
-        String[] lockNames = new String[] {"lock1", "lock2"};
-        assertTrue(service.tryLock(lockNames));
-        assertTrue(service.unlock(lockNames).isEmpty());
+    
+    private LockingService service;
+    private ExecutorService executors;
+    
+    @Before
+    public void before() {
+        service = newLockingService();
+        executors = Executors.newFixedThreadPool(3);
     }
     
-    @Test
-    public void shouldLockDifferentNamesFromDifferentThreads() throws Exception {
-        LockingService service = newLockingService();
-        CompletableFuture.runAsync(() -> assertTrue(service.tryLock("lock1"))).get();
-        CompletableFuture.runAsync(() -> assertTrue(service.tryLock("lock2"))).get();
-        assertEquals(service.unlock("lock1", "lock2").size(), 2);
+    public void after() throws Exception {
+        executors.shutdownNow();
+        service.shutdown();
     }
 
     @Test
+    public void shouldLockMultipleLocks() throws Exception {
+        String[] lockNames = new String[] { "lock1", "lock2" };
+        assertTrue(service.tryLock(lockNames));
+        assertTrue(service.unlock(lockNames));
+    }
+   
+    @Test
+    public void shouldLockDifferentNamesFromDifferentThreads() throws Exception {
+        CompletableFuture.runAsync(() -> {
+            assertLock(service, true, "lock1");
+            assertTrue(service.unlock("lock1"));
+        }).thenRunAsync(() -> {
+            assertLock(service, true, "lock2");
+            assertTrue(service.unlock("lock2"));
+        }, executors).get();
+    } 
+  
+    @Test
     public void shuttingDownShouldReleaseLocks() throws Exception {
-        LockingService service = newLockingService();
-        CompletableFuture.runAsync(() -> assertTrue(service.tryLock("lock1"))).get();
-        CompletableFuture.runAsync(() -> assertTrue(service.tryLock("lock2"))).get();
+        assertTrue(service.tryLock("lock1"));
+        assertTrue(service.tryLock("lock2"));
         assertTrue(service.shutdown());
         assertFalse(service.shutdown());
     }
 
     @Test
-    public void shouldFailIfLocksAlreadyHeld() {
-        List<String> lockNames = Arrays.asList("lock1", "lock2");
-        LockingService service = newLockingService();
-        CompletableFuture<Void> op1 = CompletableFuture.runAsync(() -> assertTrue(service.tryLock(lockNames.toArray(
-                new String[lockNames.size()]))));
-        Collections.reverse(lockNames);
-        op1.thenRunAsync(() -> assertFalse(service.tryLock(lockNames.toArray(new String[lockNames.size()]))))
-           .thenRunAsync(() -> assertEquals(service.unlock(lockNames.toArray(new String[lockNames.size()])).size(),
-                                            lockNames.size())); 
+    public void shouldFailIfLocksAlreadyHeld() throws Exception {
+        assertLock(service, true, "lock1", "lock2");
+        CompletableFuture.runAsync(() -> assertLock(service, false, "lock2", "lock1"), executors)
+                         .thenRunAsync(() -> assertFalse(service.unlock("lock1", "lock2")), executors)                 
+                         .get();
+        assertTrue(service.unlock("lock1", "lock2"));
     }
-    
+
     @Test
     public void shouldReleaseAllLocksWhenFailingToAcquireOne() throws Exception {
-        LockingService service = newLockingService();
-        CompletableFuture.runAsync(() -> assertTrue(service.tryLock("lock1", "lock2", "lock3"))).get();
-        assertFalse(service.tryLock("lock4", "lock5", "lock2"));
-        assertTrue(service.tryLock("lock4", "lock5"));
-        assertTrue(service.unlock("lock4", "lock5").isEmpty());
+        CompletableFuture.runAsync(() -> assertLock(service, true, "lock1", "lock2", "lock3"))
+                         .thenRunAsync(() -> assertLock(service, false, "lock4", "lock5", "lock2"), executors)
+                         .thenRun(() -> {
+                             assertLock(service, true, "lock4", "lock5");
+                             assertTrue(service.unlock("lock4", "lock5"));
+                         }).get();
     }
-    
+
     @Test
     public void unlockShouldReleaseReentrantLocks() throws Exception {
-        LockingService service = newLockingService();
         String[] locks = { "lock1", "lock2", "lock3" };
         CompletableFuture.runAsync(() -> {
-            assertTrue(service.tryLock(locks));
-            assertTrue(service.tryLock(locks));
-            assertTrue(service.tryLock(locks));
-            assertTrue(service.unlock(locks).isEmpty());
+            assertLock(service, true, locks);
+            assertLock(service, true, locks);
+            assertLock(service, true, locks);
+            assertTrue(service.unlock(locks));
         }).get();
         assertTrue(service.tryLock(locks));
+        assertTrue(service.unlock(locks));
+    }
+
+    @Test
+    public void locksShouldBeExclusiveAcrossMultipleThreads() throws Exception {
+        String commonLock = "3293af3317f1e7/";
+        int threadCount = 100;
+        int uniqueLocksPerThread = 3;
+        List<String> results = new ArrayList<>();
+        ForkJoinPool forkJoinPool = new ForkJoinPool(threadCount);
+        forkJoinPool.submit(() -> IntStream.range(0, threadCount)
+                                           .parallel()
+                                           .forEach(i -> lockAndUnlock(service, commonLock, uniqueLocksPerThread, results)))
+                    .get();
+        assertEquals("exclusive access was not ensured", threadCount * uniqueLocksPerThread, results.size());
+    }
+
+    private void lockAndUnlock(LockingService service, String commonLock, int uniqueLocksCount, List<String> accumulator) {
+        List<String> uniqueLocks =
+                IntStream.range(0, uniqueLocksCount).mapToObj(i -> UUID.randomUUID().toString()).collect(Collectors.toList());
+        uniqueLocks.add(commonLock);
+        String[] locks = uniqueLocks.toArray(new String[uniqueLocks.size()]);
+        try {
+            if (service.tryLock(15, TimeUnit.SECONDS, locks)) {
+                uniqueLocks.remove(commonLock);
+                accumulator.addAll(uniqueLocks);
+                service.unlock(locks);
+            } else {
+                fail("locks should've been obtained by now...");
+            }
+        } catch (InterruptedException e) {
+            fail("interrupted...");
+        }
+    }
+
+    protected LockingService newLockingService() {
+        return new StandaloneLockingService();
     }
     
-    protected LockingService newLockingService() {
-        LockingService lockingService = new StandaloneLockingService();
-        lockingService.setLockTimeout(0);
-        return lockingService;
+    protected void assertLock(LockingService service, boolean successful, String...names) {
+        try {
+            boolean result = service.tryLock(names);
+            assertEquals("lock operation failed", successful, result);
+        } catch (InterruptedException e) {
+            Thread.interrupted();
+            fail("interrupted...");
+        }
     }
 }

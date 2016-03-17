@@ -45,7 +45,7 @@ import org.modeshape.jcr.value.basic.ModeShapeDateTime;
  */
 public class LocalJournalTest {
 
-    protected LocalJournal journal;
+    protected ChangeJournal journal;
 
     private DateTime timestamp1;
     private DateTime timestamp2;
@@ -54,73 +54,73 @@ public class LocalJournalTest {
     @Before
     public void before() throws Exception {
         FileUtil.delete("target/local_journal");
-        this.journal = new LocalJournal("target/local_journal");
+        this.journal = journal();
         journal.start();
         insertTestRecords();
     }
 
     @After
     public void after() {
-        journal().shutdown();
+        journal.shutdown();
     }
 
     protected void insertTestRecords() throws InterruptedException {
         // p1 has 4 changesets (sleep for 1 ms between them to make sure the timestamps are different
         ChangeSet process1Changes1 = TestChangeSet.create("j1", 5);
-        journal().notify(process1Changes1);
+        journal.notify(process1Changes1);
 
         ChangeSet process1Changes2 = TestChangeSet.create("j1", 1);
-        journal().notify(process1Changes2);
+        journal.notify(process1Changes2);
 
         ChangeSet process1Changes3 = TestChangeSet.create("j1", 1);
-        journal().notify(process1Changes3);
+        journal.notify(process1Changes3);
 
         ChangeSet process1Changes4 = TestChangeSet.create("j1", 1);
-        journal().notify(process1Changes4);
+        journal.notify(process1Changes4);
         timestamp1 = new ModeShapeDateTime(process1Changes4.getTimestamp().getMilliseconds());
 
         // p2 has 2 changesets
         ChangeSet process2Changes1 = TestChangeSet.create("j2", 1);
-        journal().notify(process2Changes1);
+        journal.notify(process2Changes1);
 
         ChangeSet process2Changes2 = TestChangeSet.create("j2", 1);
-        journal().notify(process2Changes2);
+        journal.notify(process2Changes2);
         timestamp2 = new ModeShapeDateTime(process2Changes2.getTimestamp().getMilliseconds());
 
         // p3 has 2 changesets and 1 empty one
         ChangeSet process3Changes1 = TestChangeSet.create("j3", 2);
-        journal().notify(process3Changes1);
+        journal.notify(process3Changes1);
 
         ChangeSet process3Changes2 = TestChangeSet.create("j3", 2);
-        journal().notify(process3Changes2);
+        journal.notify(process3Changes2);
         timestamp3 = new ModeShapeDateTime(process3Changes2.getTimestamp().getMilliseconds());
 
         ChangeSet process3Changes3 = TestChangeSet.create("j3", 0);
-        journal().notify(process3Changes3);
+        journal.notify(process3Changes3);
     }
 
     @Test
     public void shouldDetectedStartedState() throws Exception {
-        assertTrue("Journal should've been started", localJournal().started());        
+        assertTrue("Journal should've been started", journal.started());        
     }
     
     @Test
     public void shouldReturnAllRecords() throws Exception {
-        assertEquals(8, journal().allRecords(false).size());
+        assertEquals(8, journal.allRecords(false).size());
     }
 
     @Test
     public void shouldAddRecords() throws InterruptedException {
-        int initialRecordCount = journal().allRecords(false).size();
-        journal().addRecords(new JournalRecord(TestChangeSet.create("j4", 2)),
-                             new JournalRecord(TestChangeSet.create("j4", 1)),
-                             new JournalRecord(TestChangeSet.create("j4", 3)));
-        assertEquals(initialRecordCount + 3, journal().allRecords(false).size());
+        int initialRecordCount = journal.allRecords(false).size();
+        journal.addRecords(new JournalRecord(TestChangeSet.create("j4", 2)),
+                           new JournalRecord(TestChangeSet.create("j4", 1)),
+                           new JournalRecord(TestChangeSet.create("j4", 3)));
+        assertEquals(initialRecordCount + 3, journal.allRecords(false).size());
     }
 
     @Test
     public void shouldReturnLastRecord() throws Exception {
-        JournalRecord lastRecord = journal().lastRecord();
+        JournalRecord lastRecord = journal.lastRecord();
         assertNotNull(lastRecord);
         assertEquals("j3", lastRecord.getJournalId());
         assertEquals(timestamp3.getMilliseconds(), lastRecord.getChangeTimeMillis());
@@ -129,19 +129,19 @@ public class LocalJournalTest {
     @Test
     public void shouldSearchRecordsBasedOnTimestamp() throws Exception {
         // find records older than 1 day
-        assertEquals(8, journal().recordsNewerThan(timestamp1.toLocalDateTime().minusDays(1), true, false).size());
+        assertEquals(8, journal.recordsNewerThan(timestamp1.toLocalDateTime().minusDays(1), true, false).size());
         // find records older than ts1, inclusive
-        assertEquals(5, journal().recordsNewerThan(timestamp1.toLocalDateTime(), true, false).size());
+        assertEquals(5, journal.recordsNewerThan(timestamp1.toLocalDateTime(), true, false).size());
         // find records older than ts1, exclusive
-        assertEquals(4, journal().recordsNewerThan(timestamp1.toLocalDateTime(), false, false).size());
+        assertEquals(4, journal.recordsNewerThan(timestamp1.toLocalDateTime(), false, false).size());
         // find records older than ts2, exclusive
-        assertEquals(2, journal().recordsNewerThan(timestamp2.toLocalDateTime(), false, false).size());
+        assertEquals(2, journal.recordsNewerThan(timestamp2.toLocalDateTime(), false, false).size());
         // find records older than ts3, exclusive
-        assertEquals(0, journal().recordsNewerThan(timestamp3.toLocalDateTime(), false, false).size());
+        assertEquals(0, journal.recordsNewerThan(timestamp3.toLocalDateTime(), false, false).size());
         // find records older than ts3, inclusive
-        assertEquals(1, journal().recordsNewerThan(timestamp3.toLocalDateTime(), true, false).size());
+        assertEquals(1, journal.recordsNewerThan(timestamp3.toLocalDateTime(), true, false).size());
         // find records older than max, exclusive
-        assertEquals(0, journal().recordsNewerThan(timestamp3.toLocalDateTime().plusDays(1), true, false).size());
+        assertEquals(0, journal.recordsNewerThan(timestamp3.toLocalDateTime().plusDays(1), true, false).size());
     }
 
     @Test
@@ -156,7 +156,7 @@ public class LocalJournalTest {
     
     private int countChangedNodesSince(long timestamp) {
         int count = 0;
-        Iterator<NodeKey> iterator = journal().changedNodesSince(timestamp);
+        Iterator<NodeKey> iterator = journal.changedNodesSince(timestamp);
         while (iterator.hasNext()) {
             iterator.next();
             ++count;
@@ -165,18 +165,20 @@ public class LocalJournalTest {
     }
 
     @Test
-    public void shouldRemoveOlderJournalEntries() throws Exception {
-        File journalFolder = new File(localJournal().getJournalLocation());
+    public void shouldRemoveOlderLocalJournalEntries() throws Exception {
+        LocalJournal localJournal = localJournal();
+        
+        File journalFolder = new File(localJournal.getJournalLocation());
         assertTrue(journalFolder.isDirectory() && journalFolder.canRead());
-        int initialEntriesCount = journal().allRecords(false).size();
+        int initialEntriesCount = journal.allRecords(false).size();
 
         // insert some of entries - this should create multiple files
         int entriesCount = 10;
         for (int i = 0; i < entriesCount; i++) {
-            journal().notify(TestChangeSet.create("j1", entriesCount));
+            journal.notify(TestChangeSet.create("j1", entriesCount));
         }
         // make sure we have at least 3 segments
-        assertEquals(entriesCount + initialEntriesCount, journal().allRecords(false).size());
+        assertEquals(entriesCount + initialEntriesCount, journal.allRecords(false).size());
 
         Thread.sleep(1);
         long currentMillis = System.currentTimeMillis();
@@ -184,36 +186,35 @@ public class LocalJournalTest {
 
         // insert another batch of record which should produce additional segments
         for (int i = 0; i < entriesCount; i++) {
-            journal().notify(TestChangeSet.create("j1", entriesCount));
+            journal.notify(TestChangeSet.create("j1", entriesCount));
         }
 
-        int sizeAfterSecondBatch = journal().allRecords(false).size();
+        int sizeAfterSecondBatch = journal.allRecords(false).size();
         assertEquals(entriesCount * 2 + initialEntriesCount, sizeAfterSecondBatch);
 
         // this should remove all the entries from the first batch + initial entries
-        localJournal().removeRecordsOlderThan(currentMillis);
-        assertEquals(entriesCount, journal().allRecords(false).size());
+        localJournal.removeRecordsOlderThan(currentMillis);
+        assertEquals(entriesCount, journal.allRecords(false).size());
 
         // now make sure we can still add data to the journal
-        journal().notify(TestChangeSet.create("j4", 2));
-        assertEquals(entriesCount + 1, journal().allRecords(false).size());
+        journal.notify(TestChangeSet.create("j4", 2));
+        assertEquals(entriesCount + 1, journal.allRecords(false).size());
     }
 
     @Test
     public void shouldHaveSameJournalIdAfterRestart() throws Exception {
-        ChangeJournal journal = journal();
         String journalId = journal.journalId();
         journal.shutdown();
         journal.start();
         assertEquals(journalId, journal.journalId());
     }
 
-    protected ChangeJournal journal() {
-        return journal;
+    protected ChangeJournal journal() throws Exception {
+        return new LocalJournal("target/local_journal");
     }
 
     protected LocalJournal localJournal() {
-        return journal;
+        return (LocalJournal) journal;
     }
 
     static class TestChangeSet implements ChangeSet {

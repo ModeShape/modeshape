@@ -17,13 +17,19 @@ package org.modeshape.jcr.cache.document;
 
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
+import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.Future;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import javax.transaction.TransactionManager;
 import org.junit.After;
 import org.junit.Before;
@@ -38,8 +44,10 @@ import org.modeshape.schematic.Schematic;
 import org.modeshape.schematic.SchematicDb;
 import org.modeshape.schematic.SchematicEntry;
 import org.modeshape.schematic.document.Document;
+import org.modeshape.schematic.document.EditableArray;
 import org.modeshape.schematic.document.EditableDocument;
 import org.modeshape.schematic.internal.annotation.FixFor;
+import org.modeshape.schematic.internal.document.BasicArray;
 
 public class LocalDocumentStoreTest {
     
@@ -267,6 +275,46 @@ public class LocalDocumentStoreTest {
             assertThat(read.getString("k1"), is("value1"));
             assertThat(read.getInteger("k3"), is(3)); // Thread 2 is last, so this should definitely be there
             assertThat(read.getInteger("k2"), is(3)); // Thread 1 is first, but still shouldn't have been overwritten
+        });
+    }
+    
+    @Test
+    public void multipleWritersShouldBeExclusivelyLockedOnTheSameKey() throws Exception {
+        String rootKey = "3293af3317f1e7/";
+        Document root = Schematic.newDocument("children", new BasicArray());
+        runInTransaction(() -> localStore.put(rootKey, root));
+
+        int threadCount = 150;
+        int childrenForEachThread = 10;
+        ForkJoinPool forkJoinPool = new ForkJoinPool(threadCount);
+        forkJoinPool.submit(() -> IntStream.range(0, threadCount).parallel().forEach(i -> insertParentWithChildren(rootKey, 
+                                                                                                                   childrenForEachThread)))
+                    .get();
+
+        Document rootDoc = localStore.get(rootKey).content();
+        List<?> children = rootDoc.getArray("children");
+        assertEquals("children corrupted", threadCount * childrenForEachThread, children.size());
+        assertEquals(threadCount * childrenForEachThread + 1, localStore.keys().size());
+    }
+    
+    private void insertParentWithChildren(String rootKey, int childrenForEachThread) {
+        List<String> newKeys = IntStream.range(0, childrenForEachThread).mapToObj(
+                nr -> UUID.randomUUID().toString()).collect(Collectors.toList());
+        newKeys.add(rootKey);
+        runInTransaction(() -> {
+            if (localStore.lockDocuments(newKeys.toArray(new String[newKeys.size()]))) {
+                newKeys.remove(rootKey);
+                EditableDocument rootDoc = localStore.edit(rootKey, false);
+                EditableArray children = rootDoc.getArray("children");
+                newKeys.forEach(newKey -> {
+                    EditableDocument newChild = Schematic.newDocument("name", Thread.currentThread().getName(),
+                                                                      "key", newKey);
+                    children.add(newChild);
+                    localStore.put(newKey, newChild);
+                });
+            } else {
+                fail("Should've obtained key by now");
+            }
         });
     }
 

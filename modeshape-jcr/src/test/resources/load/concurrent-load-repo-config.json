@@ -7,11 +7,6 @@
         "allowCreation" : true
     },
     "storage" : {
-        "persistence" : {
-            "type" : "db",
-            "dropOnExit" : true,
-            "threadPoolSize" : 25000
-        },
         "binaryStorage" : {
             "type" : "file",
             "directory": "../modeshape-jcr/target/concurrent_load_non_clustered/binary/",

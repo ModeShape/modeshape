@@ -55,13 +55,22 @@
     <xs:complexType name="repository">
         <xs:sequence minOccurs="0" maxOccurs="unbounded">
             <xs:choice>
-                <xs:element name="db-persistence" type="db-persistence" minOccurs="0" maxOccurs="1">
-                    <xs:annotation>
-                        <xs:documentation>
-                            The repository DB persistence configuration. If absent, will default to an in-memory H2 database.
-                        </xs:documentation>
-                    </xs:annotation>
-                </xs:element>
+                <xs:choice minOccurs="0" maxOccurs="1">
+                    <xs:element name="db-persistence" type="db-persistence" minOccurs="0" maxOccurs="1">
+                        <xs:annotation>
+                            <xs:documentation>
+                                The repository DB persistence configuration.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                    <xs:element name="file-persistence" type="file-persistence" minOccurs="0" maxOccurs="1">
+                        <xs:annotation>
+                            <xs:documentation>
+                                The repository FS persistence configuration.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:element>
+                </xs:choice>
                 <xs:element name="custom-persistence" type="custom-persistence" minOccurs="0" maxOccurs="1">
                     <xs:annotation>
                         <xs:documentation>
@@ -563,7 +572,7 @@
                 <xs:documentation>The JNDI name of a DataSource. If used, this datasource *must not* be JTA enabled</xs:documentation>
             </xs:annotation>
         </xs:attribute>
-        <xs:attribute name="compress" type="xs:boolean" use="optional" default="true">
+        <xs:attribute name="compress" type="xs:boolean" use="optional" default="false">
             <xs:annotation>
                 <xs:documentation>Whether binary data stored in the database should be compressed or not</xs:documentation>
             </xs:annotation>
@@ -574,7 +583,25 @@
             </xs:annotation>
         </xs:attribute>
     </xs:complexType>
-  
+
+    <xs:complexType name="file-persistence">
+        <xs:attribute name="path" type="xs:string" use="optional" default="${jboss.server.data.dir}/modeshape">
+            <xs:annotation>
+                <xs:documentation>
+                    The absolute path on the FS where the repository data should be persisted. If not specified,
+                    defaults to ${jboss.server.data.dir}/modeshape/${repository.name}
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="compress" type="xs:boolean" use="optional" default="true">
+            <xs:annotation>
+                <xs:documentation>
+                    Whether data stored on disk should be compressed or not.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
     <xs:complexType name="custom-persistence">
         <xs:attribute name="type" type="xs:string" use="required">
             <xs:annotation>

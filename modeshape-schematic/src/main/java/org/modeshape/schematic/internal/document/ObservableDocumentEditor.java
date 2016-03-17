@@ -29,8 +29,8 @@ public class ObservableDocumentEditor extends DocumentEditor {
 
     private static final long serialVersionUID = 1L;
 
-    private final Path path;
-    private final DocumentObserver observer;
+    private transient final Path path;
+    private transient final DocumentObserver observer;
 
     public ObservableDocumentEditor( MutableDocument document,
                                      Path path,

@@ -483,7 +483,6 @@ public class Transactions {
                 if (canRollback) {
                     // notify the listener always
                     listener.txRolledback(id);
-
                     // even if rollback fails, we want to execute the complete functions to try and leave the repository into a consistent state
                     // because a rollback was requested in the first place, meaning something went wrong during the UOW
                     executeFunctionsUponCompletion();
@@ -500,7 +499,7 @@ public class Transactions {
                 txnMgr.commit();
                 // notify the listener
                 listener.txCommitted(id);
-                // run the ModeShape commit functions
+                // run the ModeShape commit functions after we've notified the listener
                 executeFunctionsUponCommit();
             } finally {
                 // even if commit fails, we want to execute the complete functions to try and leave the repository into a consistent state

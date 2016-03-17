@@ -51,7 +51,7 @@
     <properties>
         <version.javax.jcr>2.0</version.javax.jcr>
         <version.org.jboss.spec.javax.transaction.jboss-transaction-api_1.1_spec>1.0.1.Final</version.org.jboss.spec.javax.transaction.jboss-transaction-api_1.1_spec>
-        <version.org.jgroups>3.6.7.Final</version.org.jgroups>
+        <version.org.jgroups>3.6.8.Final</version.org.jgroups>
         <version.com.h2>1.4.191</version.com.h2>
         <version.com.zaxxer.HikariCP>2.4.3</version.com.zaxxer.HikariCP>
         <version.com.googlecode.concurrentlinkedhashmap>1.4.2</version.com.googlecode.concurrentlinkedhashmap>
@@ -181,6 +181,11 @@
             <dependency>
                 <groupId>org.modeshape</groupId>
                 <artifactId>modeshape-persistence-relational</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-persistence-file</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

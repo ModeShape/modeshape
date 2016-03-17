@@ -47,6 +47,7 @@ public class ClusteredJournal extends MessageConsumer<ClusteredJournal.DeltaMess
 
     private final LocalJournal localJournal;
     private final ClusteringService clusteringService;
+    private final int reconciliationMaxWaitTimeMinutes;
     
     private CountDownLatch reconciliationLatch = null;
 
@@ -58,6 +59,12 @@ public class ClusteredJournal extends MessageConsumer<ClusteredJournal.DeltaMess
      */
     public ClusteredJournal( LocalJournal localJournal,
                              ClusteringService clusteringService ) {
+        this(localJournal, clusteringService, MAX_MINUTES_TO_WAIT_FOR_RECONCILIATION);
+    }
+
+    protected ClusteredJournal(LocalJournal localJournal,
+                               ClusteringService clusteringService,
+                               int reconciliationMaxWaitTime) {
         super(DeltaMessage.class);
 
         CheckArg.isNotNull(localJournal, "localJournal");
@@ -65,6 +72,7 @@ public class ClusteredJournal extends MessageConsumer<ClusteredJournal.DeltaMess
 
         this.clusteringService = clusteringService;
         this.localJournal = localJournal.withSearchTimeDelta(clusteringService.getMaxAllowedClockDelayMillis());
+        this.reconciliationMaxWaitTimeMinutes = reconciliationMaxWaitTime;
     }
 
     @Override
@@ -114,8 +122,9 @@ public class ClusteredJournal extends MessageConsumer<ClusteredJournal.DeltaMess
                              reconciliationLatch.getCount(),
                              clusterName());
             }
-            if (!reconciliationLatch.await(MAX_MINUTES_TO_WAIT_FOR_RECONCILIATION, TimeUnit.MINUTES)) {
-                LOGGER.warn(JcrI18n.journalHasNotCompletedReconciliation,journalId(), clusterName(), MAX_MINUTES_TO_WAIT_FOR_RECONCILIATION);
+            if (!reconciliationLatch.await(reconciliationMaxWaitTimeMinutes, TimeUnit.MINUTES)) {
+                LOGGER.warn(JcrI18n.journalHasNotCompletedReconciliation,journalId(), clusterName(), reconciliationMaxWaitTimeMinutes);
+                reconciliationLatch.countDown();
             } else if (LOGGER.isDebugEnabled()) {
                 LOGGER.debug("{0} successfully completed reconciliation", journalId());
             }

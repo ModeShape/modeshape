@@ -27,20 +27,14 @@ import java.io.ObjectOutputStream;
 import java.io.ObjectStreamClass;
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.locks.Lock;
-import java.util.stream.Collectors;
 import javax.jcr.RepositoryException;
 import org.jgroups.Address;
 import org.jgroups.Channel;
@@ -49,7 +43,6 @@ import org.jgroups.JChannel;
 import org.jgroups.Message;
 import org.jgroups.ReceiverAdapter;
 import org.jgroups.View;
-import org.jgroups.blocks.locking.LockService;
 import org.jgroups.conf.ProtocolStackConfigurator;
 import org.jgroups.conf.XmlConfigurator;
 import org.jgroups.fork.ForkChannel;
@@ -60,9 +53,7 @@ import org.jgroups.stack.ProtocolStack;
 import org.modeshape.common.SystemFailureException;
 import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.logging.Logger;
-import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.StringUtil;
-import org.modeshape.jcr.JcrI18n;
 
 /**
  * ModeShape service which handles sending/receiving messages in a cluster via JGroups. This service is also a
@@ -71,7 +62,7 @@ import org.modeshape.jcr.JcrI18n;
  * @author Horia Chiorean (hchiorea@redhat.com)
  */
 @ThreadSafe
-public abstract class ClusteringService implements org.modeshape.jcr.locking.LockingService {
+public abstract class ClusteringService {
 
     protected static final Logger LOGGER = Logger.getLogger(ClusteringService.class);
 
@@ -101,11 +92,6 @@ public abstract class ClusteringService implements org.modeshape.jcr.locking.Loc
     protected Channel channel;
 
     /**
-     * The service used for cluster-wide locking
-     */
-    protected LockService lockService;
-
-    /**
      * The maximum accepted clock delay between cluster members
      */
     private final long maxAllowedClockDelayMillis;
@@ -125,16 +111,6 @@ public abstract class ClusteringService implements org.modeshape.jcr.locking.Loc
      */
     private final Set<MessageConsumer<Serializable>> consumers;
 
-    /**
-     * A map of cluster locks held via this service
-     */
-    private final ConcurrentMap<String, Lock> locksByName;
-
-    /**
-     * The default lock timeout
-     */
-    private volatile long lockTimeoutMillis = 0;
-
     protected ClusteringService( String clusterName ) {
         assert clusterName != null;
         this.clusterName = clusterName;
@@ -145,7 +121,6 @@ public abstract class ClusteringService implements org.modeshape.jcr.locking.Loc
         this.membersInCluster = new AtomicInteger(1);
         this.maxAllowedClockDelayMillis = DEFAULT_MAX_CLOCK_DELAY_CLUSTER_MILLIS;
         this.consumers = new CopyOnWriteArraySet<>();     
-        this.locksByName = new ConcurrentHashMap<>();
     }
 
     /**
@@ -183,13 +158,6 @@ public abstract class ClusteringService implements org.modeshape.jcr.locking.Loc
 
         // Mark this as not accepting any more ...
         isOpen.set(false);
-        try {
-            LOGGER.debug("{0} releasing all held clustering locks...", address);
-            unlock(locksByName.keySet().toArray(new String[locksByName.size()]));
-            locksByName.clear();
-        } catch (Throwable t) {
-            LOGGER.debug(t, "Cannot release all locks...");
-        }
         
         try {
             // Disconnect from the channel and close it ...
@@ -203,117 +171,6 @@ public abstract class ClusteringService implements org.modeshape.jcr.locking.Loc
         }
         membersInCluster.set(1);
         return true;
-    }
-    
-    @Override
-    public boolean tryLock( long time,
-                            TimeUnit unit,
-                            String... names) {
-        Map<String, Lock> successfullyAcquiredLocks = new HashMap<>();
-        for (String name : names) {
-            if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug("{0} attempting to lock {1}", channel.getAddress(), name);
-            }
-            AtomicBoolean successfullyLocked = new AtomicBoolean(false);
-            locksByName.compute(name, (lockName, existingLock) -> {
-                if (existingLock != null) {
-                    if (existingLock.tryLock()) {
-                        LOGGER.debug("{0} locked successfully", name);
-                        successfullyLocked.compareAndSet(false, true);
-                    } else {
-                        LOGGER.debug("Unable to acquire lock on {0}. Reverting back the already obtained locks: {1}", name,
-                                     successfullyAcquiredLocks);
-                        successfullyAcquiredLocks.values().forEach(Lock::unlock);
-                    }
-                    // we don't want to replace the old lock
-                    return existingLock;
-                } else {
-                    Lock lock = lockService.getLock(name);
-                    try {
-                        if (attemptToLock(time, unit, name, lock)) {
-                            successfullyLocked.compareAndSet(false, true);
-                            successfullyAcquiredLocks.putIfAbsent(name, lock);
-                            // we successfully acquired a new lock so we'll want to map it
-                            return lock;
-                        } else {
-                            successfullyAcquiredLocks.values().forEach(Lock::unlock);
-                        }
-                    } catch (InterruptedException e) {
-                        LOGGER.debug("Thread " + Thread.currentThread().getName()
-                                     + " received interrupt request while waiting to acquire lock '{0}'", name);
-                        Thread.currentThread().interrupt();
-                    } catch (Exception e) {
-                        LOGGER.error(e, JcrI18n.unexpectedLockingError, name);
-                    }
-                    // there is no previous lock and the locking was unsuccessful so return null
-                    return null;
-                }                 
-            });
-            
-            if (!successfullyLocked.get()) {
-                // we were unable to obtain a lock so just return
-                return false;               
-            }
-        }
-        return true;        
-    }
-
-    public boolean attemptToLock(long time, TimeUnit unit, String name, Lock lock) throws InterruptedException {
-        if (time > 0) {
-            // even though JG has a tryLock(timeunit) method, sometimes it seems to deadlock when using it
-            // so this is a workaround for that
-            long timeUnitMillis = TimeUnit.MILLISECONDS.convert(time, unit);
-            int threadWaitTimeMillis = 100;
-            long repeatCycles = timeUnitMillis / threadWaitTimeMillis;
-            while (repeatCycles-- > 0) {
-                LOGGER.debug("Attempt {0} at obtaining cluster lock {1}", repeatCycles, name);
-                boolean success = lock.tryLock();
-                if (success) {
-                    return true;
-                }
-                LOGGER.debug("...attempt failed. Sleeping for {0} millis before retrying...", threadWaitTimeMillis);
-                Thread.sleep(threadWaitTimeMillis);
-            }
-            return false;
-        } else {
-            return lock.tryLock();     
-        }
-    }
-
-    @Override
-    public boolean tryLock(String... names) {
-        return tryLock(lockTimeoutMillis, TimeUnit.MILLISECONDS, names);
-    }
-
-    @Override
-    public void setLockTimeout(long lockTimeoutMillis) {
-        CheckArg.isNonNegative(lockTimeoutMillis, "lockTimeoutMillis");
-        this.lockTimeoutMillis = lockTimeoutMillis;
-    }
-
-    @Override
-    public List<String> unlock(String... names) {
-        return Arrays.stream(names).map(name -> {
-            if (LOGGER.isDebugEnabled() && channel != null) {
-                LOGGER.debug("{0} attempting to unlock {1}", channel.getAddress(), name);
-            }
-            Lock oldLock = locksByName.computeIfPresent(name, (lockName, lock) -> {
-                try {
-                    if (lock.tryLock()) {
-                        // this is the only way to tell in JG atm if a lock is actually unlocked successfully or not....
-                        lock.unlock();
-                        LOGGER.debug("Unlocked {0}", name);
-                        return null;
-                    } else {
-                        return lock;
-                    }
-                } catch (Exception e) {
-                    LOGGER.error(e, JcrI18n.unexpectedLockingError, name);
-                    return lock;
-                }
-            });
-            return oldLock != null ? name : null;
-        }).filter(Objects::nonNull).collect(Collectors.toList());
     }
 
     /**
@@ -455,7 +312,12 @@ public abstract class ClusteringService implements org.modeshape.jcr.locking.Loc
         }
     }
 
-    protected Channel getChannel() {
+    /**
+     * Returns the JGroups channel used for clustered communication.
+     * 
+     * @return a {@code Channel} instance, never {@code null}
+     */
+    public Channel getChannel() {
         return channel;
     }
 
@@ -595,7 +457,6 @@ public abstract class ClusteringService implements org.modeshape.jcr.locking.Loc
                     lockingProtocol.init();
                     protocolStack.addProtocol(lockingProtocol);
                 }
-                this.lockService = new LockService(this.channel);
 
                 // Add a listener through which we'll know what's going on within the cluster ...
                 this.channel.addChannelListener(listener);
@@ -682,10 +543,7 @@ public abstract class ClusteringService implements org.modeshape.jcr.locking.Loc
                 // add the fork at the top of the stack to preserve the default configuration
                 // and use the name of the cluster as the stack id
                 this.channel = new ForkChannel(mainChannel, forkStackId, FORK_CHANNEL_NAME, new CENTRAL_LOCK());
-
-                // always add central lock to the stack
-                this.lockService = new LockService(this.channel);
-
+                
                 // Add a listener through which we'll know what's going on within the cluster ...
                 this.channel.addChannelListener(listener);
 
