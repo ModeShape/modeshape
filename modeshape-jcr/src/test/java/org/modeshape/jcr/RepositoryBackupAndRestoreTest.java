@@ -47,7 +47,7 @@ import javax.transaction.TransactionManager;
 import org.junit.Before;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
-import org.modeshape.common.statistic.Stopwatch;
+import org.modeshape.common.util.FileUtil;
 import org.modeshape.common.util.IoUtil;
 import org.modeshape.jcr.api.BackupOptions;
 import org.modeshape.jcr.api.JcrTools;
@@ -78,7 +78,7 @@ public class RepositoryBackupAndRestoreTest extends SingleUseAbstractTest {
     @Override
     public void beforeEach() throws Exception {
         backupArea = new File("target/backupArea");
-        TestingUtil.waitUntilFolderCleanedUp(backupArea.getPath());
+        FileUtil.delete(backupArea.getPath());
         backupDirectory = new File(backupArea, "repoBackups");
         backupDirectory2 = new File(backupArea, "repoBackupsAfter");
         backupDirectory.mkdirs();
@@ -92,36 +92,71 @@ public class RepositoryBackupAndRestoreTest extends SingleUseAbstractTest {
     @Test
     @FixFor( "MODE-2440" )
     public void shouldBackupRepositoryWhichIncludesBinaryValuesCompressed() throws Exception {
-        verifyBackupRestoreWithBinaries(BackupOptions.DEFAULT);
+        loadBinaryContent();
+        makeBackup(BackupOptions.DEFAULT);
+        wipeRepository();
+        restoreBackup();
+        verifyBinaryContent();
     }
     
     @Test
     @FixFor( "MODE-2559" )
     public void shouldBackupRepositoryWhichIncludesBinaryValuesUncompressed() throws Exception {
-        verifyBackupRestoreWithBinaries(new BackupOptions() {
+        BackupOptions backupOptions = new BackupOptions() {
             @Override
             public boolean compress() {
                 return false;
             }
-        });
+        };
+        loadBinaryContent();
+        makeBackup(backupOptions);
+        wipeRepository();
+        restoreBackup();
+        verifyBinaryContent();
     }
 
-    private void verifyBackupRestoreWithBinaries(BackupOptions backupOptions) throws Exception {
+    @Test
+    @FixFor( "MODE-2584" )
+    public void shouldPreserveBinariesFromRestoredBackup() throws Exception {
         loadBinaryContent();
+        
+        makeBackup(BackupOptions.DEFAULT);
+        wipeRepository();
+        restoreBackup();
+        
+        makeBackup(BackupOptions.DEFAULT);
+        wipeRepository();
 
-        // Make the backup, and check that there are no problems ...
-        Problems problems = session().getWorkspace().getRepositoryManager().backupRepository(backupDirectory, backupOptions);
-        assertNoProblems(problems);
+        restoreBackup();
+        verifyBinaryContent();
+    }
 
+    private void makeBackup(BackupOptions options) throws RepositoryException {
+        assertTrue(FileUtil.delete(backupDirectory));
+        JcrSession session = repository().login();
+        try {
+            Problems problems = session.getWorkspace().getRepositoryManager().backupRepository(backupDirectory, options);
+            assertNoProblems(problems);
+        } finally {
+            session.logout();    
+        }
+    }
+    
+    private void wipeRepository() {
         // shutdown the repo and remove all repo data (stored on disk)
-        assertTrue(repository().shutdown().get());
-        TestingUtil.waitUntilFolderCleanedUp(backupRepoDir.getPath());
+        repository().doShutdown(false);
+        assertTrue(FileUtil.delete(backupRepoDir));
+    }
 
-        // start a fresh empty repo and then restore
-        startRepositoryWithConfigurationFrom("config/backup-repo-config.json");
-        problems = session().getWorkspace().getRepositoryManager().restoreRepository(backupDirectory);
+    private void restoreBackup() throws Exception {
+        startRepositoryWithConfiguration(resourceStream("config/backup-repo-config.json"));
+        JcrSession session = repository().login();
+        Problems problems = session.getWorkspace().getRepositoryManager().restoreRepository(backupDirectory);
         assertNoProblems(problems);
-
+        session.logout();
+    }
+    
+    private void verifyBinaryContent() throws Exception {
         assertFilesInWorkspace("default");
         assertFilesInWorkspace("ws2");
         assertFilesInWorkspace("ws3");
@@ -141,9 +176,7 @@ public class RepositoryBackupAndRestoreTest extends SingleUseAbstractTest {
         Problems problems = session().getWorkspace().getRepositoryManager().restoreRepository(legacyBackupDir);
         assertNoProblems(problems);
 
-        assertFilesInWorkspace("default");
-        assertFilesInWorkspace("ws2");
-        assertFilesInWorkspace("ws3");
+        verifyBinaryContent();
     }
 
     /**
@@ -184,9 +217,7 @@ public class RepositoryBackupAndRestoreTest extends SingleUseAbstractTest {
     public void shouldRestoreBinaryReferencesWhenExcludedFromBackup() throws Exception {
         loadBinaryContent();
 
-        assertFilesInWorkspace("default");
-        assertFilesInWorkspace("ws2");
-        assertFilesInWorkspace("ws3");
+        verifyBinaryContent();
 
         // Make the backup, and check that there are no problems ...
         BackupOptions backupOptions = new BackupOptions() {
@@ -200,7 +231,7 @@ public class RepositoryBackupAndRestoreTest extends SingleUseAbstractTest {
 
         // shutdown the repo and remove just the repo main store (not the binary store)
         assertTrue(repository().shutdown().get());
-        TestingUtil.waitUntilFolderCleanedUp(backupRepoDir.getPath() + "/store");
+        FileUtil.delete(backupRepoDir.getPath() + "/store");
 
         // start a fresh empty repo and then restore just the data without binaries
         startRepositoryWithConfigurationFrom("config/backup-repo-config.json");
@@ -213,9 +244,7 @@ public class RepositoryBackupAndRestoreTest extends SingleUseAbstractTest {
         problems = session().getWorkspace().getRepositoryManager().restoreRepository(backupDirectory, restoreOptions);
         assertNoProblems(problems);
 
-        assertFilesInWorkspace("default");
-        assertFilesInWorkspace("ws2");
-        assertFilesInWorkspace("ws3");
+        verifyBinaryContent();
     }
 
     @Test
@@ -380,11 +409,9 @@ public class RepositoryBackupAndRestoreTest extends SingleUseAbstractTest {
         assertTrue("Zip content not extracted correctly", legacyBackupDir.exists() && legacyBackupDir.canRead() && legacyBackupDir.isDirectory());
         
         Problems problems = session().getWorkspace().getRepositoryManager().restoreRepository(legacyBackupDir);
-        assertNoProblems(problems); 
-        
-        assertFilesInWorkspace("default");
-        assertFilesInWorkspace("ws2");
-        assertFilesInWorkspace("ws3");
+        assertNoProblems(problems);
+
+        verifyBinaryContent();
     }
 
     private File extractZip( String zipFile, File destination ) throws IOException {
@@ -580,14 +607,5 @@ public class RepositoryBackupAndRestoreTest extends SingleUseAbstractTest {
         } finally {
             session.logout();
         }
-    }
-
-    protected void populateRepositoryContent( Session session,
-                                              String testName ) throws Exception {
-        int depth = 6;
-        int breadth = 3;
-        int properties = 6;
-        session.getRootNode().addNode(testName, "nt:unstructured");
-        createSubgraph(session(), testName, depth, breadth, properties, false, new Stopwatch(), print ? System.out : null, null);
     }
 }

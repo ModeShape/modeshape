@@ -23,6 +23,9 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CountDownLatch;
@@ -33,6 +36,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 import javax.jcr.RepositoryException;
@@ -547,7 +551,7 @@ public class BackupService {
             return null;
         }
 
-        public void removeExistingBinaryFiles() {
+        private void removeExistingBinaryFiles() {
             // simply mark all of the existing binary values as unused; if an unused binary value is restored,
             // it will simply be kept without having store it ...
             try {
@@ -559,24 +563,32 @@ public class BackupService {
             }
         }
 
-        public void removeExistingDocuments() {
+        private void removeExistingDocuments() {
             documentStore.removeAll();
         }
 
-        public void restoreBinaryFiles() {
+        private void restoreBinaryFiles() {
             for (File segment1Dir : binaryDirectory.listFiles()) {
                 for (File segment2Dir : segment1Dir.listFiles()) {
                     for (File segment3Dir : segment2Dir.listFiles()) {
-                        for (File binaryFile : segment3Dir.listFiles()) {
-                            restoreBinaryFile(binaryFile);
+                        List<BinaryKey> restoredKeys = Arrays.stream(segment3Dir.listFiles())
+                                                             .map(this::restoreBinaryFile)
+                                                             .filter(Objects::nonNull)
+                                                             .collect(Collectors.toList());
+                        // now mark all restored keys as used (we originally exported only used binaries)
+                        try {
+                            binaryStore.markAsUsed(restoredKeys);
+                        } catch (BinaryStoreException e) {
+                            I18n msg = JcrI18n.problemsGettingBinaryKeysFromBinaryStore;
+                            problems.addError(msg, repositoryName(), backupLocation(), e.getMessage());
                         }
                     }
                 }
             }
         }
 
-        public void restoreBinaryFile( File binaryFile ) {
-            if (!binaryFile.exists()) return;
+        private BinaryKey restoreBinaryFile( File binaryFile ) {
+            if (!binaryFile.exists()) return null;
             if (!binaryFile.canRead()) {
                 I18n msg = JcrI18n.problemsReadingBinaryFromBackup;
                 BinaryKey key = binaryKeyFor(binaryFile, false);
@@ -592,6 +604,7 @@ public class BackupService {
                 try {
                     BinaryValue stored = binaryStore.storeValue(stream, isCompressed);
                     assert stored.getKey().equals(binaryKeyFor(binaryFile, isCompressed));
+                    return stored.getKey();
                 } finally {
                     stream.close();
                 }
@@ -599,7 +612,8 @@ public class BackupService {
                 // We already checked that it exists and is readable, so this shouldn't happen. But ...
                 I18n msg = JcrI18n.problemsReadingBinaryFromBackup;
                 BinaryKey key = binaryKeyFor(binaryFile, isCompressed);
-                problems.addError(e, msg, key.toString(), repositoryName(), backupLocation());
+                problems.addError(e, msg, key.toString(), repositoryName(), backupLocation()); 
+                return null;
             } 
         }
 
