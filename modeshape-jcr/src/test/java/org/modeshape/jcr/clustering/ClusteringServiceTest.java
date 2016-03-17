@@ -20,10 +20,10 @@ import static org.junit.Assert.assertTrue;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Stack;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import org.junit.After;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -37,33 +37,33 @@ import org.modeshape.jcr.ClusteringHelper;
  */
 public class ClusteringServiceTest {
 
-    private Stack<ClusteringService> testClusteringServices = new Stack<>();
-
-    @After
-    public void after() throws Exception {
-        while (!testClusteringServices.isEmpty()) {
-            testClusteringServices.pop().shutdown();
-        }
-        testClusteringServices.clear();
-    }
+    private static List<ClusteringService> cluster;
 
     @BeforeClass
     public static void beforeClass() throws Exception {
         ClusteringHelper.bindJGroupsToLocalAddress();
+        cluster = IntStream.range(0, 4)
+                           .mapToObj(i -> {
+                               String clusterName = "test-cluster" + (i % 2 == 0 ? "1" : "2");
+                               return ClusteringService.startStandalone(clusterName, "config/cluster/jgroups-test-config.xml");
+                           })
+                           .collect(Collectors.toList());
     }
 
     @AfterClass
     public static void afterClass() throws Exception {
+        cluster.forEach(ClusteringService::shutdown);
+        cluster.clear();
         ClusteringHelper.removeJGroupsBindings();
     }
 
     @Test
     public void shouldBroadcastMessagesBetweenServices() throws Exception {
-        ClusteringService service1 = startStandalone("test-cluster1");
+        ClusteringService service1 = cluster.get(0);
         TestConsumer consumer1 = new TestConsumer("hello_1", "hello_2");
         service1.addConsumer(consumer1);
 
-        ClusteringService service2 = startStandalone("test-cluster1");
+        ClusteringService service2 = cluster.get(2);
         TestConsumer consumer2 = new TestConsumer("hello_1", "hello_2");
         service2.addConsumer(consumer2);
 
@@ -77,8 +77,8 @@ public class ClusteringServiceTest {
     @Test
     @FixFor( "MODE-2226" )
     public void shouldAllowMultipleForksOffTheSameChannel() throws Exception {
-        ClusteringService main11 = startStandalone("test-cluster1");
-        ClusteringService main12 = startStandalone("test-cluster2");
+        ClusteringService main11 = cluster.get(0); //cluster1
+        ClusteringService main12 = cluster.get(1); //cluster2
 
         //fork11 communicates via the same fork stack to fork21
         ClusteringService fork11 = startForked(main11);
@@ -90,8 +90,8 @@ public class ClusteringServiceTest {
         TestConsumer consumer12 = new TestConsumer("12", "22");
         fork12.addConsumer(consumer12);
 
-        ClusteringService main21 = startStandalone("test-cluster1");
-        ClusteringService main22 = startStandalone("test-cluster2");
+        ClusteringService main21 = cluster.get(2); //cluster1
+        ClusteringService main22 = cluster.get(3); //cluster2
 
         //fork21 communicates via the same fork stack to fork11
         ClusteringService fork21 = startForked(main21);
@@ -114,15 +114,9 @@ public class ClusteringServiceTest {
         consumer22.assertAllPayloadsConsumed();
     }
 
-    private ClusteringService startStandalone( String clusterName ) {
-        ClusteringService service = ClusteringService.startStandalone(clusterName, "config/cluster/jgroups-test-config.xml");
-        testClusteringServices.push(service);
-        return service;
-    }
-
-    private ClusteringService startForked( ClusteringService mainService ) {
+    private ClusteringService startForked(ClusteringService mainService) {
         ClusteringService service = ClusteringService.startForked(mainService.getChannel());
-        testClusteringServices.push(service);
+        cluster.add(service);
         return service;
     }
 
@@ -130,14 +124,14 @@ public class ClusteringServiceTest {
         private List<String> payloads = new ArrayList<>();
         private CountDownLatch payloadsLatch;
 
-        protected TestConsumer( String... expectedPayloads ) {
+        protected TestConsumer(String... expectedPayloads) {
             super(String.class);
             payloads = Arrays.asList(expectedPayloads);
             payloadsLatch = new CountDownLatch(expectedPayloads.length);
         }
 
         @Override
-        public void consume( String payload ) {
+        public void consume(String payload) {
             assertTrue(payload + " not expected", payloads.contains(payload));
             payloadsLatch.countDown();
         }

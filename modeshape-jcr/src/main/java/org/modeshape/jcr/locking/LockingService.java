@@ -15,7 +15,6 @@
  */
 package org.modeshape.jcr.locking;
 
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -41,8 +40,9 @@ public interface LockingService {
      * @param unit a {@link java.util.concurrent.TimeUnit}; may not be null
      * @param names the names of the locks to acquire
      * @return {@code true} if *all* the locks were successfully acquired, {@code false} otherwise
+     * @throws InterruptedException if this thread is interrupted while waiting to obtain the locks
      */
-     boolean tryLock(long time, TimeUnit unit, String... names);
+     boolean tryLock(long time, TimeUnit unit, String... names) throws InterruptedException;
 
     /**
      * Attempts to acquire a series of locks using the default lock timeout. If not timeout is explicitly set, this will not wait
@@ -53,25 +53,18 @@ public interface LockingService {
      * 
      * @param names the names of the locks to acquire
      * @return {@code true} if *all* the locks were successfully acquired, {@code false} otherwise
-     * @see #setLockTimeout(long)  
+     * @throws InterruptedException if this thread is interrupted while waiting to obtain the locks
      */
-     boolean tryLock(String... names);
+     boolean tryLock(String... names) throws InterruptedException;
 
     /**
      * Unlocks a number of locks.  
      *
      * @param names the names of the locks to unlock
-     * @return a {@link List} of {@link String} representing the names of the locks that could not be unlocked. If all the locks were
-     * successfully unlocked, this should be empty; never {@code null}
+     * @return a {@code true} if all the locks were successfully unlocked and {@code false} if at least one lock could not be
+     * released.
      */
-    List<String> unlock(String... names);
-
-    /**
-     * Sets the value of the default lock timeout that should be used when {@link #tryLock(String...)} is called.
-     * 
-     * @param lockTimeoutMillis a number of milliseconds; must be positive 
-     */
-    void setLockTimeout(long lockTimeoutMillis);
+    boolean unlock(String... names);
 
     /**
      * Shuts down this locking service.

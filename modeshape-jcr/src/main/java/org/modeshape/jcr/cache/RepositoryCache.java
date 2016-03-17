@@ -59,8 +59,8 @@ import org.modeshape.jcr.cache.document.ReadOnlySessionCache;
 import org.modeshape.jcr.cache.document.TransactionalWorkspaceCaches;
 import org.modeshape.jcr.cache.document.WorkspaceCache;
 import org.modeshape.jcr.cache.document.WritableSessionCache;
-import org.modeshape.jcr.clustering.ClusteringService;
 import org.modeshape.jcr.federation.FederatedDocumentStore;
+import org.modeshape.jcr.locking.LockingService;
 import org.modeshape.jcr.spi.federation.Connector;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.Property;
@@ -119,14 +119,14 @@ public class RepositoryCache {
     private volatile boolean initializingRepository = false;
     private volatile boolean upgradingRepository = false;
     private int lastUpgradeId;
-    private final ClusteringService clusteringService;
+    private final LockingService lockingService;
     private volatile boolean isHoldingClusterLock = false;
     private final RepositoryFeaturesDetector repositoryFeaturesDetector;
     private final int workspaceCacheSize;
 
     public RepositoryCache( ExecutionContext context,
                             DocumentStore documentStore,
-                            ClusteringService clusteringService,
+                            LockingService lockingService,
                             RepositoryConfiguration configuration,
                             ContentInitializer initializer,
                             RepositoryEnvironment repositoryEnvironment,
@@ -136,7 +136,7 @@ public class RepositoryCache {
         this.context = context;
         this.configuration = configuration;
         this.documentStore = documentStore;
-        this.clusteringService = clusteringService;
+        this.lockingService = lockingService;
         this.minimumStringLengthForBinaryStorage.set(configuration.getBinaryStorage().getMinimumStringSize());
         this.translator = new DocumentTranslator(this.context, this.documentStore, this.minimumStringLengthForBinaryStorage.get());
         this.repositoryEnvironment = repositoryEnvironment;
@@ -153,11 +153,11 @@ public class RepositoryCache {
         
         // if we're running in a cluster, try to acquire a global cluster lock to perform initialization or to force multiple 
         // nodes to wait for the one performing the initialization
-        if (clusteringService != null) {
+        if (lockingService != null) {
             int minutesToWait = 10;
             LOGGER.debug("Waiting at most for {0} minutes while verifying the status of the '{1}' repository", minutesToWait,
                          name);
-            waitUntil(() -> clusteringService.tryLock(0, TimeUnit.MILLISECONDS, INITIALIZATION_LOCK), minutesToWait, TimeUnit.MINUTES,
+            waitUntil(() -> lockingService.tryLock(0, TimeUnit.MILLISECONDS, INITIALIZATION_LOCK), minutesToWait, TimeUnit.MINUTES,
                       JcrI18n.repositoryWasNeverInitializedAfterMinutes);
             LOGGER.debug("Repository '{0}' acquired clustered-wide lock for performing initialization or verifying status", name);
             // at this point we should have a global cluster-wide lock
@@ -367,7 +367,7 @@ public class RepositoryCache {
         } finally {
             // if we have a global cluster-wide lock, make sure its released
             if (isHoldingClusterLock) {
-                clusteringService.unlock(INITIALIZATION_LOCK);
+                lockingService.unlock(INITIALIZATION_LOCK);
                 isHoldingClusterLock = false;
                 LOGGER.debug("Repository '{0}' released clustered-wide lock after failing to start up ", name);
             }
@@ -453,7 +453,7 @@ public class RepositoryCache {
         } finally {
             // if we have a global cluster-wide lock, make sure its released
             if (isHoldingClusterLock) {
-                clusteringService.unlock(INITIALIZATION_LOCK);
+                lockingService.unlock(INITIALIZATION_LOCK);
                 isHoldingClusterLock = false;
                 LOGGER.debug("Repository '{0}' released clustered-wide lock after successful startup", name);
             }
@@ -810,7 +810,7 @@ public class RepositoryCache {
                         }
                     }
                     return result;
-                }, 0, REPOSITORY_INFO_KEY);
+                }, 0);
                 workspaceCachesByName.put(name, initializedWsCache);
             }
         }
@@ -933,7 +933,7 @@ public class RepositoryCache {
                 removeSession.save();
 
                 return null;
-            }, 0, REPOSITORY_INFO_KEY);
+            }, 0);
 
             // And notify the others - this notification will clear & close the WS cache via the local listener
             String userId = context.getSecurityContext().getUserName();

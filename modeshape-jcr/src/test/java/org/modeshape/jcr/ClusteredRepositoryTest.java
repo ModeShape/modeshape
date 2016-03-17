@@ -326,7 +326,6 @@ public class ClusteredRepositoryTest {
             repository1 = TestingUtil.startClusteredRepositoryWithConfig(
                     "config/cluster/repo-config-clustered-journal-incremental-indexes.json",
                     node1Id);
-            RepositoryConfiguration repository1Config = repository1.getConfiguration();
 
             // Start the second process completely ...
             repository2 = TestingUtil.startClusteredRepositoryWithConfig(
@@ -365,26 +364,6 @@ public class ClusteredRepositoryTest {
                     "select node.[jcr:path] from [mix:title] as node where node.[jcr:title] = 'title2'",
                     Query.JCR_SQL2);
             validateQuery().hasNodesAtPaths("/repo1_node2").useIndex("titleIndex").validate(query, query.execute());
-
-            // shut the first repo down
-            assertTrue("First repository has not shutdown in the expected amount of time", repository1.shutdown().get(3, TimeUnit.SECONDS));
-            
-            // add a new node in the second repo
-            node = session2.getRootNode().addNode("repo2_node1");
-            node.addMixin("mix:title");
-            node.setProperty("jcr:title", "title3");
-            session2.save();
-
-            // start the 1st repo back up - at the end of this the journals should be up-to-date
-            repository1 = new JcrRepository(repository1Config);
-            repository1.start();
-            Thread.sleep(300);
-            
-            session1 = repository1.login();
-            query = session1.getWorkspace().getQueryManager().createQuery(
-                    "select node.[jcr:path] from [mix:title] as node where node.[jcr:title] = 'title3'",
-                    Query.JCR_SQL2);
-            validateQuery().hasNodesAtPaths("/repo2_node1").useIndex("titleIndex").validate(query, query.execute());
             
             // shut the second repo down
             assertTrue("Second repository has not shutdown in the expected amount of time",

@@ -22,6 +22,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -36,34 +38,35 @@ import org.modeshape.jcr.clustering.ClusteringService;
  */
 public class ClusteredChangeBusTest extends AbstractChangeBusTest {
 
+    private static List<ClusteringService> clusteringServices;
+
     private ExecutorService executorService = Executors.newCachedThreadPool();
     private List<ChangeBus> buses = new ArrayList<>();
-    private List<ClusteringService> clusteringServices = new ArrayList<>();
-
+    
     @BeforeClass
     public static void beforeClass() throws Exception {
         ClusteringHelper.bindJGroupsToLocalAddress();
+        clusteringServices = IntStream.range(0, 3).mapToObj(i -> ClusteringService.startStandalone("clustered-change-bus-test",
+                                                                                                   "config/cluster/jgroups-test-config.xml"))
+                                      .collect(Collectors.toList());         
     }
 
     @AfterClass
     public static void afterClass() throws Exception {
+        clusteringServices.forEach(ClusteringService::shutdown);
         ClusteringHelper.removeJGroupsBindings();
     }
 
     @Override
     protected ChangeBus createRepositoryChangeBus() throws Exception {
-        return startNewBus();
+        return startNewBus(0);
     }
 
     @Override
     public void afterEach() {
+        super.afterEach();
         try {
-            for (ChangeBus bus : buses) {
-                bus.shutdown();
-            }
-            for (ClusteringService clusteringService : clusteringServices) {
-                clusteringService.shutdown();
-            }
+           buses.forEach(ChangeBus::shutdown);
         } finally {
             executorService.shutdownNow();
         }
@@ -77,7 +80,7 @@ public class ClusteredChangeBusTest extends AbstractChangeBusTest {
         TestListener listener3 = new TestListener();
 
         // Create three buses using a real JGroups cluster ...
-        ClusteredChangeBus bus1 = startNewBus();
+        ClusteredChangeBus bus1 = startNewBus(0);
         bus1.register(listener1);
         // ------------------------------------
         // Send a change from the first bus ...
@@ -106,7 +109,7 @@ public class ClusteredChangeBusTest extends AbstractChangeBusTest {
         // ------------------------------------
         // Create a second bus ...
         // ------------------------------------
-        ClusteredChangeBus bus2 = startNewBus();
+        ClusteredChangeBus bus2 = startNewBus(1);
         bus2.register(listener2);
 
         // ------------------------------------
@@ -162,7 +165,7 @@ public class ClusteredChangeBusTest extends AbstractChangeBusTest {
         // ------------------------------------
         // Create a third bus ...
         // ------------------------------------
-        ClusteredChangeBus bus3 = startNewBus();
+        ClusteredChangeBus bus3 = startNewBus(2);
         bus3.register(listener3);
         // ------------------------------------
         // Send a change from the first bus ...
@@ -297,12 +300,9 @@ public class ClusteredChangeBusTest extends AbstractChangeBusTest {
         assertThat(listener1.getObservedChangeSet().get(0), is(changeSet));
     }
 
-    private ClusteredChangeBus startNewBus() throws Exception {
-        ClusteringService clusteringService = ClusteringService.startStandalone("test-bus-process",
-                                                                                "config/cluster/jgroups-test-config.xml");
-        clusteringServices.add(clusteringService);
+    private ClusteredChangeBus startNewBus(int clusteringServiceIdx) throws Exception {
         ChangeBus internalBus = new RepositoryChangeBus("repo", executorService);
-        ClusteredChangeBus bus = new ClusteredChangeBus(internalBus, clusteringService);
+        ClusteredChangeBus bus = new ClusteredChangeBus(internalBus, clusteringServices.get(clusteringServiceIdx));
         bus.start();
         buses.add(bus);
         return bus;

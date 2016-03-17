@@ -88,7 +88,6 @@ public class LuceneRepositoryTest {
             repository1 = TestingUtil.startClusteredRepositoryWithConfig(
                     "config/repo-config-clustered-incremental-indexes.json", clusterNode1);
             
-
             // Start the second process completely ...
             String clusterNode2 = UUID.randomUUID().toString();
             repository2 = TestingUtil.startClusteredRepositoryWithConfig(
@@ -110,8 +109,7 @@ public class LuceneRepositoryTest {
             node.setProperty("jcr:title", "title2");
             session1.save();
 
-            // start the 2nd repo back up - at the end of this the journals should be up-to-date and ISPN should've done the state
-            // transfer
+            // start the 2nd repo back up - at the end of this the journals should be up-to-date
             repository2 = TestingUtil.startClusteredRepositoryWithConfig(
                     "config/repo-config-clustered-incremental-indexes.json", clusterNode2);
 
@@ -125,35 +123,15 @@ public class LuceneRepositoryTest {
                     Query.JCR_SQL2);
             validateQuery().hasNodesAtPaths("/repo1_node2").useIndex("titleIndex").validate(query, query.execute());
 
-            // shut the first repo down    
-            TestingUtil.killRepository(repository1);
-
-            // add a new node in the second repo
-            node = session2.getRootNode().addNode("repo2_node1");
-            node.addMixin("mix:title");
-            node.setProperty("jcr:title", "title3");
-            session2.save();
-
-            // start the 1st repo back up - at the end of this the journals should be up-to-date and ISPN should've done the state
-            // transfer
-            repository1 = TestingUtil.startClusteredRepositoryWithConfig(
-                    "config/repo-config-clustered-incremental-indexes.json", clusterNode1);
-            
-            session1 = repository1.login();
-            query = session1.getWorkspace().getQueryManager().createQuery(
-                    "select node.[jcr:path] from [mix:title] as node where node.[jcr:title] = 'title3'",
-                    Query.JCR_SQL2);
-            validateQuery().hasNodesAtPaths("/repo2_node1").useIndex("titleIndex").validate(query, query.execute());
-
             // shut the second repo down
             TestingUtil.killRepository(repository2);
-
+            Thread.sleep(100);
+            
             // remove a node from the first repo and change a value for the other node
             session1.getNode("/repo1_node2").remove();
             session1.getNode("/repo1_node1").setProperty("jcr:title", "title1_edited");
             session1.save();
 
-            // bring the 2nd repo back up
             // start the 2nd repo back up - at the end of this the journals should be up-to-date and ISPN should've done the state
             // transfer
             repository2 = TestingUtil.startClusteredRepositoryWithConfig(

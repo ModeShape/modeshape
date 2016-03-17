@@ -46,7 +46,7 @@ public class FileDb implements SchematicDb {
     private final static Logger LOGGER = Logger.getLogger(FileDb.class);
     
     private final static String FILENAME = "modeshape.repository";
-    private final static ThreadLocal<String> ACTIVE_TX_ID = new InheritableThreadLocal<>();
+    private final static ThreadLocal<String> ACTIVE_TX_ID = new ThreadLocal<>();
     private final static String REPOSITORY_CONTENT = "modeshape_data";
 
     private final boolean compress;
@@ -92,7 +92,7 @@ public class FileDb implements SchematicDb {
     @Override
     public Document get( String key ) {
         TransactionStore.TransactionMap<String, Document> txContent = transactionalContent(false);
-        return txContent != null ? txContent.get(key) : persistedContent.get(key);
+        return txContent != null ? txContent.getLatest(key) : persistedContent.get(key);
     }
 
     @Override
@@ -134,7 +134,9 @@ public class FileDb implements SchematicDb {
         if (!txContent.isSameTransaction(key)) {
             // this transaction is processing this key for the first time, so we need to clone it
             existingTxDoc = existingTxDoc.clone();
-            txContent.put(key, existingTxDoc);
+            if (!txContent.trySet(key, existingTxDoc, true)) {
+                throw new FileProviderException("cannot write new value for the first time");
+            }
         }
         
         return SchematicEntry.content(existingTxDoc).editable();
@@ -188,7 +190,6 @@ public class FileDb implements SchematicDb {
         // start a new transaction (which has READ_COMMITTED isolation) which will give us the view of the latest persisted data
         TransactionStore.Transaction tx = this.txStore.begin();
         this.persistedContent = tx.openMap(REPOSITORY_CONTENT);
-        tx.rollback();
     }
 
     @Override

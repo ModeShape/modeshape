@@ -100,6 +100,7 @@ import org.modeshape.jcr.federation.FederatedDocumentStore;
 import org.modeshape.jcr.journal.ChangeJournal;
 import org.modeshape.jcr.journal.ClusteredJournal;
 import org.modeshape.jcr.journal.LocalJournal;
+import org.modeshape.jcr.locking.ClusteredLockingService;
 import org.modeshape.jcr.locking.LockingService;
 import org.modeshape.jcr.locking.StandaloneLockingService;
 import org.modeshape.jcr.mimetype.MimeTypeDetector;
@@ -1053,8 +1054,9 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                     } else {
                         this.clusteringService = null;
                     }
-                    this.lockingService = this.clusteringService != null ? this.clusteringService : new StandaloneLockingService();
-                    this.lockingService.setLockTimeout(config.getLockTimeoutMillis());
+                    this.lockingService = this.clusteringService != null ? 
+                                          new ClusteredLockingService(this.clusteringService.getChannel(), config.getLockTimeoutMillis()) : 
+                                          new StandaloneLockingService(config.getLockTimeoutMillis());
                   
                     suspendExistingUserTransaction();
                     
@@ -1107,7 +1109,8 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                     this.documentStore = connectors.hasConnectors() ? new FederatedDocumentStore(connectors, localStore) : localStore;
 
                     // Set up the repository cache ...
-                    this.cache = new RepositoryCache(context, documentStore, clusteringService, config, systemContentInitializer,
+                    LockingService cacheLockingService = clusteringService != null ? lockingService : null;
+                    this.cache = new RepositoryCache(context, documentStore, cacheLockingService, config, systemContentInitializer,
                                                      repositoryEnvironment, changeBus, Upgrades.STANDARD_UPGRADES);
 
                     // Set up the node type manager ...
