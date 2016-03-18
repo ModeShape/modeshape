@@ -17,6 +17,7 @@
 package org.modeshape.jcr.query;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
 import org.modeshape.common.util.CheckArg;
@@ -191,6 +192,17 @@ public class RowExtractors {
                                             TypeFactory<String> type,
                                             BinaryStore binaries,
                                             StringBuilder fullTextString ) {
+        if (propertyValue instanceof Object[]) {
+            Arrays.stream((Object[]) propertyValue).forEach(value ->
+                                                                    extractTextFromSingleProperty(value, type, binaries,
+                                                                                                  fullTextString));
+        } else {
+            extractTextFromSingleProperty(propertyValue, type, binaries, fullTextString);
+        }
+    }
+
+    public static void extractTextFromSingleProperty(Object propertyValue, TypeFactory<String> type,
+                                                     BinaryStore binaries, StringBuilder fullTextString) {
         if (propertyValue instanceof Binary && binaries != null) {
             // Try extracting the text from the binary value ...
             try {
