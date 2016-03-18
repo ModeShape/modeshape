@@ -132,7 +132,7 @@ public class RepositoryBackupAndRestoreTest extends SingleUseAbstractTest {
     }
 
     private void makeBackup(BackupOptions options) throws RepositoryException {
-        assertTrue(FileUtil.delete(backupDirectory));
+        TestingUtil.waitUntilFolderCleanedUp(backupDirectory.getPath());
         JcrSession session = repository().login();
         try {
             Problems problems = session.getWorkspace().getRepositoryManager().backupRepository(backupDirectory, options);
