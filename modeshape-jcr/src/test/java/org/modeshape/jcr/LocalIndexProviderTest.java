@@ -1263,4 +1263,40 @@ public class LocalIndexProviderTest extends AbstractIndexProviderTest {
         query.setLimit(limit);
         validateQuery().rowCount(limit).useIndex("title").validate(query, query.execute());
     }
+
+    @Test
+    @FixFor( "MODE-2515" )
+    public void shouldSupportQueryOffsetAndLimitWhileSortingMultipleBatches() throws Exception {
+        registerNodeType("nt:testType");
+        registerNodeTypeIndex("typesIndex", "nt:testType", null, "*", "jcr:primaryType", PropertyType.STRING);
+
+        Node root = session().getRootNode();
+        for (int i = 0; i < 102; i++) {
+            Node node1 = root.addNode("node" + i, "nt:testType");
+            node1.setProperty("stringProp", String.format("%03d", i));
+            Thread.sleep(10);
+        }
+        session.save();
+
+        Query query1 = jcrSql2Query("SELECT * FROM [nt:testType] AS node ORDER by node.[stringProp] DESC LIMIT 1 OFFSET 0");
+        validateQuery()
+                .rowCount(1L)
+                .useIndex("typesIndex")
+                .hasNodesAtPaths("/node101")
+                .validate(query1, query1.execute());
+
+        Query query2 = jcrSql2Query("SELECT * FROM [nt:testType] AS node ORDER by node.[stringProp] DESC LIMIT 1 OFFSET 50");
+        validateQuery()
+                .rowCount(1L)
+                .useIndex("typesIndex")
+                .hasNodesAtPaths("/node51")
+                .validate(query2, query2.execute());
+
+        Query query3 = jcrSql2Query("SELECT * FROM [nt:testType] AS node ORDER by node.[stringProp] DESC LIMIT 1 OFFSET 100");
+        validateQuery()
+                .rowCount(1L)
+                .useIndex("typesIndex")
+                .hasNodesAtPaths("/node1")
+                .validate(query3, query3.execute());
+    }
 }
