@@ -11,22 +11,5 @@
             "minimumBinarySizeInBytes" : 40
         }
     },
-    "indexProviders" : {
-        "local" : {
-            "classname" : "org.modeshape.jcr.index.local.LocalIndexProvider",
-            "directory" : "target/backupArea/backupRepo/indexes"
-        }
-    },
-    "reindexing" : {
-        "async" : false
-    } ,
-    "indexes" : {
-        "nodesByPath" : {
-            "kind" : "value",
-            "provider" : "local",
-            "nodeType" : "nt:base",
-            "columns" : "jcr:path(PATH)"
-        }
-    },
     "node-types" : ["cnd/cars.cnd"]
 }
