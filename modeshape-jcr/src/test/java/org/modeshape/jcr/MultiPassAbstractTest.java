@@ -45,6 +45,10 @@ public abstract class MultiPassAbstractTest {
         } catch (ParsingException e) {
             throw new RuntimeException(e);
         }
+        return startRunStop(operation, config);
+    }
+
+    protected RepositoryConfiguration startRunStop(RepositoryOperation operation, RepositoryConfiguration config) {
         JcrRepository repository = null;
 
         try {

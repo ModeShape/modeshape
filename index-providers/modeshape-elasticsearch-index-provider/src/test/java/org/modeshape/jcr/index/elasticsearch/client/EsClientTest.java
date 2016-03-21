@@ -69,7 +69,7 @@ public class EsClientTest {
     
     @AfterClass
     public static void tearDownClass() throws InterruptedException {
-        Thread.currentThread().sleep(1000);
+        Thread.sleep(1000);
         esNode.close();
         FileUtil.delete("target/data");
     }
@@ -146,9 +146,8 @@ public class EsClientTest {
     public void testCount() throws Exception {
         EsRequest doc = new EsRequest();
         doc.put("field1", "value1");
-//        client.deleteAll(INDEX_NAME, TYPE_NAME);
         assertTrue(client.storeDocument(INDEX_NAME, TYPE_NAME, "10", doc));
-        Thread.currentThread().sleep(1000);
+        Thread.sleep(1500);
         long count = client.count(INDEX_NAME, TYPE_NAME);
         assertEquals(1, count);
     }

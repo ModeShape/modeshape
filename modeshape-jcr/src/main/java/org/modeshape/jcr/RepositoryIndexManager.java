@@ -110,6 +110,7 @@ class RepositoryIndexManager implements IndexManager, NodeTypes.Listener {
     private final Collection<Component> components;
     private final ConcurrentMap<String, IndexProvider> providers = new ConcurrentHashMap<>();
     private final AtomicBoolean initialized = new AtomicBoolean(false);
+    private final Set<String> activeIndexNames = java.util.Collections.newSetFromMap(new ConcurrentHashMap<>());
     private volatile IndexWriter indexWriter;
 
     private final Logger logger = Logger.getLogger(getClass());
@@ -124,7 +125,6 @@ class RepositoryIndexManager implements IndexManager, NodeTypes.Listener {
 
         PathFactory pathFactory = this.context.getValueFactories().getPathFactory();
         this.indexesPath = pathFactory.createAbsolutePath(JcrLexicon.SYSTEM, ModeShapeLexicon.INDEXES);
-
         // Set up the index providers ...
         this.components = config.getIndexProviders();
         for (Component component : components) {
@@ -497,6 +497,7 @@ class RepositoryIndexManager implements IndexManager, NodeTypes.Listener {
                 defn = RepositoryIndexDefinition.createFrom(defn, true);
 
                 validated.add(defn);
+                activeIndexNames.add(defn.getName());
             }
         }
         if (problems.hasErrors()) {
@@ -535,6 +536,7 @@ class RepositoryIndexManager implements IndexManager, NodeTypes.Listener {
                 throw new NoSuchIndexException(JcrI18n.indexDoesNotExist.text(indexName, repository.name()));
             }
             system.remove(defn);
+            activeIndexNames.remove(indexName);
         }
         system.save();
 
@@ -806,7 +808,7 @@ class RepositoryIndexManager implements IndexManager, NodeTypes.Listener {
             // Read the affected index definitions ...
             SessionCache systemCache = repository.createSystemSession(context, false);
             SystemContent system = new SystemContent(systemCache);
-            Collection<IndexDefinition> indexDefns = system.readAllIndexDefinitions(providers.keySet());
+            Collection<IndexDefinition> indexDefns = system.readAllIndexDefinitions(providers.keySet(), activeIndexNames);
             this.indexes = new Indexes(context, indexDefns, nodeTypes);
             return this.indexes;
         } catch (WorkspaceNotFoundException e) {

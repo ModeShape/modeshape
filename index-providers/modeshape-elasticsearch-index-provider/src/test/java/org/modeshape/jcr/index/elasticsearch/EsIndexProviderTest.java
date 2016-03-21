@@ -120,14 +120,7 @@ public class EsIndexProviderTest extends LocalIndexProviderTest {
                 .hasNodesAtPaths("/2", "/4", "/1")
                 .validate(query, query.execute());
     }
-    
-    @Test
-    @Override
-    public void shouldUseIndexesAfterRestarting() throws Exception {
-        //This test case is excluded due to local ES node failre after
-        //client disconnection
-    }
-
+  
     @Override
     protected void assertStorageLocationUnchangedAfterRestart() throws Exception {
         //nothing to assert, ES does not store indexes locally....

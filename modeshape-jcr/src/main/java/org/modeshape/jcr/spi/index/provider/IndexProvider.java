@@ -265,6 +265,15 @@ public abstract class IndexProvider {
     }
 
     /**
+     * Get all the index definition names belonging to this provider. 
+     * 
+     * @return a {@link Set} of index names
+     */
+    public Set<String> getIndexNames() {
+        return new HashSet<>(providedIndexesByIndexNameByWorkspaceName.keySet());    
+    }
+
+    /**
      * Get the context in which this provider executes. This is set prior to {@link #initialize() initialization} by ModeShape,
      * and never changed.
      *
