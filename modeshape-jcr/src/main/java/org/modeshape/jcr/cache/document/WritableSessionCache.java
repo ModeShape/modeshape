@@ -1197,15 +1197,7 @@ public class WritableSessionCache extends AbstractSessionCache {
                             changes.propertyAdded(key, primaryType, mixinTypes, newPath, prop);
                             // and we know that there are modifications to the properties ...
                             hasPropertyChanges = true;
-                        } else if (hasPropertyChanges || !oldProperty.equals(prop)) {
-                            // The 'hasPropertyChanges ||' in the above condition is what gives us the "slight optimization"
-                            // mentioned in the longer comment above. This is noticeably more efficient (since the
-                            // '!oldProperty.equals(prop)' has to be called for only some of the changes) and does result
-                            // in correct indexing behavior, but the compromise is that some no-op property changes will
-                            // result in a PROPERTY_CHANGE event. To remove all potential no-op PROPERTY CHANGE events,
-                            // simply remove the 'hasPropertyChanges||' in the above condition.
-                            // See MODE-1856 for details.
-
+                        } else if (!oldProperty.equals(prop)) {
                             // the property was changed and is actually different than the persisted property ...
                             changes.propertyChanged(key, primaryType, mixinTypes, newPath, prop, oldProperty);
                             hasPropertyChanges = true;
