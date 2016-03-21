@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
+import org.apache.lucene.analysis.util.CharArraySet;
 import org.apache.lucene.codecs.Codec;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexWriter;
@@ -166,7 +167,8 @@ public final class LuceneConfig {
 
     private Analyzer analyzer(String analyzerClass, Environment environment) {
         if (StringUtil.isBlank(analyzerClass)) {
-            return new StandardAnalyzer();    
+            // we don't want any stop words by default
+            return new StandardAnalyzer(CharArraySet.EMPTY_SET);    
         } else {
             return Reflection.getInstance(analyzerClass, environment.getClassLoader(this));
         }

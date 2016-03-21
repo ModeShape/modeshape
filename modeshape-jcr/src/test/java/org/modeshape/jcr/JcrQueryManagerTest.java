@@ -5014,6 +5014,40 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
             session.save();
         }
     }
+    
+    @Test
+    @FixFor( "MODE-2579" )
+    public void shouldRunFTSQueryWithMultivaluedProperty() throws Exception {
+        Node testRoot = session.getRootNode().addNode("ftsMVP", "nt:unstructured");
+        Node node1 = testRoot.addNode("node1");   
+        node1.addMixin("mix:title");
+        node1.setProperty("FTSProp", new String[] {"the quick", "brown fox", "jumps over"});
+
+        Node node2 = testRoot.addNode("node2");   
+        node2.addMixin("mix:title");
+        node2.setProperty("FTSProp", "the quick brown fox jumps over");
+        session.save();
+
+        try {
+            String sql = "SELECT node.[jcr:path] FROM [mix:title] as node WHERE contains(node.*, 'fox')";
+            Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+            QueryResult result = query.execute();
+            validateQuery().rowCount(2).hasNodesAtPaths(node1.getPath(), node2.getPath()).validate(query, result);
+        
+            sql = "SELECT node.[jcr:path] FROM [mix:title] as node WHERE contains(FTSProp, 'the')";
+            query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+            result = query.execute();
+            validateQuery().rowCount(2).hasNodesAtPaths(node1.getPath(), node2.getPath()).validate(query, result);
+
+            sql = "SELECT node.[jcr:path] FROM [mix:title] as node WHERE contains(node.FTSProp, 'jumps')";
+            query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+            result = query.execute();
+            validateQuery().rowCount(2).hasNodesAtPaths(node1.getPath(), node2.getPath()).validate(query, result);
+        } finally {
+            testRoot.remove();
+            session.save();
+        }
+    }
 
     private void registerNodeType( String typeName ) throws RepositoryException {
         NodeTypeManager nodeTypeManager = session.getWorkspace().getNodeTypeManager();
