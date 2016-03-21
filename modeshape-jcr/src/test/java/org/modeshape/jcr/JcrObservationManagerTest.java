@@ -27,6 +27,7 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.modeshape.jcr.api.observation.Event.ALL_EVENTS;
+import java.io.ByteArrayInputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -2280,6 +2281,44 @@ public final class JcrObservationManagerTest extends SingleUseAbstractTest {
         checkResults(listener);
         assertTrue("Path for removed node is wrong", containsPath(listener, parentPath));
         assertTrue("Path for removed child node is wrong", containsPath(listener, childPath));
+    }   
+    
+    @Test
+    @FixFor( {"MODE-2572", "MODE-2580"} )
+    public void shouldNotFireChangeEventsWhenBinaryDataDoesntChange() throws Exception {
+        tools.uploadFile(session, "/file", new ByteArrayInputStream("the quick brown fox".getBytes()));    
+        save();
+
+        String nodeTypeFilter = JcrNtLexicon.RESOURCE.getString();
+        SimpleListener listener = addListener(2, Event.PROPERTY_CHANGED, null, false, null, new String[]{ nodeTypeFilter}, false);
+        // 2 changes expected initially
+        Node content = tools.uploadFile(session, "/file", new ByteArrayInputStream("the quick".getBytes())).getNode("jcr:content");
+        save();
+        listener.waitForEvents();
+        removeListener(listener);
+        checkResults(listener);
+        assertTrue("Path property changed event is wrong", containsPath(listener, "/file/jcr:content/jcr:lastModified"));
+        assertTrue("Path property changed event is wrong", containsPath(listener, "/file/jcr:content/jcr:data"));
+
+      
+        listener = addListener(1, Event.PROPERTY_CHANGED, null, false, null, new String[]{nodeTypeFilter}, false);
+        // set binary to the same value - i.e. a no-op expect NO changes
+        content.setProperty("jcr:data", session.getValueFactory().createBinary(new ByteArrayInputStream("the quick".getBytes())));
+        save();
+        listener.waitForEvents();
+        removeListener(listener);
+        checkResults(listener);
+        assertTrue("Path property changed event is wrong", containsPath(listener, "/file/jcr:content/jcr:lastModified"));
+
+        listener = addListener(2, Event.PROPERTY_CHANGED, null, false, null, new String[]{nodeTypeFilter}, false);
+        // set binary to a new value and expected 2 events
+        content.setProperty("jcr:data", session.getValueFactory().createBinary(new ByteArrayInputStream("the quick brown".getBytes())));
+        save();
+        listener.waitForEvents();
+        removeListener(listener);
+        checkResults(listener);
+        assertTrue("Path property changed event is wrong", containsPath(listener, "/file/jcr:content/jcr:lastModified"));
+        assertTrue("Path property changed event is wrong", containsPath(listener, "/file/jcr:content/jcr:data"));
     }
 
     protected void assertPathsInJournal(EventJournal journal, boolean assertSize, String...expectedPaths) throws RepositoryException {
