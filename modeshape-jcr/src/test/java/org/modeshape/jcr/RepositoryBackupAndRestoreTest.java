@@ -27,6 +27,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.zip.ZipEntry;
@@ -79,8 +80,10 @@ public class RepositoryBackupAndRestoreTest extends SingleUseAbstractTest {
     public void beforeEach() throws Exception {
         backupArea = new File("target/backupArea");
         FileUtil.delete(backupArea.getPath());
-        backupDirectory = new File(backupArea, "repoBackups");
-        backupDirectory2 = new File(backupArea, "repoBackupsAfter");
+        //use a UUID for the backup folder to prevent some file locks lingering between tests
+        String folderId = UUID.randomUUID().toString();
+        backupDirectory = new File(backupArea, "repoBackups_" + folderId);
+        backupDirectory2 = new File(backupArea, "repoBackupsAfter_" + folderId);
         backupDirectory.mkdirs();
         backupDirectory2.mkdirs();
         backupRepoDir = new File(backupArea, "backupRepo");
