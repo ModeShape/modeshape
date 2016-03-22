@@ -653,6 +653,7 @@ public class RepositoryConfiguration {
         aliases = new HashMap<>();
         aliases.put("local", localIndexProvider);
         aliases.put("lucene", "org.modeshape.jcr.index.lucene.LuceneIndexProvider");
+        aliases.put("elasticsearch", "org.modeshape.jcr.index.elasticsearch.EsIndexProvider");
 
         INDEX_PROVIDER_ALIASES = Collections.unmodifiableMap(aliases);
 

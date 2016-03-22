@@ -13,10 +13,10 @@
     },
     "indexProviders" : {
         "elasticsearch" : {
-            "classname" : "org.modeshape.jcr.index.elasticsearch.EsIndexProvider",
+            "classname" : "elasticsearch",
             "host" : "localhost",
             "port" : 9200
-        },        
+        }        
     },
     "reindexing" : {
         "async" : false //make sure this is sync to avoid waiting in tests after registering indexes
