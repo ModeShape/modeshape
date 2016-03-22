@@ -1299,4 +1299,40 @@ public class LocalIndexProviderTest extends AbstractIndexProviderTest {
                 .hasNodesAtPaths("/node1")
                 .validate(query3, query3.execute());
     }
+
+    @Test
+    @FixFor( "MODE-2576" )
+    public void shouldNotCorruptBooleanIndexes() throws Exception {
+        registerValueIndex("booleanIndex", "nt:unstructured", "Boolean values index", "*", "isActive", PropertyType.BOOLEAN);
+
+
+        Node node1 = session().getRootNode().addNode("node1");
+        node1.setProperty("isActive", true);
+        Node node2 = session().getRootNode().addNode("node2");
+        node2.setProperty("isActive", true);
+        session.save();
+
+        Query query = jcrSql2Query("SELECT node.[jcr:name] FROM [nt:unstructured] as node WHERE node.isActive = TRUE");
+        validateQuery()
+                .rowCount(2L)
+                .useIndex("booleanIndex")
+                .hasNodesAtPaths("/node1", "/node2")
+                .validate(query, query.execute());
+        
+        node2.setProperty("isActive", false);
+        session.save();
+       
+        validateQuery()
+                .rowCount(1L)
+                .useIndex("booleanIndex")
+                .hasNodesAtPaths("/node1")
+                .validate(query, query.execute());
+        
+        session.getWorkspace().reindex("/");
+        validateQuery()
+                .rowCount(1L)
+                .useIndex("booleanIndex")
+                .hasNodesAtPaths("/node1")
+                .validate(query, query.execute());
+    }
 }

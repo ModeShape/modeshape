@@ -17,7 +17,6 @@
 package org.modeshape.jcr.index.local;
 
 import java.util.Comparator;
-import java.util.NavigableMap;
 import java.util.concurrent.atomic.AtomicLong;
 import javax.jcr.query.qom.StaticOperand;
 import org.mapdb.DB;
@@ -95,18 +94,11 @@ final class LocalDuplicateIndex<T> extends LocalMapIndex<UniqueKey<T>, T> {
     public void remove( String nodeKey,
                         String propertyName, 
                         T value ) {
-        // Find all of the actual unique values for the given value ...
-        UniqueKey<T> fromKey = new UniqueKey<T>(value, 0);
-        UniqueKey<T> toKey = new UniqueKey<T>(value, Long.MAX_VALUE);
-        NavigableMap<UniqueKey<T>, String> matching = keysByValue.subMap(fromKey, true, toKey, true);
-        if (logger.isTraceEnabled()) {
-            for (UniqueKey<T> actualValue : matching.keySet()) {
-                logger.trace("Removing node '{0}' from '{1}' index with value '{2}'", nodeKey, name, actualValue.actualKey);
-                keysByValue.remove(actualValue);
-            }
-        } else {
-            for (UniqueKey<T> actualValue : matching.keySet()) {
-                keysByValue.remove(actualValue);
+        // Find all of the T values (entry keys) for the given node key (entry values) and remove those which have value 'value'
+        for (UniqueKey<T> key : Fun.filter(valuesByKey, nodeKey)) {
+            if (key.actualKey.equals(value)) {
+                logger.trace("Removing node '{0}' from '{1}' index with value '{2}'", nodeKey, name, key.actualKey);
+                keysByValue.remove(key);
             }
         }
     }
