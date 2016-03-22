@@ -558,7 +558,7 @@
                 </workspaces>
                 <!-- Define some indexes -->
                 <index-providers>
-                    <index-provider name="elasticsearch" classname="org.modeshape.jcr.index.elasticsearch.EsIndexProvider" module="org.modeshape.index-provider.elasticsearch"/> 
+                    <index-provider classname="elasticsearch" module="org.modeshape.index-provider.elasticsearch"/> 
                 </index-providers>
                 <indexes>
                     <index name="mime-types" provider-name="elasticsearch" synchronous="true" kind="value" node-type="mix:mimeType" columns="jcr:mimeType(STRING)"/>
