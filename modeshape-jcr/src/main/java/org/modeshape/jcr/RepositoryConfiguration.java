@@ -65,9 +65,11 @@ import org.modeshape.jcr.value.PropertyType;
 import org.modeshape.jcr.value.binary.AbstractBinaryStore;
 import org.modeshape.jcr.value.binary.BinaryStore;
 import org.modeshape.jcr.value.binary.BinaryStoreException;
+import org.modeshape.jcr.value.binary.CassandraBinaryStore;
 import org.modeshape.jcr.value.binary.CompositeBinaryStore;
 import org.modeshape.jcr.value.binary.DatabaseBinaryStore;
 import org.modeshape.jcr.value.binary.FileSystemBinaryStore;
+import org.modeshape.jcr.value.binary.MongodbBinaryStore;
 import org.modeshape.jcr.value.binary.TransientBinaryStore;
 import org.modeshape.schematic.SchemaLibrary;
 import org.modeshape.schematic.SchemaLibrary.Problem;
@@ -426,6 +428,10 @@ public class RepositoryConfiguration {
         public static final String REINDEXING = "reindexing";
         public static final String REINDEXING_ASYNC = "async";
         public static final String REINDEXING_MODE = "mode";
+        public static final String ADDRESS = "address";
+        public static final String DATABASE = "database";
+        public static final String HOST = "host";
+        public static final String PORT = "port";
 
         public static final String GARBAGE_COLLECTION = "garbageCollection";
         public static final String INITIAL_TIME = "initialTime";
@@ -561,6 +567,8 @@ public class RepositoryConfiguration {
         public static final String BINARY_STORAGE_TYPE_FILE = "file";
         public static final String BINARY_STORAGE_TYPE_DATABASE = "database";
         public static final String BINARY_STORAGE_TYPE_COMPOSITE = "composite";
+        public static final String BINARY_STORAGE_TYPE_CASSANDRA = "cassandra";
+        public static final String BINARY_STORAGE_TYPE_MONGO = "mongo";
         public static final String BINARY_STORAGE_TYPE_CUSTOM = "custom";
 
         public static final String KIND_VALUE = "value";
@@ -1146,6 +1154,16 @@ public class RepositoryConfiguration {
 
                 store = createInstance();
                 setTypeFields(store, binaryStorage);
+            } else if (type.equalsIgnoreCase(FieldValue.BINARY_STORAGE_TYPE_CASSANDRA)) {
+                String address = binaryStorage.getString(FieldName.ADDRESS);
+                store = new CassandraBinaryStore(address);
+            } else if (type.equalsIgnoreCase(FieldValue.BINARY_STORAGE_TYPE_MONGO)) {
+                String host = binaryStorage.getString(FieldName.HOST);
+                Integer port = binaryStorage.getInteger(FieldName.PORT);
+                String database = binaryStorage.getString(FieldName.DATABASE);
+                String username = binaryStorage.getString(FieldName.USER_NAME);
+                String password = binaryStorage.getString(FieldName.USER_PASSWORD);
+                store = new MongodbBinaryStore(host, port, database, username, password, null);                
             }
             if (store == null) store = TransientBinaryStore.get();
             store.setMinimumBinarySizeInBytes(getMinimumBinarySizeInBytes());

@@ -15,6 +15,7 @@
  */
 package org.modeshape.test.integration;
 
+import static org.junit.Assert.assertTrue;
 import java.io.File;
 import java.io.InputStream;
 import javax.annotation.Resource;
@@ -32,6 +33,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.modeshape.common.util.FileUtil;
 import org.modeshape.jcr.JcrRepository;
 import org.modeshape.jcr.ValidateQuery;
 import org.modeshape.jcr.ValidateQuery.ValidationBuilder;
@@ -66,6 +68,10 @@ public class QueryIntegrationTest {
 
     @Before
     public void beforeEach() throws Exception {
+        File serverDataDir = new File(System.getProperty("jboss.server.data.dir"));
+        assertTrue("Cannot read server data dir !", serverDataDir.exists() && serverDataDir.canRead());
+        FileUtil.delete(new File(serverDataDir, "modeshape/store/artifacts"));
+        
         session = repository.login("default");
         print = false;
         tools = new JcrTools();

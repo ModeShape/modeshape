@@ -1,0 +1,5 @@
+<subsystem xmlns="urn:jboss:domain:modeshape:3.0">
+  <repository name="sample">
+    <db-binary-storage mime-type-detection="content" min-string-size="10" min-value-size="4096" data-source-jndi-name="test"/>  
+  </repository>
+</subsystem>

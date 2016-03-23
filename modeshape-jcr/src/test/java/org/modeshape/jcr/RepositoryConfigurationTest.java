@@ -136,6 +136,18 @@ public class RepositoryConfigurationTest {
     public void shouldSuccessfullyValidateDriverBasedBinaryStorageConfiguration() {
         assertValid("config/database-url-binary-storage.json");
     }
+   
+    @Test
+    @FixFor( "MODE-2574" )
+    public void shouldSuccessfullyValidateCassandraBinaryStorageConfiguration() {
+        assertValid("config/cassandra-binary-storage.json");
+    }
+ 
+    @Test
+    @FixFor( "MODE-2575" )
+    public void shouldSuccessfullyValidateMongoBinaryStorageConfiguration() {
+        assertValid("config/mongo-binary-storage.json");
+    }
 
     @Test
     public void shouldSuccessfullyValidateCompositeBinaryStorageConfiguration() {

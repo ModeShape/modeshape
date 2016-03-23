@@ -138,6 +138,11 @@ public class MappedListAttributeDefinition extends SimpleListAttributeDefinition
             return this;
         }
 
+        protected Builder setAllowExpression( final boolean allowExpression ) {
+            builder.setAllowExpression(allowExpression);
+            return this;
+        }
+
         protected Builder setFieldPathInRepositoryConfiguration( String... pathToField ) {
             configPath = Collections.unmodifiableList(Arrays.asList(pathToField));
             return this;

@@ -411,7 +411,8 @@ public class ModelAttributes {
             new SimpleAttributeDefinitionBuilder(ModelKeys.NODE_TYPE_NAME, ModelType.STRING)
                     .setXmlName(Attribute.NODE_TYPE.getLocalName())
                     .setAllowExpression(true)
-                    .setAllowNull(false)
+                    .setAllowNull(true)
+                    .setDefaultValue(new ModelNode("nt:base"))
                     .setValidator(NODE_TYPE_VALIDATOR)
                     .setFlags(AttributeAccess.Flag.RESTART_NONE)
                     .build();
@@ -564,6 +565,7 @@ public class ModelAttributes {
                                                              .setFlags(AttributeAccess.Flag.RESTART_NONE)
                                                              .build())
                                                  .setAllowNull(true)
+                                                 .setAllowExpression(true)
                                                  .setMinSize(0)
                                                  .build();
 
@@ -875,6 +877,55 @@ public class ModelAttributes {
                     .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                     .build();
 
+    public static final MappedSimpleAttributeDefinition CASSANDRA_HOST =
+            new MappedAttributeDefinitionBuilder(Attribute.HOST.getLocalName(), ModelType.STRING,
+                                                 FieldName.STORAGE, FieldName.BINARY_STORAGE, FieldName.ADDRESS)
+                    .setAllowExpression(true)
+                    .setAllowNull(false)
+                    .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+                    .build();
+    
+    public static final MappedSimpleAttributeDefinition MONGO_HOST =
+            new MappedAttributeDefinitionBuilder(Attribute.HOST.getLocalName(), ModelType.STRING,
+                                                 FieldName.STORAGE, FieldName.BINARY_STORAGE, FieldName.HOST)
+                    .setAllowExpression(true)
+                    .setAllowNull(false)
+                    .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+                    .build();
+    
+    public static final MappedSimpleAttributeDefinition MONGO_PORT =
+            new MappedAttributeDefinitionBuilder(Attribute.PORT.getLocalName(), ModelType.INT,
+                                                 FieldName.STORAGE, FieldName.BINARY_STORAGE, FieldName.PORT)
+                    .setAllowExpression(true)
+                    .setAllowNull(false)
+                    .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+                    .build();
+    
+    public static final MappedSimpleAttributeDefinition MONGO_DATABASE =
+            new MappedAttributeDefinitionBuilder(Attribute.DATABASE.getLocalName(), ModelType.STRING,
+                                                 FieldName.STORAGE, FieldName.BINARY_STORAGE, FieldName.DATABASE)
+                    .setAllowExpression(true)
+                    .setAllowNull(true)
+                    .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+                    .build();
+    
+    public static final MappedSimpleAttributeDefinition MONGO_USERNAME =
+            new MappedAttributeDefinitionBuilder(Attribute.USERNAME.getLocalName(), ModelType.STRING,
+                                                 FieldName.STORAGE, FieldName.BINARY_STORAGE, FieldName.USER_NAME)
+                    .setAllowExpression(true)
+                    .setAllowNull(true)
+                    .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+                    .build();
+
+    public static final MappedSimpleAttributeDefinition MONGO_PASSWORD =
+            new MappedAttributeDefinitionBuilder(Attribute.PASSWORD.getLocalName(), ModelType.STRING,
+                                                 FieldName.STORAGE, FieldName.BINARY_STORAGE, FieldName.USER_PASSWORD)
+                    .setAllowExpression(true)
+                    .setAllowNull(true)
+                    .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+                    .build();
+    
+    
     public static final AttributeDefinition[] SUBSYSTEM_ATTRIBUTES = {};
 
     public static final AttributeDefinition[] WEBAPP_ATTRIBUTES = {EXPLODED};
@@ -898,7 +949,13 @@ public class ModelAttributes {
         TRASH, RELATIVE_TO, STORE_NAME, MIME_TYPE_DETECTION};
 
     public static final AttributeDefinition[] DATABASE_BINARY_STORAGE_ATTRIBUTES = {MINIMUM_BINARY_SIZE, MINIMUM_STRING_SIZE,
-        DATA_SOURCE_JNDI_NAME, STORE_NAME, MIME_TYPE_DETECTION};
+        DATA_SOURCE_JNDI_NAME, STORE_NAME, MIME_TYPE_DETECTION};  
+    
+    public static final AttributeDefinition[] CASSANDRA_BINARY_STORAGE_ATTRIBUTES = {MINIMUM_BINARY_SIZE, MINIMUM_STRING_SIZE,
+        MIME_TYPE_DETECTION, CASSANDRA_HOST };
+
+    public static final AttributeDefinition[] MONGO_BINARY_STORAGE_ATTRIBUTES = {MINIMUM_BINARY_SIZE, MINIMUM_STRING_SIZE,
+        MIME_TYPE_DETECTION, MONGO_HOST, MONGO_PORT, MONGO_DATABASE, MONGO_USERNAME, MONGO_PASSWORD};
 
     public static final AttributeDefinition[] COMPOSITE_BINARY_STORAGE_ATTRIBUTES = {MINIMUM_BINARY_SIZE, MINIMUM_STRING_SIZE,
         NESTED_STORES, MIME_TYPE_DETECTION};

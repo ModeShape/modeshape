@@ -3,7 +3,7 @@
               jndi-name="jcr/local/sample"
               enable-monitoring="true"
               security-domain="modeshape-security"
-              anonymous-roles="readonly readwrite admin connect" 
+              anonymous-roles="readonly readwrite admin" 
               anonymous-username="&lt;anonymous&gt;" 
               use-anonymous-upon-failed-authentication="false">
     <workspaces default-workspace="default" allow-workspace-creation="true">
@@ -28,7 +28,7 @@
                         analyzerClass="org.apache.lucene.analysis.ro.RomanianAnalyzer" codec="Lucene53"/>
     </index-providers>
     <indexes>
-      <index name="primaryTypes" provider-name="local" index-kind="value" node-type="nt:base" columns="jcr:primaryType(NAME)" />
+      <index name="primaryTypes" provider-name="local" kind="value" node-type="nt:base" columns="jcr:primaryType(NAME)" />
       <index name="names" provider-name="local" kind="value" node-type="nt:resource" columns="jcr:name(NAME)" />
     </indexes>
     <sequencers>

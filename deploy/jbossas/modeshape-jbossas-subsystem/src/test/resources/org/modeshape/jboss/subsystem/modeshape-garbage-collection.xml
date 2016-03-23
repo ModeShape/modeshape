@@ -3,7 +3,7 @@
               jndi-name="jcr/local/sample"
               enable-monitoring="true"
               security-domain="modeshape-security"
-              anonymous-roles="readonly readwrite admin connect" 
+              anonymous-roles="readonly readwrite admin" 
               anonymous-username="&lt;anonymous&gt;" 
               use-anonymous-upon-failed-authentication="false"
               garbage-collection-thread-pool="something"

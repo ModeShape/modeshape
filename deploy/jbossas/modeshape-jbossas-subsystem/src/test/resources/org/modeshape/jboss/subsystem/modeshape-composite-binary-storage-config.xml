@@ -7,8 +7,8 @@
             <file-binary-storage store-name="another-fsbs"
                                  path="modeshape/sample/somewhere-else"
                                  relative-to="jboss.server.data.dir"/>
-            <custom-binary-storage classname="someclass" store-name="customBinary"/>
             <db-binary-storage data-source-jndi-name="jndiName" store-name="dbBinary"/>
+            <custom-binary-storage classname="someclass" store-name="customBinary"/>
         </composite-binary-storage>
     </repository>
 </subsystem>

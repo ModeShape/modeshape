@@ -28,6 +28,7 @@ import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.operations.common.Util;
 import org.jboss.as.controller.parsing.ParseUtils;
 import org.jboss.dmr.ModelNode;
+import org.jboss.dmr.ValueExpression;
 import org.jboss.staxmapper.XMLElementReader;
 import org.jboss.staxmapper.XMLExtendedStreamReader;
 
@@ -249,6 +250,14 @@ public class ModeShapeSubsystemXMLReader_3_0 implements XMLStreamConstants, XMLE
                 case DB_BINARY_STORAGE:
                     addBinaryStorageConfiguration(repositories, repositoryName);
                     binaryStorage = parseDatabaseBinaryStorage(reader, repositoryName, false);
+                    break;
+                case CASSANDRA_BINARY_STORAGE:
+                    addBinaryStorageConfiguration(repositories, repositoryName);
+                    binaryStorage = parseCassandraBinaryStorage(reader, repositoryName, false);
+                    break;
+                case MONGO_BINARY_STORAGE:
+                    addBinaryStorageConfiguration(repositories, repositoryName);
+                    binaryStorage = parseMongoBinaryStorage(reader, repositoryName, false);
                     break;
                 case COMPOSITE_BINARY_STORAGE:
                     addBinaryStorageConfiguration(repositories, repositoryName);
@@ -727,6 +736,96 @@ public class ModeShapeSubsystemXMLReader_3_0 implements XMLStreamConstants, XMLE
         return storageType;
     }
 
+    private ModelNode parseCassandraBinaryStorage(final XMLExtendedStreamReader reader,
+                                                  final String repositoryName,
+                                                  boolean nested) throws XMLStreamException {
+        final ModelNode storageType = new ModelNode();
+        storageType.get(OP).set(ADD);
+        storageType.get(OP_ADDR)
+                   .add(SUBSYSTEM, ModeShapeExtension.SUBSYSTEM_NAME)
+                   .add(ModelKeys.REPOSITORY, repositoryName)
+                   .add(ModelKeys.CONFIGURATION, ModelKeys.BINARY_STORAGE);
+        
+        if (reader.getAttributeCount() > 0) {
+            for (int i = 0; i < reader.getAttributeCount(); i++) {
+                String attrName = reader.getAttributeLocalName(i);
+                String attrValue = reader.getAttributeValue(i);
+                Attribute attribute = Attribute.forName(attrName);
+                switch (attribute) {
+                   // The rest go on the ModelNode for the type ...
+                    case HOST:
+                        ModelAttributes.CASSANDRA_HOST.parseAndSetParameter(attrValue, storageType, reader);
+                        break;
+                    case MIN_VALUE_SIZE:
+                        ModelAttributes.MINIMUM_BINARY_SIZE.parseAndSetParameter(attrValue, storageType, reader);
+                        break;
+                    case MIN_STRING_SIZE:
+                        ModelAttributes.MINIMUM_STRING_SIZE.parseAndSetParameter(attrValue, storageType, reader);
+                        break;
+                    case MIME_TYPE_DETECTION:
+                        ModelAttributes.MIME_TYPE_DETECTION.parseAndSetParameter(attrValue, storageType, reader);
+                        break;
+                    default:
+                        throw ParseUtils.unexpectedAttribute(reader, i);
+                }
+            }
+        }
+        requireNoElements(reader);
+        storageType.get(OP_ADDR).add(ModelKeys.STORAGE_TYPE, ModelKeys.CASSANDRA_BINARY_STORAGE);
+        return storageType;
+    }
+
+    private ModelNode parseMongoBinaryStorage(final XMLExtendedStreamReader reader,
+                                              final String repositoryName,
+                                              boolean nested) throws XMLStreamException {
+        final ModelNode storageType = new ModelNode();
+        storageType.get(OP).set(ADD);
+        storageType.get(OP_ADDR)
+                   .add(SUBSYSTEM, ModeShapeExtension.SUBSYSTEM_NAME)
+                   .add(ModelKeys.REPOSITORY, repositoryName)
+                   .add(ModelKeys.CONFIGURATION, ModelKeys.BINARY_STORAGE);
+        
+        if (reader.getAttributeCount() > 0) {
+            for (int i = 0; i < reader.getAttributeCount(); i++) {
+                String attrName = reader.getAttributeLocalName(i);
+                String attrValue = reader.getAttributeValue(i);
+                Attribute attribute = Attribute.forName(attrName);
+                switch (attribute) {
+                   // The rest go on the ModelNode for the type ...
+                    case HOST:
+                        ModelAttributes.MONGO_HOST.parseAndSetParameter(attrValue, storageType, reader);
+                        break;
+                    case PORT:
+                        ModelAttributes.MONGO_PORT.parseAndSetParameter(attrValue, storageType, reader);
+                        break;
+                    case DATABASE:
+                        ModelAttributes.MONGO_DATABASE.parseAndSetParameter(attrValue, storageType, reader);
+                        break;
+                    case USERNAME:
+                        ModelAttributes.MONGO_USERNAME.parseAndSetParameter(attrValue, storageType, reader);
+                        break;
+                    case PASSWORD:
+                        ModelAttributes.MONGO_PASSWORD.parseAndSetParameter(attrValue, storageType, reader);
+                        break;
+                    case MIN_VALUE_SIZE:
+                        ModelAttributes.MINIMUM_BINARY_SIZE.parseAndSetParameter(attrValue, storageType, reader);
+                        break;
+                    case MIN_STRING_SIZE:
+                        ModelAttributes.MINIMUM_STRING_SIZE.parseAndSetParameter(attrValue, storageType, reader);
+                        break;
+                    case MIME_TYPE_DETECTION:
+                        ModelAttributes.MIME_TYPE_DETECTION.parseAndSetParameter(attrValue, storageType, reader);
+                        break;
+                    default:
+                        throw ParseUtils.unexpectedAttribute(reader, i);
+                }
+            }
+        }
+        requireNoElements(reader);
+        storageType.get(OP_ADDR).add(ModelKeys.STORAGE_TYPE, ModelKeys.MONGO_BINARY_STORAGE);
+        return storageType;
+    }
+
     private ModelNode parseCustomBinaryStorage( final XMLExtendedStreamReader reader,
                                                 final String repositoryName,
                                                 boolean nested ) throws XMLStreamException {
@@ -1127,9 +1226,7 @@ public class ModeShapeSubsystemXMLReader_3_0 implements XMLStreamConstants, XMLE
                         ModelAttributes.INDEX_COLUMNS.parseAndSetParameter(attrValue, index, reader);
                         break;
                     default:
-                        // extra attributes are allowed to set sequencer-specific properties ...
-                        index.get(ModelKeys.PROPERTIES).add(attrName, attrValue);
-                        break;
+                       throw ParseUtils.unexpectedAttribute(reader, i);
                 }
             }
         }
@@ -1208,7 +1305,11 @@ public class ModeShapeSubsystemXMLReader_3_0 implements XMLStreamConstants, XMLE
                     }
                     default:
                         // extra attributes are allowed to set externalSource-specific properties ...
-                        externalSource.get(ModelKeys.PROPERTIES).add(attrName, attrValue);
+                        if (!attrValue.startsWith("$")) {
+                            externalSource.get(ModelKeys.PROPERTIES).add(attrName, attrValue);
+                        } else {
+                            externalSource.get(ModelKeys.PROPERTIES).add(attrName, new ValueExpression(attrValue));
+                        }
                         break;
                 }
             }
