@@ -19,7 +19,6 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.function.Function;
 import org.modeshape.schematic.document.Document;
 
@@ -67,10 +66,10 @@ public interface Statements {
      * Returns all the ids from a table.
      *
      * @param connection a {@link Connection} instance; may not be null
-     * @return a {@link Set} of ids; never {@code null}
+     * @return a {@link List} of ids; never {@code null}
      * @throws SQLException if the operation fails.
      */
-    Set<String> getAllIds( Connection connection ) throws SQLException;
+    List<String> getAllIds(Connection connection) throws SQLException;
 
     /**
      * Searches for a document with a certain id.

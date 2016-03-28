@@ -20,12 +20,12 @@ import java.io.InputStream;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.function.Function;
@@ -128,9 +128,9 @@ public class RelationalDb implements SchematicDb {
     }
 
     @Override
-    public Set<String> keys() {
+    public List<String> keys() {
         //first read everything from the db
-        Set<String> persistedKeys = runWithConnection(statements::getAllIds, true);
+        List<String> persistedKeys = runWithConnection(statements::getAllIds, true);
       
         if (!TransactionsHolder.hasActiveTransaction()) {
             // there is no active tx for just return the persistent view
@@ -138,7 +138,7 @@ public class RelationalDb implements SchematicDb {
         }
         // there is an active transaction, so just filter out the keys which have been removed
         persistedKeys.addAll(transactionalCaches.documentKeys());
-        return persistedKeys.stream().filter(id -> !transactionalCaches.isRemoved(id)).collect(Collectors.toSet());
+        return persistedKeys.stream().filter(id -> !transactionalCaches.isRemoved(id)).collect(Collectors.toList());
     }
     
     @Override
@@ -172,7 +172,7 @@ public class RelationalDb implements SchematicDb {
     }
 
     @Override
-    public List<SchematicEntry> load(Set<String> keys) {
+    public List<SchematicEntry> load(Collection<String> keys) {
         boolean hasActiveTransaction = TransactionsHolder.hasActiveTransaction();
         Function<Document, SchematicEntry> documentParser = document -> {
             SchematicEntry entry = () -> document;

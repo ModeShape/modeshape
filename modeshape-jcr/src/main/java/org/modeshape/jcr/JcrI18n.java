@@ -72,6 +72,7 @@ public final class JcrI18n {
     public static I18n problemsWritingBinaryToBackup;
     public static I18n problemsReadingBinaryFromBackup;
     public static I18n problemsGettingBinaryKeysFromBinaryStore;
+    public static I18n unexpectedProblemDuringRestore;
     public static I18n interruptedWhilePerformingBackup;
     public static I18n problemObtainingDocumentsToBackup;
     public static I18n backupOperationWasCancelled;

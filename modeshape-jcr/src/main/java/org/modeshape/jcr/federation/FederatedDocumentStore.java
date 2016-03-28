@@ -272,10 +272,10 @@ public class FederatedDocumentStore implements DocumentStore {
     }
 
     @Override
-    public List<SchematicEntry> load(Set<String> keys) {
+    public List<SchematicEntry> load(Collection<String> keys) {
         Map<Boolean, List<String>> keysByLocality = keys.stream().collect(Collectors.groupingBy(this::isLocalSource));
         List<String> localKeys = keysByLocality.get(Boolean.TRUE);
-        List<SchematicEntry> docsByKey = localKeys == null ? new ArrayList<>() : localStore().load(new HashSet<>(localKeys));
+        List<SchematicEntry> docsByKey = localKeys == null ? new ArrayList<>() : localStore().load(localKeys);
         List<String> externalKeys = keysByLocality.get(Boolean.FALSE);
         if (externalKeys != null) {
             docsByKey.addAll(externalKeys.stream()

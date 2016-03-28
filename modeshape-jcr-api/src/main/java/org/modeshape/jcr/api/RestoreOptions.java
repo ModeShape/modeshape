@@ -21,6 +21,11 @@ package org.modeshape.jcr.api;
  * @author Horia Chiorean (hchiorea@redhat.com)
  */
 public abstract class RestoreOptions {
+
+    /**
+     * The number of documents written in one unit (i.e. transaction) from the backup files into the persistent storage.
+     */
+    public static final int DEFAULT_BATCH_SIZE = 1000;
     
     /**
      * The default options used during restore, if no explicit ones are given.
@@ -37,6 +42,20 @@ public abstract class RestoreOptions {
     }
 
     /**
+     * Return the number of documents that are written to the persistent store in one unit of work (transaction)
+     *
+     * <p>
+     *     This is a setting that can be used to influence the memory and throughout of the restore process.
+     * </p>
+     *
+     * @return the number of documents; defaults to {@value #DEFAULT_BATCH_SIZE}
+     * @since 5.0
+     */
+    public int batchSize() {
+        return DEFAULT_BATCH_SIZE;
+    }
+
+    /**
      * Whether binaries should be restored or not. ModeShape uses references between documents and binary values, so 
      * depending on the context it may not always be desired for binary values to be restored. 
      * 
@@ -49,8 +68,9 @@ public abstract class RestoreOptions {
     @Override
     public String toString() {
         StringBuilder builder = new StringBuilder("[restore_options: ");
-        builder.append("include_binaries=").append(includeBinaries());
-        builder.append(", reindex_content_on_finish=").append(reindexContentOnFinish());
+        builder.append("batch size=").append(batchSize());
+        builder.append(", include binaries=").append(includeBinaries());
+        builder.append(", reindex content on finish=").append(reindexContentOnFinish());
         builder.append("]");
         return builder.toString();
     }
