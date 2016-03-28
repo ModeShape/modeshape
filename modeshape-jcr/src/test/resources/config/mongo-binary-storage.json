@@ -1,0 +1,16 @@
+{
+    "name" : "Test Repository",
+    "storage" : {
+        "binaryStorage" : {
+            "type"  : "mongo",
+            "host" : "localhost",
+            "port" : 100,
+            "username" : "test",
+            "password" : "test",
+            "database" : "test",
+            "minimumBinarySizeInBytes" : 4096,
+            "minimumStringSize" : 1025,
+            "mimeTypeDetection" : "none"
+        }
+    }
+}

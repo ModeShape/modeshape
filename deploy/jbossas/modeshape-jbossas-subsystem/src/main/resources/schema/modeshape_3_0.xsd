@@ -158,6 +158,16 @@
                         <xs:documentation>The binary files are stored in a relational database.</xs:documentation>
                     </xs:annotation>
                 </xs:element>
+                <xs:element name="cassandra-binary-storage" type="cassandra-binary-storage">
+                    <xs:annotation>
+                        <xs:documentation>The binary files are stored in Cassandra.</xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+                <xs:element name="mongo-binary-storage" type="mongo-binary-storage">
+                    <xs:annotation>
+                        <xs:documentation>The binary files are stored in MongoDB.</xs:documentation>
+                    </xs:annotation>
+                </xs:element>
                 <xs:element name="composite-binary-storage" type="composite-binary-storage">
                     <xs:annotation>
                         <xs:documentation>The binary files are stored in a one of any number of named binary stores.
@@ -837,6 +847,16 @@
         <xs:attributeGroup ref="file-storage-attributes"/>
         <xs:attributeGroup ref="binary-storage-attributes"/>
     </xs:complexType>
+   
+     <xs:complexType name="cassandra-binary-storage">
+        <xs:attributeGroup ref="cassandra-storage-attributes"/>
+        <xs:attributeGroup ref="binary-storage-attributes"/>
+    </xs:complexType>
+
+    <xs:complexType name="mongo-binary-storage">
+        <xs:attributeGroup ref="mongo-storage-attributes"/>
+        <xs:attributeGroup ref="binary-storage-attributes"/>
+    </xs:complexType>
 
     <xs:complexType name="nested-file-binary-storage">
         <xs:attributeGroup ref="file-storage-attributes"/>
@@ -994,6 +1014,40 @@
                     generate an exception when the repository is created.
                     If undefined, the path defaults to 'modeshape/{repositoryName}/binaries/trash'.
                 </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:attributeGroup>
+    <xs:attributeGroup name="cassandra-storage-attributes">
+        <xs:attribute name="host" type="xs:string" use="required">
+            <xs:annotation>
+                <xs:documentation>The address of the Cassandra server to connect to</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:attributeGroup> 
+    <xs:attributeGroup name="mongo-storage-attributes">
+        <xs:attribute name="host" type="xs:string" use="required">
+            <xs:annotation>
+                <xs:documentation>The MongoDB host name</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="port" type="xs:integer" use="required">
+            <xs:annotation>
+                <xs:documentation>The MongoDB port number</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="database" type="xs:string" default="ModeShape_BinaryStore" use="optional">
+            <xs:annotation>
+                <xs:documentation>The MongoDB database name where binaries will be stored</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="username" type="xs:string" use="optional">
+            <xs:annotation>
+                <xs:documentation>The DB user name</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="password" type="xs:string" use="optional">
+            <xs:annotation>
+                <xs:documentation>The DB user password</xs:documentation>
             </xs:annotation>
         </xs:attribute>
     </xs:attributeGroup>

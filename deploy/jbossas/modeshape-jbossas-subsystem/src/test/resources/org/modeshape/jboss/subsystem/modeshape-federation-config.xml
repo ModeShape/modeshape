@@ -3,7 +3,7 @@
               jndi-name="jcr/local/sample"
               enable-monitoring="true"
               security-domain="modeshape-security"
-              anonymous-roles="readonly readwrite admin connect" 
+              anonymous-roles="admin readwrite" 
               anonymous-username="&lt;anonymous&gt;" 
               use-anonymous-upon-failed-authentication="false">
     <workspaces default-workspace="default" allow-workspace-creation="true">

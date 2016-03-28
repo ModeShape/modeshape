@@ -40,9 +40,11 @@ import org.jboss.shrinkwrap.api.ArchivePaths;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.EmptyAsset;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.modeshape.common.FixFor;
+import org.modeshape.common.util.FileUtil;
 import org.modeshape.jcr.JcrRepository;
 import org.modeshape.jcr.JcrSession;
 import org.modeshape.jcr.RepositoryConfiguration;
@@ -75,6 +77,13 @@ public class SequencersIntegrationTest {
                          .setManifest(new File("src/main/webapp/META-INF/MANIFEST.MF"));
     }
 
+    @Before
+    public void before() {
+        File serverDataDir = new File(System.getProperty("jboss.server.data.dir"));
+        assertTrue("Cannot read server data dir !", serverDataDir.exists() && serverDataDir.canRead());
+        FileUtil.delete(new File(serverDataDir, "modeshape/store/artifacts"));        
+    }
+    
     @Test
     public void shouldSequenceImage() throws Exception {
         uploadFileAndAssertSequenced("/image_file.jpg", "/derived/image", "org.modeshape.sequencer.image.ImageMetadataSequencer");

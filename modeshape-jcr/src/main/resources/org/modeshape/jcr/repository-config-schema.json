@@ -375,6 +375,94 @@
                         },
                         {
                             "type" : "object",
+                            "additionalProperties" : true,
+                            "properties" : {
+                                "type" : {
+                                    "type" : "string",
+                                    "description" : "The specification of the Cassandra binary store",
+                                    "enum" : [ "cassandra" ]
+                                },
+                                "address" : {
+                                    "type" : "string",
+                                    "description" : "The address of a Cassandra Node",
+                                    "required" : true,
+                                },
+                                "minimumBinarySizeInBytes" : {
+                                    "type" : "integer",
+                                    "default" : 4096,
+                                    "description" : "The size threshold that dictates whether binary values should be stored in the binary store. Binary values smaller than this value are stored with the node, whereas binary values with a size equal to or greater than this limit will be stored separately from the node and in the binary store, keyed by the SHA-1 hash of the value. This is a space and performance optimization that stores each unique large value only once. The default value is '4096' bytes, or 4 kilobytes."
+                                },
+                                "minimumStringSize" : {
+                                    "type" : "integer",
+                                    "description" : "The size threshold that dictates whether string values should be stored in the binary store. String values shorter than this length are stored with the node, whereas strings with a length equal to or greater than this limit will be stored separately from the node and in the binary store, keyed by the SHA-1 hash of the value. This is a space and performance optimization that stores each unique large value only once. The default value is to match the 'minimumBinarySizeInBytes' value."
+                                },
+                                "mimeTypeDetection" : {
+                                    "type" : "string",
+                                    "description" : "What type of mime-type detection should be performed when uploading binary values. Defaults to 'content' - i.e. reading the binary content (at least the headers) to determine the mime type",
+                                    "default" : "content",
+                                    "enum" : [ "none", "content", "name" ]
+                                },
+                                "description" : {
+                                    "type" : "string",
+                                    "description" : "The optional description of this section of the configuration. It is unused by ModeShape."
+                                },
+                            }
+                        }, 
+                        {
+                            "type" : "object",
+                            "additionalProperties" : true,
+                            "properties" : {
+                                "type" : {
+                                    "type" : "string",
+                                    "description" : "The specification of the Cassandra binary store",
+                                    "enum" : [ "mongo" ]
+                                },
+                                "host" : {
+                                    "type" : "string",
+                                    "description" : "The name of the MongoDB host",
+                                    "required" : true,
+                                },
+                                "port" : {
+                                    "type" : "integer",
+                                    "description" : "The MongoDB port",
+                                    "required" : true,
+                                },
+                                "database" : {
+                                    "type" : "string",
+                                    "description" : "The name of the database where to store the binary content",
+                                    "default" : "ModeShape_BinaryStore",
+                                },
+                                "username" : {
+                                    "type" : "string",
+                                    "description" : "The username to use when connecting to MongoDB",
+                                },
+                                "password" : {
+                                    "type" : "string",
+                                    "description" : "The password to use when connecting to MongoDB",
+                                },
+                                "minimumBinarySizeInBytes" : {
+                                    "type" : "integer",
+                                    "default" : 4096,
+                                    "description" : "The size threshold that dictates whether binary values should be stored in the binary store. Binary values smaller than this value are stored with the node, whereas binary values with a size equal to or greater than this limit will be stored separately from the node and in the binary store, keyed by the SHA-1 hash of the value. This is a space and performance optimization that stores each unique large value only once. The default value is '4096' bytes, or 4 kilobytes."
+                                },
+                                "minimumStringSize" : {
+                                    "type" : "integer",
+                                    "description" : "The size threshold that dictates whether string values should be stored in the binary store. String values shorter than this length are stored with the node, whereas strings with a length equal to or greater than this limit will be stored separately from the node and in the binary store, keyed by the SHA-1 hash of the value. This is a space and performance optimization that stores each unique large value only once. The default value is to match the 'minimumBinarySizeInBytes' value."
+                                },
+                                "mimeTypeDetection" : {
+                                    "type" : "string",
+                                    "description" : "What type of mime-type detection should be performed when uploading binary values. Defaults to 'content' - i.e. reading the binary content (at least the headers) to determine the mime type",
+                                    "default" : "content",
+                                    "enum" : [ "none", "content", "name" ]
+                                },
+                                "description" : {
+                                    "type" : "string",
+                                    "description" : "The optional description of this section of the configuration. It is unused by ModeShape."
+                                }
+                            }
+                        },
+                        {
+                            "type" : "object",
                             "additionalProperties" : false,
                             "properties" : {
                                 "type" : {

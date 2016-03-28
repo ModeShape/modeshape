@@ -51,6 +51,7 @@ import org.modeshape.jcr.api.Binary;
 import org.modeshape.jcr.value.BinaryKey;
 import org.modeshape.jcr.value.BinaryValue;
 import org.modeshape.jcr.value.binary.BinaryStore;
+import com.datastax.driver.core.exceptions.NoHostAvailableException;
 
 /**
  * Test suite that should include test cases which verify that a repository configured with various binary stores, correctly
@@ -325,6 +326,18 @@ public class BinaryStorageIntegrationTest extends SingleUseAbstractTest {
         Node content2 = session.getNode("/file2.txt").getNode("jcr:content");
         // because the name of the file doe have an extension, we're expecting a specific mime type here
         assertEquals("text/plain", content2.getProperty("jcr:mimeType").getString());
+    }
+    
+    @Test(expected = NoHostAvailableException.class)
+    public void shouldStartWithCassandraBinaryStore() throws Exception {
+        // we expect cassandra to fail because we're not starting a cassandra server, but we want to check that we get that far ;)
+        startRepositoryWithConfigurationFrom("config/cassandra-binary-storage.json");        
+    }
+   
+    @Test
+    public void shouldStartWithMongoBinaryStore() throws Exception {
+        // even though we don't start mongo in this test, the binary store is initialized ;)
+        startRepositoryWithConfigurationFrom("config/mongo-binary-storage.json");        
     }
 
     private String randomString(long size) {

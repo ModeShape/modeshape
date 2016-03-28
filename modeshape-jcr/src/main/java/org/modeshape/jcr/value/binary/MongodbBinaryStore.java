@@ -19,8 +19,10 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import org.modeshape.common.util.IoUtil;
@@ -78,55 +80,14 @@ public class MongodbBinaryStore extends AbstractBinaryStore {
     private String password;
 
     // server address(es)
-    private Set<String> replicaSet = new HashSet<String>();
+    private Set<String> replicaSet = new HashSet<>();
 
     // database instance
     private DB db;
 
     // chunk size in bytes
     protected int chunkSize = 1024;
-
-    public MongodbBinaryStore() {
-        this.cache = TransientBinaryStore.get();
-        this.database = DEFAULT_DB_NAME;
-    }
-
-    /**
-     * Creates new store.
-     *
-     * @param database database name
-     * @param replicaSet list of server addresses in the form 'host:port' or null for localhost
-     */
-    public MongodbBinaryStore( String database,
-                               Set<String> replicaSet ) {
-        this.cache = TransientBinaryStore.get();
-        this.database = database;
-        if (replicaSet != null) {
-            this.replicaSet.addAll(replicaSet);
-        }
-    }
-
-    /**
-     * Creates new store.
-     *
-     * @param database database name
-     * @param username database user
-     * @param password user's password
-     * @param replicaSet list of server addresses in the form 'host:port' or null for localhost
-     */
-    public MongodbBinaryStore( String database,
-                               String username,
-                               String password,
-                               Set<String> replicaSet ) {
-        this.cache = TransientBinaryStore.get();
-        this.database = database;
-        this.username = username;
-        this.password = password;
-        if (replicaSet != null) {
-            this.replicaSet.addAll(replicaSet);
-        }
-    }
-
+    
     /**
      * Creates a new instance of the store, using a single MongoDB.
      *
@@ -137,10 +98,27 @@ public class MongodbBinaryStore extends AbstractBinaryStore {
     public MongodbBinaryStore( String host,
                                int port,
                                String database ) {
+        this(host, port, database, null, null, null);
+    }
+
+    /**
+     * Creates a new mongo binary store instance using the supplied params.
+     * 
+     * @param host the mongo host; may not be null
+     * @param port the port 
+     * @param database the name of the database; may be null in which case a default will be used
+     * @param username the username; may be null 
+     * @param password the password; may be null
+     * @param replicaSet a {@link Set} of (host:port) pairs representing multiple server addresses; may be null
+     */
+    public MongodbBinaryStore(String host, int port, String database, String username, String password, Set<String> replicaSet) {
         this.cache = TransientBinaryStore.get();
-        this.host = host;
+        this.host = Objects.requireNonNull(host);
         this.port = port;
-        this.database = database;
+        this.database = !StringUtil.isBlank(database) ? database : DEFAULT_DB_NAME;
+        this.username = username;
+        this.password = password;
+        this.replicaSet = replicaSet == null ? Collections.emptySet() : replicaSet;
     }
 
     /**

@@ -15,6 +15,7 @@
  */
 package org.modeshape.jboss.subsystem;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -291,9 +292,9 @@ public class ModeShapeSubsystemXMLWriter implements XMLStreamConstants, XMLEleme
         }
     }
 
-    private void writeBinaryStorageModel( XMLExtendedStreamWriter writer,
-                                          String storageType,
-                                          ModelNode storage ) throws XMLStreamException {
+    private void writeBinaryStorageModel(XMLExtendedStreamWriter writer,
+                                         String storageType,
+                                         ModelNode storage) throws XMLStreamException {
         if (ModelKeys.TRANSIENT_BINARY_STORAGE.equals(storageType)) {
             writer.writeStartElement(Element.TRANSIENT_BINARY_STORAGE.getLocalName());
             ModelAttributes.MINIMUM_BINARY_SIZE.marshallAsAttribute(storage, false, writer);
@@ -321,6 +322,24 @@ public class ModeShapeSubsystemXMLWriter implements XMLStreamConstants, XMLEleme
             ModelAttributes.STORE_NAME.marshallAsAttribute(storage, false, writer);
             ModelAttributes.MIME_TYPE_DETECTION.marshallAsAttribute(storage, false, writer);
             writer.writeEndElement();
+        } else if (ModelKeys.CASSANDRA_BINARY_STORAGE.equals(storageType)) {
+            writer.writeStartElement(Element.CASSANDRA_BINARY_STORAGE.getLocalName());
+            ModelAttributes.MINIMUM_BINARY_SIZE.marshallAsAttribute(storage, false, writer);
+            ModelAttributes.MINIMUM_STRING_SIZE.marshallAsAttribute(storage, false, writer);
+            ModelAttributes.MIME_TYPE_DETECTION.marshallAsAttribute(storage, false, writer);
+            ModelAttributes.CASSANDRA_HOST.marshallAsAttribute(storage, false, writer);
+            writer.writeEndElement();
+        } else if (ModelKeys.MONGO_BINARY_STORAGE.equals(storageType)) {
+            writer.writeStartElement(Element.MONGO_BINARY_STORAGE.getLocalName());
+            ModelAttributes.MINIMUM_BINARY_SIZE.marshallAsAttribute(storage, false, writer);
+            ModelAttributes.MINIMUM_STRING_SIZE.marshallAsAttribute(storage, false, writer);
+            ModelAttributes.MIME_TYPE_DETECTION.marshallAsAttribute(storage, false, writer);
+            ModelAttributes.MONGO_HOST.marshallAsAttribute(storage, false, writer);
+            ModelAttributes.MONGO_PORT.marshallAsAttribute(storage, false, writer);
+            ModelAttributes.MONGO_DATABASE.marshallAsAttribute(storage, false, writer);
+            ModelAttributes.MONGO_USERNAME.marshallAsAttribute(storage, false, writer);
+            ModelAttributes.MONGO_PASSWORD.marshallAsAttribute(storage, false, writer);
+            writer.writeEndElement();
         } else if (ModelKeys.COMPOSITE_BINARY_STORAGE.equals(storageType)) {
             writer.writeStartElement(Element.COMPOSITE_BINARY_STORAGE.getLocalName());
             ModelAttributes.MINIMUM_BINARY_SIZE.marshallAsAttribute(storage, false, writer);
@@ -339,15 +358,25 @@ public class ModeShapeSubsystemXMLWriter implements XMLStreamConstants, XMLEleme
             ModelAttributes.MINIMUM_STRING_SIZE.marshallAsAttribute(storage, false, writer);
             ModelAttributes.STORE_NAME.marshallAsAttribute(storage, false, writer);
             ModelAttributes.MIME_TYPE_DETECTION.marshallAsAttribute(storage, false, writer);
-            for (String key : storage.keys()) {
-                if (key.equals(ModelKeys.CLASSNAME)) {
-                    ModelAttributes.CLASSNAME.marshallAsAttribute(storage, false, writer);
-                } else if (key.equals(ModelKeys.MODULE)) {
-                    ModelAttributes.MODULE.marshallAsAttribute(storage, false, writer);
-                } else {
-                    writer.writeAttribute(key, storage.get(key).asString());
+            List<String> toSkip = Arrays.asList(ModelKeys.MINIMUM_BINARY_SIZE, ModelKeys.MINIMUM_STRING_SIZE,
+                                                ModelKeys.STORE_NAME, ModelKeys.MIME_TYPE_DETECTION); 
+            storage.keys().stream().filter(key -> !toSkip.contains(key)).forEach(key -> {
+                try {
+                    switch (key) {
+                        case ModelKeys.CLASSNAME:
+                            ModelAttributes.CLASSNAME.marshallAsAttribute(storage, false, writer);
+                            break;
+                        case ModelKeys.MODULE:
+                            ModelAttributes.MODULE.marshallAsAttribute(storage, false, writer);
+                            break;
+                        default:
+                            writer.writeAttribute(key, storage.get(key).asString());
+                            break;
+                    }
+                } catch (XMLStreamException e) {
+                    throw new RuntimeException(e);
                 }
-            }
+            });
             writer.writeEndElement();
         }
     }

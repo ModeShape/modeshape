@@ -1,0 +1,6 @@
+<subsystem xmlns="urn:jboss:domain:modeshape:3.0">
+  <repository name="sample">
+    <mongo-binary-storage mime-type-detection="content" min-string-size="10" min-value-size="4096" database="test"
+            host="localhost" port="100" password="test" username="test"/>  
+  </repository>
+</subsystem>

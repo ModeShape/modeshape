@@ -68,7 +68,14 @@ public class ModeShapeConfigurationTest extends AbstractSubsystemBaseTest {
 
     @Override
     protected String getSubsystemXml( String configId ) throws IOException {
-        return configId != null ? readResource("modeshape-" + configId + "-config.xml") : getSubsystemXml();
+        if (configId == null) {
+            return getSubsystemXml();
+        }
+        String config = "modeshape-" + configId + "-config.xml";
+        if (ModeShapeConfigurationTest.class.getResource(config) != null) {
+            return readResource(config); 
+        }
+        return readResource(configId);
     }
 
     @Test
@@ -83,108 +90,123 @@ public class ModeShapeConfigurationTest extends AbstractSubsystemBaseTest {
 
     @Test
     public void testConfigurationWithIndexStorage() throws Exception {
-        parse(readResource("modeshape-index-storage.xml"));
+        standardSubsystemTest("modeshape-index-storage.xml", false);
     }
 
     @Test
     public void testConfigurationWithAllIndexTypes() throws Exception {
         // fix for MODE-2348
-        parse(readResource("modeshape-index-types.xml"));
+        standardSubsystemTest("modeshape-index-types.xml");
     }
 
     @Test
     public void testConfigurationWithFileBinaryStorage() throws Exception {
-        parse(readResource("modeshape-file-binary-storage.xml"));
+        standardSubsystemTest("modeshape-file-binary-storage.xml", false);
     }  
     
     @Test
     public void testConfigurationWithTransientBinaryStorage() throws Exception {
-        parse(readResource("modeshape-transient-binary-storage.xml"));
+        standardSubsystemTest("modeshape-transient-binary-storage.xml");
+    }   
+    
+    @Test
+    public void testConfigurationWithDBBinaryStorage() throws Exception {
+        standardSubsystemTest("modeshape-db-binary-storage.xml");
+    }  
+
+    @Test
+    public void testConfigurationWithCassandraBinaryStorage() throws Exception {
+        standardSubsystemTest("modeshape-cassandra-binary-storage.xml");
+    }  
+    
+    @Test
+    public void testConfigurationWithMongoBinaryStorage() throws Exception {
+        standardSubsystemTest("modeshape-mongo-binary-storage.xml");
     }  
     
     @Test(expected = XMLStreamException.class)
     public void shouldValidateFileBinaryStoreAttributesAgainstSchema() throws Exception {
-        parse(readResource("modeshape-invalid-file-binary-storage.xml"));
+        standardSubsystemTest("modeshape-invalid-file-binary-storage.xml");
     }
 
     @Test
     public void testConfigurationWithCompositeBinaryStores() throws Exception {
-        parse(readResource("modeshape-composite-binary-storage-config.xml"));
+        standardSubsystemTest("modeshape-composite-binary-storage-config.xml", false);
     }
 
     @Test( expected = XMLStreamException.class )
     public void shouldRejectInvalidCompositeBinaryStoreConfiguration() throws Exception {
-        parse(readResource("modeshape-invalid-composite-binary-storage.xml"));
+        standardSubsystemTest("modeshape-invalid-composite-binary-storage.xml");
     }
 
     @Test
     public void testConfigurationWithWorkspaceInitialContent() throws Exception {
-        parse(readResource("modeshape-initial-content-config.xml"));
+        standardSubsystemTest("modeshape-initial-content-config.xml", false);
     }
     
     @Test
     public void testConfigurationWithClustering() throws Exception {
-        parse(readResource("modeshape-clustered-config.xml"));
+        standardSubsystemTest("modeshape-clustered-config.xml");
     }
 
     @Test
     public void testConfigurationWithNodeTypes() throws Exception {
-        parse(readResource("modeshape-node-types-config.xml"));
+        standardSubsystemTest("modeshape-node-types-config.xml");
     }
 
     @Test
     public void testConfigurationWithCustomAuthenticators() throws Exception {
-        parse(readResource("modeshape-custom-authenticators-config.xml"));
+        standardSubsystemTest("modeshape-custom-authenticators-config.xml", false);
     }
 
     @Test
     public void testConfigurationWithWorkspacesCacheContainer() throws Exception {
-        parse(readResource("modeshape-workspaces-cache-config.xml"));
+        standardSubsystemTest("modeshape-workspaces-cache-config.xml", false);
     }
 
     @Test
     public void testConfigurationWithExternalSources() throws Exception {
-        parse(readResource("modeshape-federation-config.xml"));
+        standardSubsystemTest("modeshape-federation-config.xml", false);
     }
 
     @Test
     public void testConfigurationWithGarbageCollectionSpecified() throws Exception {
-        parse(readResource("modeshape-garbage-collection.xml"));
+        standardSubsystemTest("modeshape-garbage-collection.xml", false);
     }
 
     @Test
     public void testConfigurationWithWebapps() throws Exception {
-        parse(readResource("modeshape-webapp-config.xml"));
+        standardSubsystemTest("modeshape-webapp-config.xml", false);
     }
 
     @Test
     public void testConfigurationWithJournaling() throws Exception {
-        parse(readResource("modeshape-journaling.xml"));
+        standardSubsystemTest("modeshape-journaling.xml");
     }
     
     @Test
     public void testConfigurationWithOptimization() throws Exception {
-        parse(readResource("modeshape-optimiziation-config.xml"));
+        standardSubsystemTest("modeshape-optimiziation-config.xml", false);
     }
     
     @Test
     public void testConfigurationWithMimeTypeDetection() throws Exception {
-        parse(readResource("modeshape-mime-type-detection.xml"));
+        standardSubsystemTest("modeshape-mime-type-detection.xml");
     } 
     
     @Test
     public void testConfigurationWithReindexing() throws Exception {
-        parse(readResource("modeshape-reindexing.xml"));
+        standardSubsystemTest("modeshape-reindexing.xml");
     }
     
     @Test
     public void testConfigurationWithPersistence() throws Exception {
-        parse(readResource("modeshape-persistence-config.xml"));
+        standardSubsystemTest("modeshape-persistence-config.xml");
     }  
     
     @Test
     public void testConfigurationWithCustomDependencies() throws Exception {
-        parse(readResource("modeshape-repository-dependencies-config.xml"));
+        standardSubsystemTest("modeshape-repository-dependencies-config.xml");
     }
 
     @Test

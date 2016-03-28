@@ -1,0 +1,12 @@
+{
+    "name" : "Test Repository",
+    "storage" : {
+        "binaryStorage" : {
+            "type"  : "cassandra",
+            "address" : "::1",
+            "minimumBinarySizeInBytes" : 4096,
+            "minimumStringSize" : 1025,
+            "mimeTypeDetection" : "none"
+        }
+    }
+}

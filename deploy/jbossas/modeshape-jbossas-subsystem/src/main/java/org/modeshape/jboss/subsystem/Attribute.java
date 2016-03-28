@@ -104,6 +104,9 @@ public enum Attribute {
     MAX_POOL_SIZE("max-pool-size"),
     COLUMNS("columns"),
     REINDEXING_ASNC("async"),
+    HOST("host"),
+    PORT("port"),
+    DATABASE("database"),
     REINDEXING_MODE("mode");
 
     private final String name;
