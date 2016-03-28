@@ -556,14 +556,16 @@ public class SystemContent {
     /**
      * Read from system storage the index definitions. If the names of the providers are providers, then the resulting index
      * definitions will each be {@link IndexDefinition#isEnabled() enabled} only if the definition's named provider is in the
-     * supplied set; otherwise, the definition will be marked as disabled.
+     * supplied set and the name of the index definition is present in the repository's indexes configuration; 
+     * otherwise, the definition will be marked as disabled.
      *
      * @param providerNames the names of the providers that should be used to determine which index definitions are
      *        {@link IndexDefinition#isEnabled() enabled}; may be null if not known and all index definitions will be
      *        {@link IndexDefinition#isEnabled() enabled}
+     * @param indexNames the names of the indexes that should be used according to the repository's indexes configuration
      * @return the index definitions as read from the system storage
      */
-    public List<IndexDefinition> readAllIndexDefinitions( Set<String> providerNames ) {
+    public List<IndexDefinition> readAllIndexDefinitions(Set<String> providerNames, Set<String> indexNames) {
         CachedNode indexes = indexesNode();
         List<IndexDefinition> defns = new ArrayList<>();
         for (ChildReference ref : indexes.getChildReferences(system)) {
@@ -572,7 +574,7 @@ public class SystemContent {
             for (ChildReference indexRef : provider.getChildReferences(system)) {
                 CachedNode indexDefn = system.getNode(indexRef);
                 IndexDefinition defn = readIndexDefinition(indexDefn, providerName);
-                if (providerNames.contains(defn.getProviderName())) {
+                if (providerNames.contains(defn.getProviderName()) && indexNames.contains(defn.getName())) {
                     defns.add(defn);
                 } else {
                     // There is no provider by this name, so mark it as not enabled ...

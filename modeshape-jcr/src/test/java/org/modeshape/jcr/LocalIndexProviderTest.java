@@ -753,47 +753,6 @@ public class LocalIndexProviderTest extends AbstractIndexProviderTest {
         return lastModifiedDate;
     }
 
-    @FixFor( "MODE-2292" )
-    @Test
-    public void shouldUseIndexesAfterRestarting() throws Exception {
-        registerValueIndex("pathIndex", "nt:unstructured", "Node path index", "*", "someProperty", PropertyType.STRING);
-
-        // print = true;
-
-        // Add a node that uses this type ...
-        Node book1 = session().getRootNode().addNode("myFirstBook");
-        book1.addMixin("mix:title");
-        book1.setProperty("jcr:title", "The Title");
-        book1.setProperty("someProperty", "value1");
-
-        Node book2 = session().getRootNode().addNode("mySecondBook");
-        book2.addMixin("mix:title");
-        book2.setProperty("jcr:title", "A Different Title");
-        book2.setProperty("someProperty", "value2");
-
-        Node other = book2.addNode("chapter");
-        other.setProperty("propA", "a value for property A");
-        other.setProperty("jcr:title", "The Title");
-        other.setProperty("someProperty", "value1");
-
-        session.save();
-
-        // Issues some queries that should use this index ...
-        final String queryStr = "SELECT * FROM [nt:unstructured] WHERE someProperty = 'value1'";
-        Query query = jcrSql2Query(queryStr);
-        validateQuery().rowCount(2L).useIndex("pathIndex").validate(query, query.execute());
-
-        // Shutdown the repository and restart it ...
-        stopRepository();
-        printMessage("Stopped repository. Restarting ...");
-        startRepository();
-        printMessage("Repository restart complete");
-
-        // Issues the same query and verify it uses an index...
-        query = jcrSql2Query(queryStr);
-        validateQuery().rowCount(2L).useIndex("pathIndex").validate(query, query.execute());
-    }
-
     @FixFor( "MODE-2296" )
     @Test
     public void shouldUseIndexesEvenWhenLocalIndexDoesNotContainValueUsedInCriteria() throws Exception {
