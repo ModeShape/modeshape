@@ -19,10 +19,10 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.HashSet;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Collectors;
@@ -79,8 +79,8 @@ public class FileDb implements SchematicDb {
     }
 
     @Override
-    public Set<String> keys() {
-        Set<String> keys = new HashSet<>();
+    public List<String> keys() {
+        List<String> keys = new ArrayList<>();
         persistedContent.keyIterator(persistedContent.firstKey()).forEachRemaining(keys::add);        
         TransactionStore.TransactionMap<String, Document> txContent = transactionalContent(false);
         if (txContent != null) {
@@ -96,7 +96,7 @@ public class FileDb implements SchematicDb {
     }
 
     @Override
-    public List<SchematicEntry> load( Set<String> keys ) {
+    public List<SchematicEntry> load( Collection<String> keys ) {
         return keys.stream()
                    .map(persistedContent::get)
                    .filter(Objects::nonNull)

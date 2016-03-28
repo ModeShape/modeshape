@@ -23,6 +23,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -147,7 +148,8 @@ public class BackupService {
                                                              final File backupDirectory,
                                                              final RestoreOptions options) throws RepositoryException {
         final String backupLocString = backupDirectory.getAbsolutePath();
-        LOGGER.debug("Beginning restore of '{0}' repository from {1}", repository.getName(), backupLocString);
+        LOGGER.debug("Beginning restore of '{0}' repository from {1} with options {2}", repository.getName(), backupLocString,
+                     options);
         // Put the repository into the 'restoring' state ...
         repository.prepareToRestore();
 
@@ -423,10 +425,22 @@ public class BackupService {
                     // PHASE 1:
                     // Perform the backup of the repository cache content ...
                     AtomicInteger counter = new AtomicInteger();
-                    documentStore.load(documentStore.keys()).forEach(entry -> {
-                        writeToContentArea(entry, contentWriter);
-                        counter.incrementAndGet();
-                    });
+                    List<String> keys = documentStore.keys();
+                    int startIdx = 0;
+                    int totalDocumentsCount = keys.size();
+                    int batchSize = options.batchSize();
+                    while (startIdx < totalDocumentsCount) {
+                        int estimatedEndIdx = startIdx + batchSize;
+                        int endIdx = estimatedEndIdx < totalDocumentsCount ? estimatedEndIdx : totalDocumentsCount;
+                        LOGGER.debug("writing batch [{0}, {1}] of documents from the content store...", startIdx, endIdx);
+                        List<String> batchKeys = keys.subList(startIdx, endIdx);
+                        batchWriteDocuments(batchKeys, contentWriter);
+                        counter.addAndGet(batchKeys.size());
+                        if (endIdx == totalDocumentsCount) {
+                            break;
+                        }
+                        startIdx += batchSize;
+                    }
                     LOGGER.debug("Wrote {0} documents to {1}", counter, backupDirectory.getAbsolutePath());
 
                     // PHASE 2:
@@ -450,6 +464,7 @@ public class BackupService {
                 }
 
                 if (options.includeBinaries()) {
+                    LOGGER.debug("writing used binaries to backup location...");
                     // PHASE 3:
                     // Perform the backup of the binary store ...
                     try {
@@ -474,6 +489,7 @@ public class BackupService {
                     // PHASE 4:
                     // Write all of the binary files that were added during the changes made while we worked ...
                     int counter = 0;
+                    LOGGER.debug("writing recently used binaries to backup location...");
                     for (BinaryKey binaryKey : observer.getUsedBinaryKeys()) {
                         try {
                             writeToContentArea(binaryKey, binaryStore.getInputStream(binaryKey));
@@ -488,6 +504,7 @@ public class BackupService {
 
                     // PHASE 5:
                     // And now write all binary keys for the binaries that were recorded as unused by the observer ...
+                    LOGGER.debug("writing unused binaries to the backup location...");
                     writeToChangedArea(observer.getUnusedBinaryKeys());
                 }
                 // Wait for the changes to be written
@@ -512,6 +529,15 @@ public class BackupService {
 
             return problems;
         }
+        
+        private void batchWriteDocuments(List<String> keys, BackupDocumentWriter contentWriter) {
+            documentStore.load(keys).forEach(entry -> {
+                if (LOGGER.isTraceEnabled()) {
+                    LOGGER.trace("backing up doc: {0}", entry.source());
+                }
+                writeToContentArea(entry, contentWriter);
+            });   
+        }
     }
 
     /**
@@ -533,22 +559,31 @@ public class BackupService {
 
         @Override
         public Problems execute() {
-            // run the restore as a transactional unit so that if anything fails the entire changes are rolled back...            
-            documentStore.runInTransaction(this::restore, 0, RepositoryCache.REPOSITORY_INFO_KEY);
-            return problems;
-        }
-
-        private Void restore() {
             boolean includeBinaries = binaryDirectory.exists() && binaryDirectory.canRead() && options.includeBinaries();
             if (includeBinaries) {
+                LOGGER.debug("restoring binary files...");
                 removeExistingBinaryFiles();
                 restoreBinaryFiles();
+                if (problems.hasErrors()) {
+                    // there were issues restoring the binaries so break
+                    return problems;
+                }
+            }
+            
+            removeExistingDocuments();
+            if (problems.hasErrors()) {
+                // there were issues clearing the db so break
+                return problems;
             }
 
-            removeExistingDocuments();
             restoreDocuments(backupDirectory); // first pass of documents
             restoreDocuments(changeDirectory); // documents changed while backup was being made
-            return null;
+            if (problems.hasErrors()) {
+                // there were issues while restoring, so remove everything
+                removeExistingBinaryFiles();
+                removeExistingDocuments();
+            }
+            return problems;
         }
 
         private void removeExistingBinaryFiles() {
@@ -564,7 +599,15 @@ public class BackupService {
         }
 
         private void removeExistingDocuments() {
-            documentStore.removeAll();
+            LOGGER.debug("clearing existing persistent store...");
+            try {
+                documentStore.runInTransaction(() -> {
+                    documentStore.removeAll();
+                    return null;
+                }, 0);
+            } catch (Throwable t) {
+                problems.addError(t, JcrI18n.unexpectedProblemDuringRestore, t.getMessage());
+            }
         }
 
         private void restoreBinaryFiles() {
@@ -630,15 +673,53 @@ public class BackupService {
             BackupDocumentReader reader = new BackupDocumentReader(directory, DOCUMENTS_FILENAME_PREFIX, problems);
             LOGGER.debug("Restoring documents from {0}", directory.getAbsolutePath());
             int count = 0;
-            while (true) {
-                Document doc = reader.read();
-                if (doc == null) break;
-                documentStore.put(doc);
-
-                ++count;
-                LOGGER.debug("restoring {0} doc {1}", (count + 1), doc);
+            int batchSize = options.batchSize();
+            int batchCounter = 0;
+            List<Document> documentsBatch = new ArrayList<>();
+            boolean eod = false;
+            while (!eod) {       
+                while (batchCounter++ < batchSize) {
+                    Document doc = reader.read();
+                    if (doc == null) {
+                        eod = true; 
+                        break;
+                    }
+                    documentsBatch.add(doc);
+                }
+                count += documentsBatch.size();
+                if (!documentsBatch.isEmpty()) {
+                    if (LOGGER.isDebugEnabled()) {
+                        LOGGER.debug("restoring documents batch [{0}, {1}]", count - documentsBatch.size(), count - 1);
+                    }
+                    writeDocumentsBatch(documentsBatch);
+                   
+                    if (problems.hasErrors()) {
+                        // something when wrong while writing the batch, so abort
+                        return;
+                    }
+                    documentsBatch.clear();
+                    batchCounter = 0;
+                }
             }
             LOGGER.debug("Restored {0} documents from {1}", count, directory.getAbsolutePath());
+        }
+        
+        private void writeDocumentsBatch(List<Document> documents) {
+            try {
+                documentStore.runInTransaction(() -> {
+                    documents.forEach(this::restoreDocument);
+                    return null;
+                }, 0);
+            } catch (Throwable t) {
+                problems.addError(t, JcrI18n.unexpectedProblemDuringRestore, t.getMessage());
+            }
+        }
+        
+        private void restoreDocument(Document document) {
+            if (LOGGER.isTraceEnabled()) {
+                LOGGER.trace("restoring doc: {0}", document);
+            }
+            documentStore.put(document);
         }
     }
 }

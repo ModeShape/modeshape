@@ -49,9 +49,9 @@ public interface DocumentStore {
      * Loads a set of entries from the document store. This should always return the latest persisted view of the entries.
      * 
      * @param keys a {@link Set} of document keys; may not be null
-     * @return a {@link Set} of {@link SchematicEntry entries}; never {@code null} 
+     * @return a {@link Collection} of {@link SchematicEntry entries}; never {@code null} 
      */
-    public List<SchematicEntry> load(Set<String> keys);
+    public List<SchematicEntry> load(Collection<String> keys);
 
     /**
      * Store the supplied document at the given key.

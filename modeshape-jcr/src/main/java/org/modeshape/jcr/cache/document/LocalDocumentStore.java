@@ -73,12 +73,12 @@ public class LocalDocumentStore implements DocumentStore {
      * 
      * @return a {@link Set} of keys, never {@code null}
      */
-    public Set<String> keys() {
+    public List<String> keys() {
         return database.keys();    
     }
 
     @Override
-    public List<SchematicEntry> load(Set<String> keys) {
+    public List<SchematicEntry> load(Collection<String> keys) {
         return database.load(keys);
     }
     

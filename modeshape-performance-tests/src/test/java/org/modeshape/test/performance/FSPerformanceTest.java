@@ -21,7 +21,7 @@ import org.modeshape.jcr.TestingUtil;
 public class FSPerformanceTest extends InMemoryPerformanceTest {
     @Override
     protected void cleanUpFileSystem() {
-        TestingUtil.waitUntilFolderCleanedUp("target/perf-test");
+        TestingUtil.waitUntilFolderCleanedUp("target/perf_test");
     }
 
     @Override

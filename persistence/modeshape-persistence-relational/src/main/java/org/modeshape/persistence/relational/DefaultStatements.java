@@ -24,10 +24,8 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -83,10 +81,10 @@ public class DefaultStatements implements Statements {
     }
 
     @Override
-    public Set<String> getAllIds( Connection connection ) throws SQLException {
+    public List<String> getAllIds(Connection connection) throws SQLException {
         logTableInfo("Returning all ids from {0}");
         try (PreparedStatement ps = connection.prepareStatement(statements.get(GET_ALL_IDS))) {
-            Set<String> result = new HashSet<>();
+            List<String> result = new ArrayList<>();
             ps.setFetchSize(config.fetchSize());
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
