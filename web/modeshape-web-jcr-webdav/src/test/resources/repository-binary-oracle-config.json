@@ -1,0 +1,26 @@
+{
+    "name" : "repo",
+    "workspaces" : {
+        "predefined" : [],
+        "default" : "default",
+        "allowCreation" : true
+    },
+    "storage" : {        
+      "binaryStorage" : {            
+          "type"  : "database",
+          "driverClass" : "oracle.jdbc.OracleDriver",
+          "url" : "jdbc:oracle:thin:@testbed.ruslan.ru:1521/MDSP",
+          "username" : "modeshape",
+          "password" : "modeshape"
+      }
+     },
+    "security" : {
+        "anonymous" : {
+            "roles" : ["readonly","readwrite","admin"],
+            "useOnFailedLogin" : false
+        },
+        "providers" : [
+            { "classname" : "servlet" }
+        ]
+    }
+}
