@@ -5,31 +5,58 @@ We hope you enjoy it!
 
 ## What's new
 
-This release addresses 18 bugs and 12 enhancements, most notably:
-- Wildfly 9 support. Starting with this version, the ModeShape AS kit can be run both on Wildfly 8 and Wildly 9.
+This is the first major release from the 5.x series. This release addresses 52 issues in total, 20 of which are bug fixes while
+the rest are new features or improvements.
 
-- Support for large collections of flat nodes. This is a long outstanding enhancement which allows large number of children (>500k)
-  to be stored under the same parent node. See [MODE-2109](https://issues.jboss.org/browse/MODE-2109) and [our documentation](https://docs.jboss.org/author/display/MODE40/Large+numbers+of+child+nodes#Largenumbersofchildnodes-Unorderedlargecollections)
-  for more information.
+We strongly recommend looking at all the new changes in detail by reading the ModeShape 5 [documentation](https://docs.jboss.org/author/display/MODE50/Home)
 
-- Enhanced look & feel for the Repository Explorer web application, together with a number of bug fixes.
- 
-- New example of how to use and embed a custom authorization and authentication provider in your own application. 
-  The example can be found [here](https://github.com/ModeShape/modeshape-examples/tree/4.4.0.Final/modeshape-custom-security-example)  
+Some of he most notable changes for ModeShape 5 include:
+
+- **Improved consistency** - ModeShape 5 no longer uses Infinispan and provides instead its own persistence stores. We suggest reading
+[this forum post](https://developer.jboss.org/message/945504) for an in depth explanation of this decision
+- **JDK 8 support** - ModeShape 5 is compiled with and runs on Java 8
+- **Wildfly 10 support** - ModeShape 5 fully integrates with Wildfly 10, while still supporting Wildfly 9. Note that starting from this
+release **ModeShape will not support Wildfly 8 or earlier**
+- **Simplified configuration** - not using Infinispan means the additional cache configuration files that users of ModeShape 3 and ModeShape 4 
+are familiar with, are no longer required. The entire repository configuration is self-contained in either the JSON or 
+JBoss AS files (with the exception that in certain clustering cases a separate JGroups configuration is required)
+- **Storage options** - ModeShape 5 provides out-of-the-box support for storing content either in memory, relational databases (via JDBC)
+or the file system. Make sure you take a look at the [new persistence documentation](https://docs.jboss.org/author/display/MODE50/Persistence)
+- **Storage SPI** - A new storage SPI is available meaning that there's always the option of implementing additional stores, 
+as long as they are transactional and support a key-value storage model
+
+## Migrating from ModeShape 3 or ModeShape 4 
+
+If you're planning on migrating from earlier versions of ModeShape to ModeShape 5 (which we strongly encourage) make sure you
+read [the migration guide](https://docs.jboss.org/author/display/MODE50/Migrating+from+3.x+and+4.x)
+
+## Starting with ModeShape for the first time
+
+If you're starting to use ModeShape for the first time, make sure you read [the getting started guide](https://docs.jboss.org/author/display/MODE50/Getting+Started)
+
+## What to test
+
+Since this is a new major release, all features targeted to 5.0 are complete and
+are suitable for testing.
+
+We would like to get as much feedback as possible, so we do ask that our
+community do testing with &version; to help us identify problems. Specifically,
+we ask that you test the following areas:
+
+* JDK - ModeShape now requires JDK 8. 
+* Clustering - ModeShape 5 still supports clustering, but in a much more conservative fashion. See [our clustering documentation](https://docs.jboss.org/author/display/MODE50/Clustering)
+* New persistence stores - We've moved away from Infinispan and now provide our own persistent stores, so we'd greatly appreciate
+any feedback around the new persistence model
 
 ## Features
 
 ModeShape &version; has these features:
 
-- ModeShape uses Infinispan for all caching and storage, giving a powerful and flexible
-foundation for creating JCR repositories that are fast, scalable, and highly available.
-Infinispan offers a great deal of storage options (via cache loaders), but using Infinispan 
-as a distributed, multi-site, in-memory data grid provides incredible scalability and performance.
+- ModeShape provides its own persistence stores, focusing primarily on data integrity
 - Strongly consistent. ModeShape is atomic, consistent, isolated and durable (ACID), so writing
 applications is very natural. Applications can even use JTA transactions.
-- Fast. ModeShape 4 is just plain seriously fast, and performance is all-around
-faster than earlier version.
-- Larger content. ModeShape 4 can store and access the content so that
+- Fast. ModeShape 5 should be just as fast in most cases as previous versions
+- Larger content. ModeShape 5 can store and access the content so that
 a node can have hundreds of thousands (or more!) of child nodes (even with same-name-siblings)
 yet still be incredibly fast. Additionally, repositories can scale to many millions of nodes 
 and be deployed across many processes.
@@ -39,7 +66,6 @@ JSON Schema and can be validated by ModeShape prior to use. Repository configura
 changed while the repository is running (some restrictions apply), making it possible to 
 add/change/remove sequencers, authorization providers, and many other configuration options
 while the repository is in use.
-- Elastic. Add processes to scale out, without having to have a single coordinator.
 - Deploy, start, stop and undeploy repositories while the engine is running and while and other
 repositories are still in use.
 - Sessions immediately see all changes persisted/committed by other sessions, although
@@ -55,11 +81,11 @@ Tika-based detector that determines MIME types using the filename extensions and
 - Simple API for implementing custom text extractors, which extracts from binary values
 searchable text used in full-text searches and queries.
 - Ability to store binary values of any sizes, with a separate facility for storing these on the file
-system, in Infinispan caches, in relational DBMSes (via JDBC), and in MongoDB. Custom stores are also
+system, in relational DBMSes (via JDBC), in MongoDB or in Cassandra. Custom stores are also
 possible.
-- Public API interfaces and methods that were deprecated in 2.7.0.Final (or later) have been removed.
-There weren't many of these; most of the ModeShape API remains the same as 2.x.
-- Integration with JBoss Wildfly 8. ModeShape runs as an integrated subsystem within Wildfly, and
+- Indexes to optimize query performance. ModeShape offers a number of different index providers and can store
+and uses indexes in a variety of fashions
+- Integration with JBoss Wildfly. ModeShape runs as an integrated subsystem within Wildfly, and
 the Wildfly tooling can be used to define and manage repositories independently of each other
 and while the server is running.
 - Local and remote JDBC drivers for issuing JCR-SQL2 queries and getting database metadata via the JDBC API
@@ -129,22 +155,18 @@ All of the JCR 2.0 features previously supported in 2.x are currently supported:
 - Versioning
 - Shareable nodes
 - Access controls
-- Even journal
+- Event journal
 
 ### Content Storage Options
-- In-memory (local, replicated, and distributed)
+- In-memory
 - Relational databases (via JDBC), including in-memory, file-based, or remote
-- LevelDB
 - File system
-- Cassandra
-- Cloud storage (e.g., Amazon's S3, Rackspace's Cloudfiles, or any other provider supported by JClouds)
-- Remote Infinispan
 
 ### Binary Storage Options
 - File system
 - JDBC database
-- Infinispan
 - MongoDB
+- Cassandra
 - Chained binary stores
 
 ModeShape also has features that go beyond the JCR API:
@@ -168,8 +190,6 @@ ModeShape also has features that go beyond the JCR API:
 - XML Schema Document (XSD) Sequencer
 - Web Service Definition Lanaguage (WSDL) 1.1 Sequencer
 - Zip File Sequencer (also WARs, JARs, and EARs)
-- Teiid Relational Model Sequencer
-- Teiid VDB Sequencer
 
 ### ModeShape Deployment/Access Models
 - JNDI-Based Deployment
