@@ -79,7 +79,7 @@ public class ModeShapeWebdavStoreTest {
         when(principal.getName()).thenReturn("testuser");
         when(request.getUserPrincipal()).thenReturn(principal);
         when(request.isUserInRole("readwrite")).thenReturn(true);
-        when(context.getInitParameter(RepositoryFactory.URL)).thenReturn("file:///repository-config.json");
+        when(context.getInitParameter(RepositoryFactory.URL)).thenReturn("file:///repository-binary-oracle-config.json");
         when(context.getInitParameter(SingleRepositoryRequestResolver.INIT_REPOSITORY_NAME)).thenReturn(REPOSITORY_NAME);
         when(context.getInitParameter(SingleRepositoryRequestResolver.INIT_WORKSPACE_NAME)).thenReturn(WORKSPACE_NAME);
         when(event.getServletContext()).thenReturn(context);
@@ -249,6 +249,51 @@ public class ModeShapeWebdavStoreTest {
         assertThat((int)length, is(TEST_STRING.getBytes().length));
 
         StoredObject ob = store.getStoredObject(tx, TEST_URI);
+
+        assertThat(ob, is(notNullValue()));
+    }
+
+    @Test
+    public void shouldSimulateAddingAndCopyingZeroLengthFileThroughWebdav() throws Exception {
+        final String TEST_STRING = "";
+        final String SRC_URI = TEST_ROOT_PATH + "/TestFile.rtf";
+        final String DST_URI = TEST_ROOT_PATH + "/CopyOfTestFile.rtf";
+
+        when(request.getPathInfo()).thenReturn("");
+        store.getStoredObject(tx, "");
+
+        when(request.getPathInfo()).thenReturn(SRC_URI);
+        store.getStoredObject(tx, SRC_URI);
+
+        when(request.getPathInfo()).thenReturn("/"); // will ask for parent during resolution ...
+        store.createResource(tx, SRC_URI);
+
+        when(request.getPathInfo()).thenReturn(SRC_URI);
+        long length = store.setResourceContent(tx,
+                                               SRC_URI,
+                                               new ByteArrayInputStream(TEST_STRING.getBytes()),
+                                               "text/plain",
+                                               "UTF-8");
+
+        assertThat((int)length, is(TEST_STRING.getBytes().length));
+
+        StoredObject ob = store.getStoredObject(tx, SRC_URI);
+
+        assertThat(ob, is(notNullValue()));
+        
+        when(request.getPathInfo()).thenReturn("/"); // will ask for parent during resolution ...
+        store.createResource(tx, DST_URI);
+
+        when(request.getPathInfo()).thenReturn(DST_URI);
+        length = store.setResourceContent(tx,
+                                               DST_URI,
+                                               store.getResourceContent(tx, SRC_URI),
+                                               "text/plain",
+                                               "UTF-8");
+
+        assertThat((int)length, is(TEST_STRING.getBytes().length));
+
+        ob = store.getStoredObject(tx, DST_URI);
 
         assertThat(ob, is(notNullValue()));
     }
