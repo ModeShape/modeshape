@@ -831,7 +831,7 @@ public class ModeShapeRestServiceTest extends AbstractRestTest {
         assertTrue(backupContentDefault.length > 0);
 
         // now backup with custom options
-        response = doPost((String)null, backupUrl() + "?includeBinaries=false&compress=false&documentsPerFile=12").isCreated().json();
+        response = doPost((String)null, backupUrl() + "?includeBinaries=false&compress=false&documentsPerFile=12&batchSize=100").isCreated().json();
         assertNotNull(response.getString("name"));
         backupURL = response.getString("url");
         assertNotNull(backupURL);
@@ -869,7 +869,7 @@ public class ModeShapeRestServiceTest extends AbstractRestTest {
         doPost((String)null, restoreUrl() + "?name=" + backupName).isOk();
 
         // now restore with custom options
-        doPost((String)null, restoreUrl() + "?name=" + backupName + "&includeBinaries=false&reindexContent=false").isOk();
+        doPost((String)null, restoreUrl() + "?name=" + backupName + "&includeBinaries=false&reindexContent=false&batchSize=10").isOk();
 
         FileUtil.delete(new File(new URI(backupURL)));
     }

@@ -192,6 +192,7 @@ public final class ModeShapeRestService {
      * @param includeBinaries whether or not binary values should be part of the backup or not; defaults to {@code true}
      * @param documentsPerFile the number of nodes each backup file will contains; defaults to {@code 100k}
      * @param compress whether or not each documents file should be compressed or not; default to {@code true}
+     * @param batchSize how many documents to backup in a single batch; default to {@code 10000}
      * @return a {@link Response} instance which if successful will contain the name of the backup file and the location on the 
      * server where the backup was performed.
      * @throws RepositoryException if there is any unexpected error while performing the backup
@@ -206,7 +207,8 @@ public final class ModeShapeRestService {
                             @PathParam( "repositoryName" ) String repositoryName,
                             @QueryParam( "includeBinaries" ) @DefaultValue( "true" ) final boolean includeBinaries,
                             @QueryParam( "documentsPerFile" ) @DefaultValue( "100000" ) final long documentsPerFile,
-                            @QueryParam( "compress" ) @DefaultValue( "true" ) final boolean compress ) throws RepositoryException {
+                            @QueryParam( "compress" ) @DefaultValue( "true" ) final boolean compress,
+                            @QueryParam( "batchSize" ) @DefaultValue( "10000" ) final int batchSize ) throws RepositoryException {
         return repositoryHandler.backupRepository(servletContext, request, repositoryName, new BackupOptions() {
             @Override
             public boolean includeBinaries() {
@@ -221,6 +223,11 @@ public final class ModeShapeRestService {
             @Override
             public boolean compress() {
                 return compress;
+            }
+
+            @Override
+            public int batchSize() {
+                return batchSize;
             }
         });
     }  
@@ -244,6 +251,7 @@ public final class ModeShapeRestService {
      * @param backupName a {@link String} representing the name of the backup folder as returned by the backup request
      * @param includeBinaries whether or not binary values should be part of the backup or not; defaults to {@code true}
      * @param reindexContent whether or not a full repository reindexing should be performed, once restore has completed; defaults to {@code true}
+     * @param batchSize how many documents to restore in a single batch; defaults to {@code 1000}
      * @return a {@link Response} instance, never {@code null}
      * @throws RepositoryException if there is any unexpected error while performing the restore
      * 
@@ -257,7 +265,8 @@ public final class ModeShapeRestService {
                             @PathParam( "repositoryName" ) String repositoryName,
                             @QueryParam("name") final String backupName,
                             @QueryParam( "includeBinaries" ) @DefaultValue( "true" ) final boolean includeBinaries,
-                            @QueryParam( "reindexContent" ) @DefaultValue( "true" ) final boolean reindexContent ) throws RepositoryException {
+                            @QueryParam( "reindexContent" ) @DefaultValue( "true" ) final boolean reindexContent,
+                            @QueryParam( "batchSize" ) @DefaultValue( "1000" ) final int batchSize) throws RepositoryException {
         return repositoryHandler.restoreRepository(servletContext, request, repositoryName, backupName, new RestoreOptions() {
             @Override
             public boolean reindexContentOnFinish() {
@@ -267,6 +276,11 @@ public final class ModeShapeRestService {
             @Override
             public boolean includeBinaries() {
                 return includeBinaries;
+            }
+
+            @Override
+            public int batchSize() {
+                return batchSize;
             }
         });
     }
