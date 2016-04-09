@@ -542,7 +542,7 @@ public class Database {
             try {
                 connection.close();
             } catch (Throwable t) {
-                LOGGER.debug(t, "Cannot close prepared statement");
+                LOGGER.debug(t, "Cannot close connection");
             }
         }
     }
