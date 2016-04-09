@@ -42,7 +42,7 @@ public class OracleStatements extends DefaultStatements {
         } catch (SQLException e) {
             int errorCode = e.getErrorCode();
             if (IGNORABLE_ERROR_CODES.contains(errorCode)) {
-                logger.debug(e, "Ignoring Oracle SQL exception for database {0} with error code {1}", errorCode);
+                logger.debug(e, "Ignoring Oracle SQL exception for database {0} with error code {1}", tableName(), errorCode);
                 return null;
             }
             throw e;
@@ -56,7 +56,7 @@ public class OracleStatements extends DefaultStatements {
         } catch (SQLException e) {
             int errorCode = e.getErrorCode();
             if (IGNORABLE_ERROR_CODES.contains(e.getErrorCode())) {
-                logger.debug(e, "Ignoring Oracle SQL exception for database {0} with error code {1}", errorCode);
+                logger.debug(e, "Ignoring Oracle SQL exception for database {0} with error code {1}", tableName(), errorCode);
                 return null;
             }
             throw e;

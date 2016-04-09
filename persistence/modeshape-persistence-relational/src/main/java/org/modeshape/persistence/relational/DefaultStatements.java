@@ -98,7 +98,7 @@ public class DefaultStatements implements Statements {
     @Override
     public Document getById( Connection connection, String id ) throws SQLException {
         if (logger.isDebugEnabled()) {
-            logger.debug("Searching for entry by id {0} in {1}", id, config.tableName());
+            logger.debug("Searching for entry by id {0} in {1}", id, tableName());
         }
         try (PreparedStatement ps = connection.prepareStatement(statements.get(GET_BY_ID))) {
             ps.setString(1, id);
@@ -114,7 +114,7 @@ public class DefaultStatements implements Statements {
     @Override
     public <R> List<R> load( Connection connection, List<String> ids, Function<Document, R> parser ) throws SQLException {
         if (logger.isDebugEnabled()) {
-            logger.debug("Loading ids {0} from {1}", ids.toString(), config.tableName());
+            logger.debug("Loading ids {0} from {1}", ids.toString(), tableName());
         }
         String getMultipleStatement = statements.get(GET_MULTIPLE);
         int batchLoadSize = batchLoadSize();
@@ -156,7 +156,7 @@ public class DefaultStatements implements Statements {
     @Override
     public boolean exists( Connection connection, String id ) throws SQLException {
         if (logger.isDebugEnabled()) {
-            logger.debug("Checking if the content with ID {0} exists in {1}", id, config.tableName());
+            logger.debug("Checking if the content with ID {0} exists in {1}", id, tableName());
         }
         
         try (PreparedStatement ps = connection.prepareStatement(statements.get(CONTENT_EXISTS))) {
@@ -181,10 +181,14 @@ public class DefaultStatements implements Statements {
    
     protected void logTableInfo( String message ) {
         if (logger.isDebugEnabled()) {
-            logger.debug(message, config.tableName());
+            logger.debug(message, tableName());
         }
     }
-    
+
+    protected String tableName() {
+        return config.tableName();
+    }
+
     protected Document readDocument(InputStream is) {
         try (InputStream contentStream = config.compress() ? new GZIPInputStream(is) : is) {
             return Bson.read(contentStream);
