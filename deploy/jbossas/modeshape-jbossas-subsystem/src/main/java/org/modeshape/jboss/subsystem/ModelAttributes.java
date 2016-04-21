@@ -852,10 +852,10 @@ public class ModelAttributes {
                     .build();
 
     public static final MappedSimpleAttributeDefinition PERSISTENCE_DS_JNDI_NAME =
-            new MappedAttributeDefinitionBuilder(Attribute.PERSISTENCE_DS_JNDI.getLocalName(), ModelType.STRING,
+            new MappedAttributeDefinitionBuilder(Attribute.DATA_SOURCE_JNDI_NAME.getLocalName(), ModelType.STRING,
                                                  FieldName.STORAGE, FieldName.PERSISTENCE,
                                                  RelationalDbConfig.DATASOURCE_JNDI_NAME)
-                    .setXmlName(Attribute.PERSISTENCE_DS_JNDI.getLocalName())
+                    .setXmlName(Attribute.DATA_SOURCE_JNDI_NAME.getLocalName())
                     .setAllowExpression(true)
                     .setAllowNull(true)
                     .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)

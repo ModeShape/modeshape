@@ -23,7 +23,7 @@
             "driver" : "test",
             "username" : "test",
             "password" : "",
-            "datasourceJNDI" : "test",
+            "dataSourceJndiName" : "test",
             "tableName" : "test",
             "createOnStart" : true,
             "dropOnExit" : false,
