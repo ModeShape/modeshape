@@ -577,9 +577,11 @@
                 <xs:documentation>The password used for the JDBC connection authentication</xs:documentation>
             </xs:annotation>
         </xs:attribute>
-        <xs:attribute name="datasource-jndi" type="xs:string" use="optional">
+        <xs:attribute name="data-source-jndi-name" type="xs:string" use="optional">
             <xs:annotation>
-                <xs:documentation>The JNDI name of a DataSource. If used, this datasource *must not* be JTA enabled</xs:documentation>
+                <xs:documentation>
+                    Specifies the JNDI name of the JDBC data source that should be used to store the repository data.
+                </xs:documentation>
             </xs:annotation>
         </xs:attribute>
         <xs:attribute name="compress" type="xs:boolean" use="optional" default="false">

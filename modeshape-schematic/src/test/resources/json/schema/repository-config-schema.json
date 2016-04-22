@@ -107,7 +107,7 @@
                                     "default"  : "",
                                     "description" : "The db connection password"
                                 },
-                                "datasourceJNDI" : {
+                                "dataSourceJndiName" : {
                                     "type" : "string",
                                     "description" : "The JNDI name of an existing datasource"
                                 },

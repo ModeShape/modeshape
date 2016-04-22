@@ -357,7 +357,7 @@ public class ModeShapeSubsystemXMLReader_3_0 implements XMLStreamConstants, XMLE
                     case COMPRESS:
                         ModelAttributes.DB_COMPRESS.parseAndSetParameter(attrValue, persistence, reader);
                         break;
-                    case PERSISTENCE_DS_JNDI:
+                    case DATA_SOURCE_JNDI_NAME:
                         ModelAttributes.PERSISTENCE_DS_JNDI_NAME.parseAndSetParameter(attrValue, persistence, reader);
                         break;
                     case POOL_SIZE:

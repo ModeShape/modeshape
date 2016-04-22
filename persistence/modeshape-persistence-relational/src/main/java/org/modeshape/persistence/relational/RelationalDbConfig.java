@@ -40,7 +40,7 @@ public final class RelationalDbConfig {
     public static final String DRIVER = "driver";
     public static final String USERNAME = "username";
     public static final String PASSWORD = "password";
-    public static final String DATASOURCE_JNDI_NAME = "datasourceJNDI";
+    public static final String DATASOURCE_JNDI_NAME = "dataSourceJndiName";
     public static final String POOL_SIZE = "poolSize";
 
     protected static final String DEFAULT_CONNECTION_URL = "jdbc:h2:mem:modeshape;DB_CLOSE_DELAY=0;MVCC=TRUE";

@@ -43,7 +43,6 @@ public enum Attribute {
     DRIVER("driver"),
     USERNAME("username"),
     PASSWORD("password"),
-    PERSISTENCE_DS_JNDI("datasource-jndi"),
     COMPRESS("compress"),
     POOL_SIZE("pool-size"),
     REPOSITORY_MODULE_DEPENDENCIES("depends-on"),
