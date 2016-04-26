@@ -23,12 +23,15 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
-import org.apache.poi.hslf.HSLFSlideShow;
-import org.apache.poi.hslf.model.Slide;
-import org.apache.poi.hslf.model.TextRun;
-import org.apache.poi.hslf.usermodel.SlideShow;
+import java.util.stream.Collectors;
+import org.apache.poi.hslf.usermodel.HSLFSlide;
+import org.apache.poi.hslf.usermodel.HSLFSlideShow;
+import org.apache.poi.hslf.usermodel.HSLFSlideShowImpl;
+import org.apache.poi.hslf.usermodel.HSLFTextParagraph;
+import org.apache.poi.hslf.usermodel.HSLFTextRun;
+import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 
 /**
  * Utility for extracting metadata from PowerPoint files
@@ -36,58 +39,59 @@ import org.apache.poi.hslf.usermodel.SlideShow;
 public class PowerPointMetadataReader {
 
     public static PowerpointMetadata instance( InputStream stream ) throws IOException {
-        HSLFSlideShow rawSlideShow = new HSLFSlideShow(stream);
-        SlideShow slideshow = new SlideShow(rawSlideShow);
-        Slide[] slides = slideshow.getSlides();
-
-        List<SlideMetadata> slidesMetadata = new ArrayList<SlideMetadata>();
-
-        for (Slide slide : slides) {
-            SlideMetadata slideMetadata = new SlideMetadata();
-            // process title
-            slideMetadata.setTitle(slide.getTitle());
-
-            // process notes
-            for (TextRun textRun : slide.getNotesSheet().getTextRuns()) {
-                if (slideMetadata.getNotes() == null) {
-                    slideMetadata.setNotes("");
-                }
-                slideMetadata.setNotes(slideMetadata.getNotes() + textRun.getText());
-            }
-            // process text
-            for (TextRun textRun : slide.getTextRuns()) {
-                if (!textRun.getText().equals(slideMetadata.getTitle()) && textRun.getText() != null) {
-                    if (slideMetadata.getText() == null) {
-                        slideMetadata.setText("");
-                    }
-                    slideMetadata.setText(slideMetadata.getText() + textRun.getText());
-                }
-            }
-
-            // process thumbnail
-            Dimension pgsize = slideshow.getPageSize();
-
-            BufferedImage img = new BufferedImage(pgsize.width, pgsize.height, BufferedImage.TYPE_INT_RGB);
-            Graphics2D graphics = img.createGraphics();
-            // clear the drawing area
-            graphics.setPaint(Color.white);
-            graphics.fill(new Rectangle2D.Float(0, 0, pgsize.width, pgsize.height));
-
-            // render
-            slide.draw(graphics);
-
-            ByteArrayOutputStream out = new ByteArrayOutputStream();
-            javax.imageio.ImageIO.write(img, "png", out);
-            slideMetadata.setThumbnail(out.toByteArray());
-
-            slidesMetadata.add(slideMetadata);
-
-        }
+        POIFSFileSystem fs = new POIFSFileSystem(stream);
+        HSLFSlideShow rawSlideShow = new HSLFSlideShow(fs);
+        List<SlideMetadata> slidesMetadata = rawSlideShow.getSlides()
+                                                         .stream()
+                                                         .map(slide -> processSlide(rawSlideShow, slide))
+                                                         .collect(Collectors.toList());
 
         PowerpointMetadata deck = new PowerpointMetadata();
         deck.setSlides(slidesMetadata);
-        deck.setMetadata(rawSlideShow.getSummaryInformation());
+        deck.setMetadata(new HSLFSlideShowImpl(fs).getSummaryInformation());
         return deck;
     }
 
+    private static SlideMetadata processSlide(HSLFSlideShow rawSlideShow, HSLFSlide slide) {
+        SlideMetadata slideMetadata = new SlideMetadata();
+        // process title
+        String title = slide.getTitle();
+        slideMetadata.setTitle(title);
+
+        // process notes
+        slideMetadata.setNotes(collectText(slide.getNotes().getTextParagraphs(), title));
+        // process text
+        slideMetadata.setText(collectText(slide.getTextParagraphs(), title));
+
+        // process thumbnail
+        Dimension pgsize = rawSlideShow.getPageSize();
+
+        BufferedImage img = new BufferedImage(pgsize.width, pgsize.height, BufferedImage.TYPE_INT_RGB);
+        Graphics2D graphics = img.createGraphics();
+        // clear the drawing area
+        graphics.setPaint(Color.white);
+        graphics.fill(new Rectangle2D.Float(0, 0, pgsize.width, pgsize.height));
+
+        // render
+        slide.draw(graphics);
+
+        try {
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            javax.imageio.ImageIO.write(img, "png", out);
+            slideMetadata.setThumbnail(out.toByteArray());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    
+        return slideMetadata;
+    }
+
+    private static String collectText(List<List<HSLFTextParagraph>> paragraphs, String title) {
+        return paragraphs.stream()
+                         .flatMap(Collection::stream)
+                         .flatMap(paragraph -> paragraph.getTextRuns().stream())
+                         .map(HSLFTextRun::getRawText)
+                         .filter(rawText -> !title.equals(rawText))
+                         .collect(Collectors.joining());
+    }
 }
