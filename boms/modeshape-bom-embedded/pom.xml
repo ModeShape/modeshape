@@ -63,7 +63,7 @@
         <version.org.jboss.jbossts.jta>5.1.0.Final</version.org.jboss.jbossts.jta>
         <version.org.mongodb.mongo-java-driver>2.14.0</version.org.mongodb.mongo-java-driver>
         <version.com.datastax.cassandra>2.0.0-rc2</version.com.datastax.cassandra>
-        <version.org.apache.tika>1.8</version.org.apache.tika>
+        <version.org.apache.tika>1.12</version.org.apache.tika>
         <version.org.eclipse.equinox.common>3.3.0-v20070426</version.org.eclipse.equinox.common>
         <version.org.eclipse.jdt.core>3.3.0-v_771</version.org.eclipse.jdt.core>
         <version.org.eclipse.core.resources>3.3.0-v20070604</version.org.eclipse.core.resources>
@@ -81,7 +81,7 @@
         <version.org.eclipse.emf.ecore-xmi>2.4.1</version.org.eclipse.emf.ecore-xmi>
         <version.org.javassist>3.18.1-GA</version.org.javassist>
         <version.org.jaudiotagger>2.0.3</version.org.jaudiotagger>
-        <version.org.apache.poi>3.11-beta2</version.org.apache.poi>
+        <version.org.apache.poi>3.13</version.org.apache.poi>
         <version.com.beust.jcommander>1.5</version.com.beust.jcommander>
         <version.wsdl4j>1.6.2</version.wsdl4j>
         <version.org.apache.lucene>5.3.1</version.org.apache.lucene>
@@ -748,20 +748,6 @@
             <dependency>
                 <groupId>org.apache.poi</groupId>
                 <artifactId>poi-scratchpad</artifactId>
-                <version>${version.org.apache.poi}</version>
-            </dependency>
-            <!--
-                The following 2 POI dependencies are not used directly, but defined so that we use the same "beta" version
-                across the board (see https://issues.jboss.org/browse/MODE-1934).Tika-parsers brings these 2 transitively in
-             -->
-            <dependency>
-                <groupId>org.apache.poi</groupId>
-                <artifactId>poi-ooxml</artifactId>
-                <version>${version.org.apache.poi}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.poi</groupId>
-                <artifactId>poi-ooxml-schemas</artifactId>
                 <version>${version.org.apache.poi}</version>
             </dependency>
             <!--WSDL sequencer-->
