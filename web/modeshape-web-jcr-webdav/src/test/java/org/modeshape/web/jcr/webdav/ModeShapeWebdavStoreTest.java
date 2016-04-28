@@ -33,6 +33,7 @@ import org.junit.Test;
 import org.mockito.Mock;
 import static org.mockito.Mockito.when;
 import org.mockito.MockitoAnnotations;
+import org.modeshape.common.FixFor;
 import org.modeshape.common.util.IoUtil;
 import org.modeshape.jcr.api.RepositoryFactory;
 import org.modeshape.web.jcr.ModeShapeJcrDeployer;
@@ -135,7 +136,7 @@ public class ModeShapeWebdavStoreTest {
 
     private void compareChildrenWithSession( String[] children,
                                              String path ) throws Exception {
-        List<String> sessChildren = new LinkedList<String>();
+        List<String> sessChildren = new LinkedList<>();
         Node node = (Node)session.getItem(path);
         for (NodeIterator iter = node.getNodes(); iter.hasNext(); ) {
             sessChildren.add(iter.nextNode().getName());
@@ -253,4 +254,39 @@ public class ModeShapeWebdavStoreTest {
         assertThat(ob, is(notNullValue()));
     }
 
+    @Test
+    @FixFor( "MODE-2589" )
+    public void shouldSimulateAddingAndCopyingZeroLengthFileThroughWebdav() throws Exception {
+        final String testString = "";
+        final String sourceUri = TEST_ROOT_PATH + "/TestFile.rtf";
+        final String destinationUri = TEST_ROOT_PATH + "/CopyOfTestFile.rtf";
+
+        when(request.getPathInfo()).thenReturn("");
+        store.getStoredObject(tx, "");
+
+        when(request.getPathInfo()).thenReturn(sourceUri);
+        store.getStoredObject(tx, sourceUri);
+
+        when(request.getPathInfo()).thenReturn("/"); // will ask for parent during resolution ...
+        store.createResource(tx, sourceUri);
+
+        when(request.getPathInfo()).thenReturn(sourceUri);
+        long length = store.setResourceContent(tx, sourceUri, new ByteArrayInputStream(testString.getBytes()), "text/plain",
+                                               "UTF-8");
+
+        assertThat((int)length, is(testString.getBytes().length));
+
+        StoredObject ob = store.getStoredObject(tx, sourceUri);
+        assertThat(ob, is(notNullValue()));
+
+        when(request.getPathInfo()).thenReturn("/"); // will ask for parent during resolution ...
+        store.createResource(tx, destinationUri);
+
+        when(request.getPathInfo()).thenReturn(destinationUri);
+        length = store.setResourceContent(tx, destinationUri, store.getResourceContent(tx, sourceUri), "text/plain", "UTF-8");
+
+        assertThat((int)length, is(testString.getBytes().length));
+        ob = store.getStoredObject(tx, destinationUri);
+        assertThat(ob, is(notNullValue()));
+    }
 }

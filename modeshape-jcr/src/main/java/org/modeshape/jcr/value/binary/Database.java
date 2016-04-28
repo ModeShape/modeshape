@@ -15,6 +15,7 @@
  */
 package org.modeshape.jcr.value.binary;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.sql.Connection;
@@ -465,7 +466,8 @@ public class Database {
                                         InputStream jdbcBinaryStream ) {
             this.connection = connection;
             this.statement = statement;
-            this.jdbcBinaryStream = jdbcBinaryStream;
+            // some drivers (notably Oracle) can return a null stream if the stored binary is empty (i.e. has 0 bytes)
+            this.jdbcBinaryStream = jdbcBinaryStream != null ? jdbcBinaryStream : new ByteArrayInputStream(new byte[0]);
         }
 
         @Override
