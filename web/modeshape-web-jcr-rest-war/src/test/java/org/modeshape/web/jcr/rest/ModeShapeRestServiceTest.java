@@ -874,6 +874,21 @@ public class ModeShapeRestServiceTest extends AbstractRestTest {
         FileUtil.delete(new File(new URI(backupURL)));
     }
 
+
+    @Test
+    @FixFor( "MODE-2594" )
+    public void shouldReturnAllValuesWhenQueryingMultiValuedProperty() throws Exception {
+        doPost("post/node_multivalue_prop_request.json", itemsUrl(TEST_NODE)).isCreated();
+        String query = "SELECT property FROM [nt:unstructured] WHERE [jcr:path] = '/" + TEST_NODE + "'";
+        JSONObject result = jcrSQL2Query(query, queryUrl()).isOk().json();
+        JSONArray rows = result.getJSONArray("rows");
+        assertEquals(1, rows.length());
+        JSONObject row = rows.getJSONObject(0);
+        JSONArray values = row.getJSONArray("property");
+        assertEquals("[\"value1\",\"value2\",\"value3\"]", values.toString());
+    }
+
+
     private void assertUpload( String url,
                                boolean expectCreated,
                                boolean useMultiPart ) throws Exception {
