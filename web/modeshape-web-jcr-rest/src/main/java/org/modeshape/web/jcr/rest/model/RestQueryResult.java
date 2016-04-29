@@ -17,6 +17,7 @@
 package org.modeshape.web.jcr.rest.model;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -85,16 +86,24 @@ public final class RestQueryResult implements JSONAble {
     }
 
     public class RestRow implements JSONAble {
-        private final Map<String, String> values;
+        private final Map<String, Object> values;
 
         public RestRow() {
-            this.values = new LinkedHashMap<String, String>();
+            this.values = new LinkedHashMap<>();
         }
 
-        public void addValue( String name,
-                              String value ) {
-            if (!StringUtil.isBlank(name) && !StringUtil.isBlank(value)) {
+        public void addValue(String name,
+                             Object value) {
+            if (value == null || StringUtil.isBlank(name)) {
+                return;
+            }
+            if (value instanceof Collection<?>) {
                 values.put(name, value);
+            } else {
+                String valueString = value.toString();
+                if (!StringUtil.isBlank(valueString)) {
+                    values.put(name, valueString);
+                }
             }
         }
 

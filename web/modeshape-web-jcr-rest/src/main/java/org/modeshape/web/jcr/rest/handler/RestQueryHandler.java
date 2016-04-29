@@ -21,7 +21,10 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import javax.jcr.Node;
+import javax.jcr.PathNotFoundException;
 import javax.jcr.Property;
 import javax.jcr.PropertyIterator;
 import javax.jcr.PropertyType;
@@ -194,8 +197,55 @@ public final class RestQueryHandler extends AbstractHandler {
                                                    Row resultRow ) throws RepositoryException {
         RestQueryResult.RestRow restRow = restQueryResult.new RestRow();
         Map<Value, String> binaryPropertyPaths = null;
-
+        Map<String, Node> nodesBySelectorName = null;
+        Node defaultNode = null;
+        String defaultSelectorName = null;
+        try {
+            defaultNode = resultRow.getNode();
+            defaultSelectorName = result.getSelectorNames()[0];
+        } catch (RepositoryException e) {
+            // there are multiple selectors....
+            nodesBySelectorName = Arrays.stream(result.getSelectorNames())
+                                        .collect(Collectors.toMap(Function.identity(), selectorName -> {
+                                            try {
+                                                return resultRow.getNode(selectorName);
+                                            } catch (RepositoryException re) {
+                                                throw new RuntimeException(re);
+                                            }
+                                        }));
+        }
+     
         for (String columnName : columnNames) {
+            Node activeNode = defaultNode;
+            String activeSelectorName = defaultSelectorName;
+            if (defaultNode == null) {
+                // there are multiple selectors so we must see which one refers to the current column...
+                assert nodesBySelectorName != null;
+                for (Map.Entry<String, Node> nodeBySelector : nodesBySelectorName.entrySet()) {
+                    String selectorName = nodeBySelector.getKey();
+                    if (columnName.startsWith(selectorName)) {
+                        activeNode = nodeBySelector.getValue();
+                        activeSelectorName = selectorName;
+                        break;
+                    }
+                }
+            }
+            
+            if (activeNode != null) {
+                // the column name by default has the [selectorName].[propertyName] format...
+                String propertyName = columnName.replaceFirst(activeSelectorName + "\\.", "");
+                Property property = null;
+                try {
+                    // try to locate the actual property based on the column name 
+                    property = activeNode.getProperty(propertyName);
+                    List<String> values = restPropertyValues(property, baseUrl, session);
+                    restRow.addValue(columnName, values.size() == 1 ? values.get(0) : values);
+                    continue;
+                } catch (PathNotFoundException e) {
+                    // we didn't locate the actual node property, so just read the value from the result row
+                }
+            }
+            
             Value value = resultRow.getValue(columnName);
             if (value == null) {
                 continue;
