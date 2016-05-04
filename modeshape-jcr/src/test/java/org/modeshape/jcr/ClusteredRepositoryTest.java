@@ -249,7 +249,7 @@ public class ClusteredRepositoryTest {
     
     @Test
     @FixFor( "MODE-1903" )
-    public void shouldReindexContentInClusterBasedOnTimestsamp() throws Exception {
+    public void shouldReindexContentInClusterBasedOnTimestamp() throws Exception {
         JcrRepository repository1 = null;
         JcrRepository repository2 = null;
         try {

@@ -91,8 +91,13 @@ public class FileDb implements SchematicDb {
 
     @Override
     public Document get( String key ) {
+        LOGGER.debug("reading {0}", key);
         TransactionStore.TransactionMap<String, Document> txContent = transactionalContent(false);
-        return txContent != null ? txContent.getLatest(key) : persistedContent.get(key);
+        Document result = txContent != null ? txContent.getLatest(key) : persistedContent.get(key);
+        if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace("{0} is {1}", key, result);
+        }
+        return result;
     }
 
     @Override
@@ -108,6 +113,9 @@ public class FileDb implements SchematicDb {
 
     @Override
     public void put( String key, SchematicEntry entry ) {
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("putting at {0} document {1}", key, entry.source());
+        }
         TransactionStore.TransactionMap<String, Document> txContent = transactionalContent(true);
         Document source = entry.source();
         Document content = entry.content();
@@ -156,7 +164,12 @@ public class FileDb implements SchematicDb {
     @Override
     public boolean remove( String key ) {
         TransactionStore.TransactionMap<String, Document> txContent = transactionalContent(true);
-        return txContent.remove(key) != null;
+        Document doc = txContent.remove(key);
+        if (doc != null) {
+            LOGGER.debug("removed document at {0}", key);
+            return true;
+        }
+        return false;
     }
 
     @Override
@@ -201,22 +214,19 @@ public class FileDb implements SchematicDb {
 
     @Override
     public void txStarted( String id ) {
-        if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("New tx '{0}' started...", id);
-        }
+        LOGGER.debug("New tx '{0}' started...", id);
         ACTIVE_TX_ID.set(id);
         this.transactionalContentById.putIfAbsent(id, this.txStore.begin().openMap(REPOSITORY_CONTENT));
     }
 
     @Override
     public void txCommitted( String id ) {
-        if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("Received committed notification for tx '{0}'", id);
-        }
+        LOGGER.debug("Received committed notification for tx '{0}'", id);
         try {
             TransactionStore.TransactionMap<String, Document> txContent = this.transactionalContentById.remove(id);
             TransactionStore.Transaction tx = txContent.getTransaction();
             tx.commit();
+            LOGGER.debug("tx '{0}' committed", id);
         } finally {
             ACTIVE_TX_ID.remove();
         }
@@ -224,12 +234,11 @@ public class FileDb implements SchematicDb {
 
     @Override
     public void txRolledback( String id ) {
-        if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("Received rollback notification for tx '{0}'", id);
-        }
+        LOGGER.debug("Received rollback notification for tx '{0}'", id);
         try {
             TransactionStore.Transaction tx = this.transactionalContentById.remove(id).getTransaction();
             tx.rollback();
+            LOGGER.debug("tx '{0}' rolled back", id);
         } finally {
             ACTIVE_TX_ID.remove();
         }

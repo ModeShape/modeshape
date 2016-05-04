@@ -18,5 +18,8 @@
             "nodeType" : "mix:title",
             "columns" : "jcr:title(STRING)"
         }
+    },
+    "reindexing" : {
+        "async" : false
     }
 }

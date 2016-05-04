@@ -23,6 +23,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import javax.annotation.Resource;
+import javax.ejb.EJB;
 import javax.enterprise.concurrent.ManagedExecutorService;
 import javax.inject.Inject;
 import javax.jcr.Session;
@@ -49,9 +50,12 @@ public class TransactionsTest {
     public static WebArchive createWarDeployment() {
         WebArchive archive = ShrinkWrap.create(WebArchive.class, "transactions-test.war")
                                        .addAsWebInfResource(EmptyAsset.INSTANCE, ArchivePaths.create("beans.xml"))
-                                       .addClass(RepositoryOperation.class)
-                                       .addClass(TransactionalOperationExecutor.class);
-
+                                       .addClasses(RepositoryProvider.class,
+                                                   StartupRepositoryProvider1.class,
+                                                   StartupRepositoryProvider2.class,
+                                                   RepositoryOperation.class,
+                                                   TransactionalOperationExecutor.class);
+                                    
         // Add our custom Manifest, which has the additional Dependencies entry ...
         archive.setManifest(new File("src/main/webapp/META-INF/MANIFEST.MF"));
         return archive;
@@ -65,6 +69,13 @@ public class TransactionsTest {
 
     @Resource( mappedName = "java:/jcr/sample" )
     protected JcrRepository repository;
+
+
+    @EJB//@FixFor( "MODE-2596" ) at startup this bean will run its post-construct code
+    private StartupRepositoryProvider1 startupBean1;
+
+    @EJB//@FixFor( "MODE-2596" ) at startup this bean will run its post-construct code
+    private StartupRepositoryProvider2 startupBean2;
 
     @Test
     @FixFor( "MODE-2352" )

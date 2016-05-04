@@ -69,6 +69,7 @@ import org.modeshape.jcr.value.ValueFactory;
 import org.modeshape.schematic.Schematic;
 import org.modeshape.schematic.SchematicEntry;
 import org.modeshape.schematic.document.Document;
+import org.modeshape.schematic.document.EditableArray;
 import org.modeshape.schematic.document.EditableDocument;
 import com.googlecode.concurrentlinkedhashmap.ConcurrentLinkedHashMap;
 
@@ -757,64 +758,69 @@ public class RepositoryCache {
     }
 
     WorkspaceCache workspace( final String name ) {
-        WorkspaceCache workspaceCache = workspaceCachesByName.get(name);
-
-        if (workspaceCache != null) {
-            return workspaceCache;
-        }
-
         final boolean isSystemWorkspace = this.systemWorkspaceName.equals(name);
         if (!this.workspaceNames.contains(name) && !isSystemWorkspace) {
             throw new WorkspaceNotFoundException(name);
         }
-
+     
         // We know that this workspace is not the system workspace, so find it ...
         final WorkspaceCache systemWorkspaceCache = isSystemWorkspace ? null : workspaceCachesByName.get(systemWorkspaceName);
 
-        // when multiple threads (e.g. re-indexing threads) are performing ws cache initialization, we want this to be atomic
-        synchronized (this) {
-            // after we have the lock, check if maybe another thread has already finished
-            if (!workspaceCachesByName.containsKey(name)) {
-                WorkspaceCache initializedWsCache = localStore().runInTransaction(() -> {
-                    // Create/get the workspaceCache
-                    ConcurrentMap<NodeKey, CachedNode> nodeCache = cacheForWorkspace();
-                    ExecutionContext context = context();
+        // multiple threads (e.g. re-indexing threads) could be performing ws cache initialization, so we want this to be atomic
+        return workspaceCachesByName.computeIfAbsent(name, wsName ->  initializeCacheForWorkspace(wsName, systemWorkspaceCache));
+    }
+    
+    private WorkspaceCache initializeCacheForWorkspace(String name, WorkspaceCache systemWorkspaceCache) {
+        String workspaceKey = NodeKey.keyForWorkspaceName(name);
+        NodeKey rootKey = new NodeKey(sourceKey, workspaceKey, rootNodeId);
 
-                    // Compute the root key for this workspace ...
-                    String workspaceKey = NodeKey.keyForWorkspaceName(name);
-                    NodeKey rootKey = new NodeKey(sourceKey, workspaceKey, rootNodeId);
+        return localStore().runInLocalTransaction(() -> {
+            ConcurrentMap<NodeKey, CachedNode> nodeCache = cacheForWorkspace();
+            ExecutionContext context = context();
+            logger.debug("Attempting to initialize a new ws cache for workspace '{0}' in repository '{1}' with root key '{2}'", name, 
+                         getName(), rootKey);
+            // Create the root document for this workspace ...
+            EditableDocument rootDoc = Schematic.newDocument();
+            DocumentTranslator trans = new DocumentTranslator(context, documentStore, Long.MAX_VALUE);
+            trans.setProperty(rootDoc,
+                              context.getPropertyFactory().create(JcrLexicon.PRIMARY_TYPE, ModeShapeLexicon.ROOT),
+                              null, null);
+            String rootKeyString = rootKey.toString();
+            trans.setProperty(rootDoc, context.getPropertyFactory().create(JcrLexicon.UUID, rootKeyString),
+                              null, null);
 
-                    // Create the root document for this workspace ...
-                    EditableDocument rootDoc = Schematic.newDocument();
-                    DocumentTranslator trans = new DocumentTranslator(context, documentStore, Long.MAX_VALUE);
-                    trans.setProperty(rootDoc,
-                                      context.getPropertyFactory().create(JcrLexicon.PRIMARY_TYPE, ModeShapeLexicon.ROOT),
-                                      null, null);
-                    trans.setProperty(rootDoc, context.getPropertyFactory().create(JcrLexicon.UUID, rootKey.toString()),
-                                      null, null);
+            WorkspaceCache result = new WorkspaceCache(context, getKey(), name, systemWorkspaceCache,
+                                                       documentStore, translator, rootKey, nodeCache,
+                                                       changeBus, repositoryEnvironment());
 
-                    WorkspaceCache result = new WorkspaceCache(context, getKey(), name, systemWorkspaceCache,
-                                                                       documentStore, translator, rootKey, nodeCache,
-                                                                       changeBus, repositoryEnvironment());
-
-                    if (documentStore.storeIfAbsent(rootKey.toString(), rootDoc) == null) {
-                        // we are the first node to perform the initialization, so we need to link the system node
-                        if (!systemWorkspaceName.equals(name)) {
-                            logger.debug("Creating '{0}' workspace in repository '{1}'", name, getName());
-                            SessionCache workspaceSession = new WritableSessionCache(context, result, txWorkspaceCaches, repositoryEnvironment);
-                            MutableCachedNode workspaceRootNode = workspaceSession.mutable(workspaceSession.getRootKey());
-                            workspaceRootNode.linkChild(workspaceSession, RepositoryCache.this.systemKey, JcrLexicon.SYSTEM);
-
-                            // this will be enrolled in the active transaction
-                            workspaceSession.save();
-                        }
+            if (documentStore.storeIfAbsent(rootKeyString, rootDoc) == null) {
+                // we are the first node to perform the initialization (in a cluster), so we need to link the system node
+                
+                // we'll be doing this using low-level document edits (as opposed to using sessions) in order to avoid
+                // any pseudo-recursive calls which might occur when using sessions and calling session.save which, in turn,
+                // can fire events that lead back to this place (initializing a ws cache) especially when indexing is configured
+                if (!systemWorkspaceName.equals(name)) {
+                    logger.debug("Creating '{0}' workspace in repository '{1}' with root '{2}'", name, getName(), rootKey);
+                     
+                    rootDoc = documentStore.edit(rootKeyString, false); // we just placed a document, but need to edit this in place
+                    
+                    EditableDocument systemChildRefDoc = translator.childReferenceDocument(RepositoryCache.this.systemKey, JcrLexicon.SYSTEM);
+                    rootDoc.setArray(DocumentTranslator.CHILDREN, Schematic.newArray(systemChildRefDoc));
+                    EditableDocument childInfo = rootDoc.getOrCreateDocument(DocumentTranslator.CHILDREN_INFO);
+                    childInfo.setNumber(DocumentTranslator.COUNT, 1);
+                    
+                    EditableDocument systemDoc = documentStore.edit(RepositoryCache.this.systemKey.toString(), false);
+                    assert systemDoc != null;
+                    String parent = systemDoc.getString(DocumentTranslator.PARENT);
+                    EditableArray parents = systemDoc.getOrCreateArray(DocumentTranslator.PARENT);
+                    if (parent != null) {
+                        parents.add(parent);
                     }
-                    return result;
-                }, 0);
-                workspaceCachesByName.put(name, initializedWsCache);
-            }
-        }
-        return workspaceCachesByName.get(name);
+                    parents.add(rootKeyString);
+              }
+            } 
+            return result;
+        }, 0, rootKey.toString());
     }
     
     protected ConcurrentMap<NodeKey, CachedNode> cacheForWorkspace() {
