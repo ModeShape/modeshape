@@ -1,4 +1,4 @@
-Copyright 2008-2014 ModeShape Project.
+Copyright 2008-2016 ModeShape Project.
 Licensed under the Apache License, Version 2.0.
 
 # Overview
