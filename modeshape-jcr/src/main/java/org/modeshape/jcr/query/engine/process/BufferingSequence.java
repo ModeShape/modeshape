@@ -118,24 +118,7 @@ public abstract class BufferingSequence extends DelegatingSequence {
         Batch batch = sequence.nextBatch();
         int batchSize = 0;
         Object value = null;
-        while (batch != null && batchSize == 0) {
-            while (batch.hasNext()) {
-                batch.nextRow();
-                value = extractor.getValueInRow(batch);
-                if (value instanceof Object[]) {
-                    // Put each of the values in the buffer ...
-                    for (Object v : (Object[])value) {
-                        buffer.put(v, createRow(batch));
-                    }
-                } else if (value != null) {
-                    buffer.put(value, createRow(batch));
-                } else if (rowsWithNullKey != null) {
-                    rowsWithNullKey.addIfAbsent(createRow(batch));
-                }
-                ++batchSize;
-            }
-            batch = sequence.nextBatch();
-        }
+        boolean firstBatchCounted = false;
         while (batch != null) {
             while (batch.hasNext()) {
                 batch.nextRow();
@@ -150,9 +133,14 @@ public abstract class BufferingSequence extends DelegatingSequence {
                 } else if (rowsWithNullKey != null) {
                     rowsWithNullKey.addIfAbsent(createRow(batch));
                 }
+                if (!firstBatchCounted) {
+                    ++batchSize;    
+                }
             }
+            firstBatchCounted = true;
             batch = sequence.nextBatch();
         }
+       
         return batchSize;
     }
 

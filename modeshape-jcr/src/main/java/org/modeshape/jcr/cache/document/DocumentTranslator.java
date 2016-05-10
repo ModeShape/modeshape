@@ -971,10 +971,13 @@ public class DocumentTranslator implements DocumentConstants {
     }
 
     public EditableDocument fromChildReference( ChildReference ref ) {
-        // We don't write the
-        return Schematic.newDocument(KEY, valueToDocument(ref.getKey(), null, null), NAME, strings.create(ref.getName()));
+        return childReferenceDocument(ref.getKey(), ref.getName());
     }
-
+    
+    public EditableDocument childReferenceDocument(NodeKey key, Name name) {
+        return Schematic.newDocument(KEY, valueToDocument(key, null, null), NAME, strings.create(name)); 
+    }
+    
     public Set<NodeKey> getReferrers( Document document,
                                       ReferenceType type ) {
         // Get the properties container ...

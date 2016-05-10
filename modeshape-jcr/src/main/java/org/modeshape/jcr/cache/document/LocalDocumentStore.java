@@ -25,6 +25,7 @@ import java.util.concurrent.Callable;
 import java.util.function.BiFunction;
 import javax.transaction.NotSupportedException;
 import javax.transaction.SystemException;
+import javax.transaction.Transaction;
 import org.modeshape.common.SystemFailureException;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.jcr.RepositoryEnvironment;
@@ -309,6 +310,26 @@ public class LocalDocumentStore implements DocumentStore {
             throw re;
         } catch (Exception e) {
             throw new RuntimeException(e);
+        }
+    }
+  
+    /**
+     * Runs the given operation within a local transaction, after optionally suspending any existing transaction.
+     *
+     * @see #runInTransaction(Callable, int, String...) 
+     */
+    public  <V> V runInLocalTransaction( Callable<V> operation, int retryCountOnLockTimeout, String... keysToLock ) {
+        // Start a transaction ...
+        Transactions txns = repoEnv.getTransactions();
+        try {
+            Transaction activeTransaction = txns.suspend();
+            V result = runInTransaction(operation, retryCountOnLockTimeout, keysToLock);
+            if (activeTransaction != null) {
+                txns.resume(activeTransaction);
+            }
+            return result;
+        } catch (SystemException e) {
+            throw new SystemFailureException(e);
         }
     }
 
