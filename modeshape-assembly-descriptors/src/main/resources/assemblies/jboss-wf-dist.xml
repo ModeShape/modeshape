@@ -104,7 +104,6 @@
             <outputDirectory>modules/org/modeshape/persistence/relational/main</outputDirectory>
             <includes>
                 <include>org.modeshape:modeshape-persistence-relational:jar</include>
-                <include>com.zaxxer:HikariCP:jar</include>
             </includes>
         </dependencySet>
 
@@ -151,6 +150,15 @@
             <unpack>false</unpack>
         </dependencySet>
 
+        <!--Module for Hikari connection pool -->
+        <dependencySet>
+            <useProjectArtifact>false</useProjectArtifact>
+            <outputDirectory>modules/com/zaxxer/hikari/${version.com.zaxxer.HikariCP}</outputDirectory>
+            <includes>
+                <include>com.zaxxer:HikariCP:jar</include>
+            </includes>
+        </dependencySet>
+        
         <!-- Module for Tika (self-contained) -->
         <dependencySet>
             <useProjectArtifact>false</useProjectArtifact>
@@ -207,7 +215,6 @@
             <outputDirectory>modules/org/modeshape/connector/jdbc/metadata/main</outputDirectory>
             <includes>
                 <include>org.modeshape:modeshape-connector-jdbc-metadata:jar</include>
-                <include>com.zaxxer:HikariCP:jar</include>
             </includes>
         </dependencySet>
 

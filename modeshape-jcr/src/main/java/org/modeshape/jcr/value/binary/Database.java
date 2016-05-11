@@ -24,7 +24,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
-import java.util.LinkedHashSet;
+import java.util.HashSet;
 import java.util.Properties;
 import java.util.Set;
 import org.modeshape.common.database.DatabaseType;
@@ -148,7 +148,6 @@ public class Database {
     }
 
     private int determineMaxExtractedTextLength( DatabaseMetaData metaData ) {
-        ResultSet resultSet = null;
         try {
             String tableName = this.tableName;
             if (metaData.storesLowerCaseIdentifiers()) {
@@ -156,15 +155,14 @@ public class Database {
             } else if (metaData.storesUpperCaseIdentifiers()) {
                 tableName = tableName.toUpperCase();
             }
-            resultSet = metaData.getColumns(null, null, tableName,  EXTRACTED_TEXT_COLUMN_NAME);
-            return resultSet.next() ? resultSet.getInt("COLUMN_SIZE") : DEFAULT_MAX_EXTRACTED_TEXT_LENGTH;
+            try (ResultSet resultSet = metaData.getColumns(null, null, tableName,  EXTRACTED_TEXT_COLUMN_NAME)) {
+                return resultSet.next() ? resultSet.getInt("COLUMN_SIZE") : DEFAULT_MAX_EXTRACTED_TEXT_LENGTH;
+            }
         } catch (SQLException e) {
             LOGGER.debug(e, "Cannot determine the maximum size of the column which holds the extracted text. Defaulting to {0}",
                          DEFAULT_MAX_EXTRACTED_TEXT_LENGTH);
             return DEFAULT_MAX_EXTRACTED_TEXT_LENGTH;
-        } finally {
-            tryToClose(resultSet);
-        }
+        } 
     }
 
     private void initializeStatements(DatabaseType databaseType) throws IOException {
@@ -202,30 +200,23 @@ public class Database {
     private void initializeStorage(Connection connection, DatabaseType databaseType) throws SQLException {
         // First, prepare a statement to see if the table exists ...
         boolean createTable = true;
-        PreparedStatement exists = null;
-        try {
-            exists = prepareStatement(TABLE_EXISTS_STMT_KEY, connection);
+        try (PreparedStatement exists = prepareStatement(TABLE_EXISTS_STMT_KEY, connection)) {
             execute(exists);
             createTable = false;
         } catch (SQLException e) {
             // proceed to create the table ...
-        } finally {
-            tryToClose(exists);
-        }
+        } 
 
         if (createTable) {
             if (LOGGER.isDebugEnabled()) {
                 LOGGER.debug("Unable to find existing table. Attempting to create '{0}' table in {1}", tableName,
                              connection.getMetaData().getURL());
             }
-            PreparedStatement create = prepareStatement(CREATE_TABLE_STMT_KEY, connection);
-            try {
+            try (PreparedStatement create = prepareStatement(CREATE_TABLE_STMT_KEY, connection)) {
                 execute(create);
             } catch (SQLException e) {
                 String msg = JcrI18n.errorCreatingDatabaseTable.text(tableName, databaseType);
                 throw new RuntimeException(msg, e);
-            } finally {
-                tryToClose(create);
             }
         }
     }
@@ -246,39 +237,31 @@ public class Database {
                                   InputStream stream,
                                   long size,
                                   Connection connection ) throws SQLException {
-        PreparedStatement addContentSql = prepareStatement(INSERT_CONTENT_STMT_KEY, connection);
-        try {
+        try (PreparedStatement addContentSql = prepareStatement(INSERT_CONTENT_STMT_KEY, connection)) {
             addContentSql.setString(1, key.toString());
             addContentSql.setTimestamp(2, new java.sql.Timestamp(System.currentTimeMillis()));
             addContentSql.setBinaryStream(3, stream, size);
             execute(addContentSql);
-        } finally {
             try {
                 // it's not guaranteed that the driver will close the stream, so we mush always close it to prevent read-locks
                 stream.close();
             } catch (IOException e) {
                 // ignore
             }
-            tryToClose(addContentSql);
         }
     }
 
-    protected boolean contentExists( BinaryKey key,
-                                     boolean inUse,
-                                     Connection connection ) throws SQLException {
-        PreparedStatement readContentStatement = inUse ? prepareStatement(USED_CONTENT_STMT_KEY, connection) : prepareStatement(UNUSED_CONTENT_STMT_KEY,
-                                                                                                                                connection);
-        try {
+    protected boolean contentExists( BinaryKey key, boolean inUse, Connection connection ) throws SQLException {
+        try (PreparedStatement readContentStatement = inUse ? 
+                                                      prepareStatement(USED_CONTENT_STMT_KEY, connection) :
+                                                      prepareStatement(UNUSED_CONTENT_STMT_KEY, connection)) {
             readContentStatement.setString(1, key.toString());
             ResultSet rs = executeQuery(readContentStatement);
             return rs.next();
         } catch (SQLException e) {
             LOGGER.debug("Cannot determine if content exists under key '{0}'", key.toString());
             return false;
-        } finally {
-            // always closes the result set
-            tryToClose(readContentStatement);
-        }
+        } 
     }
 
     /**
@@ -327,86 +310,60 @@ public class Database {
 
     protected void markUnused( Iterable<BinaryKey> keys,
                                Connection connection ) throws SQLException {
-        PreparedStatement markUnusedSql = prepareStatement(MARK_UNUSED_STMT_KEY, connection);
-        try {
+        try (PreparedStatement markUnusedSql = prepareStatement(MARK_UNUSED_STMT_KEY, connection)) {
             Timestamp now = new Timestamp(System.currentTimeMillis());
             for (BinaryKey key : keys) {
                 markUnusedSql.setTimestamp(1, now);
                 markUnusedSql.setString(2, key.toString());
                 executeUpdate(markUnusedSql);
             }
-        } finally {
-            tryToClose(markUnusedSql);
-        }
+        } 
     }
 
     protected void restoreContent( Connection connection,
                                    Iterable<BinaryKey> keys ) throws SQLException {
-        PreparedStatement markUsedSql = prepareStatement(MARK_USED_STMT_KEY, connection);
-        try {
+        try (PreparedStatement markUsedSql = prepareStatement(MARK_USED_STMT_KEY, connection)) {
             for (BinaryKey key : keys) {
                 markUsedSql.setString(1, key.toString());
                 executeUpdate(markUsedSql);
             }
-        } finally {
-            tryToClose(markUsedSql);
         }
     }
 
     protected void removeExpiredContent( long deadline,
                                          Connection connection ) throws SQLException {
-        PreparedStatement removedExpiredSql = prepareStatement(REMOVE_EXPIRED_STMT_KEY, connection);
-        try {
+        try (PreparedStatement removedExpiredSql = prepareStatement(REMOVE_EXPIRED_STMT_KEY, connection)) {
             removedExpiredSql.setTimestamp(1, new java.sql.Timestamp(deadline));
             execute(removedExpiredSql);
-        } finally {
-            tryToClose(removedExpiredSql);
         }
     }
 
     protected String getMimeType( BinaryKey key,
                                   Connection connection ) throws SQLException {
-        PreparedStatement getMimeType = prepareStatement(GET_MIMETYPE_STMT_KEY, connection);
-        try {
+        try (PreparedStatement getMimeType = prepareStatement(GET_MIMETYPE_STMT_KEY, connection)) {
             getMimeType.setString(1, key.toString());
             ResultSet rs = executeQuery(getMimeType);
-            if (rs.next()) {
-                return rs.getString(1);
-            }
-            return null;
-        } finally {
-            // will also close the result set
-            tryToClose(getMimeType);
+            return rs.next() ? rs.getString(1) : null;
         }
     }
 
     protected void setMimeType( BinaryKey key,
                                 String mimeType,
                                 Connection connection ) throws SQLException {
-        PreparedStatement setMimeTypeSQL = prepareStatement(SET_MIMETYPE_STMT_KEY, connection);
-        try {
+        try (PreparedStatement setMimeTypeSQL = prepareStatement(SET_MIMETYPE_STMT_KEY, connection)) {
             setMimeTypeSQL.setString(1, mimeType);
             setMimeTypeSQL.setString(2, key.toString());
             executeUpdate(setMimeTypeSQL);
-        } finally {
-            tryToClose(setMimeTypeSQL);
-        }
+        } 
     }
 
     protected String getExtractedText( BinaryKey key,
                                        Connection connection ) throws SQLException {
-        PreparedStatement getExtractedTextSql = prepareStatement(GET_EXTRACTED_TEXT_STMT_KEY, connection);
-        try {
+        try (PreparedStatement getExtractedTextSql = prepareStatement(GET_EXTRACTED_TEXT_STMT_KEY, connection)) {
             getExtractedTextSql.setString(1, key.toString());
             ResultSet rs = executeQuery(getExtractedTextSql);
-            if (rs.next()) {
-                return rs.getString(1);
-            }
-            return null;
-        } finally {
-            // will also close the result set
-            tryToClose(getExtractedTextSql);
-        }
+            return rs.next() ? rs.getString(1) : null;
+        } 
     }
 
     protected void setExtractedText( BinaryKey key,
@@ -416,29 +373,23 @@ public class Database {
             LOGGER.warn(JcrI18n.warnExtractedTextTooLarge, EXTRACTED_TEXT_COLUMN_NAME, this.maxExtractedTextLength, tableName);
             text = text.substring(0, maxExtractedTextLength);
         }
-        PreparedStatement setExtractedTextSql = prepareStatement(SET_EXTRACTED_TEXT_STMT_KEY, connection);
-        try {
+        try (PreparedStatement setExtractedTextSql = prepareStatement(SET_EXTRACTED_TEXT_STMT_KEY, connection)) {
             setExtractedTextSql.setString(1, text);
             setExtractedTextSql.setString(2, key.toString());
             executeUpdate(setExtractedTextSql);
-        } finally {
-            tryToClose(setExtractedTextSql);
         }
     }
 
     protected Set<BinaryKey> getBinaryKeys( Connection connection ) throws SQLException {
-        PreparedStatement getBinaryKeysSql = prepareStatement(GET_BINARY_KEYS_STMT_KEY, connection);
-        Set<BinaryKey> keys = new LinkedHashSet<>();
+        Set<BinaryKey> keys = new HashSet<>();
 
-        try {
+        try (PreparedStatement getBinaryKeysSql = prepareStatement(GET_BINARY_KEYS_STMT_KEY, connection)) {
             ResultSet rs = executeQuery(getBinaryKeysSql);
             while (rs.next()) {
                 keys.add(new BinaryKey(rs.getString(1)));
             }
             return keys;
-        } finally {
-            tryToClose(getBinaryKeysSql);
-        }
+        } 
     }
 
     private void execute( PreparedStatement sql ) throws SQLException {
@@ -464,6 +415,8 @@ public class Database {
         protected DatabaseBinaryStream( Connection connection,
                                         PreparedStatement statement,
                                         InputStream jdbcBinaryStream ) {
+            assert connection != null;
+            assert statement != null;
             this.connection = connection;
             this.statement = statement;
             // some drivers (notably Oracle) can return a null stream if the stored binary is empty (i.e. has 0 bytes)
@@ -519,7 +472,7 @@ public class Database {
         }
     }
 
-    protected static void tryToClose( PreparedStatement statement ) {
+    private void tryToClose( PreparedStatement statement ) {
         if (statement != null) {
             try {
                 statement.close();
@@ -527,19 +480,9 @@ public class Database {
                 LOGGER.debug(t, "Cannot close prepared statement");
             }
         }
-    }  
-    
-    protected static void tryToClose( ResultSet resultSet ) {
-        if (resultSet != null) {
-            try {
-                resultSet.close();
-            } catch (Throwable t) {
-                LOGGER.debug(t, "Cannot close result set");
-            }
-        }
     }
 
-    protected static void tryToClose( Connection connection ) {
+    private void tryToClose( Connection connection ) {
         if (connection != null) {
             try {
                 connection.close();

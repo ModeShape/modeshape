@@ -15,12 +15,12 @@
  */
 package org.modeshape.jcr.value.binary;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.concurrent.TimeUnit;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
@@ -30,6 +30,7 @@ import org.modeshape.common.util.StringUtil;
 import org.modeshape.jcr.JcrI18n;
 import org.modeshape.jcr.value.BinaryKey;
 import org.modeshape.jcr.value.BinaryValue;
+import com.zaxxer.hikari.HikariDataSource;
 
 /**
  * A {@link BinaryStore} implementation that uses a database for persisting binary values.
@@ -140,29 +141,17 @@ public class DatabaseBinaryStore extends AbstractBinaryStore {
 
     @Override
     public void start() {
-        super.start();
-
         if (!StringUtil.isBlank(datasourceJNDILocation)) {
             lookupDataSource();
         } else {
-            lookupDriver();
+            initManagedDS();
         }
-
-        database();
-    }
-
-    protected Database database() {
-        if (this.database == null) {
-            Connection connection = newConnection();
-            try {
-                this.database = new Database(connection);
-            } catch (Throwable t) {
-                throw new RuntimeException(t);
-            } finally {
-                Database.tryToClose(connection);
-            }
+        
+        try (Connection connection = newConnection()) {
+            this.database = new Database(connection);
+        } catch (SQLException | IOException e) {
+            throw new RuntimeException(e);
         }
-        return database;
     }
 
     @Override
@@ -170,33 +159,27 @@ public class DatabaseBinaryStore extends AbstractBinaryStore {
         // store into temporary file system store and get SHA-1
         final BinaryValue temp = cache.storeValue(stream, markAsUnused);
         try {
-            return dbCall(new DBCallable<BinaryValue>() {
-                @Override
-                public BinaryValue execute( Connection connection ) throws Exception {
-                    // prepare new binary key based on SHA-1
-                    BinaryKey key = new BinaryKey(temp.getKey().toString());
-
-                    // check for duplicate content
-                    Database database = database();
-
-                    if (database.contentExists(key, ALIVE, connection)) {
-                        return new StoredBinaryValue(DatabaseBinaryStore.this, key, temp.getSize());
-                    }
-
-                    // check unused content
-                    if (database.contentExists(key, UNUSED, connection)) {
-                        if (!markAsUnused) {
-                            database.restoreContent(connection, Arrays.asList(key));
-                        }
-                    } else {
-                        // store the content
-                        database.insertContent(key, temp.getStream(), temp.getSize(), connection);
-                        if (markAsUnused) {
-                            database.markUnused(Arrays.asList(key), connection);
-                        }
-                    }
+            return dbCall(connection -> {
+                // prepare new binary key based on SHA-1
+                BinaryKey key = new BinaryKey(temp.getKey().toString());
+            
+                if (database.contentExists(key, ALIVE, connection)) {
                     return new StoredBinaryValue(DatabaseBinaryStore.this, key, temp.getSize());
                 }
+
+                // check unused content
+                if (database.contentExists(key, UNUSED, connection)) {
+                    if (!markAsUnused) {
+                        database.restoreContent(connection, Collections.singletonList(key));
+                    }
+                } else {
+                    // store the content
+                    database.insertContent(key, temp.getStream(), temp.getSize(), connection);
+                    if (markAsUnused) {
+                        database.markUnused(Collections.singletonList(key), connection);
+                    }
+                }
+                return new StoredBinaryValue(DatabaseBinaryStore.this, key, temp.getSize());
             });
         } finally {
             // remove content from temp store
@@ -221,113 +204,87 @@ public class DatabaseBinaryStore extends AbstractBinaryStore {
 
     @Override
     public void markAsUsed(final Iterable<BinaryKey> keys ) throws BinaryStoreException {
-        dbCall(new DBCallable<Object>() {
-            @SuppressWarnings( "synthetic-access" )
-            @Override
-            public Object execute( Connection connection ) throws Exception {
-                database.restoreContent(connection, keys);
-                return null;
-            }
+        dbCall(connection -> {
+            database.restoreContent(connection, keys);
+            return null;
         }) ;
     }
 
     @Override
     public void markAsUnused( final Iterable<BinaryKey> keys ) throws BinaryStoreException {
-        dbCall(new DBCallable<Void>() {
-            @Override
-            public Void execute( Connection connection ) throws Exception {
-                database().markUnused(keys, connection);
-                return null;
-            }
+        dbCall(connection -> { 
+            database.markUnused(keys, connection);
+            return null;
         });
     }
 
     @Override
     public void removeValuesUnusedLongerThan( final long minimumAge,
                                               final TimeUnit unit ) throws BinaryStoreException {
-        dbCall(new DBCallable<Void>() {
-            @Override
-            public Void execute( Connection connection ) throws Exception {
-                long deadline = System.currentTimeMillis() - unit.toMillis(minimumAge);
-                database().removeExpiredContent(deadline, connection);
-                return null;
-            }
+        dbCall(connection -> {
+            long deadline = System.currentTimeMillis() - unit.toMillis(minimumAge);
+            database.removeExpiredContent(deadline, connection);
+            return null;
         });
     }
 
     @Override
     protected String getStoredMimeType( final BinaryValue source ) throws BinaryStoreException {
-        return dbCall(new DBCallable<String>() {
-            @Override
-            public String execute( Connection connection ) throws Exception {
-                BinaryKey key = source.getKey();
-                if (!database().contentExists(key, true, connection) && !database().contentExists(key, false, connection)) {
-                    throw new BinaryStoreException(JcrI18n.unableToFindBinaryValue.text(key, database().getTableName()));
-                }
-                return database().getMimeType(key, connection);
+        return dbCall(connection -> {
+            BinaryKey key = source.getKey();
+            if (!database.contentExists(key, true, connection) && !database.contentExists(key, false, connection)) {
+                throw new BinaryStoreException(JcrI18n.unableToFindBinaryValue.text(key, database.getTableName()));
             }
+            return database.getMimeType(key, connection);
         });
     }
 
     @Override
     protected void storeMimeType( final BinaryValue source,
                                   final String mimeType ) throws BinaryStoreException {
-        dbCall(new DBCallable<Void>() {
-            @Override
-            public Void execute( Connection connection ) throws Exception {
-                database().setMimeType(source.getKey(), mimeType, connection);
-                return null;
-            }
+        dbCall(connection -> {
+            database.setMimeType(source.getKey(), mimeType, connection);
+            return null;
         });
     }
 
     @Override
     public String getExtractedText( final BinaryValue source ) throws BinaryStoreException {
-        return dbCall(new DBCallable<String>() {
-            @SuppressWarnings( "synthetic-access" )
-            @Override
-            public String execute( Connection connection ) throws Exception {
-                BinaryKey key = source.getKey();
-                if (!database.contentExists(key, true, connection) && !database.contentExists(key, false, connection)) {
-                    throw new BinaryStoreException(JcrI18n.unableToFindBinaryValue.text(key, database().getTableName()));
-                }
-                return database().getExtractedText(key, connection);
+        return dbCall(connection -> {
+            BinaryKey key = source.getKey();
+            if (!database.contentExists(key, true, connection) && !database.contentExists(key, false, connection)) {
+                throw new BinaryStoreException(JcrI18n.unableToFindBinaryValue.text(key, database.getTableName()));
             }
+            return database.getExtractedText(key, connection);
         });
     }
 
     @Override
     public void storeExtractedText( final BinaryValue source,
                                     final String extractedText ) throws BinaryStoreException {
-        dbCall(new DBCallable<Void>() {
-            @Override
-            public Void execute( Connection connection ) throws Exception {
-                database().setExtractedText(source.getKey(), extractedText, connection);
-                return null;
-            }
+        dbCall(connection -> {
+            database.setExtractedText(source.getKey(), extractedText, connection);
+            return null;
         });
     }
 
     @Override
     public Iterable<BinaryKey> getAllBinaryKeys() throws BinaryStoreException {
-        return dbCall(new DBCallable<Iterable<BinaryKey>>() {
-            @Override
-            public Iterable<BinaryKey> execute( Connection connection ) throws Exception {
-                return database().getBinaryKeys(connection);
-            }
-        });
+        return dbCall(connection -> database.getBinaryKeys(connection));
     }
 
     @Override
     public void shutdown() {
-        super.shutdown();
+       if (dataSource instanceof HikariDataSource) {
+            // we're managing this, so force a close to release all connections...
+            ((HikariDataSource) this.dataSource).close();
+        }
     }
 
     private Connection newConnection() {
         try {
-            return dataSource != null ? dataSource.getConnection() : DriverManager.getConnection(connectionURL, username,
-                                                                                                 password);
-        } catch (Exception e) {
+            return dataSource.getConnection();
+        } catch (SQLException e) {
             throw new RuntimeException(e);
         }
     }
@@ -341,28 +298,30 @@ public class DatabaseBinaryStore extends AbstractBinaryStore {
         }
     }
 
-    private void lookupDriver() {
-        try {
-            Class.forName(driverClass);
-        } catch (ClassNotFoundException e) {
-            throw new RuntimeException(e);
-        }
+    private void initManagedDS() {
+        logger.debug("Attempting to connect to '{0}' with '{1}' for username '{2}' and password '{3}'", connectionURL,
+                     driverClass, username, password);
+        HikariDataSource hikariDS = new HikariDataSource();
+        hikariDS.setJdbcUrl(connectionURL);
+        hikariDS.setDriverClassName(driverClass);
+        hikariDS.setUsername(username);
+        hikariDS.setPassword(password);
+
+        this.dataSource = hikariDS;
     }
 
+    @FunctionalInterface
     private interface DBCallable<T> {
-        public T execute( Connection connection ) throws Exception;
+         T execute( Connection connection ) throws Exception;
     }
 
     private <T> T dbCall( DBCallable<T> callable ) throws BinaryStoreException {
-        Connection connection = newConnection();
-        try {
-            return callable.execute(connection);
+        try (Connection connection = newConnection()) {
+            return callable.execute(connection);    
         } catch (BinaryStoreException bse) {
             throw bse;
         } catch (Exception e) {
             throw new BinaryStoreException(e);
-        } finally {
-            Database.tryToClose(connection);
-        }
+        } 
     }
 }
