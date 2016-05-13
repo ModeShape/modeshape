@@ -333,6 +333,15 @@
 
         <dependencySet>
             <useProjectArtifact>false</useProjectArtifact>
+            <outputDirectory>modules/org/modeshape/sequencer/video/main</outputDirectory>
+            <includes>
+                <include>org.modeshape:modeshape-sequencer-video:jar</include>
+                <include>io.humble:humble-video-all:jar</include>
+            </includes>
+        </dependencySet>
+
+        <dependencySet>
+            <useProjectArtifact>false</useProjectArtifact>
             <outputDirectory>modules/org/modeshape/extractor/tika/main</outputDirectory>
             <useTransitiveDependencies>true</useTransitiveDependencies>
             <includes>
