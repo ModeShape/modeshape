@@ -107,11 +107,15 @@
         </fileSet>   
         <fileSet>
             <directory>../sequencers/modeshape-sequencer-video/target/${binary.dist.name}</directory>
-            <outputDirectory>/modules/modeshape-sequencer-video</outputDirectory>
+            <outputDirectory>./modules/modeshape-sequencer-video</outputDirectory>
         </fileSet>
         <fileSet>
             <directory>../sequencers/modeshape-sequencer-pdf/target/${binary.dist.name}</directory>
             <outputDirectory>./modules/modeshape-sequencer-pdf</outputDirectory>
+        </fileSet>
+        <fileSet>
+            <directory>../sequencers/modeshape-sequencer-audio/target/${binary.dist.name}</directory>
+            <outputDirectory>./modules/modeshape-sequencer-audio</outputDirectory>
         </fileSet>
         <fileSet>
             <directory>../index-providers/modeshape-lucene-index-provider/target/${binary.dist.name}</directory>

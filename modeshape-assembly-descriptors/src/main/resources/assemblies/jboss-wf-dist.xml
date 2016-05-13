@@ -351,6 +351,15 @@
 
         <dependencySet>
             <useProjectArtifact>false</useProjectArtifact>
+            <outputDirectory>modules/org/modeshape/sequencer/audio/main</outputDirectory>
+            <includes>
+                <include>org.modeshape:modeshape-sequencer-audio:jar</include>
+                <include>org:jaudiotagger:jar</include>
+            </includes>
+        </dependencySet>
+
+        <dependencySet>
+            <useProjectArtifact>false</useProjectArtifact>
             <outputDirectory>modules/org/modeshape/extractor/tika/main</outputDirectory>
             <useTransitiveDependencies>true</useTransitiveDependencies>
             <includes>
