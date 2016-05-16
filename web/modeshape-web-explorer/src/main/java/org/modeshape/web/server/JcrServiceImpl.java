@@ -210,7 +210,12 @@ public class JcrServiceImpl extends RemoteServiceServlet implements JcrService {
             node.setProperties(getProperties(repository, workspace, path, n));
 
             node.setPropertyDefs(propertyDefs(n));
-            node.setAcl(getAcl(repository, workspace, path));
+            
+            try {
+                node.setAcl(getAcl(repository, workspace, path));
+            } catch (AccessDeniedException e) {
+                node.setAcl(null);
+            }
 
             NodeIterator it = n.getNodes();
             while (it.hasNext()) {
@@ -218,8 +223,6 @@ public class JcrServiceImpl extends RemoteServiceServlet implements JcrService {
                 node.addChild(new JcrNode(repository, workspace, child.getName(), child.getPath(), child.getPrimaryNodeType().getName()));
             }
             return node;
-        } catch (AccessDeniedException | SecurityException ade) {
-            throw new RemoteException(RemoteException.SECURITY_ERROR, ade.getMessage());
         } catch (RepositoryException e) {
             logger.error(e,  JcrI18n.unexpectedException, e.getMessage());
             throw new RemoteException(e.getMessage());

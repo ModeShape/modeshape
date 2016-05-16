@@ -25,6 +25,7 @@ import com.smartgwt.client.widgets.events.ClickHandler;
 import com.smartgwt.client.widgets.form.DynamicForm;
 import com.smartgwt.client.widgets.form.fields.ComboBoxItem;
 import com.smartgwt.client.widgets.layout.HLayout;
+import java.util.ArrayList;
 import org.modeshape.web.client.contents.PermissionsEditor.AclRecord;
 import org.modeshape.web.client.grid.BooleanField;
 import org.modeshape.web.client.grid.TabGrid;
@@ -73,7 +74,9 @@ public class PermissionsEditor extends TabGrid<AclRecord, JcrPermission> {
      */
     public void show(JcrNode node) {
         this.node = node;
-        if (this.isAclDefined(node)) {
+        if (node.getAcl() == null) {
+            this.displayDisabledEditor();
+        } else if (this.isAclDefined(node)) {
             this.selectFirstPrincipalAndDisplayPermissions(node);
         } else {
             this.displayEveryonePermissions();
@@ -197,13 +200,22 @@ public class PermissionsEditor extends TabGrid<AclRecord, JcrPermission> {
     private void displayEveryonePermissions() {
         principal.setValueMap(new String[]{"Everyone"});
         principal.setValue("Everyone");
+        principal.setDisabled(false);
         setValues(ALL_PERMISSIONS_FOR_EVERYONE.permissions());
     }
 
+    private void displayDisabledEditor() {
+        principal.setValueMap(new String[]{"Permission denied"});
+        principal.setValue("Permission denied");
+        principal.setDisabled(true);
+        setValues(new ArrayList());
+    }
+    
     private void selectFirstPrincipalAndDisplayPermissions(JcrNode node) {
         String[] principals = node.getAcl().principals();
         principal.setValueMap(principals);
         principal.setValue(principals[0]);
+        principal.setDisabled(false);
         setValues(node.getAcl().getPolicy(principals[0]).permissions());
     }
 
