@@ -341,6 +341,15 @@
         </dependencySet>
 
         <dependencySet>
+            <outputDirectory>modules/org/modeshape/sequencer/pdf/main</outputDirectory>
+            <includes>
+                <include>org.modeshape:modeshape-sequencer-pdf:jar</include>
+                <include>org.apache.pdfbox:pdfbox:jar</include>
+                <include>org.apache.pdfbox:xmpbox:jar</include>
+            </includes>
+        </dependencySet>
+
+        <dependencySet>
             <useProjectArtifact>false</useProjectArtifact>
             <outputDirectory>modules/org/modeshape/extractor/tika/main</outputDirectory>
             <useTransitiveDependencies>true</useTransitiveDependencies>
