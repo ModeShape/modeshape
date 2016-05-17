@@ -171,6 +171,7 @@
         <version.org.apache.tika>1.12</version.org.apache.tika>
         <version.com.drewnoakes.metadata-extractor>2.6.2</version.com.drewnoakes.metadata-extractor>
         <version.org.apache.lucene>5.3.1</version.org.apache.lucene>
+        <version.io.humble>0.2.1</version.io.humble>
         <version.org.apache.chemistry.opencmis>0.11.0</version.org.apache.chemistry.opencmis>
         <version.com.google.gwt>2.5.1</version.com.google.gwt>
         <version.com.smartgwt>2.4</version.com.smartgwt>
@@ -971,6 +972,11 @@
             </dependency>
             <dependency>
                 <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-sequencer-video</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.modeshape</groupId>
                 <artifactId>modeshape-lucene-index-provider</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -1614,6 +1620,17 @@
                 <groupId>org.eclipse.emf</groupId>
                 <artifactId>ecore-xmi</artifactId>
                 <version>${version.org.eclipse.emf.ecore-xmi}</version>
+            </dependency>
+            <!--Video sequencer-->
+            <dependency>
+                <groupId>io.humble</groupId>
+                <artifactId>humble-video-all</artifactId>
+                <version>${version.io.humble}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.humble</groupId>
+                <artifactId>humble-video-noarch</artifactId>
+                <version>${version.io.humble}</version>
             </dependency>
 
             <!--TIKA text extractor
