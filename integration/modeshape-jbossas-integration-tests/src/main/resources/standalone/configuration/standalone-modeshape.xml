@@ -350,7 +350,7 @@
                     <index-provider name="local_custom_settings" classname="local" path="modeshape/artifacts/indexes_local_custom/" relative-to="jboss.server.data.dir"
                                     cacheLRUEnable="true" mmapFileEnable="true" commitFileSyncDisable="true" transactionDisable="true"
                                     asyncWrite="true" cacheSize="100"/>
-                    <index-provider classname="lucene" path="modeshape/artifacts/indexes_lucene" relative-to="jboss.server.data.dir" module="org.modeshape.index-provider.lucene"/> 
+                    <index-provider classname="lucene" path="modeshape/artifacts/indexes_lucene" relative-to="jboss.server.data.dir"/> 
                 </index-providers>
                 <indexes>
                     <index name="names" provider-name="local" synchronous="true" kind="value" node-type="nt:base" columns="jcr:name(NAME)" />
@@ -558,7 +558,7 @@
                 </workspaces>
                 <!-- Define some indexes -->
                 <index-providers>
-                    <index-provider classname="elasticsearch" module="org.modeshape.index-provider.elasticsearch"/> 
+                    <index-provider classname="elasticsearch"/> 
                 </index-providers>
                 <indexes>
                     <index name="mime-types" provider-name="elasticsearch" synchronous="true" kind="value" node-type="mix:mimeType" columns="jcr:mimeType(STRING)"/>

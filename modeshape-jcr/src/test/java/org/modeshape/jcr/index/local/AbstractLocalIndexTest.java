@@ -22,7 +22,6 @@ import static org.junit.Assert.assertTrue;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map;
 import javax.jcr.query.qom.Constraint;
@@ -44,7 +43,6 @@ import org.modeshape.jcr.query.model.PropertyValue;
 import org.modeshape.jcr.query.model.SelectorName;
 import org.modeshape.jcr.query.model.StaticOperand;
 import org.modeshape.jcr.spi.index.IndexConstraints;
-import org.modeshape.jcr.spi.index.ResultWriter;
 import org.modeshape.jcr.spi.index.provider.Filter;
 import org.modeshape.jcr.value.PropertyType;
 import org.modeshape.jcr.value.ValueFactories;
@@ -144,11 +142,8 @@ public abstract class AbstractLocalIndexTest {
                                  Operator op,
                                  T value,
                                  LinkedList<String> expectedValues ) {
-        Filter.Results results = index.filter(constraints(propertyName, op, value));
-        ResultWriter writer = verify(expectedValues);
-        for (;;) {
-            if (!results.getNextBatch(writer, Integer.MAX_VALUE)) break;
-        }
+        Filter.Results results = index.filter(constraints(propertyName, op, value), -1);
+        validateResults(expectedValues, results);
         assertTrue("Not all expected values were found in results: " + expectedValues, expectedValues.isEmpty());
     }
 
@@ -170,12 +165,19 @@ public abstract class AbstractLocalIndexTest {
                                  Operator op,
                                  T value,
                                  LinkedList<String> expectedValues ) {
-        Filter.Results results = index.filter(constraints(propertyName, op, value));
-        ResultWriter writer = verify(expectedValues);
-        for (;;) {
-            if (!results.getNextBatch(writer, Integer.MAX_VALUE)) break;
-        }
+        Filter.Results results = index.filter(constraints(propertyName, op, value), -1);
+        validateResults(expectedValues, results);
         assertTrue("Not all expected values were found in results: " + expectedValues, expectedValues.isEmpty());
+    }
+
+    protected void validateResults(LinkedList<String> expectedValues, Filter.Results results) {
+        Filter.ResultBatch batch;
+        while ((batch = results.getNextBatch(Integer.MAX_VALUE)).size() > 0) {
+            for (NodeKey actual : batch.keys()) {
+                assertTrue("Got actual result '" + actual + "' but expected nothing", !expectedValues.isEmpty());
+                assertThat(actual, is(nodeKey(expectedValues.removeFirst())));
+            }
+        }
     }
 
     protected static SelectorName selector() {
@@ -242,36 +244,6 @@ public abstract class AbstractLocalIndexTest {
             expected.add(keys[i]);
         }
         return expected;
-    }
-
-    protected ResultWriter verify( final LinkedList<String> keys ) {
-        return new ResultWriter() {
-            @Override
-            public void add( Iterable<NodeKey> nodeKeys,
-                             float score ) {
-                for (NodeKey actual : nodeKeys) {
-                    assertTrue("Got actual result '" + actual + "' but expected nothing", !keys.isEmpty());
-                    assertThat(actual, is(nodeKey(keys.removeFirst())));
-                }
-            }
-
-            @Override
-            public void add( Iterator<NodeKey> nodeKeys,
-                             float score ) {
-                while (nodeKeys.hasNext()) {
-                    NodeKey actual = nodeKeys.next();
-                    assertTrue("Got actual result '" + actual + "' but expected nothing", !keys.isEmpty());
-                    assertThat(actual, is(nodeKey(keys.removeFirst())));
-                }
-            }
-
-            @Override
-            public void add( NodeKey nodeKey,
-                             float score ) {
-                assertTrue("Got actual result '" + nodeKey + "' but expected nothing", !keys.isEmpty());
-                assertThat(nodeKey, is(nodeKey(keys.removeFirst())));
-            }
-        };
     }
 
     private static final String NODE_KEY_PREFIX = "12345671234567-";

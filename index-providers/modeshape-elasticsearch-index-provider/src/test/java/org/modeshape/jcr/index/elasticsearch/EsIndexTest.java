@@ -15,10 +15,10 @@
  */
 package org.modeshape.jcr.index.elasticsearch;
 
-import java.util.ArrayList;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.Map;
 import javax.jcr.PropertyType;
 import javax.jcr.query.qom.Constraint;
@@ -29,8 +29,6 @@ import org.elasticsearch.node.NodeBuilder;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertEquals;
 import org.modeshape.common.util.FileUtil;
 import org.modeshape.jcr.ExecutionContext;
 import org.modeshape.jcr.api.query.qom.Operator;
@@ -51,7 +49,7 @@ import org.modeshape.jcr.query.model.SelectorName;
 import org.modeshape.jcr.query.model.SetCriteria;
 import org.modeshape.jcr.query.model.UpperCase;
 import org.modeshape.jcr.spi.index.IndexConstraints;
-import org.modeshape.jcr.spi.index.ResultWriter;
+import org.modeshape.jcr.spi.index.provider.Filter;
 import org.modeshape.jcr.spi.index.provider.Filter.Results;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.ValueFactories;
@@ -255,10 +253,9 @@ public class EsIndexTest {
     }
 
     private void validate(Constraint constraint, String... keys) {
-        ResultWriterImpl rw = new ResultWriterImpl();
-        Results results = index.filter(constraints(constraint));
-        results.getNextBatch(rw, 100);
-        assertTrue(checkResults(rw.results(), keys));
+        Results results = index.filter(constraints(constraint), keys.length);
+        Filter.ResultBatch batch = results.getNextBatch(100);
+        assertTrue(checkResults(batch.keys(), keys));
     }
 
     private PropertyValue propertyValue(EsIndexColumn column) {
@@ -303,9 +300,10 @@ public class EsIndexTest {
         };
     }
 
-    private boolean checkResults(Collection<NodeKey> res, String... expected) {
-        assertEquals(expected.length, res.size());
+    private boolean checkResults(Iterable<NodeKey> res, String... expected) {
+        int count = 0;
         for (NodeKey k : res) {
+            ++count;
             for (int i = 0; i < expected.length; i++) {
                 String s = key(expected[i]);
                 if (s.equals(k.toString())) {
@@ -313,35 +311,8 @@ public class EsIndexTest {
                 }
             }
         }
+        assertEquals(expected.length, count);
         return false;
-    }
-
-    private class ResultWriterImpl implements ResultWriter {
-
-        private ArrayList<NodeKey> keys = new ArrayList<NodeKey>();
-
-        @Override
-        public void add(NodeKey nodeKey, float score) {
-            keys.add(nodeKey);
-        }
-
-        @Override
-        public void add(Iterable<NodeKey> nodeKeys, float score) {
-            for (NodeKey k : nodeKeys) {
-                keys.add(k);
-            }
-        }
-
-        @Override
-        public void add(Iterator<NodeKey> nodeKeys, float score) {
-            while (nodeKeys.hasNext()) {
-                keys.add(nodeKeys.next());
-            }
-        }
-
-        public Collection<NodeKey> results() {
-            return keys;
-        }
     }
     
     private static final String NODE_KEY_PREFIX = "12345671234567-";

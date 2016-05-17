@@ -27,7 +27,7 @@ import org.modeshape.jcr.spi.index.provider.IndexPlanner;
 import org.modeshape.jcr.value.ValueFactories;
 
 /**
- * The a set of constraints that ModeShape passes to {@link Filter} instances via the {@link Filter#filter(IndexConstraints)}
+ * The a set of constraints that ModeShape passes to {@link Filter} instances via the {@link Filter#filter(IndexConstraints, long)}
  * method.
  * 
  * @author Randall Hauch (rhauch@redhat.com)

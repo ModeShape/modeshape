@@ -16,12 +16,14 @@
 package org.modeshape.jcr.index.lucene;
 
 import java.io.IOException;
-import java.util.ArrayList;
+import java.util.BitSet;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -34,18 +36,16 @@ import org.apache.lucene.index.LeafReader;
 import org.apache.lucene.index.LeafReaderContext;
 import org.apache.lucene.search.BooleanClause;
 import org.apache.lucene.search.BooleanQuery;
-import org.apache.lucene.search.CachingWrapperQuery;
 import org.apache.lucene.search.CollectionTerminatedException;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.LRUQueryCache;
 import org.apache.lucene.search.MatchAllDocsQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.QueryCache;
-import org.apache.lucene.search.QueryCachingPolicy;
 import org.apache.lucene.search.Scorer;
 import org.apache.lucene.search.SearcherManager;
 import org.apache.lucene.search.SimpleCollector;
-import org.apache.lucene.search.TotalHitCountCollector;
+import org.apache.lucene.util.Bits;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.common.logging.Logger;
@@ -53,7 +53,6 @@ import org.modeshape.common.util.NamedThreadFactory;
 import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.index.lucene.query.LuceneQueryFactory;
 import org.modeshape.jcr.spi.index.IndexConstraints;
-import org.modeshape.jcr.spi.index.ResultWriter;
 import org.modeshape.jcr.spi.index.provider.Filter;
 
 /**
@@ -69,6 +68,10 @@ public class Searcher {
     protected static final float DEFAULT_SCORE = 1.0f;
 
     private static final Logger LOGGER = Logger.getLogger(Searcher.class);
+    private static final int MAX_QUERIES_TO_CACHE = 200;
+    private static final long MAX_RAM_BYTES_TO_USE = 50 * 1024L * 1024L;
+
+    private static final Set<String> ID_FIELD_SET = Collections.singleton(FieldUtil.ID);
     
     private final SearcherManager searchManager;
     private final ScheduledExecutorService searchManagerRefreshService;
@@ -77,7 +80,7 @@ public class Searcher {
 
     protected Searcher( LuceneConfig config, IndexWriter writer, String name ) {
         this.searchManager = config.searchManager(writer);
-        this.queryCache = new LRUQueryCache(200, 50);
+        this.queryCache = new LRUQueryCache(MAX_QUERIES_TO_CACHE, MAX_RAM_BYTES_TO_USE);
         this.searchManagerRefreshService = Executors.newScheduledThreadPool(1, new NamedThreadFactory(
                 name + "-lucene-search-manager-refresher"));
         this.searchManagerRefreshResult = this.searchManagerRefreshService.scheduleWithFixedDelay(new SearchManagerRefresher(),
@@ -96,18 +99,18 @@ public class Searcher {
         }
     }
     
-    protected Filter.Results filter( IndexConstraints indexConstraints, LuceneQueryFactory queryFactory) {
+    protected Filter.Results filter(IndexConstraints indexConstraints, 
+                                    LuceneQueryFactory queryFactory,
+                                    long cardinalityEstimate) {
         Query query = createQueryFromConstraints(indexConstraints.getConstraints(), queryFactory);
-        return new LuceneResults(query, queryFactory.scoreDocuments());
+        return new LuceneResults(query, queryFactory.scoreDocuments(), cardinalityEstimate);
     }
     
     protected long estimateCardinality( final List<Constraint> andedConstraints, final LuceneQueryFactory queryFactory ) throws IOException {
         return search(searcher -> {
             Query query = createQueryFromConstraints(andedConstraints, queryFactory);
-            TotalHitCountCollector results = new TotalHitCountCollector();
-            searcher.search(query, results);
-            return (long)results.getTotalHits();
-        }, false, true);
+            return (long) searcher.count(query);
+        }, true);
     }
     
     protected Document loadDocumentById(final String id) throws IOException {
@@ -116,7 +119,7 @@ public class Searcher {
             DocumentByIdCollector collector = new DocumentByIdCollector();
             searcher.search(FieldUtil.idQuery(id), collector);
             return collector.document();
-        }, false, true);
+        }, true);
     }
 
     private Query createQueryFromConstraints( Collection<Constraint> andedConstraints, LuceneQueryFactory queryFactory ) {
@@ -147,142 +150,218 @@ public class Searcher {
         }
     }
 
-    protected <T> T search(Searchable<T> searchable, boolean useScoring, boolean refreshReader) {
+    protected <T> T search(Searchable<T> searchable, boolean refreshReader) {
         if (refreshReader) {
             refreshSearchManager(false);
         }
         IndexSearcher searcher = null;
         try {
-            try {
-                searcher = searchManager.acquire();
-                if (!useScoring) {
-                    searcher.setQueryCache(queryCache);
-                }
-                return searchable.search(searcher);
-            } finally {
-                if (searcher != null) {
-                    searchManager.release(searcher);
-                }
-            }
+            searcher = searchManager.acquire();
+            searcher.setQueryCache(queryCache);
+            return searchable.search(searcher);
         } catch (IOException e) {
             throw new LuceneIndexException(e);
+        } finally {
+            if (searcher != null) {
+                try {
+                    searchManager.release(searcher);
+                } catch (IOException e) {
+                    LOGGER.debug(e, "Cannot release Lucene searcher");
+                }
+            }
         }
     }
-
+   
     private class LuceneResults implements Filter.Results {
         
-        private final Query query;
         private final boolean scoreDocuments;
+        private final long size;
         
+        private Query query;
+        private Iterator<NodeKey> keysIterator;
+        private Iterator<Float> scoresIterator;
         private int currentBatch;
-        private boolean runQuery;
-        private List<Float> scores;
-        private List<NodeKey> ids;
-        private int size;
 
-        protected LuceneResults( Query query, boolean scoreDocuments ) {
+        protected LuceneResults( Query query, boolean scoreDocuments, long size ) {
             this.scoreDocuments = scoreDocuments;
-            this.query = scoreDocuments ? query : new CachingWrapperQuery(query, QueryCachingPolicy.ALWAYS_CACHE);
+            this.query = query;
             this.currentBatch = 0;
-            this.runQuery = true;
-            this.scores = new ArrayList<>();
-            this.ids = new ArrayList<>();
+            this.size = size;
         }
 
         @Override
-        public boolean getNextBatch( final ResultWriter writer, final int batchSize ) {
-            if (runQuery) {
-                search(searcher -> {
-                    IdsCollector collector = new IdsCollector(scoreDocuments);
-                    searcher.search(query, collector);
-                    for (Map.Entry<NodeKey, Float> entry : collector.getScoresById().entrySet()) {
-                        ids.add(entry.getKey());
-                        scores.add(entry.getValue());
-                    }
-                    size = ids.size();
-                    runQuery = false;
-                    return null;
-                }, scoreDocuments, true);
-            }
+        public Filter.ResultBatch getNextBatch(final int batchSize) {
+            int startPosition = currentBatch++ * batchSize;
+            int endPosition = (int) Math.min(size, startPosition + batchSize);
+            boolean hasNextBatch = endPosition != size;
+            int size = endPosition - startPosition;
+            return new Filter.ResultBatch() {
+                private int keysCount = 0;
+                private int scoresCount = 0;
+                
+                @Override
+                public Iterable<NodeKey> keys() {
+                   return () -> new Iterator<NodeKey>() {
+                       @Override
+                       public boolean hasNext() {
+                           if (keysCount == size) {
+                               return false;
+                           }
+                           if (keysIterator == null) {
+                               runQuery();
+                           }
+                           return keysIterator.hasNext();
+                       }
 
-            int startPosition = currentBatch * batchSize;
-            int endPosition = Math.min(size, startPosition + batchSize);
-            for (int i = startPosition; i < endPosition; i++) {
-                writer.add(ids.get(i), scores.get(i));
+                       @Override
+                       public NodeKey next() {
+                           if (keysCount++ == size) {
+                               throw new NoSuchElementException();
+                           }  
+                           if (keysIterator == null) {
+                               runQuery();
+                           }
+                           return keysIterator.next();
+                       }
+                   };
+                }
+
+                @Override
+                public Iterable<Float> scores() {
+                    return () -> new Iterator<Float>() {
+                        @Override
+                        public boolean hasNext() {
+                            if (scoresCount == size) {
+                                return false;
+                            }
+                            if (scoresIterator == null) {
+                                runQuery();
+                            }
+                            return scoresIterator.hasNext();
+                        }
+
+                        @Override
+                        public Float next() {
+                            if (scoresCount++ == size) {
+                                throw new NoSuchElementException();
+                            }
+                            if (scoresIterator == null) {
+                                runQuery();
+                            }
+                            return scoresIterator.next();
+                        }
+                    };
+                }
+
+                @Override
+                public boolean hasNext() {
+                    return hasNextBatch;
+                }
+
+                @Override
+                public int size() {
+                    return size;
+                }
+
+                private void runQuery() {
+                    if (keysIterator == null && scoresIterator == null) {
+                        Map<NodeKey, Float> results = search(searcher -> getSearchResults(searcher), true);
+                        keysIterator = results.keySet().iterator();
+                        scoresIterator = results.values().iterator();
+                    }
+                }
+            };
+        }
+
+        private Map<NodeKey, Float> getSearchResults(IndexSearcher searcher) throws IOException {
+            IdsCollector collector = new IdsCollector(scoreDocuments, searcher.getIndexReader().maxDoc());
+            searcher.search(query, collector);
+            BitSet docIds = collector.documents();
+            Map<NodeKey, Float> results = new LinkedHashMap<>();
+            for (int i = docIds.nextSetBit(0); i >= 0; i = docIds.nextSetBit(i + 1)) {
+                try {
+                    // this is a valid document which we have to load...
+                    Document document = searcher.doc(i, ID_FIELD_SET);
+                    String id = document.getBinaryValue(FieldUtil.ID).utf8ToString();
+                    Float score = collector.scoreFor(i);
+                    results.put(new NodeKey(id), score);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
             }
-            ++currentBatch;
-            return endPosition < size;
+            return results;
         }
 
         @Override
         public void close() {
-            scores.clear();
-            ids.clear();
+            keysIterator = null;
+            scoresIterator = null;
+            query = null;
         }
 
         @Override
         public String toString() {
             final StringBuilder sb = new StringBuilder(query.toString());
-            sb.append("=").append("[");
-            for (int i = 0; i < size; i++) {
-                sb.append("(").append(ids.get(i)).append(", ").append(scores.get(i)).append(")");
-                if (i < size - 1) {
-                    sb.append(", ");
-                }
-            }
-            sb.append(']');
+            sb.append("=").append("[").append(size).append( " keys]");
             return sb.toString();
         }
     }
     
     private static class IdsCollector extends SimpleCollector {
 
-        // a set which contains the ID field which is the only field we want to load
-        private static final Set<String> ID_FIELD_SET = Collections.singleton(FieldUtil.ID);
+        private final float[] scores;
         
-        private final boolean useScore;
-        private final Map<NodeKey, Float> scoresById;
-
-        private LeafReader currentReader;
+        private BitSet docHits;
         private Scorer scorer;
+        private int docBase;
+        private Bits liveDocs;
 
-        protected IdsCollector( boolean useScore ) {
-            this.useScore = useScore;
-            this.scoresById = new LinkedHashMap<>();
+        protected IdsCollector(boolean scoring, int maxDoc) {
+            this.scores = scoring ? new float[maxDoc] : null;
+            this.docHits = new BitSet(maxDoc);
         }
 
         @Override
         protected void doSetNextReader( LeafReaderContext context ) throws IOException {
-            currentReader = context.reader();
+            this.docBase = context.docBase;
+            this.liveDocs = context.reader().getLiveDocs();
         }
 
         @Override
         public void setScorer( Scorer scorer ) throws IOException {
-            if (useScore) {
+            if (isScoring()) {
                 this.scorer = scorer;
             }
         }
 
         @Override
         public void collect( int doc ) throws IOException {
-            // this is a valid document which we have to load...
-            Document document = currentReader.document(doc, ID_FIELD_SET);
-            if (document == null) {
+            if (liveDocs != null && !liveDocs.get(doc)) {
+                // 'doc' has been deleted, so ignore it
                 return;
             }
-            String id = document.getBinaryValue(FieldUtil.ID).utf8ToString();
-            Float score = useScore ? scorer.score() : DEFAULT_SCORE;
-            scoresById.put(new NodeKey(id), score);
+            int docId = doc + docBase;
+            if (isScoring()) {
+                scores[docId] = scorer.score();
+            }
+            docHits.set(docId);
         }
-        
-
+    
         @Override
         public boolean needsScores() {
-            return useScore;
+            return isScoring();
         }
 
-        protected Map<NodeKey, Float> getScoresById() {
-            return scoresById;
+        protected BitSet documents() {
+            return docHits;
+        }
+        
+        protected Float scoreFor(int docId) {
+            return isScoring() ? scores[docId] : DEFAULT_SCORE;
+        }
+        
+        private boolean isScoring() {
+            return scores != null;
         }
     }
     

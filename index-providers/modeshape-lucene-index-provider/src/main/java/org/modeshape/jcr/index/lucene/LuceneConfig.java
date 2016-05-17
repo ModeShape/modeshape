@@ -106,7 +106,7 @@ public final class LuceneConfig {
     
     protected SearcherManager searchManager( IndexWriter writer ) {
         try {
-            return new SearcherManager(writer, true, null);
+            return new SearcherManager(writer, true, true, null);
         } catch (IOException e) {
             throw new LuceneIndexException("Cannot create index writer", e);
         }

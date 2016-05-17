@@ -256,7 +256,7 @@ public class EsIndex implements ProvidedIndex {
     }
 
     @Override
-    public Results filter(IndexConstraints constraints) {
+    public Results filter(IndexConstraints constraints, long cardinalityEstimate) {
         EsRequest query = operations.createQuery(constraints.getConstraints(), constraints.getVariables());
         return new SearchResults(client, name(), workspace, query);
     }

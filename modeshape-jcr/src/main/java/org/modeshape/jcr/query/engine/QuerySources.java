@@ -20,8 +20,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -41,7 +39,7 @@ import org.modeshape.jcr.query.NodeSequence;
 import org.modeshape.jcr.query.NodeSequence.Batch;
 import org.modeshape.jcr.spi.index.Index;
 import org.modeshape.jcr.spi.index.IndexConstraints;
-import org.modeshape.jcr.spi.index.ResultWriter;
+import org.modeshape.jcr.spi.index.provider.Filter;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.Path;
 import org.modeshape.jcr.value.Path.Segment;
@@ -305,21 +303,23 @@ public class QuerySources {
      * Obtain a {@link NodeSequence} that uses the supplied index to find the node that satisfy the given constraints.
      *
      * @param index the index; may not be null
+     * @param cardinalityEstimate an estimation for the cardinality of that index, as returned during the planning phase
      * @param constraints the constraints that apply to the index; may not be null but can be empty
      * @param joinConditions the join constraints that apply to the index; may not be but can be empty
      * @param variables the immutable map of variable values keyed by their name; never null but possibly empty
      * @param parameters the provider-specific index parameters; may not be null, but may be empty
      * @param valueFactories the value factories; never null
-     * @param batchSize the ideal number of nodes that are to be included in each batch; always positive     
+     * @param batchSize the ideal number of nodes that are to be included in each batch; always positive           
      * @return the sequence of nodes; null if the index cannot be used (e.g., it might be rebuilding or in an inconsistent state)
      */
-    public NodeSequence fromIndex( final Index index,
-                                   final Collection<Constraint> constraints,
-                                   final Collection<JoinCondition> joinConditions, 
-                                   final Map<String, Object> variables,
-                                   final Map<String, Object> parameters,
-                                   final ValueFactories valueFactories,
-                                   final int batchSize ) {
+    public NodeSequence fromIndex(final Index index,
+                                  final long cardinalityEstimate, 
+                                  final Collection<Constraint> constraints,
+                                  final Collection<JoinCondition> joinConditions,
+                                  final Map<String, Object> variables,
+                                  final Map<String, Object> parameters,
+                                  final ValueFactories valueFactories,
+                                  final int batchSize) {
         if (!index.isEnabled()) {
             return null;
         }
@@ -358,7 +358,7 @@ public class QuerySources {
         // Return a node sequence that will lazily get the results from the index ...
         return new NodeSequence() {
             private Index.Results results;
-            private BatchWriter writer;
+            private Filter.ResultBatch currentBatch;
             private boolean more = true;
             private long rowCount = 0L;
 
@@ -388,35 +388,37 @@ public class QuerySources {
 
             @Override
             public Batch nextBatch() {
-                if (writer == null) {
-                    if (!more) return null;
+                if (currentBatch == null) {
+                    if (!more) {
+                        // make sure we always close
+                        close();
+                        return null;
+                    }
                     readBatch();
                 }
-                if (writer != null) {
-                    // Return a preloaded batch if there is one ...
-                    Batch preloaded = writer.popPreloadedBatch();
-                    if (preloaded != null) return preloaded;
-                }
-                try {
-                    return writer.convertToBatch(!more);
-                } finally {
-                    writer = null;
-                }
+                Batch nextBatch = NodeSequence.batchOfKeys(currentBatch.keys().iterator(), 
+                                                           currentBatch.scores().iterator(),
+                                                           currentBatch.size(),
+                                                           workspaceName, repo);
+                currentBatch = null;
+                return nextBatch;
             }
 
             @Override
             public void close() {
                 if (results != null) {
                     results.close();
+                    results = null;
                 }
             }
 
             protected final void readBatch() {
-                if (writer == null) {
-                    writer = new BatchWriter(batchSize, workspaceName, repo);
+                if (currentBatch != null) {
+                    return;
                 }
-                more = writer.consumeOperation(getResults());
-                rowCount += writer.rowCount();
+                currentBatch = getResults().getNextBatch(batchSize);
+                more = currentBatch.hasNext();
+                rowCount += currentBatch.size();
             }
 
             @Override
@@ -427,88 +429,10 @@ public class QuerySources {
             private Index.Results getResults() {
                 if (results != null) return results;
                 // Otherwise we have to initialize the results, so have the index do the filtering based upon the constraints ...
-                results = index.filter(indexConstraints);
+                results = index.filter(indexConstraints, cardinalityEstimate);
                 return results;
             }
         };
-    }
-
-    protected static class BatchWriter implements ResultWriter {
-        private List<NodeKey> keys;
-        private List<Float> scores;
-        private Float lastScore;
-        private LinkedList<Batch> preloadedBatches;
-        private final RepositoryCache repo;
-        private final String workspaceName;
-        private final int batchSize;
-
-        protected BatchWriter( int batchSize,
-                               String workspaceName,
-                               RepositoryCache repository ) {
-            this.batchSize = batchSize;
-            this.repo = repository;
-            this.workspaceName = workspaceName;
-        }
-
-        @Override
-        public void add( NodeKey nodeKey,
-                         float score ) {
-            keys.add(nodeKey);
-            if (lastScore == null || lastScore.floatValue() != score) {
-                lastScore = Float.valueOf(score);
-            }
-            scores.add(lastScore);
-        }
-
-        @Override
-        public void add( Iterable<NodeKey> nodeKeys,
-                         float score ) {
-            add(nodeKeys.iterator(), score);
-        }
-
-        @Override
-        public void add( Iterator<NodeKey> nodeKeys,
-                         float score ) {
-            final Float s = Float.valueOf(score);
-            while (nodeKeys.hasNext()) {
-                keys.add(nodeKeys.next());
-                scores.add(s);
-            }
-        }
-
-        public Batch popPreloadedBatch() {
-            if (preloadedBatches == null || preloadedBatches.isEmpty()) return null;
-            return preloadedBatches.pop();
-        }
-
-        public long rowCount() {
-            return keys == null ? 0 : keys.size();
-        }
-
-        protected boolean consumeOperation( Index.Results operation ) {
-            if (keys != null && !keys.isEmpty()) {
-                // We've already read some, but have to get ready to read more ...
-                Batch batch = convertToBatch(false);
-                if (batch.isEmpty()) return false;
-                if (preloadedBatches == null) preloadedBatches = new LinkedList<>();
-                preloadedBatches.add(batch);
-            }
-            keys = new ArrayList<NodeKey>(batchSize);
-            scores = new ArrayList<Float>(batchSize);
-            return operation.getNextBatch(this, batchSize);
-        }
-
-        protected Batch convertToBatch( boolean isLast ) {
-            if (keys == null || keys.isEmpty()) {
-                return isLast ? null : NodeSequence.emptyBatch(workspaceName, batchSize);
-            }
-            try {
-                return NodeSequence.batchOfKeys(keys.iterator(), scores.iterator(), keys.size(), workspaceName, repo);
-            } finally {
-                keys = null;
-                scores = null;
-            }
-        }
     }
 
     protected static class CompositeNodeFilter implements NodeFilter {

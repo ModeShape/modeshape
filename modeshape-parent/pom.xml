@@ -117,7 +117,7 @@
         <version.org.slf4j>1.7.2</version.org.slf4j>
         <version.log4j>1.2.17</version.log4j>
         <version.javax.jcr>2.0</version.javax.jcr>
-        <version.org.mapdb>1.0.8</version.org.mapdb>
+        <version.org.mapdb>1.0.9</version.org.mapdb>
         <version.org.apache.jackrabbit>2.6.0</version.org.apache.jackrabbit>
         <version.org.jboss.jbossts.jta>5.2.9.Final</version.org.jboss.jbossts.jta>
         <version.com.atomikos>3.8.0</version.com.atomikos>
@@ -170,7 +170,7 @@
         <!-- nightmare end -->        
         <version.org.apache.tika>1.12</version.org.apache.tika>
         <version.com.drewnoakes.metadata-extractor>2.6.2</version.com.drewnoakes.metadata-extractor>
-        <version.org.apache.lucene>5.3.1</version.org.apache.lucene>
+        <version.org.apache.lucene>6.0.0</version.org.apache.lucene>
         <version.io.humble>0.2.1</version.io.humble>
         <version.org.apache.chemistry.opencmis>0.11.0</version.org.apache.chemistry.opencmis>
         <version.com.google.gwt>2.5.1</version.com.google.gwt>
@@ -209,7 +209,7 @@
         <version.bundle.plugin>3.0.0</version.bundle.plugin>
         <version.gwt.maven.plugin>2.5.1</version.gwt.maven.plugin>
         <version.org.wildfly.plugings.wildfly-maven-plugin>1.0.2.Final</version.org.wildfly.plugings.wildfly-maven-plugin>
-        <version.elasticsearch>2.1.0</version.elasticsearch>
+        <version.org.elasticsearch>2.1.0</version.org.elasticsearch>
         <version.jna>4.1.0</version.jna>
         <!--The name of the modeshape-client artifact used by tools-->
         <client.artifactId>modeshape-client</client.artifactId>
@@ -1398,8 +1398,14 @@
                 <groupId>org.apache.lucene</groupId>
                 <artifactId>lucene-queryparser</artifactId>
                 <version>${version.org.apache.lucene}</version>
-            </dependency> 
-          
+            </dependency>
+            <dependency>
+                <groupId>org.apache.lucene</groupId>
+                <artifactId>lucene-backward-codecs</artifactId>
+                <version>${version.org.apache.lucene}</version>
+            </dependency>
+
+
             <!--
                Web Modules dependencies
             -->
@@ -2027,7 +2033,7 @@
             <dependency>
                <groupId>org.elasticsearch</groupId>
                <artifactId>elasticsearch</artifactId>
-               <version>${version.elasticsearch}</version>
+               <version>${version.org.elasticsearch}</version>
                <scope>test</scope>
             </dependency>            
             <dependency>

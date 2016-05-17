@@ -22,9 +22,9 @@ import org.modeshape.jcr.spi.index.provider.IndexProvider;
 /**
  * An index used by the query system to quickly provide the set of {@link NodeKey}s that satisfy a particular portion of a query.
  * <p>
- * Each time ModeShape uses this index, it calls the {@link #filter(IndexConstraints)} method with a set of
+ * Each time ModeShape uses this index, it calls the {@link Filter#filter(IndexConstraints, long)} method with a set of
  * {@link IndexConstraints} to obtain an {@link org.modeshape.jcr.spi.index.provider.Filter.Results} instance that ModeShape will
- * then use to {@link org.modeshape.jcr.spi.index.provider.Filter.Results#getNextBatch(ResultWriter, int) access} the batches of
+ * then use to {@link Results#getNextBatch(int) access} the batches of
  * node keys that satisfy the constraints. Note that once an {@link org.modeshape.jcr.spi.index.provider.Filter.Results} is
  * obtained, it may be called zero or more times but will always be closed.
  * </p>

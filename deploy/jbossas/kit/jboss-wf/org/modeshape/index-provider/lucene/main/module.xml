@@ -18,10 +18,15 @@
 <module xmlns="urn:jboss:module:1.3" name="org.modeshape.index-provider.lucene">
     <resources>
         <resource-root path="modeshape-lucene-index-provider-${project.version}.jar" />
+        <resource-root path="lucene-analyzers-common-${version.org.apache.lucene}.jar" />
+        <resource-root path="lucene-core-${version.org.apache.lucene}.jar" />
+        <resource-root path="lucene-queries-${version.org.apache.lucene}.jar" />
+        <resource-root path="lucene-queryparser-${version.org.apache.lucene}.jar" />
+        <resource-root path="lucene-sandbox-${version.org.apache.lucene}.jar" />
+        <resource-root path="lucene-backward-codecs-${version.org.apache.lucene}.jar" />
     </resources>
 
     <dependencies>
-        <module name="org.apache.lucene" slot="${version.org.apache.lucene}"/>
         <module name="org.modeshape"/>
     </dependencies>
 </module>

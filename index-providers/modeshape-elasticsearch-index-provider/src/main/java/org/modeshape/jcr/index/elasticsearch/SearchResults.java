@@ -16,14 +16,16 @@
 package org.modeshape.jcr.index.elasticsearch;
 
 import java.io.IOException;
+import java.util.LinkedHashMap;
 import java.util.List;
-import org.modeshape.schematic.document.Document;
+import java.util.stream.Collectors;
 import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.index.elasticsearch.client.EsClient;
 import org.modeshape.jcr.index.elasticsearch.client.EsRequest;
 import org.modeshape.jcr.index.elasticsearch.client.EsResponse;
 import org.modeshape.jcr.spi.index.Index;
-import org.modeshape.jcr.spi.index.ResultWriter;
+import org.modeshape.jcr.spi.index.provider.Filter;
+import org.modeshape.schematic.document.Document;
 
 /**
  *
@@ -40,8 +42,6 @@ public class SearchResults implements Index.Results {
     
     /**
      * Creates new search result instance for the given search request.
-     * 
-     * @param searchBuilder search request as request builder.
      */
     public SearchResults(EsClient client, String index, String type, EsRequest query) {
         this.client = client;
@@ -51,7 +51,8 @@ public class SearchResults implements Index.Results {
     }
 
     @Override
-    public boolean getNextBatch(ResultWriter writer, int batchSize) {
+    @SuppressWarnings("unchecked")
+    public Filter.ResultBatch getNextBatch(int batchSize) {
         query.put("from", pos);
         query.put("size", batchSize);
         
@@ -59,17 +60,39 @@ public class SearchResults implements Index.Results {
             EsResponse res = client.search(index, type, query);
             Document hits = (Document) res.get("hits");
             totalHits = hits.getInteger("total");
-            List items = hits.getArray("hits");
-            for (Object doc : items) {
-                Document hit = (Document) doc;
-                String nodeKey = hit.getString("_id");
-                float score = (hit.getDouble("_score").floatValue());
-                writer.add(new NodeKey(nodeKey), score);
-                pos++;
+            List<Document> items = (List<Document>) hits.getArray("hits");
+            if (items == null || items.isEmpty()) {
+                return Filter.ResultBatch.EMPTY;
             }
-            return pos < totalHits;
+            LinkedHashMap<NodeKey, Float> results = items.stream().collect(Collectors.toMap(
+                    doc -> new NodeKey(doc.getString("_id")),
+                    doc -> doc.getDouble("_score").floatValue(),
+                    (v1, v2) -> v1,
+                    LinkedHashMap::new));
+            pos += results.size();
+            return new Filter.ResultBatch() {
+                @Override
+                public Iterable<NodeKey> keys() {
+                    return () -> results.keySet().iterator();
+                }
+
+                @Override
+                public Iterable<Float> scores() {
+                    return () -> results.values().iterator();
+                }
+
+                @Override
+                public boolean hasNext() {
+                    return pos < totalHits;
+                }
+
+                @Override
+                public int size() {
+                    return results.size();
+                }
+            };
         } catch (IOException e) {
-            return false;
+            throw new EsIndexException(e);
         }
     }
 

@@ -114,7 +114,7 @@ abstract class LocalMapIndex<T, V> extends LocalIndex<V> {
     }
 
     @Override
-    public Results filter( IndexConstraints filter ) {
+    public Results filter(IndexConstraints filter, long cardinalityEstimate) {
         return Operations.createFilter(keysByValue, converter, filter.getConstraints(), filter.getVariables()).getResults();
     }
 

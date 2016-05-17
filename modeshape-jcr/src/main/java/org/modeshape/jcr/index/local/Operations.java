@@ -19,6 +19,7 @@ package org.modeshape.jcr.index.local;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.NavigableMap;
 import java.util.NoSuchElementException;
@@ -41,7 +42,7 @@ import org.modeshape.jcr.query.model.BindVariableName;
 import org.modeshape.jcr.query.model.Comparison;
 import org.modeshape.jcr.query.model.Literal;
 import org.modeshape.jcr.spi.index.Index;
-import org.modeshape.jcr.spi.index.ResultWriter;
+import org.modeshape.jcr.spi.index.provider.Filter;
 import org.modeshape.jcr.spi.index.provider.Filter.Results;
 
 /**
@@ -57,9 +58,8 @@ class Operations {
     protected static final Results EMPTY_RESULTS = new Results() {
 
         @Override
-        public boolean getNextBatch( ResultWriter writer,
-                                     int batchSize ) {
-            return false;
+        public Filter.ResultBatch getNextBatch(int batchSize) {
+            return Filter.ResultBatch.EMPTY;
         }
 
         @Override
@@ -331,14 +331,34 @@ class Operations {
             final float score = 1.0f;
             return new Results() {
                 @Override
-                public boolean getNextBatch( ResultWriter writer,
-                                             int batchSize ) {
+                public Filter.ResultBatch getNextBatch(int batchSize) {
                     int count = 0;
+                    final LinkedHashMap<NodeKey, Float> keysByScore = new LinkedHashMap<>();
                     while (count < batchSize && filteredKeys.hasNext()) {
-                        writer.add(new NodeKey(filteredKeys.next()), score);
-                        ++count;
+                        keysByScore.put(new NodeKey(filteredKeys.next()), score);
+                        count++;
                     }
-                    return filteredKeys.hasNext();
+                    return new Filter.ResultBatch() {
+                        @Override
+                        public Iterable<NodeKey> keys() {
+                            return () -> keysByScore.keySet().iterator();
+                        }
+
+                        @Override
+                        public Iterable<Float> scores() {
+                            return () -> keysByScore.values().iterator();
+                        }
+
+                        @Override
+                        public boolean hasNext() {
+                            return filteredKeys.hasNext();
+                        }
+
+                        @Override
+                        public int size() {
+                            return keysByScore.size();
+                        }
+                    };
                 }
 
                 @Override
@@ -566,18 +586,45 @@ class Operations {
             final Results first = left.getResults();
             return new Results() {
                 Results second = null;
-
+                Results first = null;
                 @Override
-                public boolean getNextBatch( ResultWriter writer,
-                                             int batchSize ) {
-                    if (first.getNextBatch(writer, batchSize)) {
-                        return true;
-                    }
-                    // Otherwise, the first one is done so we have to get the second one ...
+                public Filter.ResultBatch getNextBatch(int batchSize) {
                     if (second == null) {
+                        if (first == null) {
+                            first = left.getResults();
+                        }
+                        Filter.ResultBatch resultFromFirst = first.getNextBatch(batchSize);
+                        if (resultFromFirst.hasNext()) {
+                            return resultFromFirst;
+                        }
+                        // no more batches in the 1st result set so we need to look at the second
+                        first = null;
                         second = right.getResults();
+                        if (resultFromFirst.size() > 0) {
+                            return new Filter.ResultBatch() {
+                                @Override
+                                public Iterable<NodeKey> keys() {
+                                    return resultFromFirst.keys();
+                                }
+
+                                @Override
+                                public Iterable<Float> scores() {
+                                    return resultFromFirst.scores();
+                                }
+
+                                @Override
+                                public boolean hasNext() {
+                                    return second != null;
+                                }
+
+                                @Override
+                                public int size() {
+                                    return resultFromFirst.size();
+                                }
+                            };
+                        }
                     }
-                    return second.getNextBatch(writer, batchSize);
+                    return second.getNextBatch(batchSize);
                 }
 
                 @Override

@@ -18,6 +18,8 @@ package org.modeshape.jboss.subsystem;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADDRESS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPERATION_HEADERS;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
@@ -25,7 +27,6 @@ import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
-import org.jboss.logging.Logger;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceTarget;
@@ -40,7 +41,13 @@ public class AddIndexProvider extends AbstractAddStepHandler {
 
     public static final AddIndexProvider INSTANCE = new AddIndexProvider();
 
-    private static final Logger LOG = Logger.getLogger(AddIndexProvider.class.getPackage().getName());
+    private static final Map<String, String> MODULE_NAMES_BY_PROVIDER_ALIAS = new HashMap<String, String>() {
+        {
+            put("org.modeshape.jcr.index.lucene.LuceneIndexProvider", "org.modeshape.index-provider.lucene");
+            put("org.modeshape.jcr.index.elasticsearch.EsIndexProvider", "org.modeshape.index-provider.elasticsearch");
+            put("org.modeshape.jcr.index.local.LocalIndexProvider", "org.modeshape");
+        }
+    };
 
     private AddIndexProvider() {
     }
@@ -124,29 +131,27 @@ public class AddIndexProvider extends AbstractAddStepHandler {
         providerBuilder.setInitialMode(ServiceController.Mode.ACTIVE).install();
     }
 
-    private void ensureClassLoadingPropertyIsSet( Properties providerProperties ) {
+    private void ensureClassLoadingPropertyIsSet( Properties providerProperties ) throws OperationFailedException {
         // could be already set if the "module" element is present in the xml (AddIndexProvider)
         if (providerProperties.containsKey(FieldName.CLASSLOADER)) {
             return;
         }
         String providerClassName = providerProperties.getProperty(FieldName.CLASSNAME);
         if (StringUtil.isBlank(providerClassName)) {
-            LOG.warnv("Required property: {0} not found among the index provider properties: {1}",
-                      FieldName.CLASSNAME,
-                      providerProperties);
-            return;
+            throw new OperationFailedException(
+                    String.format("Required property: %s not found among the index provider properties: %s", FieldName.CLASSNAME,
+                                  providerProperties));
         }
         // try to see if an alias is configured
         String fqProviderClass = RepositoryConfiguration.getBuiltInIndexProviderClassName(providerClassName);
         if (fqProviderClass == null) {
             fqProviderClass = providerClassName;
         }
-        // set the classloader to the package name of the sequencer class
-        int index = fqProviderClass.lastIndexOf(".");
-        String providerModuleName = index != -1 ? fqProviderClass.substring(0, index) : fqProviderClass;
-        if (providerModuleName.startsWith(ModeShapeExtension.ModuleID.MAIN)) {
-            // Any index provider with this package exists in the main module ...
-            providerModuleName = ModeShapeExtension.ModuleID.MAIN;
+        String providerModuleName = MODULE_NAMES_BY_PROVIDER_ALIAS.get(fqProviderClass);
+        if (providerModuleName == null) {
+            // set the classloader to the package name of the class
+            int index = fqProviderClass.lastIndexOf(".");
+            providerModuleName = index != -1 ? fqProviderClass.substring(0, index) : fqProviderClass;
         }
         providerProperties.setProperty(FieldName.CLASSLOADER, providerModuleName);
     }

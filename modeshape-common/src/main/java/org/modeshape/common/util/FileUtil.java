@@ -227,24 +227,21 @@ public class FileUtil {
         ZipInputStream zis = new ZipInputStream(zipFile);
         //get the zipped file list entry
         ZipEntry ze = zis.getNextEntry();
-
+        File parent = new File(dest);
         while (ze != null) {
-
             String fileName = ze.getName();
-            File newFile = new File(fileName);
-
-            //create all non exists folders
-            //else we will hit FileNotFoundException for compressed folder
-            new File(newFile.getParent()).mkdirs();
-
-            FileOutputStream fos = new FileOutputStream(newFile);
-
-            int len;
-            while ((len = zis.read(buffer)) > 0) {
-                fos.write(buffer, 0, len);
+            if (ze.isDirectory()) {
+                File newFolder = new File(parent, fileName);
+                newFolder.mkdir();
+            } else {
+                File newFile = new File(parent, fileName);
+                try (FileOutputStream fos = new FileOutputStream(newFile)) {
+                    int len;
+                    while ((len = zis.read(buffer)) > 0) {
+                        fos.write(buffer, 0, len);
+                    }
+                }
             }
-
-            fos.close();
             ze = zis.getNextEntry();
         }
 

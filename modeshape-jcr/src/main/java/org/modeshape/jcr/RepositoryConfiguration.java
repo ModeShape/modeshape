@@ -657,9 +657,8 @@ public class RepositoryConfiguration {
 
         SEQUENCER_ALIASES = Collections.unmodifiableMap(aliases);
 
-        String localIndexProvider = LocalIndexProvider.class.getName();
         aliases = new HashMap<>();
-        aliases.put("local", localIndexProvider);
+        aliases.put("local", LocalIndexProvider.class.getName());
         aliases.put("lucene", "org.modeshape.jcr.index.lucene.LuceneIndexProvider");
         aliases.put("elasticsearch", "org.modeshape.jcr.index.elasticsearch.EsIndexProvider");
 
