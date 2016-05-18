@@ -13,6 +13,10 @@
     <name>ModeShape Elasticsearch Index Provider</name>
     <description>ModeShape index provider that uses Elasticsearch engine</description>
     <url>http://www.modeshape.org</url>
+    <properties>
+        <!--Overwrite the default version because this version of ES uses an older Lucene version -->
+        <version.org.apache.lucene>5.3.1</version.org.apache.lucene>
+    </properties>
     <dependencies>
         <dependency>
             <groupId>org.elasticsearch</groupId>

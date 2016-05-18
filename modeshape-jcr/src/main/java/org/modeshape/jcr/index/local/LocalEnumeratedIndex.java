@@ -140,7 +140,7 @@ final class LocalEnumeratedIndex extends LocalIndex<String> {
     }
 
     @Override
-    public Results filter( IndexConstraints filter ) {
+    public Results filter(IndexConstraints filter, long cardinalityEstimate) {
         // Find all sets that match the name pattern ...
         return Operations.createEnumeratedFilter(nodeKeySetsByValue, converter, filter.getConstraints(), filter.getVariables())
                          .getResults();

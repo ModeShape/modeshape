@@ -25,10 +25,10 @@ import javax.jcr.Binary;
 import javax.jcr.RepositoryException;
 import javax.jcr.query.qom.Constraint;
 import org.apache.lucene.document.Document;
-import org.apache.lucene.document.DoubleField;
 import org.apache.lucene.document.Field;
-import org.apache.lucene.document.IntField;
-import org.apache.lucene.document.LongField;
+import org.apache.lucene.document.LegacyDoubleField;
+import org.apache.lucene.document.LegacyIntField;
+import org.apache.lucene.document.LegacyLongField;
 import org.apache.lucene.document.StringField;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexWriter;
@@ -52,6 +52,7 @@ import org.modeshape.jcr.value.StringFactory;
  */
 @ThreadSafe
 @Immutable
+@SuppressWarnings("deprecation")
 public abstract class LuceneIndex implements ProvidedIndex<Object> {
 
     protected final Logger logger = Logger.getLogger(getClass());
@@ -126,8 +127,8 @@ public abstract class LuceneIndex implements ProvidedIndex<Object> {
     }
 
     @Override
-    public Results filter( IndexConstraints constraints ) {
-        return searcher.filter(constraints, queryFactory(constraints.getVariables()));
+    public Results filter(IndexConstraints constraints, long cardinalityEstimate) {
+        return searcher.filter(constraints, queryFactory(constraints.getVariables()), cardinalityEstimate);
     }
 
     @Override
@@ -252,30 +253,30 @@ public abstract class LuceneIndex implements ProvidedIndex<Object> {
     
     protected void addStringField( String propertyName, String value, List<Field> fields ) {
         fields.add(new StringField(propertyName, value, Field.Store.YES));
-        fields.add(new LongField(FieldUtil.lengthField(propertyName), value.length(), Field.Store.YES));
+        fields.add(new LegacyLongField(FieldUtil.lengthField(propertyName), value.length(), Field.Store.YES));
     }
 
     protected void addBooleanField( String propertyName, Boolean value, List<Field> fields ) {
         String valueString = stringFactory.create(value);
         int intValue = value ? 1 : 0;
-        fields.add(new IntField(propertyName, intValue, Field.Store.YES));
+        fields.add(new LegacyIntField(propertyName, intValue, Field.Store.YES));
         // add the length
-        fields.add(new LongField(FieldUtil.lengthField(propertyName), valueString.length(), Field.Store.YES));
+        fields.add(new LegacyLongField(FieldUtil.lengthField(propertyName), valueString.length(), Field.Store.YES));
     } 
     
     protected void addDateField( String propertyName, DateTime value, List<Field> fields ) {
         // dates are stored as millis
-        fields.add(new LongField(propertyName, value.getMilliseconds(), Field.Store.YES));
+        fields.add(new LegacyLongField(propertyName, value.getMilliseconds(), Field.Store.YES));
         // add the length
         String valueString = stringFactory.create(value);
-        fields.add(new LongField(FieldUtil.lengthField(propertyName), valueString.length(), Field.Store.YES));
+        fields.add(new LegacyLongField(FieldUtil.lengthField(propertyName), valueString.length(), Field.Store.YES));
     }
     
     protected void addBinaryField( String propertyName, Object value, List<Field> fields ) {
         // only the length is indexed for binary values by default....
         try {
             Binary binary = (Binary) value;
-            fields.add(new LongField(FieldUtil.lengthField(propertyName), binary.getSize(), Field.Store.YES));
+            fields.add(new LegacyLongField(FieldUtil.lengthField(propertyName), binary.getSize(), Field.Store.YES));
         } catch (RepositoryException e) {
             throw new LuceneIndexException(e);
         }
@@ -286,20 +287,20 @@ public abstract class LuceneIndex implements ProvidedIndex<Object> {
         String stringValue = FieldUtil.decimalToString(value);
         fields.add(new StringField(propertyName, stringValue, Field.Store.YES));
         // add the length using the JCR string format
-        fields.add(new LongField(FieldUtil.lengthField(propertyName), stringFactory.create(value).length(), Field.Store.YES));
+        fields.add(new LegacyLongField(FieldUtil.lengthField(propertyName), stringFactory.create(value).length(), Field.Store.YES));
     }
 
     protected void addDoubleField( String propertyName, Double value, List<Field> fields ) {
-        fields.add(new DoubleField(propertyName, value, Field.Store.YES));
+        fields.add(new LegacyDoubleField(propertyName, value, Field.Store.YES));
         // add the length
         String valueString = stringFactory.create(value);
-        fields.add(new LongField(FieldUtil.lengthField(propertyName), valueString.length(), Field.Store.YES));
+        fields.add(new LegacyLongField(FieldUtil.lengthField(propertyName), valueString.length(), Field.Store.YES));
     }
     
     protected void addLongField( String propertyName, Long value, List<Field> fields ) {
-        fields.add(new LongField(propertyName, value.longValue(), Field.Store.YES));
+        fields.add(new LegacyLongField(propertyName, value.longValue(), Field.Store.YES));
         // add the length
         String valueString = stringFactory.create(value);
-        fields.add(new LongField(FieldUtil.lengthField(propertyName), valueString.length(), Field.Store.YES));
+        fields.add(new LegacyLongField(FieldUtil.lengthField(propertyName), valueString.length(), Field.Store.YES));
     }
 }

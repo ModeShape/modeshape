@@ -53,6 +53,7 @@
         <version.com.h2>1.4.191</version.com.h2>
         <version.com.zaxxer.HikariCP>2.4.3</version.com.zaxxer.HikariCP>
         <version.com.googlecode.concurrentlinkedhashmap>1.4.2</version.com.googlecode.concurrentlinkedhashmap>
+        <version.org.mapdb>1.0.9</version.org.mapdb>
         <version.org.slf4j>1.7.2</version.org.slf4j>
         <version.log4j>1.2.17</version.log4j>
         <version.org.picketbox>4.0.21.Final</version.org.picketbox>
@@ -82,7 +83,7 @@
         <version.org.apache.poi>3.13</version.org.apache.poi>
         <version.com.beust.jcommander>1.5</version.com.beust.jcommander>
         <version.wsdl4j>1.6.2</version.wsdl4j>
-        <version.org.apache.lucene>5.3.1</version.org.apache.lucene>
+        <version.org.apache.lucene>6.0.0</version.org.apache.lucene>
         <!-- ***************** -->
         <!-- Repository Deployment URLs -->
         <!-- ***************** -->
@@ -353,6 +354,16 @@
                 <artifactId>concurrentlinkedhashmap-lru</artifactId>
                 <version>${version.com.googlecode.concurrentlinkedhashmap}</version>
             </dependency>
+
+            <!--
+                Used by local indexes and journaling
+            -->
+            <dependency>
+                <groupId>org.mapdb</groupId>
+                <artifactId>mapdb</artifactId>
+                <version>${version.org.mapdb}</version>
+            </dependency>
+
 
             <!-- 
                 Used by the relational persistence provider

@@ -43,9 +43,9 @@ import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.lucene.search.BooleanQuery;
+import org.apache.lucene.search.LegacyNumericRangeQuery;
 import org.apache.lucene.search.MatchAllDocsQuery;
 import org.apache.lucene.search.MatchNoDocsQuery;
-import org.apache.lucene.search.NumericRangeQuery;
 import org.apache.lucene.search.PhraseQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.RegexpQuery;
@@ -89,6 +89,7 @@ import org.modeshape.jcr.value.ValueFactories;
  */
 @ThreadSafe
 @Immutable
+@SuppressWarnings("deprecation")
 public class LuceneQueryFactory {
 
     protected final PathFactory pathFactory;
@@ -107,7 +108,7 @@ public class LuceneQueryFactory {
         this.nameFactory = factories.getNameFactory();
         this.stringFactory = factories.getStringFactory();
 
-        this.variables = variables != null ? variables : Collections.<String, Object>emptyMap();
+        this.variables = variables != null ? variables : Collections.emptyMap();
         assert propertyTypesByName != null;
         this.propertyTypesByName = propertyTypesByName;
     }
@@ -294,19 +295,19 @@ public class LuceneQueryFactory {
             case DATE:
                 long lowerDate = factories.getLongFactory().create(lowerValue);
                 long upperDate = factories.getLongFactory().create(upperValue);
-                return NumericRangeQuery.newLongRange(field, lowerDate, upperDate, includesLower, includesUpper);
+                return LegacyNumericRangeQuery.newLongRange(field, lowerDate, upperDate, includesLower, includesUpper);
             case LONG:
                 long lowerLong = factories.getLongFactory().create(lowerValue);
                 long upperLong = factories.getLongFactory().create(upperValue);
-                return NumericRangeQuery.newLongRange(field, lowerLong, upperLong, includesLower, includesUpper);
+                return LegacyNumericRangeQuery.newLongRange(field, lowerLong, upperLong, includesLower, includesUpper);
             case DOUBLE:
                 double lowerDouble = factories.getDoubleFactory().create(lowerValue);
                 double upperDouble = factories.getDoubleFactory().create(upperValue);
-                return NumericRangeQuery.newDoubleRange(field, lowerDouble, upperDouble, includesLower, includesUpper);
+                return LegacyNumericRangeQuery.newDoubleRange(field, lowerDouble, upperDouble, includesLower, includesUpper);
             case BOOLEAN:
                 int lowerInt = factories.getBooleanFactory().create(lowerValue) ? 1 : 0;
                 int upperInt = factories.getBooleanFactory().create(upperValue) ? 1 : 0;
-                return NumericRangeQuery.newIntRange(field, lowerInt, upperInt, includesLower, includesUpper);
+                return LegacyNumericRangeQuery.newIntRange(field, lowerInt, upperInt, includesLower, includesUpper);
             case DECIMAL:
                 BigDecimal lowerDecimal = factories.getDecimalFactory().create(lowerValue);
                 BigDecimal upperDecimal = factories.getDecimalFactory().create(upperValue);
@@ -607,19 +608,19 @@ public class LuceneQueryFactory {
         if (booleanValue) {
             switch (operator) {
                 case EQUAL_TO:
-                    return NumericRangeQuery.newIntRange(field, 0, 1, false, true);
+                    return LegacyNumericRangeQuery.newIntRange(field, 0, 1, false, true);
                 case NOT_EQUAL_TO:
-                    return NumericRangeQuery.newIntRange(field, 0, 1, true, false);
+                    return LegacyNumericRangeQuery.newIntRange(field, 0, 1, true, false);
                 case GREATER_THAN_OR_EQUAL_TO:
-                    return NumericRangeQuery.newIntRange(field, 1, 1, true, true);
+                    return LegacyNumericRangeQuery.newIntRange(field, 1, 1, true, true);
                 case LESS_THAN_OR_EQUAL_TO:
-                    return NumericRangeQuery.newIntRange(field, 0, 1, true, true);
+                    return LegacyNumericRangeQuery.newIntRange(field, 0, 1, true, true);
                 case GREATER_THAN:
                     // Can't be greater than 'true', per JCR spec
                     return new MatchNoDocsQuery();
                 case LESS_THAN:
                     // 'false' is less than 'true' ...
-                    return NumericRangeQuery.newIntRange(field, 0, 0, true, true);
+                    return LegacyNumericRangeQuery.newIntRange(field, 0, 0, true, true);
                 case LIKE:
                     // This is not supported
                     throw new LuceneIndexException(LuceneIndexProviderI18n.invalidOperatorForPropertyType.text(Operator.LIKE,
@@ -631,16 +632,16 @@ public class LuceneQueryFactory {
         } else {
             switch (operator) {
                 case EQUAL_TO:
-                    return NumericRangeQuery.newIntRange(field, 0, 1, true, false);
+                    return LegacyNumericRangeQuery.newIntRange(field, 0, 1, true, false);
                 case NOT_EQUAL_TO:
-                    return NumericRangeQuery.newIntRange(field, 0, 1, false, true);
+                    return LegacyNumericRangeQuery.newIntRange(field, 0, 1, false, true);
                 case GREATER_THAN_OR_EQUAL_TO:
-                    return NumericRangeQuery.newIntRange(field, 0, 1, true, true);
+                    return LegacyNumericRangeQuery.newIntRange(field, 0, 1, true, true);
                 case LESS_THAN_OR_EQUAL_TO:
-                    return NumericRangeQuery.newIntRange(field, 0, 0, true, true);
+                    return LegacyNumericRangeQuery.newIntRange(field, 0, 0, true, true);
                 case GREATER_THAN:
                     // 'true' is greater than 'false' ...
-                    return NumericRangeQuery.newIntRange(field, 1, 1, true, true);
+                    return LegacyNumericRangeQuery.newIntRange(field, 1, 1, true, true);
                 case LESS_THAN:
                     // Can't be less than 'false', per JCR spec
                     return new MatchNoDocsQuery();
@@ -663,34 +664,34 @@ public class LuceneQueryFactory {
                 if (longValue < longMinimum || longValue > longMaximum) {
                     return new MatchNoDocsQuery();
                 }
-                return NumericRangeQuery.newLongRange(field, longValue, longValue, true, true);
+                return LegacyNumericRangeQuery.newLongRange(field, longValue, longValue, true, true);
             case NOT_EQUAL_TO:
                 if (longValue < longMinimum || longValue > longMaximum) {
                     return new MatchAllDocsQuery();
                 }
-                Query lowerRange = NumericRangeQuery.newLongRange(field, longMinimum, longValue, true, false);
-                Query upperRange = NumericRangeQuery.newLongRange(field, longValue, longMaximum, false, true);
+                Query lowerRange = LegacyNumericRangeQuery.newLongRange(field, longMinimum, longValue, true, false);
+                Query upperRange = LegacyNumericRangeQuery.newLongRange(field, longValue, longMaximum, false, true);
                 return booleanQuery(lowerRange, Occur.SHOULD, upperRange, Occur.SHOULD);
             case GREATER_THAN:
                 if (longValue > longMaximum) {
                     return new MatchNoDocsQuery();
                 }
-                return NumericRangeQuery.newLongRange(field, longValue, longMaximum, false, true);
+                return LegacyNumericRangeQuery.newLongRange(field, longValue, longMaximum, false, true);
             case GREATER_THAN_OR_EQUAL_TO:
                 if (longValue > longMaximum) {
                     return new MatchNoDocsQuery();
                 }
-                return NumericRangeQuery.newLongRange(field, longValue, longMaximum, true, true);
+                return LegacyNumericRangeQuery.newLongRange(field, longValue, longMaximum, true, true);
             case LESS_THAN:
                 if (longValue < longMinimum) {
                     return new MatchNoDocsQuery();
                 }
-                return NumericRangeQuery.newLongRange(field, longMinimum, longValue, true, false);
+                return LegacyNumericRangeQuery.newLongRange(field, longMinimum, longValue, true, false);
             case LESS_THAN_OR_EQUAL_TO:
                 if (longValue < longMinimum) {
                     return new MatchNoDocsQuery();
                 }
-                return NumericRangeQuery.newLongRange(field, longMinimum, longValue, true, true);
+                return LegacyNumericRangeQuery.newLongRange(field, longMinimum, longValue, true, true);
             case LIKE:
                 throw new LuceneIndexException(LuceneIndexProviderI18n.invalidOperatorForPropertyType.text(operator,
                                                                                                            PropertyType.LONG));
@@ -708,36 +709,36 @@ public class LuceneQueryFactory {
                 if (doubleValue < doubleMinimum || doubleValue > doubleMaximum) {
                     return new MatchNoDocsQuery();
                 }
-                return NumericRangeQuery.newDoubleRange(field, doubleValue, doubleValue, true, true);
+                return LegacyNumericRangeQuery.newDoubleRange(field, doubleValue, doubleValue, true, true);
             case NOT_EQUAL_TO:
                 if (doubleValue < doubleMinimum || doubleValue > doubleMaximum) {
                     return new MatchAllDocsQuery();
                 }
-                Query lowerRange = NumericRangeQuery.newDoubleRange(field, doubleMinimum, doubleValue, true,
+                Query lowerRange = LegacyNumericRangeQuery.newDoubleRange(field, doubleMinimum, doubleValue, true,
                                                                     false);
-                Query upperRange = NumericRangeQuery.newDoubleRange(field, doubleValue, doubleMaximum, false,
+                Query upperRange = LegacyNumericRangeQuery.newDoubleRange(field, doubleValue, doubleMaximum, false,
                                                                     true);
                 return booleanQuery(lowerRange, Occur.SHOULD, upperRange, Occur.SHOULD);
             case GREATER_THAN:
                 if (doubleValue > doubleMaximum) {
                     return new MatchNoDocsQuery();
                 }
-                return NumericRangeQuery.newDoubleRange(field, doubleValue, doubleMaximum, false, true);
+                return LegacyNumericRangeQuery.newDoubleRange(field, doubleValue, doubleMaximum, false, true);
             case GREATER_THAN_OR_EQUAL_TO:
                 if (doubleValue > doubleMaximum) {
                     return new MatchNoDocsQuery();
                 }
-                return NumericRangeQuery.newDoubleRange(field, doubleValue, doubleMaximum, true, true);
+                return LegacyNumericRangeQuery.newDoubleRange(field, doubleValue, doubleMaximum, true, true);
             case LESS_THAN:
                 if (doubleValue < doubleMinimum) {
                     return new MatchNoDocsQuery();
                 }
-                return NumericRangeQuery.newDoubleRange(field, doubleMinimum, doubleValue, true, false);
+                return LegacyNumericRangeQuery.newDoubleRange(field, doubleMinimum, doubleValue, true, false);
             case LESS_THAN_OR_EQUAL_TO:
                 if (doubleValue < doubleMinimum) {
                     return new MatchNoDocsQuery();
                 }
-                return NumericRangeQuery.newDoubleRange(field, doubleMinimum, doubleValue, true, true);
+                return LegacyNumericRangeQuery.newDoubleRange(field, doubleMinimum, doubleValue, true, true);
             case LIKE:
                 // should never happen (the double conversion should've failed)
                 assert false;
@@ -755,34 +756,34 @@ public class LuceneQueryFactory {
                 if (millis < longMinimum || millis > longMaximum) {
                     return new MatchNoDocsQuery();
                 }
-                return NumericRangeQuery.newLongRange(field, millis, millis, true, true);
+                return LegacyNumericRangeQuery.newLongRange(field, millis, millis, true, true);
             case NOT_EQUAL_TO:
                 if (millis < longMinimum || millis > longMaximum) {
                     return new MatchAllDocsQuery();
                 }
-                Query lowerRange = NumericRangeQuery.newLongRange(field, longMinimum, millis, true, false);
-                Query upperRange = NumericRangeQuery.newLongRange(field, millis, longMaximum, false, true);
+                Query lowerRange = LegacyNumericRangeQuery.newLongRange(field, longMinimum, millis, true, false);
+                Query upperRange = LegacyNumericRangeQuery.newLongRange(field, millis, longMaximum, false, true);
                 return booleanQuery(lowerRange, Occur.SHOULD, upperRange, Occur.SHOULD);
             case GREATER_THAN:
                 if (millis > longMaximum) {
                     return new MatchNoDocsQuery();
                 }
-                return NumericRangeQuery.newLongRange(field, millis, longMaximum, false, true);
+                return LegacyNumericRangeQuery.newLongRange(field, millis, longMaximum, false, true);
             case GREATER_THAN_OR_EQUAL_TO:
                 if (millis > longMaximum) {
                     return new MatchNoDocsQuery();
                 }
-                return NumericRangeQuery.newLongRange(field, millis, longMaximum, true, true);
+                return LegacyNumericRangeQuery.newLongRange(field, millis, longMaximum, true, true);
             case LESS_THAN:
                 if (millis < longMinimum) {
                     return new MatchNoDocsQuery();
                 }
-                return NumericRangeQuery.newLongRange(field, longMinimum, millis, true, false);
+                return LegacyNumericRangeQuery.newLongRange(field, longMinimum, millis, true, false);
             case LESS_THAN_OR_EQUAL_TO:
                 if (millis < longMinimum) {
                     return new MatchNoDocsQuery();
                 }
-                return NumericRangeQuery.newLongRange(field, longMinimum, millis, true, true);
+                return LegacyNumericRangeQuery.newLongRange(field, longMinimum, millis, true, true);
             case LIKE:
                 // should never happen (the millis conversion should've failed)
                 assert false;
@@ -851,19 +852,19 @@ public class LuceneQueryFactory {
         String field = FieldUtil.lengthField(propertyLength.getPropertyValue().getPropertyName());
         switch (operator) {
             case EQUAL_TO:
-                return NumericRangeQuery.newLongRange(field, length, length, true, true);
+                return LegacyNumericRangeQuery.newLongRange(field, length, length, true, true);
             case NOT_EQUAL_TO:
-                Query upper = NumericRangeQuery.newLongRange(field, length, Long.MAX_VALUE, false, false);
-                Query lower = NumericRangeQuery.newLongRange(field, 0L, length, true, false);
+                Query upper = LegacyNumericRangeQuery.newLongRange(field, length, Long.MAX_VALUE, false, false);
+                Query lower = LegacyNumericRangeQuery.newLongRange(field, 0L, length, true, false);
                 return booleanQuery(upper, Occur.SHOULD, lower, Occur.SHOULD);
             case GREATER_THAN:
-                return NumericRangeQuery.newLongRange(field, length, Long.MAX_VALUE, false, false);
+                return LegacyNumericRangeQuery.newLongRange(field, length, Long.MAX_VALUE, false, false);
             case GREATER_THAN_OR_EQUAL_TO:
-                return NumericRangeQuery.newLongRange(field, length, Long.MAX_VALUE, true, false);
+                return LegacyNumericRangeQuery.newLongRange(field, length, Long.MAX_VALUE, true, false);
             case LESS_THAN:
-                return NumericRangeQuery.newLongRange(field, 0L, length, true, false);
+                return LegacyNumericRangeQuery.newLongRange(field, 0L, length, true, false);
             case LESS_THAN_OR_EQUAL_TO:
-                return NumericRangeQuery.newLongRange(field, 0L, length, true, true);
+                return LegacyNumericRangeQuery.newLongRange(field, 0L, length, true, true);
             case LIKE:
                 // This is not allowed ...
                 throw new LuceneIndexException(LuceneIndexProviderI18n.invalidOperatorForOperand.text(operator,

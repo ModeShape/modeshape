@@ -51,7 +51,6 @@ import org.modeshape.jcr.query.model.SelectorName;
 import org.modeshape.jcr.query.model.SetCriteria;
 import org.modeshape.jcr.query.model.StaticOperand;
 import org.modeshape.jcr.query.model.UpperCase;
-import org.modeshape.jcr.spi.index.ResultWriter;
 import org.modeshape.jcr.spi.index.provider.Filter;
 import org.modeshape.jcr.value.ValueFactories;
 
@@ -93,19 +92,22 @@ public abstract class AbstractLuceneIndexSearchTest {
     }
 
     protected void validateCardinality(Constraint constraint, long expected) {
-        long actualValue = index.estimateCardinality(Collections.<javax.jcr.query.qom.Constraint>singletonList(constraint), Collections.<String, Object>emptyMap());
+        long actualValue = index.estimateCardinality(Collections.singletonList(constraint), Collections.emptyMap());
         assertEquals("Incorrect returned cardinality:", expected, actualValue);
     }
 
     protected void validateFilterResults(Constraint constraint, int batchSize, boolean expectRealScore, String...expectedKeys) {
-        Filter.Results results = index.filter(new TestIndexConstraints(constraint));
-        BatchCollector collector = new BatchCollector();
-        while (true) {
-            if (!results.getNextBatch(collector, batchSize)) {
-                break;
+        long cardinalityEstimate = expectedKeys != null ? expectedKeys.length : 0;
+        Filter.Results results = index.filter(new TestIndexConstraints(constraint), cardinalityEstimate);
+        Map<String, Float> actualResults = new LinkedHashMap<>();
+        Filter.ResultBatch nextBatch;
+        while ((nextBatch = results.getNextBatch(batchSize)).size() > 0) {
+            Iterator<NodeKey> keyIterator = nextBatch.keys().iterator();
+            Iterator<Float> scoresIterator = nextBatch.scores().iterator();
+            while (keyIterator.hasNext() && scoresIterator.hasNext()) {
+                actualResults.put(keyIterator.next().toString(), scoresIterator.next());
             }
         }
-        Map<String, Float> actualResults = collector.actualResults();
         assertEquals("Incorrect number of results:", expectedKeys.length, actualResults.size());
         for (String expectedKey : actualResults.keySet()) {
             Float score = actualResults.get(expectedKey);
@@ -205,33 +207,6 @@ public abstract class AbstractLuceneIndexSearchTest {
     
     protected PropertyExistence propertyExistence(String propertyName) {
         return new PropertyExistence(SELECTOR, propertyName);
-    }
-
-    protected class BatchCollector implements ResultWriter {
-        private Map<String, Float> actualResults = new LinkedHashMap<>();
-
-        @Override
-        public void add( NodeKey nodeKey, float score ) {
-            actualResults.put(nodeKey.toString(), score);
-        }
-
-        @Override
-        public void add( Iterable<NodeKey> nodeKeys, float score ) {
-            for (NodeKey key : nodeKeys) {
-                actualResults.put(key.toString(), score);
-            }
-        }
-
-        @Override
-        public void add( Iterator<NodeKey> nodeKeys, float score ) {
-            while(nodeKeys.hasNext()) {
-                actualResults.put(nodeKeys.next().toString(), score);
-            }
-        }
-
-        protected Map<String, Float> actualResults() {
-            return actualResults;
-        }
     }
 
     protected class TestIndexConstraints implements org.modeshape.jcr.spi.index.IndexConstraints {

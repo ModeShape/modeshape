@@ -64,11 +64,12 @@ public class EsIndexIntegrationTest {
                 .loadPomFromFile("pom.xml")
                 .resolve("org.modeshape:modeshape-jcr:test-jar:tests:?").withTransitivity().asFile();
 
+        ClassLoader cl = EsIndexIntegrationTest.class.getClassLoader();
         return ShrinkWrap.create(WebArchive.class, "query-test.war").addAsLibraries(testDeps)
                 .addAsWebInfResource(EmptyAsset.INSTANCE, ArchivePaths.create("beans.xml"))
-                .addAsWebInfResource(new File("src/main/webapp/WEB-INF/jboss-deployment-structure.xml"), ArchivePaths.create("jboss-deployment-structure.xml"))
+                .addAsWebInfResource(cl.getResource("WEB-INF/jboss-deployment-structure.xml"), ArchivePaths.create("jboss-deployment-structure.xml"))
                 .addAsResource(new File("src/test/resources/text-extractor/text-file.txt"))
-                .setManifest(new File("src/main/webapp/META-INF/MANIFEST.MF"));
+                .setManifest(cl.getResource("META-INF/MANIFEST.MF"));
     }
 
     @BeforeClass

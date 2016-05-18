@@ -1491,8 +1491,8 @@ public abstract class IndexProvider {
         }
 
         @Override
-        public final Results filter( IndexConstraints constraints ) {
-            return managedIndex.filter(constraints);
+        public final Results filter(IndexConstraints constraints, long cardinalityEstimate) {
+            return managedIndex.filter(constraints, cardinalityEstimate);
         }
 
         @Override

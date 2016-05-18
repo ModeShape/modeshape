@@ -1,0 +1,34 @@
+<!--This build a wf module which will be installed in WF while running the integration tests -->
+<assembly xmlns="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.0"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.0 http://maven.apache.org/xsd/assembly-1.1.0.xsd">
+    <id>as-module</id>
+    <formats>
+        <format>dir</format>
+    </formats>
+    <includeBaseDirectory>false</includeBaseDirectory>
+    <baseDirectory>/</baseDirectory>
+
+    <files>
+        <file>
+            <source>src/test/assembly/es-module.xml</source>
+            <outputDirectory>modules/org/elasticsearch/${version.org.elasticsearch}</outputDirectory>
+            <destName>module.xml</destName>
+            <filtered>true</filtered>
+        </file>
+    </files>
+
+    <dependencySets>
+        <!--Add all the Elastic Search + transitive dependencies -->
+        <dependencySet>
+            <unpack>false</unpack>
+            <scope>test</scope>
+            <includes>
+                <include>org.elasticsearch</include>
+                <include>net.java.dev.jna</include>
+            </includes>
+            <useTransitiveFiltering>true</useTransitiveFiltering>
+            <outputDirectory>modules/org/elasticsearch/${version.org.elasticsearch}</outputDirectory>
+        </dependencySet>
+    </dependencySets>
+</assembly>

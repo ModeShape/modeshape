@@ -184,19 +184,6 @@
                 <include>org.bouncycastle:*:jar</include>
                 -->
             </includes>
-        </dependencySet>  
-        
-        <!--  Module for Lucene -->
-        <dependencySet>
-            <useProjectArtifact>false</useProjectArtifact>
-            <outputDirectory>modules/org/apache/lucene/${version.org.apache.lucene}</outputDirectory>
-            <includes>
-                <include>org.apache.lucene:lucene-core:jar</include>
-                <include>org.apache.lucene:lucene-analyzers-common:jar</include>
-                <include>org.apache.lucene:lucene-queryparser:jar</include>
-                <include>org.apache.lucene:lucene-sandbox:jar</include>
-                <include>org.apache.lucene:lucene-queries:jar</include>
-            </includes>
         </dependencySet>
 
         <!--Connectors-->
@@ -364,6 +351,7 @@
             <useTransitiveDependencies>true</useTransitiveDependencies>
             <includes>
                 <include>org.modeshape:modeshape-lucene-index-provider:jar</include>
+                <include>org.apache.lucene:*:jar</include>
             </includes>
         </dependencySet>
 

@@ -1,0 +1,34 @@
+{
+    "name" : "Backward Compatibility Indexes",
+    "workspaces" : {
+        "predefined" : ["otherWorkspace"],
+        "default" : "default",
+        "allowCreation" : true
+    },
+    "monitoring" : {
+        "enabled" : false
+    },
+    "storage": {
+        "persistence": {
+            "type": "file",
+            "path" : "target/repo/data"
+        }
+    },
+    "indexProviders" : {
+        "lucene53" : {
+            "classname" : "lucene",
+            "directory" : "target/indexes/lucene53"
+        }
+    },
+    "indexes" : {
+        "titleIndex" : {
+            "kind" : "value",
+            "provider" : "lucene53",
+            "nodeType" : "mix:title",
+            "columns" : "jcr:title(STRING)"
+        }
+    },
+    "reindexing" : {
+        "async" : false
+    }
+}

@@ -65,8 +65,8 @@ public final class DefaultManagedIndex implements ManagedIndex {
     }
 
     @Override
-    public Results filter( IndexConstraints constraints ) {
-        return index.filter(constraints);
+    public Results filter(IndexConstraints constraints, long cardinalityEstimate) {
+        return index.filter(constraints, cardinalityEstimate);
     }
 
     @Override

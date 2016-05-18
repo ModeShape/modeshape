@@ -22,10 +22,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.apache.lucene.document.Document;
-import org.apache.lucene.document.DoubleField;
 import org.apache.lucene.document.Field;
-import org.apache.lucene.document.IntField;
-import org.apache.lucene.document.LongField;
+import org.apache.lucene.document.LegacyDoubleField;
+import org.apache.lucene.document.LegacyIntField;
+import org.apache.lucene.document.LegacyLongField;
 import org.apache.lucene.document.StringField;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.util.BytesRef;
@@ -47,6 +47,7 @@ import org.modeshape.jcr.value.PropertyType;
  */
 @ThreadSafe
 @Immutable
+@SuppressWarnings("deprecation")
 class MultiColumnIndex extends LuceneIndex {
 
     private final DocumentIdCache cache;
@@ -115,15 +116,15 @@ class MultiColumnIndex extends LuceneIndex {
 
         if (name.startsWith(FieldUtil.LENGTH_PREFIX)) {
             // these are always stored as longs
-            return new LongField(name, Long.valueOf(existing.stringValue()), Field.Store.YES);
+            return new LegacyLongField(name, Long.valueOf(existing.stringValue()), Field.Store.YES);
         }
         Number numberValue = existing.numericValue();
         if (numberValue instanceof Integer) {
-            return new IntField(name, numberValue.intValue(), Field.Store.YES);
+            return new LegacyIntField(name, numberValue.intValue(), Field.Store.YES);
         } else if (numberValue instanceof Long) {
-            return new LongField(name, numberValue.longValue(), Field.Store.YES);
+            return new LegacyLongField(name, numberValue.longValue(), Field.Store.YES);
         } else if (numberValue instanceof Double) {
-            return new DoubleField(name, numberValue.doubleValue(), Field.Store.YES);
+            return new LegacyDoubleField(name, numberValue.doubleValue(), Field.Store.YES);
         }
         String stringValue = existing.stringValue();
         if (stringValue != null) {
@@ -140,7 +141,7 @@ class MultiColumnIndex extends LuceneIndex {
     @Override
     protected void preCommit( Map<String, String> commitData ) {
         super.preCommit(commitData);
-        cache.updateCommmitData(commitData);
+        cache.updateCommitData(commitData);
     }
 
     @Override
@@ -224,17 +225,10 @@ class MultiColumnIndex extends LuceneIndex {
             this.removed.clear();
         }
 
-        protected synchronized void updateCommmitData(Map<String, String> commitData) {
-            if (!removed.isEmpty()) {
-                for (String key : removed) {
-                    commitData.remove(key);
-                }
-            }
-            if (!added.isEmpty()) {
-                for (String key : added) {
-                    commitData.put(key, "");
-                }
-            }
+        protected synchronized void updateCommitData(Map<String, String> commitData) {
+            removed.forEach(commitData::remove);
+            added.forEach(key -> commitData.put(key, ""));
+            clear();
         }
     }
 }

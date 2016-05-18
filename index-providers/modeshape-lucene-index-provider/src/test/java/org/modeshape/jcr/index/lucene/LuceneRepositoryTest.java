@@ -15,18 +15,27 @@
  */
 package org.modeshape.jcr.index.lucene;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.modeshape.jcr.ValidateQuery.validateQuery;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.IntStream;
 import javax.jcr.Node;
+import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.query.Query;
+import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
+import org.modeshape.common.util.FileUtil;
 import org.modeshape.jcr.ClusteringHelper;
 import org.modeshape.jcr.JcrRepository;
 import org.modeshape.jcr.TestingUtil;
+import org.modeshape.jcr.api.Repository;
 
 /**
  * Unit tests for generic operations involving a repository which has a {@link LuceneIndexProvider} configured. Tests which are 
@@ -35,6 +44,8 @@ import org.modeshape.jcr.TestingUtil;
  * @author Horia Chiorean (hchiorea@redhat.com)
  */
 public class LuceneRepositoryTest {
+    
+    private Repository repository;
 
     @BeforeClass
     public static void beforeClass() throws Exception {
@@ -46,9 +57,16 @@ public class LuceneRepositoryTest {
         ClusteringHelper.removeJGroupsBindings();
     }
     
+    @After
+    public void after() {
+        if (repository != null) {
+            TestingUtil.killRepositories(repository);
+        }
+    }
+    
     @Test
     public void shouldAllowAdvancedLuceneConfiguration() throws Exception {
-        JcrRepository repository = TestingUtil.startRepositoryWithConfig(
+        repository = TestingUtil.startRepositoryWithConfig(
                 "config/repo-config-persistent-lucene-provider-advanced-settings.json");
         
         //add a node in the default ws
@@ -159,5 +177,66 @@ public class LuceneRepositoryTest {
         } finally {
             TestingUtil.killRepositories(repository1, repository2);
         }
+    }
+    
+    @Test
+    @FixFor( "MODE-2586" )
+    public void shouldReadIndexesFromLucene53() throws Exception {
+        // unzip a folder with 53 indexes and data with 2 nodes: /node1 and /node2, both of which have mix:title and a title property
+        FileUtil.unzip(LuceneRepositoryTest.class.getClassLoader().getResourceAsStream("lucene53_indexes.zip"), "target/indexes");
+        FileUtil.unzip(LuceneRepositoryTest.class.getClassLoader().getResourceAsStream("lucene53_repo.zip"), "target/repo");
+        
+        // fire up the repository and check that the indexes and data are still being read
+        repository = TestingUtil.startRepositoryWithConfig("config/repo-config-backward-compatibility-indexes.json");
+
+        Session session = repository.login();
+        Node node1 = session.getNode("/node1");
+        assertTrue(node1.isNodeType("mix:title"));
+        assertEquals("title1", node1.getProperty("jcr:title").getString());
+        Node node2 = session.getNode("/node2");
+        assertTrue(node2.isNodeType("mix:title"));
+        assertEquals("title2", node2.getProperty("jcr:title").getString());        
+        
+        //test that each query is local to its own workspace....
+        Query query = session.getWorkspace().getQueryManager().createQuery(
+                "select node.[jcr:path] from [mix:title] as node where node.[jcr:title] LIKE 'title%'", Query.JCR_SQL2);
+        validateQuery().hasNodesAtPaths("/node1", "/node2").useIndex("titleIndex").validate(query, query.execute());
+    }
+    
+    @Test
+    @FixFor( "MODE-2585" )
+    @Ignore(" perf test")
+    public void shouldQueryLargeNumberOfNodes() throws Exception {
+        assertTrue(FileUtil.delete("target/repo"));
+        assertTrue(FileUtil.delete("target/indexes"));
+        repository = TestingUtil.startRepositoryWithConfig("config/repo-config-backward-compatibility-indexes.json");
+        Session session = repository.login();
+        int nodeCount = 10003;
+        int batchSize = 1000;
+        IntStream.range(0, nodeCount).forEach(i -> {
+            int idx = i + 1;
+            try {
+                Node node = session.getRootNode().addNode("node" + idx);
+                node.addMixin("mix:title");
+                node.addMixin("mix:created");
+                node.setProperty("jcr:title", "title" + idx);
+                if (i > 0 && i % batchSize == 0) {
+                    System.out.println("inserting batch [" + (i - batchSize) + "," + i + "]");
+                    session.save();
+                }
+            } catch (RepositoryException e) {
+                throw new RuntimeException(e);
+            }
+        });
+        if (session.hasPendingChanges()) {
+            System.out.printf("inserting last batch ");
+            session.save();
+        }
+        
+        Query query = session.getWorkspace().getQueryManager().createQuery(
+                "select node.[jcr:path] from [mix:title] as node where node.[jcr:title] LIKE 'title%' ORDER BY [jcr:created] ASC LIMIT 3 OFFSET 1000", Query.JCR_SQL2);
+        long start = System.nanoTime();
+        validateQuery().rowCount(3).printDetail().useIndex("titleIndex").hasNodesAtPaths("/node1001", "/node1002", "/node1003").validate(query, query.execute());
+        System.out.println("Time to run query with limit and offset: " + TimeUnit.MILLISECONDS.convert(System.nanoTime() - start, TimeUnit.NANOSECONDS)/1000d + " seconds");
     }
 }

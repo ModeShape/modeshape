@@ -1,0 +1,38 @@
+<module xmlns="urn:jboss:module:1.3" name="org.elasticsearch" slot="${version.org.elasticsearch}">
+    <resources>
+        <resource-root path="elasticsearch-${version.org.elasticsearch}.jar" />
+        <resource-root path="HdrHistogram-2.1.6.jar" />
+        <resource-root path="commons-cli-1.3.1.jar" />
+        <resource-root path="compress-lzf-1.0.2.jar" />
+        <resource-root path="guava-18.0.jar" />
+        <resource-root path="hppc-0.7.1.jar" />
+        <resource-root path="joda-convert-1.2.jar" />
+        <resource-root path="joda-time-2.8.2.jar" />
+        <resource-root path="jsr166e-1.1.0.jar" />
+        <resource-root path="netty-3.10.5.Final.jar" />
+        <resource-root path="snakeyaml-1.15.jar" />
+        <resource-root path="spatial4j-0.4.1.jar" />	
+        <resource-root path="t-digest-3.0.jar" />
+        <resource-root path="jackson-core-2.6.2.jar" />
+        <resource-root path="jackson-dataformat-cbor-2.6.2.jar" />
+        <resource-root path="jackson-dataformat-yaml-2.6.2.jar" />
+        <resource-root path="jackson-dataformat-smile-2.6.2.jar" />
+        <resource-root path="lucene-analyzers-common-${version.org.apache.lucene}.jar" />
+        <resource-root path="lucene-core-${version.org.apache.lucene}.jar" />
+        <resource-root path="lucene-queries-${version.org.apache.lucene}.jar" />
+        <resource-root path="lucene-queryparser-${version.org.apache.lucene}.jar" />
+        <resource-root path="lucene-sandbox-${version.org.apache.lucene}.jar" />
+        <resource-root path="lucene-join-${version.org.apache.lucene}.jar" />
+        <resource-root path="lucene-highlighter-${version.org.apache.lucene}.jar" />
+        <resource-root path="lucene-memory-${version.org.apache.lucene}.jar" />
+        <resource-root path="lucene-suggest-${version.org.apache.lucene}.jar" />
+        <resource-root path="lucene-misc-${version.org.apache.lucene}.jar" />
+        <resource-root path="lucene-grouping-${version.org.apache.lucene}.jar" />
+        <resource-root path="lucene-spatial-${version.org.apache.lucene}.jar" />        
+        <resource-root path="jna-${version.jna}.jar" />        
+    </resources>
+    <dependencies>
+        <module name="javax.api" export="true"/>
+        <module name="sun.jdk" export="true"/>
+    </dependencies>
+</module>
