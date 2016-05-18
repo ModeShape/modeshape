@@ -117,7 +117,6 @@ public class EsClientTest {
         
         EsRequest doc1 = client.getDocument(INDEX_NAME, TYPE_NAME, "1");
         assertTrue(java.util.Arrays.equals((Object[])doc.get("field1"), (Object[])doc1.get("field1")));
-//        assertEquals(doc.get("field1"), doc1.get("field1"));
     }
 
     @Test
