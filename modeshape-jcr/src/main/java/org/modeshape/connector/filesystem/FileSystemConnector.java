@@ -481,16 +481,31 @@ public class FileSystemConnector extends WritableConnector implements Pageable {
         return fileFor(id).exists();
     }
 
+    /**
+     * Hook for processing other node types (not resources or regular files)
+     * @param id
+     * @param file
+     * @param isRoot
+     * @param isResource
+     * @return DocumentWriter if node is recognized and processed; otherwise
+     * null (signaling subsequent fallback to default processing)
+     */
+    protected DocumentWriter writerFor(String id, File file, boolean isRoot, boolean isResource) {
+        return null;
+    }
+
     @Override
     public Document getDocumentById( String id ) {
         File file = fileFor(id);
         boolean isRoot = isRoot(id);
         // make sure the root folder is never excluded....
-        if (!isRoot && (isExcluded(file) || !file.exists())) return null;
+        if (!isRoot && (isExcluded(file) || !acceptFile(file))) return null;
         boolean isResource = isContentNode(id);
-        DocumentWriter writer = null;
         File parentFile = file.getParentFile();
-        if (isResource) {
+        DocumentWriter writer = writerFor(id, file, isRoot, isResource);
+        if (writer != null) {
+            // node configuration initialized by writerFor method
+        } else if (isResource) {
             writer = newDocument(id);
             BinaryValue binaryValue = binaryFor(file);
             writer.setPrimaryType(NT_RESOURCE);
@@ -581,6 +596,12 @@ public class FileSystemConnector extends WritableConnector implements Pageable {
         return isRoot ? JCR_CONTENT_SUFFIX : fileId + JCR_CONTENT_SUFFIX;
     }
 
+    protected boolean acceptFile(File file) {
+        // By default, only include as a child if we can access and read the file. Permissions might prevent us from
+        // reading the file, and the file might not exist if it is a broken symlink (see MODE-1768 for details).
+        return file.exists() && file.canRead() && (file.isFile() || file.isDirectory());
+    }
+
     private DocumentWriter newFolderWriter( String id,
                                             File file,
                                             int offset ) {
@@ -595,9 +616,7 @@ public class FileSystemConnector extends WritableConnector implements Pageable {
         int nextOffset = 0;
         for (int i = 0; i < children.length; i++) {
             File child = children[i];
-            // Only include as a child if we can access and read the file. Permissions might prevent us from
-            // reading the file, and the file might not exist if it is a broken symlink (see MODE-1768 for details).
-            if (child.exists() && child.canRead() && (child.isFile() || child.isDirectory())) {
+            if (acceptFile(child)) {
                 // we need to count the total accessible children
                 totalChildren++;
                 // only add a child if it's in the current page
