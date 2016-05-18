@@ -127,6 +127,11 @@
 
         <dependency>
             <groupId>org.modeshape</groupId>
+            <artifactId>modeshape-sequencer-pdf</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.modeshape</groupId>
             <artifactId>modeshape-lucene-index-provider</artifactId>
         </dependency>
 

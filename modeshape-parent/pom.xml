@@ -181,6 +181,7 @@
         <version.org.jboss.ironjacamar>1.0.13.Final</version.org.jboss.ironjacamar>
         <version.com.datastax.cassandra>2.0.0-rc2</version.com.datastax.cassandra>
         <version.org.apache.cassandra>2.0.3</version.org.apache.cassandra>
+        <version.org.apache.pdfbox>1.8.10</version.org.apache.pdfbox>
         
         <version.com.h2>1.4.191</version.com.h2>
         <version.postgresql.9>9.2-1002.jdbc4</version.postgresql.9>
@@ -977,6 +978,11 @@
             </dependency>
             <dependency>
                 <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-sequencer-pdf</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.modeshape</groupId>
                 <artifactId>modeshape-lucene-index-provider</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -1631,6 +1637,18 @@
                 <groupId>io.humble</groupId>
                 <artifactId>humble-video-noarch</artifactId>
                 <version>${version.io.humble}</version>
+            </dependency>
+
+            <!--PDF sequencer-->
+            <dependency>
+                <groupId>org.apache.pdfbox</groupId>
+                <artifactId>pdfbox</artifactId>
+                <version>${version.org.apache.pdfbox}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.pdfbox</groupId>
+                <artifactId>xmpbox</artifactId>
+                <version>${version.org.apache.pdfbox}</version>
             </dependency>
 
             <!--TIKA text extractor

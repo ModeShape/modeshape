@@ -1,0 +1,67 @@
+/*
+ * ModeShape (http://www.modeshape.org)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+ 
+//------------------------------------------------------------------------------
+// N A M E S P A C E S
+//------------------------------------------------------------------------------
+<jcr='http://www.jcp.org/jcr/1.0'>
+<nt='http://www.jcp.org/jcr/nt/1.0'>
+<mix='http://www.jcp.org/jcr/mix/1.0'>
+<pdf='http://www.modeshape.org/pdf/1.0'>
+<xmp='http://www.modeshape.org/xmp/1.0/'>
+
+//------------------------------------------------------------------------------
+// N O D E T Y P E S
+//------------------------------------------------------------------------------
+
+[pdf:metadata] > nt:unstructured, mix:mimeType
+  - pdf:pageCount (long) mandatory
+  - pdf:encrypted (boolean) mandatory
+  - pdf:version (string) mandatory
+  - pdf:orientation (string) mandatory
+    < 'portrait', 'landscape', 'reverse landscape'
+  - pdf:author (string)
+  - pdf:creationDate (date)
+  - pdf:creator (string)
+  - pdf:keywords (string)
+  - pdf:modificationDate (date)
+  - pdf:producer (string)
+  - pdf:subject (string)
+  - pdf:title (string)
+  + pdf:xmp (pdf:xmp)
+  + pdf:page (pdf:page)
+
+[pdf:page]
+  - pdf:pageNumber (long) mandatory
+  + pdf:attachment (pdf:attachment) = pdf:attachment
+
+[pdf:attachment] > mix:mimeType
+  - pdf:creationDate (date)
+  - pdf:modificationDate (date)
+  - pdf:subject (string)
+  - pdf:name (string)
+  - jcr:data (binary)
+
+[pdf:xmp]
+  - xmp:baseURL (string)
+  - xmp:createDate (date)
+  - xmp:creatorTool (string)
+  - xmp:identifier (string) *
+  - xmp:metadataDate (date)
+  - xmp:modifyDate (date)
+  - xmp:nickname (string)
+  - xmp:rating (string)
+  - xmp:label (string)
