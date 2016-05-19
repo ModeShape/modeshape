@@ -95,6 +95,7 @@
         <module>modeshape-sequencer-wsdl</module>
         <module>modeshape-sequencer-video</module>
         <module>modeshape-sequencer-pdf</module>
+        <module>modeshape-sequencer-audio</module>
     </modules>
 
     <profiles>
