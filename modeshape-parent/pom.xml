@@ -111,6 +111,10 @@
         <preferIpv6>true</preferIpv6>
         <debug.argline/>
 
+        <!-- OpenDocument API -->
+        <version.org.odftoolkit.odfdom-java>0.8.7</version.org.odftoolkit.odfdom-java>
+        <version.org.odftoolkit.simple-odf>0.6.6</version.org.odftoolkit.simple-odf>
+
         <version.junit>4.12</version.junit>
         <version.org.hamcrest>1.3</version.org.hamcrest>
         <version.org.mockito>1.10.19</version.org.mockito>
@@ -993,6 +997,11 @@
             </dependency>
             <dependency>
                 <groupId>org.modeshape</groupId>
+                <artifactId>modeshape-sequencer-odf</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.modeshape</groupId>
                 <artifactId>modeshape-lucene-index-provider</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -1665,6 +1674,17 @@
                 <groupId>org.apache.pdfbox</groupId>
                 <artifactId>xmpbox</artifactId>
                 <version>${version.org.apache.pdfbox}</version>
+            </dependency>
+            <!--ODF sequencer-->
+            <dependency>
+                <groupId>org.odftoolkit</groupId>
+                <artifactId>odfdom-java</artifactId>
+                <version>${version.org.odftoolkit.odfdom-java}</version>
+             </dependency>
+             <dependency>
+                <groupId>org.odftoolkit</groupId>
+                <artifactId>simple-odf</artifactId>
+                <version>${version.org.odftoolkit.simple-odf}</version>
             </dependency>
 
             <!--TIKA text extractor
