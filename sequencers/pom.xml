@@ -96,6 +96,7 @@
         <module>modeshape-sequencer-video</module>
         <module>modeshape-sequencer-pdf</module>
         <module>modeshape-sequencer-audio</module>
+        <module>modeshape-sequencer-epub</module>
     </modules>
 
     <profiles>
