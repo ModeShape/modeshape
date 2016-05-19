@@ -420,6 +420,9 @@
                     </sequencer>
                     <sequencer name="mp3-sequencer" classname="mp3" module="org.modeshape.sequencer.mp3">
                         <path-expression>/files(//*.mp3[*])/jcr:content[@jcr:data] => /derived/mp3/$1</path-expression>
+                    </sequencer>  
+                    <sequencer name="audio-sequencer" classname="audio" module="org.modeshape.sequencer.audio">
+                        <path-expression>/files(//*.(mp4|ogg|flac|wma)[*])/jcr:content[@jcr:data] => /derived/audio/$1</path-expression>
                     </sequencer>
                     <sequencer name="zip-sequencer-manual" classname="zip" module="org.modeshape.sequencer.zip"/>
                 </sequencers>

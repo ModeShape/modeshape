@@ -95,6 +95,11 @@ public class SequencersIntegrationTest {
     }
 
     @Test
+    public void shouldSequenceOgg() throws Exception {
+        uploadFileAndAssertSequenced("/sample.ogg", "/derived/audio", "org.modeshape.sequencer.audio.AudioMetadataSequencer");
+    }
+
+    @Test
     public void shouldSequenceZip() throws Exception {
         uploadFileAndAssertSequenced("/zip_file.zip", "/derived/zip", "org.modeshape.sequencer.zip.ZipSequencer");
     }

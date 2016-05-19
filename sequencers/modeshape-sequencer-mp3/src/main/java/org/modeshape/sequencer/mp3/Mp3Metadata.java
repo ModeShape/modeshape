@@ -30,7 +30,10 @@ import org.jaudiotagger.tag.Tag;
 
 /**
  * Utility for extracting metadata from MP3 files.
+ *
+ * @deprecated starting with 5.1 this should be replaced with the Audio sequencer; this will be removed in the next major version
  */
+@Deprecated
 public class Mp3Metadata {
 
     private String title;

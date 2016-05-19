@@ -18,18 +18,10 @@ package org.modeshape.sequencer.audio;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-
-import javax.jcr.ItemExistsException;
 import javax.jcr.NamespaceRegistry;
 import javax.jcr.Node;
-import javax.jcr.PathNotFoundException;
 import javax.jcr.Property;
 import javax.jcr.RepositoryException;
-import javax.jcr.lock.LockException;
-import javax.jcr.nodetype.ConstraintViolationException;
-import javax.jcr.nodetype.NoSuchNodeTypeException;
-import javax.jcr.version.VersionException;
-
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.StringUtil;
 import org.modeshape.jcr.api.Binary;
@@ -70,20 +62,22 @@ import org.modeshape.jcr.api.sequencer.Sequencer;
  * </li>
  * </ul>
  * </p>
+ *
+ * @since 5.1
  */
 public class AudioMetadataSequencer extends Sequencer {
 
     @Override
-    public void initialize( NamespaceRegistry registry,
-                            NodeTypeManager nodeTypeManager ) throws RepositoryException, IOException {
+    public void initialize(NamespaceRegistry registry,
+                           NodeTypeManager nodeTypeManager) throws RepositoryException, IOException {
         super.registerNodeTypes("audio.cnd", nodeTypeManager, true);
         registerDefaultMimeTypes(AudioMetadata.MIME_TYPE_STRINGS);
     }
 
     @Override
-    public boolean execute( Property inputProperty,
-                            Node outputNode,
-                            Context context ) throws Exception {
+    public boolean execute(Property inputProperty,
+                           Node outputNode,
+                           Context context) throws Exception {
         Binary binaryValue = (Binary) inputProperty.getBinary();
         CheckArg.isNotNull(binaryValue, "binary");
         final String mimeType = binaryValue.getMimeType();
@@ -119,8 +113,8 @@ public class AudioMetadataSequencer extends Sequencer {
         }
     }
 
-    private void addTagNode( Node sequencedNode,
-                             AudioMetadata metadata ) throws ItemExistsException, PathNotFoundException, NoSuchNodeTypeException, LockException, VersionException, ConstraintViolationException, RepositoryException {
+    private void addTagNode(Node sequencedNode,
+                            AudioMetadata metadata) throws RepositoryException {
         Node tagNode = sequencedNode.addNode(AudioMetadataLexicon.TAG_NODE, AudioMetadataLexicon.TAG_NODE);
 
         setPropertyIfMetadataPresent(tagNode, AudioMetadataLexicon.TITLE, metadata.getTitle());
@@ -139,23 +133,24 @@ public class AudioMetadataSequencer extends Sequencer {
         }
     }
 
-    private void setPropertyIfMetadataPresent( Node node,
-                                               String propertyName,
-                                               Object value) throws RepositoryException {
-        if (value != null) {
-            if (value instanceof String && !StringUtil.isBlank((String) value)) {
-                node.setProperty(propertyName, (String) value);
-            } else if (value instanceof Double) {
-                node.setProperty(propertyName, (Double) value);
-            } else if (value instanceof Number) {
-                node.setProperty(propertyName, ((Number) value).longValue());
-            } else if (value instanceof byte[]) {
-                InputStream is = new ByteArrayInputStream((byte []) value);
-                Binary binaryProperty = (Binary) node.getSession().getValueFactory().createBinary(is);
-                node.setProperty(propertyName, binaryProperty);
-            } else {
-                throw new IllegalArgumentException(String.format("The value of the property %s has unknown type and couldn't be saved.", propertyName));
-            }
+    private void setPropertyIfMetadataPresent(Node node,
+                                              String propertyName,
+                                              Object value) throws RepositoryException {
+        if (value == null) {
+            return;
+        }
+        if (value instanceof String && !StringUtil.isBlank((String) value)) {
+            node.setProperty(propertyName, (String) value);
+        } else if (value instanceof Double) {
+            node.setProperty(propertyName, (Double) value);
+        } else if (value instanceof Number) {
+            node.setProperty(propertyName, ((Number) value).longValue());
+        } else if (value instanceof byte[]) {
+            InputStream is = new ByteArrayInputStream((byte[]) value);
+            Binary binaryProperty = (Binary) node.getSession().getValueFactory().createBinary(is);
+            node.setProperty(propertyName, binaryProperty);
+        } else {
+            getLogger().warn("The value of the property {0} has unknown type and couldn't be saved.", propertyName);
         }
     }
 

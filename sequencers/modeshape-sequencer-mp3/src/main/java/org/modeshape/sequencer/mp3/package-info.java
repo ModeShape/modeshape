@@ -15,6 +15,7 @@
  */
 /**
  * The classes that make up the MP3 file sequencer.
+ * 
  */
 
 package org.modeshape.sequencer.mp3;
