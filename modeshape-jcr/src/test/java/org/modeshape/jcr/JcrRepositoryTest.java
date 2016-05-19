@@ -1499,6 +1499,34 @@ public class JcrRepositoryTest {
         repository.start();
     }
 
+    @Test
+    public void allInitialDelaysShouldBeValid() throws Exception {
+        repository.determineInitialDelay("00:00");
+        repository.determineInitialDelay("01:00");
+        repository.determineInitialDelay("02:00");
+        repository.determineInitialDelay("03:00");
+        repository.determineInitialDelay("04:00");
+        repository.determineInitialDelay("05:00");
+        repository.determineInitialDelay("06:00");
+        repository.determineInitialDelay("07:00");
+        repository.determineInitialDelay("08:00");
+        repository.determineInitialDelay("09:00");
+        repository.determineInitialDelay("10:00");
+        repository.determineInitialDelay("11:00");
+        repository.determineInitialDelay("12:00");
+        repository.determineInitialDelay("13:00");
+        repository.determineInitialDelay("14:00");
+        repository.determineInitialDelay("15:00");
+        repository.determineInitialDelay("16:00");
+        repository.determineInitialDelay("17:00");
+        repository.determineInitialDelay("18:00");
+        repository.determineInitialDelay("19:00");
+        repository.determineInitialDelay("20:00");
+        repository.determineInitialDelay("21:00");
+        repository.determineInitialDelay("22:00");
+        repository.determineInitialDelay("23:00");
+    }
+
     protected void nodeExists( Session session,
                                String parentPath,
                                String childName,
