@@ -1,0 +1,64 @@
+/*
+ * ModeShape (http://www.modeshape.org)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+//------------------------------------------------------------------------------
+// N A M E S P A C E S
+//------------------------------------------------------------------------------
+<jcr='http://www.jcp.org/jcr/1.0'>
+<nt='http://www.jcp.org/jcr/nt/1.0'>
+<mix='http://www.jcp.org/jcr/mix/1.0'>
+<epub='http://www.modeshape.org/epub/1.0'>
+
+//------------------------------------------------------------------------------
+// N O D E T Y P E S
+//------------------------------------------------------------------------------
+
+[epub:metadata] > nt:unstructured, mix:mimeType
+ + epub:identifier (epub:identifier)
+ + epub:title (epub:title)
+ + epub:language (epub:language)
+ + epub:contributor (epub:contributor)
+ + epub:creator (epub:creator)
+ + epub:description (epub:description)
+ + epub:publisher (epub:publisher)
+ + epub:rights (epub:rights)
+ + epub:date (epub:date)
+
+[epub:property] > nt:unstructured
+ - epub:value (string)
+ - epub:titleType (string)
+ - epub:identifierType (string)
+ - epub:metadataAuthority (string)
+ - epub:role (string)
+ - epub:displaySeq (long)
+ - epub:fileAs (string)
+ - epub:groupPosition (long)
+ - epub:scheme (string)
+ + epub:alternateScript (epub:alternateScript)
+
+[epub:alternateScript] > nt:unstructured
+ - epub:languageCode (string)
+ - epub:value (string)
+
+[epub:identifier] > epub:property
+[epub:title] > epub:property
+[epub:language] > epub:property
+[epub:contributor] > epub:property
+[epub:creator] > epub:property
+[epub:description] > epub:property
+[epub:publisher] > epub:property
+[epub:rights] > epub:property
+[epub:date] > epub:property
