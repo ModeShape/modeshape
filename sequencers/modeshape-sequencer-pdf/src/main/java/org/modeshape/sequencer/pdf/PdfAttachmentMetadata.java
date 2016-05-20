@@ -19,6 +19,8 @@ import java.util.Calendar;
 
 /**
  * Utility for extracting information from files embedded in PDF file.
+ *
+ * @since 5.1
  */
 public class PdfAttachmentMetadata {
 

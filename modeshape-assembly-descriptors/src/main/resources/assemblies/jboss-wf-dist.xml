@@ -262,6 +262,16 @@
                 <include>org:jaudiotagger:jar</include>
             </includes>
         </dependencySet>
+      
+        <dependencySet>
+            <useProjectArtifact>false</useProjectArtifact>
+            <outputDirectory>modules/org/modeshape/sequencer/pdf/main</outputDirectory>
+            <includes>
+                <include>org.modeshape:modeshape-sequencer-pdf:jar</include>
+                <include>org.apache.pdfbox:*:jar</include>
+                <include>commons-logging:commons-logging:jar</include>
+            </includes>
+        </dependencySet>
 
         <dependencySet>
             <useProjectArtifact>false</useProjectArtifact>

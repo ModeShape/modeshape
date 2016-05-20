@@ -20,6 +20,8 @@ import java.util.List;
 
 /**
  * Utility for extracting metadata from PDF files' pages.
+ * 
+ * @since 5.1
  */
 public class PdfPageMetadata {
 

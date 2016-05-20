@@ -624,6 +624,7 @@ public class RepositoryConfiguration {
         String delimitedTextSequencer = "org.modeshape.sequencer.text.DelimitedTextSequencer";
         String audioSequencer = "org.modeshape.sequencer.audio.AudioMetadataSequencer";
         String videoSequencer = "org.modeshape.sequencer.video.VideoMetadataSequencer";
+        String pdfSequencer = "org.modeshape.sequencer.pdf.PdfMetadataSequencer";
 
         aliases = new HashMap<>();
         aliases.put("cnd", cndSequencer);
@@ -659,7 +660,9 @@ public class RepositoryConfiguration {
         aliases.put("audio", audioSequencer);
         aliases.put("audiosequencer", audioSequencer);  
         aliases.put("video", videoSequencer);
-        aliases.put("videosequencer", videoSequencer);
+        aliases.put("videosequencer", videoSequencer);  
+        aliases.put("pdf", pdfSequencer);
+        aliases.put("pdfsequencer", pdfSequencer);
 
         SEQUENCER_ALIASES = Collections.unmodifiableMap(aliases);
 

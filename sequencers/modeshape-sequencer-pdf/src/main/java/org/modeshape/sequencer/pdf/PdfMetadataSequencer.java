@@ -18,11 +18,10 @@ package org.modeshape.sequencer.pdf;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
 import java.util.TimeZone;
-
+import java.util.stream.Collectors;
 import javax.jcr.Binary;
 import javax.jcr.NamespaceRegistry;
 import javax.jcr.Node;
@@ -30,7 +29,6 @@ import javax.jcr.Property;
 import javax.jcr.RepositoryException;
 import javax.jcr.Value;
 import javax.jcr.ValueFactory;
-
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.StringUtil;
 import org.modeshape.jcr.api.JcrConstants;
@@ -89,15 +87,16 @@ import org.modeshape.jcr.api.sequencer.Sequencer;
  *   </li>
  *  </ul>
  * </p>
+ * 
+ * @since 5.1
  */
-
 public class PdfMetadataSequencer extends Sequencer {
 
     @Override
     public void initialize( NamespaceRegistry registry,
                             NodeTypeManager nodeTypeManager ) throws RepositoryException, IOException {
         super.registerNodeTypes("pdf.cnd", nodeTypeManager, true);
-        registerDefaultMimeTypes(new String[]{ PdfBasicMetadata.MIME_TYPE_STRING });
+        registerDefaultMimeTypes(PdfBasicMetadata.MIME_TYPE_STRING);
     }
 
     @Override
@@ -115,7 +114,7 @@ public class PdfMetadataSequencer extends Sequencer {
     }
 
     private boolean processBasicMetadata( Node sequencedNode,
-                                          Binary binaryValue) throws RepositoryException {
+                                          Binary binaryValue) {
         PdfBasicMetadata metadata = null;
         try (InputStream stream = binaryValue.getStream()) {
             metadata = new PdfBasicMetadata(stream);
@@ -160,7 +159,7 @@ public class PdfMetadataSequencer extends Sequencer {
     }
 
     private boolean processXMPMetadata( Node sequencedNode,
-                                        Binary binaryValue) throws RepositoryException {
+                                        Binary binaryValue) {
         PdfXmpMetadata metadata = null;
         try (InputStream stream = binaryValue.getStream()) {
             metadata = new PdfXmpMetadata(stream);
@@ -219,16 +218,12 @@ public class PdfMetadataSequencer extends Sequencer {
                 node.setProperty(propertyName, binaryProperty);
             } else if (value instanceof List<?>) {
                 ValueFactory vf = node.getSession().getValueFactory();
-                List<Value> values = new ArrayList<Value>();
-                for (Object val : (List<?>) value) {
-                    if (val instanceof String) {
-                        values.add(vf.createValue((String) val));
-                    }
-                }
-                if (values.size() > 0) {
-                    Value[] valuesArray = new Value[values.size()];
-                    values.toArray(valuesArray);
-                    node.setProperty(propertyName, valuesArray);
+                List<Value> values = ((List<?>) value).stream()
+                                                      .filter(val -> val instanceof String)
+                                                      .map(val -> vf.createValue((String) val))
+                                                      .collect(Collectors.toList());
+                if (!values.isEmpty()) {
+                    node.setProperty(propertyName, values.toArray(new Value[values.size()]));
                 }
             } else {
                 throw new IllegalArgumentException(String.format("The value of the property %s has unknown type and couldn't be saved.", propertyName));

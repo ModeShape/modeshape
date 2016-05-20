@@ -160,6 +160,11 @@ public class SequencersIntegrationTest {
     @Test
     public void shouldSequenceXSDFile() throws Exception {
         uploadFileAndAssertSequenced("/xsd_file.xsd", "/derived/xsd", "org.modeshape.sequencer.xsd.XsdSequencer");
+    }  
+    
+    @Test
+    public void shouldSequencePDFFile() throws Exception {
+        uploadFileAndAssertSequenced("/sample.pdf", "/derived/pdf", "org.modeshape.sequencer.pdf.PdfMetadataSequencer");
     }
     
     @Test
