@@ -46,6 +46,8 @@ import org.w3c.dom.NodeList;
 
 /**
  * Utility for extracting Metadata from EPUB format.
+ * 
+ * @since 5.1
  */
 public class EpubMetadata {
 
@@ -229,7 +231,7 @@ public class EpubMetadata {
      * Parse the container file to get the list of all rootfile packages.
      */
     private List<String> getRootfiles( ZipInputStream zipStream ) throws Exception {
-        List<String> rootfiles = new ArrayList<String>();
+        List<String> rootfiles = new ArrayList<>();
         ZipEntry entry = null;
         while ((entry = zipStream.getNextEntry()) != null) {
             String entryName = entry.getName();

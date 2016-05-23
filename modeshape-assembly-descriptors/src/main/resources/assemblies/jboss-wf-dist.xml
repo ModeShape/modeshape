@@ -271,6 +271,14 @@
                 <include>org.apache.pdfbox:*:jar</include>
                 <include>commons-logging:commons-logging:jar</include>
             </includes>
+        </dependencySet> 
+       
+        <dependencySet>
+            <useProjectArtifact>false</useProjectArtifact>
+            <outputDirectory>modules/org/modeshape/sequencer/epub/main</outputDirectory>
+            <includes>
+                <include>org.modeshape:modeshape-sequencer-epub:jar</include>
+            </includes>
         </dependencySet>
 
         <dependencySet>

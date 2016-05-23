@@ -357,6 +357,9 @@
                     <sequencer name="pdf-sequencer" classname="pdf" module="org.modeshape.sequencer.pdf">
                         <path-expression>/files(//*.pdf[*])/jcr:content[@jcr:data] => /derived/pdf/$1</path-expression>    
                     </sequencer>
+                    <sequencer name="epub-sequencer" classname="epub" module="org.modeshape.sequencer.epub">
+                        <path-expression>/files(//*.epub[*])/jcr:content[@jcr:data] => /derived/epub/$1</path-expression>
+                    </sequencer>
                 </sequencers>
                 <text-extractors>
                     <text-extractor name="tika-extractor" classname="tika" module="org.modeshape.extractor.tika"/>

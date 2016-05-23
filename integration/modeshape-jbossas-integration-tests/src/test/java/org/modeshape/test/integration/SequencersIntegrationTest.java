@@ -166,6 +166,11 @@ public class SequencersIntegrationTest {
     public void shouldSequencePDFFile() throws Exception {
         uploadFileAndAssertSequenced("/sample.pdf", "/derived/pdf", "org.modeshape.sequencer.pdf.PdfMetadataSequencer");
     }
+     
+    @Test
+    public void shouldSequenceEpubFile() throws Exception {
+        uploadFileAndAssertSequenced("/sample.epub", "/derived/epub", "org.modeshape.sequencer.epub.EpubMetadataSequencer");
+    }
     
     @Test
     @FixFor( "MODE-2288" )

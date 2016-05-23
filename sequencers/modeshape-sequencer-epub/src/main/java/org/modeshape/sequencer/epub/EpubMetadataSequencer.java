@@ -16,21 +16,18 @@
 package org.modeshape.sequencer.epub;
 
 import static org.modeshape.sequencer.epub.EpubMetadataLexicon.METADATA_NODE;
-
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
-
+import java.util.stream.Collectors;
 import javax.jcr.NamespaceRegistry;
 import javax.jcr.Node;
 import javax.jcr.Property;
 import javax.jcr.RepositoryException;
 import javax.jcr.Value;
 import javax.jcr.ValueFactory;
-
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.StringUtil;
 import org.modeshape.jcr.api.Binary;
@@ -79,6 +76,8 @@ import org.modeshape.jcr.api.sequencer.Sequencer;
  *   </li>
  *  </ul>
  * </p>
+ * 
+ * @since 5.1
  */
 public class EpubMetadataSequencer extends Sequencer {
 
@@ -103,7 +102,7 @@ public class EpubMetadataSequencer extends Sequencer {
     }
 
     private boolean processBasicMetadata( Node sequencedNode,
-                                          Binary binaryValue ) throws RepositoryException {
+                                          Binary binaryValue ) {
         EpubMetadata metadata = null;
         try (InputStream stream = binaryValue.getStream()) {
             metadata = new EpubMetadata(stream);
@@ -179,17 +178,15 @@ public class EpubMetadataSequencer extends Sequencer {
                 node.setProperty(propertyName, binaryProperty);
             } else if (value instanceof List<?>) {
                 ValueFactory vf = node.getSession().getValueFactory();
-                List<Value> values = new ArrayList<Value>();
-                for (Object val : (List<?>) value) {
-                    if (val instanceof String) {
-                        values.add(vf.createValue((String) val));
-                    }
-                }
-                if (values.size() > 0) {
+                List<Value> values = ((List<?>) value).stream()
+                                                      .filter(val -> val instanceof String)
+                                                      .map(val -> vf.createValue((String) val))
+                                                      .collect(Collectors.toList());
+                if (!values.isEmpty()) {
                     node.setProperty(propertyName, values.toArray(new Value[values.size()]));
                 }
             } else {
-                throw new IllegalArgumentException(String.format("The value of the property %s has unknown type and couldn't be saved.", propertyName));
+                getLogger().warn("The value of the property {0} has unknown type and couldn't be saved", propertyName);
             }
         }
     }
