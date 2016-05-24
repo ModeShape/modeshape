@@ -97,6 +97,7 @@
         <module>modeshape-sequencer-pdf</module>
         <module>modeshape-sequencer-audio</module>
         <module>modeshape-sequencer-epub</module>
+        <module>modeshape-sequencer-odf</module>
     </modules>
 
     <profiles>

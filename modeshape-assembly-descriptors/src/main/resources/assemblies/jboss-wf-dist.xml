@@ -354,6 +354,16 @@
 
         <dependencySet>
             <useProjectArtifact>false</useProjectArtifact>
+            <outputDirectory>modules/org/modeshape/sequencer/odf/main</outputDirectory>
+            <includes>
+                <include>org.modeshape:modeshape-sequencer-odf:jar</include>
+                <include>org.odftoolkit:odfdom-java:jar</include>
+                <include>org.odftoolkit:simple-odf:jar</include>
+            </includes>
+        </dependencySet>
+
+        <dependencySet>
+            <useProjectArtifact>false</useProjectArtifact>
             <outputDirectory>modules/org/modeshape/extractor/tika/main</outputDirectory>
             <useTransitiveDependencies>true</useTransitiveDependencies>
             <includes>
