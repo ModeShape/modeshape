@@ -1680,10 +1680,22 @@
                 <groupId>org.odftoolkit</groupId>
                 <artifactId>odfdom-java</artifactId>
                 <version>${version.org.odftoolkit.odfdom-java}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>xml-apis</groupId>
+                        <artifactId>xml-apis</artifactId>
+                    </exclusion>
+                </exclusions>
              </dependency>
              <dependency>
                 <groupId>org.odftoolkit</groupId>
                 <artifactId>simple-odf</artifactId>
+                 <exclusions>
+                     <exclusion>
+                         <groupId>xml-apis</groupId>
+                         <artifactId>xml-apis</artifactId>
+                     </exclusion>
+                 </exclusions>
                 <version>${version.org.odftoolkit.simple-odf}</version>
             </dependency>
 

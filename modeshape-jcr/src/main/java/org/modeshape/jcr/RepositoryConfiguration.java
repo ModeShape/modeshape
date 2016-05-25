@@ -626,6 +626,7 @@ public class RepositoryConfiguration {
         String videoSequencer = "org.modeshape.sequencer.video.VideoMetadataSequencer";
         String pdfSequencer = "org.modeshape.sequencer.pdf.PdfMetadataSequencer";
         String epubSequencer = "org.modeshape.sequencer.epub.EpubMetadataSequencer";
+        String odfSequencer = "org.modeshape.sequencer.odf.OdfMetadataSequencer";
 
         aliases = new HashMap<>();
         aliases.put("cnd", cndSequencer);
@@ -665,7 +666,9 @@ public class RepositoryConfiguration {
         aliases.put("pdf", pdfSequencer);
         aliases.put("pdfsequencer", pdfSequencer);
         aliases.put("epub", epubSequencer);
-        aliases.put("epubsequencer", epubSequencer);
+        aliases.put("epubsequencer", epubSequencer);  
+        aliases.put("odf", odfSequencer);
+        aliases.put("odfsequencer", odfSequencer);
 
         SEQUENCER_ALIASES = Collections.unmodifiableMap(aliases);
 

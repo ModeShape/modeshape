@@ -170,6 +170,11 @@ public class SequencersIntegrationTest {
     @Test
     public void shouldSequenceEpubFile() throws Exception {
         uploadFileAndAssertSequenced("/sample.epub", "/derived/epub", "org.modeshape.sequencer.epub.EpubMetadataSequencer");
+    } 
+    
+    @Test
+    public void shouldSequenceODFFile() throws Exception {
+        uploadFileAndAssertSequenced("/text.odt", "/derived/odf", "org.modeshape.sequencer.odf.OdfMetadataSequencer");
     }
     
     @Test

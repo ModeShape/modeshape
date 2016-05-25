@@ -22,6 +22,8 @@ import org.modeshape.common.annotation.Immutable;
 
 /**
  * A lexicon of names used within OpenDocument sequencer.
+ * 
+ * @since 5.1
  */
 @Immutable
 public class OdfMetadataLexicon {

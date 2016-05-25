@@ -360,6 +360,9 @@
                     <sequencer name="epub-sequencer" classname="epub" module="org.modeshape.sequencer.epub">
                         <path-expression>/files(//*.epub[*])/jcr:content[@jcr:data] => /derived/epub/$1</path-expression>
                     </sequencer>
+                    <sequencer name="odf-sequencer" classname="odf" module="org.modeshape.sequencer.odf">
+                        <path-expression>/files(//*.(odt|ods|odp|odg|odc|ott|ots|otp|otg|otc)[*])/jcr:content[@jcr:data] => /derived/odf/$1</path-expression>
+                    </sequencer>
                 </sequencers>
                 <text-extractors>
                     <text-extractor name="tika-extractor" classname="tika" module="org.modeshape.extractor.tika"/>

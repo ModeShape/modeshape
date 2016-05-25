@@ -29,6 +29,8 @@ import org.odftoolkit.simple.meta.Meta;
 
 /**
  * Utility for extracting metadata from OpenDocument formats.
+ * 
+ * @since 5.1
  */
 public class OdfMetadata {
 
@@ -59,7 +61,7 @@ public class OdfMetadata {
     private Long editingTime;
     private String generator;
     private String initialCreator;
-    private List<String> keywords = new ArrayList<String>();
+    private List<String> keywords = new ArrayList<>();
     private String language;
     private Calendar modificationDate;
     private String printedBy;
