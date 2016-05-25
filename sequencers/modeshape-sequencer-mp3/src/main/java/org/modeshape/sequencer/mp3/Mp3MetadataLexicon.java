@@ -21,8 +21,11 @@ import org.modeshape.common.annotation.Immutable;
 
 /**
  * A lexicon of names used within the mp3 sequencer.
+ *
+ * @deprecated starting with 5.1 this should be replaced with the Audio sequencer; this will be removed in the next major version
  */
 @Immutable
+@Deprecated
 public class Mp3MetadataLexicon {
 
     public static class Namespace {

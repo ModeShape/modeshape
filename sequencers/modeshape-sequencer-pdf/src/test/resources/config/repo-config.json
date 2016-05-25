@@ -3,7 +3,7 @@
     "sequencing" : {
         "sequencers" : {
             "PDF sequencer" :  {
-                "classname" : "org.modeshape.sequencer.pdf.PdfMetadataSequencer",
+                "classname" : "pdf",
                 "pathExpressions" : [ "default:/(*.pdf)/jcr:content[@jcr:data] => /sequenced/pdf" ]
             }
         }

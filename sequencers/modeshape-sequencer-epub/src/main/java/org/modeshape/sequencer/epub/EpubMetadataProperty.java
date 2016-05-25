@@ -17,6 +17,8 @@ package org.modeshape.sequencer.epub;
 
 /**
  * Class representing one metadata property.
+ * 
+ * @since 5.1
  */
 public class EpubMetadataProperty {
 

@@ -29,13 +29,15 @@ import org.apache.xmpbox.xml.DomXmpParser;
 
 /**
  * Utility for extracting XMP metadata from PDF files.
+ * 
+ * @since 5.1
  */
 public class PdfXmpMetadata {
 
     private String baseURL;
     private Calendar createDate;
     private String creatorTool;
-    private List<String> identifier = new ArrayList<String>();
+    private List<String> identifier = new ArrayList<>();
     private Calendar metadataDate;
     private Calendar modifyDate;
     private String nickname;
@@ -49,42 +51,41 @@ public class PdfXmpMetadata {
     }
 
     public boolean check() throws Exception {
-        PDDocument document = PDDocument.load(in);
-        Boolean encrypted = document.isEncrypted();
+        try (PDDocument document = PDDocument.load(in)) {
+            Boolean encrypted = document.isEncrypted();
 
-        if (encrypted) {
-            document.close();
-            return false;
-        }
-
-        PDDocumentCatalog catalog = document.getDocumentCatalog();
-        PDMetadata metadata = catalog.getMetadata();
-        if (metadata == null) {
-            document.close();
-            return false;
-        }
-
-        DomXmpParser xmpParser = new DomXmpParser();
-        InputStream is = metadata.createInputStream();
-        XMPMetadata xmp = xmpParser.parse(is);
-        XMPBasicSchema basicSchema = xmp.getXMPBasicSchema();
-        is.close();
-
-        if (basicSchema != null) {
-            baseURL = basicSchema.getBaseURL();
-            createDate = basicSchema.getCreateDate();
-            creatorTool = basicSchema.getCreatorTool();
-            if (basicSchema.getIdentifiers() != null) {
-                identifier.addAll(basicSchema.getIdentifiers());
+            if (encrypted) {
+                return false;
             }
-            metadataDate = basicSchema.getMetadataDate();
-            modifyDate = basicSchema.getModifyDate();
-            nickname = basicSchema.getNickname();
-            rating = basicSchema.getRating();
-            label = basicSchema.getLabel();
+
+            PDDocumentCatalog catalog = document.getDocumentCatalog();
+            PDMetadata metadata = catalog.getMetadata();
+            if (metadata == null) {
+                return false;
+            }
+
+            DomXmpParser xmpParser = new DomXmpParser();
+            try (InputStream is = metadata.createInputStream()) {
+                XMPMetadata xmp = xmpParser.parse(is);
+                XMPBasicSchema basicSchema = xmp.getXMPBasicSchema();
+                if (basicSchema != null) {
+                    baseURL = basicSchema.getBaseURL();
+                    createDate = basicSchema.getCreateDate();
+                    creatorTool = basicSchema.getCreatorTool();
+                    if (basicSchema.getIdentifiers() != null) {
+                        identifier.addAll(basicSchema.getIdentifiers());
+                    }
+                    metadataDate = basicSchema.getMetadataDate();
+                    modifyDate = basicSchema.getModifyDate();
+                    nickname = basicSchema.getNickname();
+                    rating = basicSchema.getRating();
+                    label = basicSchema.getLabel();
+                    return true;
+                }
+                return false;
+            }
+            
         }
-        document.close();
-        return true;
     }
 
 

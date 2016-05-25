@@ -622,8 +622,13 @@ public class RepositoryConfiguration {
         String mp3Sequencer = "org.modeshape.sequencer.mp3.Mp3MetadataSequencer";
         String fixedWidthTextSequencer = "org.modeshape.sequencer.text.FixedWidthTextSequencer";
         String delimitedTextSequencer = "org.modeshape.sequencer.text.DelimitedTextSequencer";
+        String audioSequencer = "org.modeshape.sequencer.audio.AudioMetadataSequencer";
+        String videoSequencer = "org.modeshape.sequencer.video.VideoMetadataSequencer";
+        String pdfSequencer = "org.modeshape.sequencer.pdf.PdfMetadataSequencer";
+        String epubSequencer = "org.modeshape.sequencer.epub.EpubMetadataSequencer";
+        String odfSequencer = "org.modeshape.sequencer.odf.OdfMetadataSequencer";
 
-        aliases = new HashMap<String, String>();
+        aliases = new HashMap<>();
         aliases.put("cnd", cndSequencer);
         aliases.put("cndsequencer", cndSequencer);
         aliases.put("class", classfileSequencer);
@@ -654,6 +659,16 @@ public class RepositoryConfiguration {
         aliases.put("fixedwidthtextsequencer", fixedWidthTextSequencer);
         aliases.put("delimitedtext", delimitedTextSequencer);
         aliases.put("delimitedtextsequencer", delimitedTextSequencer);
+        aliases.put("audio", audioSequencer);
+        aliases.put("audiosequencer", audioSequencer);  
+        aliases.put("video", videoSequencer);
+        aliases.put("videosequencer", videoSequencer);  
+        aliases.put("pdf", pdfSequencer);
+        aliases.put("pdfsequencer", pdfSequencer);
+        aliases.put("epub", epubSequencer);
+        aliases.put("epubsequencer", epubSequencer);  
+        aliases.put("odf", odfSequencer);
+        aliases.put("odfsequencer", odfSequencer);
 
         SEQUENCER_ALIASES = Collections.unmodifiableMap(aliases);
 

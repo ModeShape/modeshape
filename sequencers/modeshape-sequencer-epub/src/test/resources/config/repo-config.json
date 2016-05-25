@@ -3,7 +3,7 @@
     "sequencing" : {
         "sequencers" : {
             "EPUB Format sequencer" :  {
-                "classname" : "org.modeshape.sequencer.epub.EpubMetadataSequencer",
+                "classname" : "epub",
                 "pathExpressions" : ["default://(*.(epub))/jcr:content[@jcr:data] => default:/sequenced/epub" ]
             }
         }

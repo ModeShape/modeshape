@@ -49,7 +49,10 @@ import org.modeshape.jcr.api.sequencer.Sequencer;
  * </li>
  * </ul>
  * </p>
+ * 
+ * @deprecated starting with 5.1 this should be replaced with the Audio sequencer; this will be removed in the next major version
  */
+@Deprecated
 public class Mp3MetadataSequencer extends Sequencer {
 
     public static final class MimeTypeConstants {

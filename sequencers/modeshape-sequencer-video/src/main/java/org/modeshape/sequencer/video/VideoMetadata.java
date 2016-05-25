@@ -33,6 +33,8 @@ import org.modeshape.common.util.IoUtil;
 
 /**
  * Utility for extracting Metadata from video formats.
+ * 
+ * @since 5.1
  */
 public class VideoMetadata {
 
@@ -52,7 +54,7 @@ public class VideoMetadata {
     private String title;
     private String comment;
     private String encoder;
-    private List<StreamMetadata> streams = new ArrayList<StreamMetadata>();
+    private List<StreamMetadata> streams = new ArrayList<>();
 
     private InputStream in;
 
@@ -65,7 +67,7 @@ public class VideoMetadata {
      */
     public boolean check() throws Exception {
         // create a temporary copy from input
-        File fileCopy = File.createTempFile("modeshape-sequencer-audio", ".tmp");
+        File fileCopy = File.createTempFile("modeshape-sequencer-video", ".tmp");
         IoUtil.write(in, new BufferedOutputStream(new FileOutputStream(fileCopy)));
 
         final Demuxer container = Demuxer.make();

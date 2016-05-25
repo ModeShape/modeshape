@@ -95,6 +95,11 @@ public class SequencersIntegrationTest {
     }
 
     @Test
+    public void shouldSequenceOgg() throws Exception {
+        uploadFileAndAssertSequenced("/sample.ogg", "/derived/audio", "org.modeshape.sequencer.audio.AudioMetadataSequencer");
+    }
+
+    @Test
     public void shouldSequenceZip() throws Exception {
         uploadFileAndAssertSequenced("/zip_file.zip", "/derived/zip", "org.modeshape.sequencer.zip.ZipSequencer");
     }
@@ -155,6 +160,21 @@ public class SequencersIntegrationTest {
     @Test
     public void shouldSequenceXSDFile() throws Exception {
         uploadFileAndAssertSequenced("/xsd_file.xsd", "/derived/xsd", "org.modeshape.sequencer.xsd.XsdSequencer");
+    }  
+    
+    @Test
+    public void shouldSequencePDFFile() throws Exception {
+        uploadFileAndAssertSequenced("/sample.pdf", "/derived/pdf", "org.modeshape.sequencer.pdf.PdfMetadataSequencer");
+    }
+     
+    @Test
+    public void shouldSequenceEpubFile() throws Exception {
+        uploadFileAndAssertSequenced("/sample.epub", "/derived/epub", "org.modeshape.sequencer.epub.EpubMetadataSequencer");
+    } 
+    
+    @Test
+    public void shouldSequenceODFFile() throws Exception {
+        uploadFileAndAssertSequenced("/text.odt", "/derived/odf", "org.modeshape.sequencer.odf.OdfMetadataSequencer");
     }
     
     @Test

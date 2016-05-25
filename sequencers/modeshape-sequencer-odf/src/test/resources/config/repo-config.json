@@ -3,7 +3,7 @@
     "sequencing" : {
         "sequencers" : {
             "OpenDocument Format sequencer" :  {
-                "classname" : "org.modeshape.sequencer.odf.OdfMetadataSequencer",
+                "classname" : "odf",
                 "pathExpressions" : ["default://(*.(odt|ods|odp|odg|odc|ott|ots|otp|otg|otc))/jcr:content[@jcr:data] => default:/sequenced/odf" ]
             }
         }

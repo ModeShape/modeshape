@@ -420,9 +420,21 @@
                     </sequencer>
                     <sequencer name="mp3-sequencer" classname="mp3" module="org.modeshape.sequencer.mp3">
                         <path-expression>/files(//*.mp3[*])/jcr:content[@jcr:data] => /derived/mp3/$1</path-expression>
+                    </sequencer>  
+                    <sequencer name="audio-sequencer" classname="audio" module="org.modeshape.sequencer.audio">
+                        <path-expression>/files(//*.(mp4|ogg|flac|wma)[*])/jcr:content[@jcr:data] => /derived/audio/$1</path-expression>
                     </sequencer>
                     <sequencer name="zip-sequencer-manual" classname="zip" module="org.modeshape.sequencer.zip"/>
-                </sequencers>
+                    <sequencer name="pdf-sequencer" classname="pdf" module="org.modeshape.sequencer.pdf">
+                        <path-expression>/files(//*.pdf[*])/jcr:content[@jcr:data] => /derived/pdf/$1</path-expression>
+                    </sequencer>
+                    <sequencer name="epub-sequencer" classname="epub" module="org.modeshape.sequencer.epub">
+                        <path-expression>/files(//*.epub[*])/jcr:content[@jcr:data] => /derived/epub/$1</path-expression>
+                    </sequencer> 
+                    <sequencer name="odf-sequencer" classname="odf" module="org.modeshape.sequencer.odf">
+                        <path-expression>/files(//*.(odt|ods|odp|odg|odc|ott|ots|otp|otg|otc)[*])/jcr:content[@jcr:data] => /derived/odf/$1</path-expression>
+                    </sequencer>
+                </sequencers> 
                 <text-extractors max-pool-size="5" thread-pool-name="test-text-extractor">
                     <text-extractor name="tika-extractor" classname="tika" module="org.modeshape.extractor.tika"/>
                 </text-extractors>

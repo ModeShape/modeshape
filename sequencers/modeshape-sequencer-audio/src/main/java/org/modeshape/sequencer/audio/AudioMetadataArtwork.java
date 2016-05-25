@@ -17,6 +17,8 @@ package org.modeshape.sequencer.audio;
 
 /**
  * Class for saving metadata of artwork.
+ * 
+ * @since 5.1
  */
 public class AudioMetadataArtwork {
 

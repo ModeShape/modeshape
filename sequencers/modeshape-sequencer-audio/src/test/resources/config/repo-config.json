@@ -3,11 +3,11 @@
     "sequencing" : {
         "sequencers" : {
             "Audio files in separate location" : {
-                "classname" : "org.modeshape.sequencer.audio.AudioMetadataSequencer",
+                "classname" : "audio",
                 "pathExpression" : "default://(*.(mp3|mp4|ogg|flac|wma))/jcr:content[@jcr:data] => default:/sequenced/audio"
             },
             "Audio files in the same location" : {
-                "classname" : "org.modeshape.sequencer.audio.AudioMetadataSequencer",
+                "classname" : "audioSequencer",
                 "pathExpressions" : [ "default://(*.(mp3|mp4|ogg|flac|wma))/jcr:content[@jcr:data]" ]
             }
         }

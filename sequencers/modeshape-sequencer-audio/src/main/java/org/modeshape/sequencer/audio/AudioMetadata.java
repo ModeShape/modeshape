@@ -39,6 +39,8 @@ import org.modeshape.common.util.IoUtil;
 
 /**
  * Utility for extracting metadata from audio files.
+ * 
+ * @since 5.1
  */
 public class AudioMetadata {
 
@@ -182,9 +184,9 @@ public class AudioMetadata {
         if (header instanceof MP3AudioHeader) {
             duration = ((MP3AudioHeader) header).getPreciseTrackLength();
         } else if (header instanceof Mp4AudioHeader) {
-            duration = new Double(((Mp4AudioHeader) header).getPreciseLength());
+            duration = (double) ((Mp4AudioHeader) header).getPreciseLength();
         } else {
-            duration = new Double((double) header.getTrackLength());
+            duration = (double) header.getTrackLength();
         }
 
         // generic frames
@@ -197,7 +199,7 @@ public class AudioMetadata {
         track = tag.getFirst(FieldKey.TRACK);
         genre = tag.getFirst(FieldKey.GENRE);
 
-        artwork = new ArrayList<AudioMetadataArtwork>();
+        artwork = new ArrayList<>();
         for (Artwork a : tag.getArtworkList()) {
             AudioMetadataArtwork ama = new AudioMetadataArtwork();
             ama.setMimeType(a.getMimeType());

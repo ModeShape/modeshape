@@ -22,6 +22,8 @@ import org.modeshape.common.annotation.Immutable;
 
 /**
  * A lexicon of names used within audio sequencer.
+ * 
+ * @since 5.1
  */
 @Immutable
 public class AudioMetadataLexicon {

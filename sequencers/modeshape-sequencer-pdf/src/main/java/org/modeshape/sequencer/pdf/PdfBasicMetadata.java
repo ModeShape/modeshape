@@ -33,6 +33,8 @@ import org.apache.pdfbox.pdmodel.interactive.annotation.PDAnnotationFileAttachme
 
 /**
  * Utility for extracting Document Information Directory metadata from PDF files.
+ * 
+ * @since 5.1
  */
 public class PdfBasicMetadata {
 
@@ -53,7 +55,7 @@ public class PdfBasicMetadata {
     private Boolean encrypted;
     private String version;
 
-    private List<PdfPageMetadata> pages = new ArrayList<PdfPageMetadata>();
+    private List<PdfPageMetadata> pages = new ArrayList<>();
 
     private InputStream in;
 
@@ -65,63 +67,62 @@ public class PdfBasicMetadata {
      * Check that given file is supported by this sequencer.
      */
     public boolean check() throws Exception {
-        PDDocument document = PDDocument.load(in);
-        PDDocumentCatalog catalog = document.getDocumentCatalog();
-        PDPageable pageable = new PDPageable(document);
-        PageFormat firstPage = pageable.getPageFormat(0);
+        try (PDDocument document = PDDocument.load(in)) {
+            PDDocumentCatalog catalog = document.getDocumentCatalog();
+            PDPageable pageable = new PDPageable(document);
+            PageFormat firstPage = pageable.getPageFormat(0);
 
-        encrypted = document.isEncrypted();
-        pageCount = document.getNumberOfPages();
-        orientation = ORIENTATION_STRINGS[firstPage.getOrientation()];
-        version = String.valueOf(document.getDocument().getVersion());
-        String catalogVersion = catalog.getVersion();
-        if (catalogVersion != null && !catalogVersion.isEmpty()) {
-            // According to specs version saved here should be determining instead
-            // the version in header. It is barely used, though.
-            version = catalogVersion;
-        }
-
-        if (!encrypted) {
-            PDDocumentInformation metadata = document.getDocumentInformation();
-            author = metadata.getAuthor();
-            creationDate = metadata.getCreationDate();
-            creator = metadata.getCreator();
-            keywords = metadata.getKeywords();
-            modificationDate = metadata.getModificationDate();
-            producer = metadata.getProducer();
-            subject = metadata.getSubject();
-            title = metadata.getTitle();
-        }
-
-        // extract all attached files from all pages
-        int pageNumber = 0;
-        for (Object page : catalog.getAllPages()) {
-            pageNumber += 1;
-            PdfPageMetadata pageMetadata = new PdfPageMetadata();
-            pageMetadata.setPageNumber(pageNumber);
-            for (PDAnnotation annotation : ((PDPage) page).getAnnotations()) {
-                if (annotation instanceof PDAnnotationFileAttachment) {
-                    PdfAttachmentMetadata attachmentMetadata = new PdfAttachmentMetadata();
-
-                    PDAnnotationFileAttachment fann = (PDAnnotationFileAttachment) annotation;
-                    PDComplexFileSpecification fileSpec = (PDComplexFileSpecification) fann.getFile();
-                    PDEmbeddedFile embeddedFile = fileSpec.getEmbeddedFile();
-
-                    attachmentMetadata.setSubject(fann.getSubject());
-                    attachmentMetadata.setName(fileSpec.getFilename());
-                    attachmentMetadata.setCreationDate(embeddedFile.getCreationDate());
-                    attachmentMetadata.setModificationDate(embeddedFile.getModDate());
-                    attachmentMetadata.setMimeType(embeddedFile.getSubtype());
-                    attachmentMetadata.setData(embeddedFile.getByteArray());
-
-                    pageMetadata.addAttachment(attachmentMetadata);
-                }
+            encrypted = document.isEncrypted();
+            pageCount = document.getNumberOfPages();
+            orientation = ORIENTATION_STRINGS[firstPage.getOrientation()];
+            version = String.valueOf(document.getDocument().getVersion());
+            String catalogVersion = catalog.getVersion();
+            if (catalogVersion != null && !catalogVersion.isEmpty()) {
+                // According to specs version saved here should be determining instead
+                // the version in header. It is barely used, though.
+                version = catalogVersion;
             }
-            pages.add(pageMetadata);
-        }
 
-        document.close();
-        return true;
+            if (!encrypted) {
+                PDDocumentInformation metadata = document.getDocumentInformation();
+                author = metadata.getAuthor();
+                creationDate = metadata.getCreationDate();
+                creator = metadata.getCreator();
+                keywords = metadata.getKeywords();
+                modificationDate = metadata.getModificationDate();
+                producer = metadata.getProducer();
+                subject = metadata.getSubject();
+                title = metadata.getTitle();
+            }
+
+            // extract all attached files from all pages
+            int pageNumber = 0;
+            for (Object page : catalog.getAllPages()) {
+                pageNumber += 1;
+                PdfPageMetadata pageMetadata = new PdfPageMetadata();
+                pageMetadata.setPageNumber(pageNumber);
+                for (PDAnnotation annotation : ((PDPage) page).getAnnotations()) {
+                    if (annotation instanceof PDAnnotationFileAttachment) {
+                        PdfAttachmentMetadata attachmentMetadata = new PdfAttachmentMetadata();
+
+                        PDAnnotationFileAttachment fann = (PDAnnotationFileAttachment) annotation;
+                        PDComplexFileSpecification fileSpec = (PDComplexFileSpecification) fann.getFile();
+                        PDEmbeddedFile embeddedFile = fileSpec.getEmbeddedFile();
+
+                        attachmentMetadata.setSubject(fann.getSubject());
+                        attachmentMetadata.setName(fileSpec.getFilename());
+                        attachmentMetadata.setCreationDate(embeddedFile.getCreationDate());
+                        attachmentMetadata.setModificationDate(embeddedFile.getModDate());
+                        attachmentMetadata.setMimeType(embeddedFile.getSubtype());
+                        attachmentMetadata.setData(embeddedFile.getByteArray());
+
+                        pageMetadata.addAttachment(attachmentMetadata);
+                    }
+                }
+                pages.add(pageMetadata);
+            }
+            return true;
+        }
     }
 
 

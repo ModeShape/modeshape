@@ -17,6 +17,8 @@ package org.modeshape.sequencer.video;
 
 /**
  * Java class representing metadata within video or audio stream.
+ * 
+ * @since 5.1
  */
 public class StreamMetadata {
 
