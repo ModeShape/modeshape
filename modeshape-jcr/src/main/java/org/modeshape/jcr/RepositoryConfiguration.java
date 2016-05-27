@@ -682,13 +682,16 @@ public class RepositoryConfiguration {
         String fileSystemConnector = FileSystemConnector.class.getName();
         String gitConnector = "org.modeshape.connector.git.GitConnector";
         String cmisConnector = "org.modeshape.connector.cmis.CmisConnector";
+        String jdbcMetadataConnector = "org.modeshape.connector.meta.jdbc.JdbcMetadataConnector";
 
         aliases = new HashMap<>();
         aliases.put("files", fileSystemConnector);
         aliases.put("filesystem", fileSystemConnector);
         aliases.put("filesystemconnector", fileSystemConnector);
         aliases.put("git", gitConnector);
-        aliases.put("gitconnector", gitConnector);
+        aliases.put("gitconnector", gitConnector); 
+        aliases.put("jdbcmetadata", jdbcMetadataConnector);
+        aliases.put("jdbcmetadataconnector", jdbcMetadataConnector);
         aliases.put("cmis", cmisConnector);
         aliases.put("cmisconnector", cmisConnector);
 
@@ -1001,6 +1004,17 @@ public class RepositoryConfiguration {
      */
     public static String getBuiltInSequencerClassName( String alias ) {
         return SEQUENCER_ALIASES.get(alias);
+    }  
+    
+    /**
+     * Returns a fully qualified built-in connector class name mapped to the given alias, or {@code null} if there isn't such a
+     * mapping
+     *
+     * @param alias the alias
+     * @return the name of the connector class, or null if the alias did not correspond to a built-in class
+     */
+    public static String getBuiltInConnectorClassName( String alias ) {
+        return CONNECTOR_ALIASES.get(alias);
     }
 
     /**
