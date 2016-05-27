@@ -18,8 +18,6 @@ package org.modeshape.jboss.subsystem;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADDRESS;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPERATION_HEADERS;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Properties;
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.AttributeDefinition;
@@ -40,14 +38,6 @@ import org.modeshape.jcr.RepositoryConfiguration.FieldName;
 public class AddIndexProvider extends AbstractAddStepHandler {
 
     public static final AddIndexProvider INSTANCE = new AddIndexProvider();
-
-    private static final Map<String, String> MODULE_NAMES_BY_PROVIDER_ALIAS = new HashMap<String, String>() {
-        {
-            put("org.modeshape.jcr.index.lucene.LuceneIndexProvider", "org.modeshape.index-provider.lucene");
-            put("org.modeshape.jcr.index.elasticsearch.EsIndexProvider", "org.modeshape.index-provider.elasticsearch");
-            put("org.modeshape.jcr.index.local.LocalIndexProvider", "org.modeshape");
-        }
-    };
 
     private AddIndexProvider() {
     }
@@ -147,12 +137,7 @@ public class AddIndexProvider extends AbstractAddStepHandler {
         if (fqProviderClass == null) {
             fqProviderClass = providerClassName;
         }
-        String providerModuleName = MODULE_NAMES_BY_PROVIDER_ALIAS.get(fqProviderClass);
-        if (providerModuleName == null) {
-            // set the classloader to the package name of the class
-            int index = fqProviderClass.lastIndexOf(".");
-            providerModuleName = index != -1 ? fqProviderClass.substring(0, index) : fqProviderClass;
-        }
+        String providerModuleName = ModuleNamesProvider.moduleNameFor(fqProviderClass);
         providerProperties.setProperty(FieldName.CLASSLOADER, providerModuleName);
     }
 

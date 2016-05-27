@@ -34,7 +34,7 @@
             <source
                     classname="org.modeshape.connector.meta.jdbc.JdbcMetadataConnector"
                     dataSourceJndiName="java:jboss/datasources/ExampleDS"
-                    module="org.modeshape.connector.jdbc.metadata" name="jdbc-metadata">
+                    name="jdbc-metadata">
                 <projection>default:/ModeShapeTestDb =&gt; /</projection>
             </source>
         </external-sources>

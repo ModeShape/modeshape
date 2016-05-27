@@ -20,7 +20,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OPERATION_HEADERS;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
 import org.jboss.as.controller.AbstractAddStepHandler;
@@ -29,7 +29,6 @@ import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
-import org.jboss.logging.Logger;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceTarget;
@@ -48,13 +47,11 @@ public class AddSource extends AbstractAddStepHandler {
 
     static final AddSource INSTANCE = new AddSource();
 
-    private static final Logger LOGGER = Logger.getLogger(AddSource.class.getPackage().getName());
-
     /**
      * The list of known custom connector properties which come in the form of comma-separated strings and should be transformed
      * into Lists before being set on the connector classes.
      */
-    private static final List<String> LIST_PROPERTIES = Arrays.asList("queryableBranches");
+    private static final List<String> LIST_PROPERTIES = Collections.singletonList("queryableBranches");
 
     private AddSource() {
     }
@@ -75,7 +72,7 @@ public class AddSource extends AbstractAddStepHandler {
     @Override
     protected void performRuntime( final OperationContext context,
                                    final ModelNode operation,
-                                   final ModelNode model) {
+                                   final ModelNode model) throws OperationFailedException {
 
         ServiceTarget target = context.getServiceTarget();
 
@@ -102,7 +99,7 @@ public class AddSource extends AbstractAddStepHandler {
             } else if (key.equals(ModelKeys.MODULE) && ModelAttributes.MODULE.isMarshallable(operation)) {
                 props.put(RepositoryConfiguration.FieldName.CLASSLOADER, node.asString());
             } else if (key.equals(ModelKeys.PROJECTIONS)) {
-                List<String> projections = new ArrayList<String>();
+                List<String> projections = new ArrayList<>();
                 for (ModelNode projection : operation.get(ModelKeys.PROJECTIONS).asList()) {
                     projections.add(projection.asString());
                 }
@@ -144,29 +141,31 @@ public class AddSource extends AbstractAddStepHandler {
         }
 
         String[] values = valueAsString.split(",");
-        List<String> result = new ArrayList<String>(values.length);
+        List<String> result = new ArrayList<>(values.length);
         for (String value : values) {
             result.add(value.trim());
         }
         return result;
     }
 
-    private void ensureClassLoadingPropertyIsSet( Properties sourceProperties ) {
+    private void ensureClassLoadingPropertyIsSet( Properties sourceProperties ) throws OperationFailedException {
         // could be already set if the "module" element is present in the xml
         if (sourceProperties.containsKey(RepositoryConfiguration.FieldName.CLASSLOADER)) {
             return;
         }
         String connectorClassName = sourceProperties.getProperty(RepositoryConfiguration.FieldName.CLASSNAME);
         if (StringUtil.isBlank(connectorClassName)) {
-            LOGGER.warnv("Required property: {0} not found among the source properties: {1}",
-                      RepositoryConfiguration.FieldName.CLASSNAME,
-                      sourceProperties);
-            return;
+            throw new OperationFailedException(
+                    String.format("Required property: %s not found among the connector properties: %s",
+                                  RepositoryConfiguration.FieldName.CLASSNAME,
+                                  sourceProperties));
         }
-
-        // set the classloader to the package name of the connector class
-        int index = connectorClassName.lastIndexOf(".");
-        String connectorModuleName = index != -1 ? connectorClassName.substring(0, index) : connectorClassName;
+        // try to see if an alias is configured
+        String fqConnectorClass = RepositoryConfiguration.getBuiltInConnectorClassName(connectorClassName);
+        if (fqConnectorClass == null) {
+            fqConnectorClass = connectorClassName;
+        }
+        String connectorModuleName = ModuleNamesProvider.moduleNameFor(fqConnectorClass);
         sourceProperties.setProperty(RepositoryConfiguration.FieldName.CLASSLOADER, connectorModuleName);
     }
 }

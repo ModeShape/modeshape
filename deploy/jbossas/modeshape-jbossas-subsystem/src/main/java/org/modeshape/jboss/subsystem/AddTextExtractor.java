@@ -25,7 +25,6 @@ import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
-import org.jboss.logging.Logger;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
@@ -40,8 +39,6 @@ import org.modeshape.jcr.RepositoryConfiguration.FieldName;
 public class AddTextExtractor extends AbstractAddStepHandler {
 
     public static final AddTextExtractor INSTANCE = new AddTextExtractor();
-
-    private static final Logger LOG = Logger.getLogger(AddTextExtractor.class.getPackage().getName());
 
     private AddTextExtractor() {
     }
@@ -62,7 +59,7 @@ public class AddTextExtractor extends AbstractAddStepHandler {
     @Override
     protected void performRuntime( final OperationContext context,
                                    final ModelNode operation,
-                                   final ModelNode mode) {
+                                   final ModelNode mode) throws OperationFailedException {
 
         ServiceTarget target = context.getServiceTarget();
 
@@ -109,26 +106,24 @@ public class AddTextExtractor extends AbstractAddStepHandler {
         extractorBuilder.setInitialMode(ServiceController.Mode.ACTIVE).install();
     }
 
-    private void ensureClassLoadingPropertyIsSet( Properties properties ) {
+    private void ensureClassLoadingPropertyIsSet( Properties properties ) throws OperationFailedException {
         // could be already set if the "module" element is present in the xml
         if (properties.containsKey(FieldName.CLASSLOADER)) {
             return;
         }
         String textExtractorClassName = properties.getProperty(FieldName.CLASSNAME);
         if (StringUtil.isBlank(textExtractorClassName)) {
-            LOG.warnv("Required property: {0} not found among the text extractor properties: {1}",
-                      FieldName.CLASSNAME,
-                      properties);
-            return;
+            throw new OperationFailedException(
+                    String.format("Required property: %s not found among the text extractor properties: %s",
+                                  FieldName.CLASSNAME,
+                                  properties));
         }
         // try to see if an alias is configured
         String fqExtractorClass = RepositoryConfiguration.getBuiltInTextExtractorClassName(textExtractorClassName);
         if (fqExtractorClass == null) {
             fqExtractorClass = textExtractorClassName;
         }
-        // set the classloader to the package name of the sequencer class
-        int index = fqExtractorClass.lastIndexOf(".");
-        String extractorModuleName = index != -1 ? fqExtractorClass.substring(0, index) : fqExtractorClass;
+        String extractorModuleName = ModuleNamesProvider.moduleNameFor(fqExtractorClass);
         properties.setProperty(FieldName.CLASSLOADER, extractorModuleName);
     }
 

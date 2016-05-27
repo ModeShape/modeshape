@@ -63,7 +63,7 @@ public class AddSequencer extends AbstractAddStepHandler {
     @Override
     protected void performRuntime( final OperationContext context,
                                    final ModelNode operation,
-                                   final ModelNode model) {
+                                   final ModelNode model) throws OperationFailedException {
 
         ServiceTarget target = context.getServiceTarget();
 
@@ -120,17 +120,17 @@ public class AddSequencer extends AbstractAddStepHandler {
         sequencerBuilder.setInitialMode(ServiceController.Mode.ACTIVE).install();
     }
 
-    private void ensureClassLoadingPropertyIsSet( Properties sequencerProperties ) {
+    private void ensureClassLoadingPropertyIsSet( Properties sequencerProperties ) throws OperationFailedException {
         // could be already set if the "module" element is present in the xml (AddSequencer)
         if (sequencerProperties.containsKey(FieldName.CLASSLOADER)) {
             return;
         }
         String sequencerClassName = sequencerProperties.getProperty(FieldName.CLASSNAME);
         if (StringUtil.isBlank(sequencerClassName)) {
-            LOG.warnv("Required property: {0} not found among the sequencer properties: {1}",
-                      FieldName.CLASSNAME,
-                      sequencerProperties);
-            return;
+            throw new OperationFailedException(
+                    String.format("Required property: %s not found among the sequencer properties: %s",
+                                  FieldName.CLASSNAME,
+                                  sequencerProperties));
         }
         // try to see if an alias is configured
         String fqSequencerClass = RepositoryConfiguration.getBuiltInSequencerClassName(sequencerClassName);
@@ -138,8 +138,7 @@ public class AddSequencer extends AbstractAddStepHandler {
             fqSequencerClass = sequencerClassName;
         }
         // set the classloader to the package name of the sequencer class
-        int index = fqSequencerClass.lastIndexOf(".");
-        String sequencerModuleName = index != -1 ? fqSequencerClass.substring(0, index) : fqSequencerClass;
+        String sequencerModuleName = ModuleNamesProvider.moduleNameFor(fqSequencerClass);
         sequencerProperties.setProperty(FieldName.CLASSLOADER, sequencerModuleName);
     }
 

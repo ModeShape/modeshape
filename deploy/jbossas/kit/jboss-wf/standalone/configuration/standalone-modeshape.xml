@@ -300,72 +300,69 @@
                 short alias (which only works for the sequencer provided by ModeShape). -->
                 <sequencers>
                     <sequencer name="delimited-text-sequencer" classname="org.modeshape.sequencer.text.DelimitedTextSequencer"
-                               module="org.modeshape.sequencer.text" splitPattern=",">
+                               splitPattern=",">
                         <path-expression>/files(//*.csv[*])/jcr:content[@jcr:data] => /derived/text/delimited/$1</path-expression>
                     </sequencer>
                     <sequencer name="fixed-width-text-sequencer"
                                classname="org.modeshape.sequencer.text.FixedWidthTextSequencer"
-                               module="org.modeshape.sequencer.text" commentMarker="#">
+                               commentMarker="#">
                         <path-expression>/files(//*.txt[*])/jcr:content[@jcr:data] => /derived/text/fixedWidth/$1</path-expression>
                     </sequencer>
-                    <sequencer name="ddl-sequencer" classname="org.modeshape.sequencer.ddl.DdlSequencer"
-                               module="org.modeshape.sequencer.ddl">
+                    <sequencer name="ddl-sequencer" classname="org.modeshape.sequencer.ddl.DdlSequencer">
                         <path-expression>/files(//*.ddl[*])/jcr:content[@jcr:data] => /derived/ddl/$1</path-expression>
                     </sequencer>
                     <!--
                         For the java & class sequencer we need to explicitly define the module, as it does not map 1-1 to the classname
                     -->
-                    <sequencer name="java-source-sequencer" classname="org.modeshape.sequencer.javafile.JavaFileSequencer"
-                               module="org.modeshape.sequencer.java">
+                    <sequencer name="java-source-sequencer" classname="org.modeshape.sequencer.javafile.JavaFileSequencer">
                         <path-expression>/files//(*.java[*])/jcr:content[@jcr:data] => /derived/java</path-expression>
                     </sequencer>
-                    <sequencer name="java-class-sequencer" classname="org.modeshape.sequencer.classfile.ClassFileSequencer"
-                               module="org.modeshape.sequencer.java">
+                    <sequencer name="java-class-sequencer" classname="org.modeshape.sequencer.classfile.ClassFileSequencer">
                         <path-expression>/files//(*.class[*])/jcr:content[@jcr:data] => /derived/class</path-expression>
                     </sequencer>
-                    <sequencer name="cnd-sequencer" classname="cnd" module="org.modeshape">
+                    <sequencer name="cnd-sequencer" classname="cnd">
                         <path-expression>default:/files(//*.cnd[*])/jcr:content[@jcr:data] => /derived/cnd/$1</path-expression>
                     </sequencer>
-                    <sequencer name="msoffice-sequencer" classname="msoffice" module="org.modeshape.sequencer.msoffice">
+                    <sequencer name="msoffice-sequencer" classname="msoffice">
                         <path-expression>/files(//*.(xls|ppt|doc)[*])/jcr:content[@jcr:data] => /derived/msoffice/$1</path-expression>
                     </sequencer>
                     <!--
                      The XSD, XML, WSDL, and ZIP sequencers all generate a node for the input documents, and so we don't want the filename to
                      be included in the output path. Therefore, only the relative path under '/files' and above '*.xsd' (or '*.wsdl'
                      or '*.xml') is captured in the input path. -->
-                    <sequencer name="xsd-sequencer" classname="xsd" module="org.modeshape.sequencer.xsd">
+                    <sequencer name="xsd-sequencer" classname="xsd">
                         <path-expression>/files(//*).xsd[*]/jcr:content[@jcr:data] => /derived/xsd/$1</path-expression>
                     </sequencer>
-                    <sequencer name="wsdl-sequencer" classname="wsdl" module="org.modeshape.sequencer.wsdl">
+                    <sequencer name="wsdl-sequencer" classname="wsdl">
                         <path-expression>/files(//)*.wsdl[*]/jcr:content[@jcr:data] => /derived/wsdl/$1</path-expression>
                     </sequencer>
-                    <sequencer name="xml-sequencer" classname="xml" module="org.modeshape.sequencer.xml">
+                    <sequencer name="xml-sequencer" classname="xml">
                         <path-expression>/files(//)*.xml[*]/jcr:content[@jcr:data] => /derived/xml/$1</path-expression>
                     </sequencer>
-                    <sequencer name="zip-sequencer" classname="zip" module="org.modeshape.sequencer.zip">
+                    <sequencer name="zip-sequencer" classname="zip">
                         <path-expression>/files(//*.zip[*])/jcr:content[@jcr:data] => /derived/zip/$1</path-expression>
                     </sequencer>
-                    <sequencer name="image-sequencer" classname="image" module="org.modeshape.sequencer.image">
+                    <sequencer name="image-sequencer" classname="image">
                         <path-expression>/files(//*.(png|jpg|gif)[*])/jcr:content[@jcr:data] => /derived/image/$1</path-expression>
                     </sequencer>
-                    <sequencer name="mp3-sequencer" classname="mp3" module="org.modeshape.sequencer.mp3">
+                    <sequencer name="mp3-sequencer" classname="mp3">
                         <path-expression>/files(//*.mp3[*])/jcr:content[@jcr:data] => /derived/mp3/$1</path-expression>
                     </sequencer>    
-                    <sequencer name="audio-sequencer" classname="audio" module="org.modeshape.sequencer.audio">
+                    <sequencer name="audio-sequencer" classname="audio">
                         <path-expression>/files(//*.(mp4|ogg|flac|wma)[*])/jcr:content[@jcr:data] => /derived/audio/$1</path-expression>
                     </sequencer>
-                    <sequencer name="pdf-sequencer" classname="pdf" module="org.modeshape.sequencer.pdf">
+                    <sequencer name="pdf-sequencer" classname="pdf">
                         <path-expression>/files(//*.pdf[*])/jcr:content[@jcr:data] => /derived/pdf/$1</path-expression>    
                     </sequencer>
-                    <sequencer name="epub-sequencer" classname="epub" module="org.modeshape.sequencer.epub">
+                    <sequencer name="epub-sequencer" classname="epub">
                         <path-expression>/files(//*.epub[*])/jcr:content[@jcr:data] => /derived/epub/$1</path-expression>
                     </sequencer>
-                    <sequencer name="odf-sequencer" classname="odf" module="org.modeshape.sequencer.odf">
+                    <sequencer name="odf-sequencer" classname="odf">
                         <path-expression>/files(//*.(odt|ods|odp|odg|odc|ott|ots|otp|otg|otc)[*])/jcr:content[@jcr:data] => /derived/odf/$1</path-expression>
                     </sequencer>
                 </sequencers>
                 <text-extractors>
-                    <text-extractor name="tika-extractor" classname="tika" module="org.modeshape.extractor.tika"/>
+                    <text-extractor name="tika-extractor" classname="tika"/>
                 </text-extractors>
             </repository>
         </subsystem>
