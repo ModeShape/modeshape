@@ -85,6 +85,8 @@ public class AddIndexDefinition extends AbstractAddStepHandler {
                 props.put(FieldName.NODE_TYPE, node.asString());
             } else if (key.equals(ModelKeys.INDEX_COLUMNS) && ModelAttributes.INDEX_COLUMNS.isMarshallable(operation)) {
                 props.put(FieldName.COLUMNS, node.asString());
+            } else if (key.equals(ModelKeys.WORKSPACES) && ModelAttributes.WORKSPACES.isMarshallable(operation)) {
+                props.put(FieldName.WORKSPACES, node.asString());
             } else if (key.equals(ModelKeys.PROPERTIES)) {
                 for (Property property : node.asPropertyList()) {
                     props.put(property.getName(), property.getValue().asString());

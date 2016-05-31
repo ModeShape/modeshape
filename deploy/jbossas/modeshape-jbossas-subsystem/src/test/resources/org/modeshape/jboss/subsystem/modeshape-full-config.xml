@@ -14,6 +14,15 @@
             <initial-content>initial-content-default.xml</initial-content>
         </workspaces>
         <journaling max-days-to-keep-records="15"/>
+        <index-providers>
+            <index-provider name="local" classname="local"
+                            path="modeshape/artifacts/indexes/"
+                            relative-to="jboss.server.data.dir"/>
+        </index-providers>
+        <indexes>
+            <index name="valueIndex" provider-name="local" kind="value" node-type="nt:unstructured" columns="test:value(NAME)"
+                   workspaces="*"/>
+        </indexes>
         <file-binary-storage path="modeshape/compositeBinaryStoreRepository/binaries/fs1"/>
         <sequencers>
             <sequencer classname="ddl" name="modeshape-sequencer-ddl" path-expression="//a/b"/>

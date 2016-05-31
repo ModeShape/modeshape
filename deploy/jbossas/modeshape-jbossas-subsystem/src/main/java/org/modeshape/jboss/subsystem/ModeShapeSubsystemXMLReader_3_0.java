@@ -1225,6 +1225,9 @@ public class ModeShapeSubsystemXMLReader_3_0 implements XMLStreamConstants, XMLE
                     case COLUMNS:
                         ModelAttributes.INDEX_COLUMNS.parseAndSetParameter(attrValue, index, reader);
                         break;
+                    case WORKSPACES: 
+                        ModelAttributes.WORKSPACES.parseAndSetParameter(attrValue, index, reader);
+                        break;
                     default:
                        throw ParseUtils.unexpectedAttribute(reader, i);
                 }

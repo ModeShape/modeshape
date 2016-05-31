@@ -102,6 +102,7 @@ public class ModelKeys {
     static final String PROVIDER_NAME = "provider-name";
     static final String NODE_TYPE_NAME = "node-type-name";
     static final String INDEX_COLUMNS = "index-columns";
+    static final String WORKSPACES = "workspaces";
 
     static final String INDEX_PROVIDER = "index-provider";
 

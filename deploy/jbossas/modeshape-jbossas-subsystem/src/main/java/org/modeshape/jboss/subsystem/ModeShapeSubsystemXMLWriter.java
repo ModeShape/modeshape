@@ -514,7 +514,7 @@ public class ModeShapeSubsystemXMLWriter implements XMLStreamConstants, XMLEleme
                 ModelAttributes.SYNCHRONOUS.marshallAsAttribute(prop, writer);
                 ModelAttributes.NODE_TYPE_NAME.marshallAsAttribute(prop, writer);
                 ModelAttributes.INDEX_COLUMNS.marshallAsAttribute(prop, writer);
-
+                ModelAttributes.WORKSPACES.marshallAsAttribute(prop, writer);
                 // Write out the extra properties ...
                 if (has(prop, ModelKeys.PROPERTIES)) {
                     ModelNode properties = prop.get(ModelKeys.PROPERTIES);

@@ -683,6 +683,15 @@
                    that specifies the 'jcr:mixin' property and 'STRING' type.</xs:documentation>
             </xs:annotation>
         </xs:attribute>
+        <xs:attribute name="workspaces" type="xs:string">
+            <xs:annotation>
+                <xs:documentation>
+                    The regular expression pattern that stipulates which workspaces this index is to be used for. 
+                    By default, the pattern is '*', which means all workspaces. A literal string will match the exact workspace name. 
+                    Any workspaces that do not match this pattern will not use this index.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
         <xs:anyAttribute namespace="##any" processContents="lax"/>
     </xs:complexType>
 
