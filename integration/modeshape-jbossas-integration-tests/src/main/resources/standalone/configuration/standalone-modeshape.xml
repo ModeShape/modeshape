@@ -354,7 +354,7 @@
                 </index-providers>
                 <indexes>
                     <index name="names" provider-name="local" synchronous="true" kind="value" node-type="nt:base" columns="jcr:name(NAME)" />
-                    <index name="titles" provider-name="lucene" synchronous="true" kind="value" node-type="mix:title" columns="jcr:title(STRING)"/>
+                    <index name="titles" provider-name="lucene" synchronous="true" kind="value" node-type="mix:title" columns="jcr:title(STRING)" workspaces="default"/>
                     <index name="textFromFiles" provider-name="lucene" synchronous="true" kind="text" node-type="nt:resource" columns="jcr:data(BINARY)"/>
                 </indexes>
                 <!--

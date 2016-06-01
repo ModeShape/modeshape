@@ -98,6 +98,7 @@ public enum Attribute {
     INDEX_KIND("kind"),
     SYNCHRONOUS("synchronous"),
     PROVIDER_NAME("provider-name"),
+    WORKSPACES("workspaces"),
     NODE_TYPE("node-type"),
     THREAD_POOL_NAME("thread-pool-name"),
     MAX_POOL_SIZE("max-pool-size"),

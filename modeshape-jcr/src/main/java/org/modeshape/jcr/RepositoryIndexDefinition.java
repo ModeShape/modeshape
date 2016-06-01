@@ -38,12 +38,6 @@ final class RepositoryIndexDefinition implements IndexDefinition {
 
     private static final Logger LOGGER = Logger.getLogger(RepositoryIndexDefinition.class);
 
-    public static IndexDefinition createFrom( IndexDefinition other ) {
-        return new RepositoryIndexDefinition(other.getName(), other.getProviderName(), other.getKind(), other.getNodeTypeName(),
-                                             other, other.getIndexProperties(), other.getDescription(), other.isSynchronous(),
-                                             other.isEnabled(), other.getWorkspaceMatchRule());
-    }
-
     public static IndexDefinition createFrom( IndexDefinition other,
                                               boolean isEnabled ) {
         return new RepositoryIndexDefinition(other.getName(), other.getProviderName(), other.getKind(), other.getNodeTypeName(),

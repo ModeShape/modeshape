@@ -434,6 +434,14 @@ public class ModelAttributes {
                     .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                     .build();
 
+    public static final SimpleAttributeDefinition WORKSPACES =
+            new SimpleAttributeDefinitionBuilder(ModelKeys.WORKSPACES, ModelType.STRING)
+                    .setXmlName(Attribute.WORKSPACES.getLocalName())
+                    .setAllowExpression(true)
+                    .setAllowNull(true)
+                    .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+                    .build();
+
     public static final SimpleAttributeDefinition PATH =
             new SimpleAttributeDefinitionBuilder(ModelKeys.PATH, ModelType.STRING)
                     .setXmlName(Attribute.PATH.getLocalName())
@@ -964,7 +972,7 @@ public class ModelAttributes {
         CLASSNAME, MODULE, STORE_NAME, MIME_TYPE_DETECTION};
 
     public static final AttributeDefinition[] INDEX_DEFINITION_ATTRIBUTES = {INDEX_KIND, PROVIDER_NAME, NODE_TYPE_NAME,
-        SYNCHRONOUS ,INDEX_COLUMNS, PROPERTIES};
+        SYNCHRONOUS ,INDEX_COLUMNS, WORKSPACES, PROPERTIES};
 
     public static final AttributeDefinition[] INDEX_PROVIDER_ATTRIBUTES = {CLASSNAME, MODULE, RELATIVE_TO, PATH, PROPERTIES};
 
