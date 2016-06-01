@@ -48,18 +48,18 @@
 
     <properties>
         <version.javax.jcr>2.0</version.javax.jcr>
-        <version.org.jboss.spec.javax.transaction.jboss-transaction-api_1.1_spec>1.0.1.Final</version.org.jboss.spec.javax.transaction.jboss-transaction-api_1.1_spec>
+        <version.org.jboss.spec.javax.transaction.jboss-transaction-api_1.2_spec>1.0.1.Final</version.org.jboss.spec.javax.transaction.jboss-transaction-api_1.2_spec>
         <version.org.jgroups>3.6.8.Final</version.org.jgroups>
         <version.com.h2>1.4.191</version.com.h2>
         <version.com.zaxxer.HikariCP>2.4.3</version.com.zaxxer.HikariCP>
         <version.com.googlecode.concurrentlinkedhashmap>1.4.2</version.com.googlecode.concurrentlinkedhashmap>
         <version.org.mapdb>1.0.9</version.org.mapdb>
-        <version.org.slf4j>1.7.2</version.org.slf4j>
+        <version.org.slf4j>1.7.7</version.org.slf4j>
         <version.log4j>1.2.17</version.log4j>
-        <version.org.picketbox>4.0.21.Final</version.org.picketbox>
-        <version.org.jboss.logging>3.1.0.GA</version.org.jboss.logging>
+        <version.org.picketbox>4.9.6.Final</version.org.picketbox>
+        <version.org.jboss.logging>3.3.0.Final</version.org.jboss.logging>
         <version.com.atomikos>3.8.0</version.com.atomikos>
-        <version.org.jboss.jbossts.jta>5.1.0.Final</version.org.jboss.jbossts.jta>
+        <version.org.jboss.jbossts.jta>5.2.16.Final</version.org.jboss.jbossts.jta>
         <version.org.mongodb.mongo-java-driver>2.14.0</version.org.mongodb.mongo-java-driver>
         <version.com.datastax.cassandra>2.0.0-rc2</version.com.datastax.cassandra>
         <version.org.apache.tika>1.12</version.org.apache.tika>
@@ -82,7 +82,7 @@
         <version.org.jaudiotagger>2.0.3</version.org.jaudiotagger>
         <version.org.apache.poi>3.13</version.org.apache.poi>
         <version.com.beust.jcommander>1.5</version.com.beust.jcommander>
-        <version.wsdl4j>1.6.2</version.wsdl4j>
+        <version.wsdl4j>1.6.3</version.wsdl4j>
         <version.org.apache.lucene>6.0.0</version.org.apache.lucene>
         <!-- ***************** -->
         <!-- Repository Deployment URLs -->
@@ -408,8 +408,8 @@
             -->
             <dependency>
                 <groupId>org.jboss.spec.javax.transaction</groupId>
-                <artifactId>jboss-transaction-api_1.1_spec</artifactId>
-                <version>${version.org.jboss.spec.javax.transaction.jboss-transaction-api_1.1_spec}</version>
+                <artifactId>jboss-transaction-api_1.2_spec</artifactId>
+                <version>${version.org.jboss.spec.javax.transaction.jboss-transaction-api_1.2_spec}</version>
             </dependency>
             
             <!--
@@ -493,164 +493,6 @@
                 <artifactId>narayana-jta</artifactId>
                 <version>${version.org.jboss.jbossts.jta}</version>
                 <optional>true</optional>
-                <exclusions>
-                    <exclusion>
-                        <artifactId>commons-httpclient</artifactId>
-                        <groupId>commons-httpclient</groupId>
-                    </exclusion>
-                    <exclusion>
-                        <artifactId>ironjacamar-spec-api</artifactId>
-                        <groupId>org.jboss.ironjacamar</groupId>
-                    </exclusion>
-                    <exclusion>
-                        <artifactId>jboss-logging-spi</artifactId>
-                        <groupId>org.jboss.logging</groupId>
-                    </exclusion>
-                    <exclusion>
-                        <artifactId>jboss-logging</artifactId>
-                        <groupId>org.jboss.logging</groupId>
-                    </exclusion>
-                    <exclusion>
-                        <artifactId>jboss-logging-processor</artifactId>
-                        <groupId>org.jboss.logging</groupId>
-                    </exclusion>
-                    <exclusion>
-                        <artifactId>jboss-logging-generator</artifactId>
-                        <groupId>org.jboss.logging</groupId>
-                    </exclusion>
-                    <exclusion>
-                        <artifactId>jbossws-native-core</artifactId>
-                        <groupId>org.jboss.ws.native</groupId>
-                    </exclusion>
-                    <exclusion>
-                        <artifactId>emma</artifactId>
-                        <groupId>emma</groupId>
-                    </exclusion>
-                    <exclusion>
-                        <artifactId>emma_ant</artifactId>
-                        <groupId>emma</groupId>
-                    </exclusion>
-                    <exclusion>
-                        <artifactId>hornetq-core</artifactId>
-                        <groupId>org.hornetq</groupId>
-                    </exclusion>
-                    <exclusion>
-                        <artifactId>netty</artifactId>
-                        <groupId>org.jboss.netty</groupId>
-                    </exclusion>
-                    <exclusion>
-                        <artifactId>wrapper</artifactId>
-                        <groupId>tanukisoft</groupId>
-                    </exclusion>
-                    <exclusion>
-                        <artifactId>jacorb</artifactId>
-                        <groupId>jacorb</groupId>
-                    </exclusion>
-                    <exclusion>
-                        <artifactId>jfreechart</artifactId>
-                        <groupId>jfree</groupId>
-                    </exclusion>
-                    <exclusion>
-                        <artifactId>jboss-corba-ots-spi</artifactId>
-                        <groupId>org.jboss.integration</groupId>
-                    </exclusion>
-                    <exclusion>
-                        <artifactId>jboss-server-manager</artifactId>
-                        <groupId>org.jboss.jbossas</groupId>
-                    </exclusion>
-                    <exclusion>
-                        <artifactId>jboss-ejb-api_3.1_spec</artifactId>
-                        <groupId>org.jboss.spec.javax.ejb</groupId>
-                    </exclusion>
-                    <exclusion>
-                        <artifactId>jnp-client</artifactId>
-                        <groupId>org.jboss.naming</groupId>
-                    </exclusion>
-                    <exclusion>
-                        <artifactId>jboss-servlet-api_3.0_spec</artifactId>
-                        <groupId>org.jboss.spec.javax.servlet</groupId>
-                    </exclusion>
-                    <exclusion>
-                        <artifactId>jbossws-common</artifactId>
-                        <groupId>org.jboss.ws</groupId>
-                    </exclusion>
-                    <exclusion>
-                        <artifactId>jcl-over-slf4j</artifactId>
-                        <groupId>org.slf4j</groupId>
-                    </exclusion>
-                    <exclusion>
-                        <artifactId>stax-api</artifactId>
-                        <groupId>stax</groupId>
-                    </exclusion>
-                    <exclusion>
-                        <artifactId>idl</artifactId>
-                        <groupId>jacorb</groupId>
-                    </exclusion>
-                    <exclusion>
-                        <artifactId>jboss-logging-tools</artifactId>
-                        <groupId>org.jboss.logging</groupId>
-                    </exclusion>
-                    <exclusion>
-                        <artifactId>jboss-connector-api_1.5_spec</artifactId>
-                        <groupId>org.jboss.spec.javax.resource</groupId>
-                    </exclusion>
-                    <exclusion>
-                        <artifactId>jboss-transaction-spi</artifactId>
-                        <groupId>org.jboss.integration</groupId>
-                    </exclusion>
-                    <exclusion>
-                        <artifactId>jboss-remoting</artifactId>
-                        <groupId>org.jboss.remoting</groupId>
-                    </exclusion>
-                    <exclusion>
-                        <artifactId>slf4j-api</artifactId>
-                        <groupId>org.slf4j</groupId>
-                    </exclusion>
-                    <exclusion>
-                        <artifactId>dom4j</artifactId>
-                        <groupId>dom4j</groupId>
-                    </exclusion>
-                    <exclusion>
-                        <artifactId>commons-codec</artifactId>
-                        <groupId>commons-codec</groupId>
-                    </exclusion>
-                    <exclusion>
-                        <artifactId>jboss-logmanager</artifactId>
-                        <groupId>org.jboss.logmanager</groupId>
-                    </exclusion>
-                    <exclusion>
-                        <artifactId>hibernate-jpa-2.0-api</artifactId>
-                        <groupId>org.hibernate.javax.persistence</groupId>
-                    </exclusion>
-                    <exclusion>
-                        <artifactId>commons-logging</artifactId>
-                        <groupId>commons-logging</groupId>
-                    </exclusion>
-                    <exclusion>
-                        <artifactId>jcommon</artifactId>
-                        <groupId>jfree</groupId>
-                    </exclusion>
-                    <exclusion>
-                        <artifactId>jboss-transaction-api_1.1_spec</artifactId>
-                        <groupId>org.jboss.spec.javax.transaction</groupId>
-                    </exclusion>
-                    <exclusion>
-                        <artifactId>byteman</artifactId>
-                        <groupId>org.jboss.byteman</groupId>
-                    </exclusion>
-                    <exclusion>
-                        <artifactId>byteman-submit</artifactId>
-                        <groupId>org.jboss.byteman</groupId>
-                    </exclusion>
-                    <exclusion>
-                        <artifactId>hornetq-core</artifactId>
-                        <groupId>org.hornetq</groupId>
-                    </exclusion>
-                    <exclusion>
-                        <artifactId>hornetq-commons</artifactId>
-                        <groupId>org.hornetq</groupId>
-                    </exclusion>
-                </exclusions>
             </dependency>
             <!--
                 Binary Stores
