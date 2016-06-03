@@ -128,12 +128,12 @@ import org.modeshape.sequencer.ddl.node.AstNodeFactory;
 @NotThreadSafe
 public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.StatementStartPhrases {
 
-    private static final Logger LOGGER = Logger.getLogger(StandardDdlParser.class);
-
     /**
      * The Standard DDL parser identifier.
      */
     public static final String ID = "SQL92";
+
+    private static final Logger LOGGER = Logger.getLogger(StandardDdlParser.class);
 
     private boolean testMode = false;
     private final List<DdlParserProblem> problems;
@@ -658,7 +658,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
                 parseSingleTerminatedColumnDefinition(tokens, alterTableNode, true);
             }
         } else if (tokens.canConsume("DROP")) {
-            if (tokens.canConsume("CONSTRAINT")) {
+            if (tokens.canConsume(CONSTRAINT)) {
                 String constraintName = parseName(tokens); // constraint name
                 AstNode constraintNode = nodeFactory().node(constraintName, alterTableNode, TYPE_DROP_TABLE_CONSTRAINT_DEFINITION);
                 if (tokens.canConsume(DropBehavior.CASCADE)) {
@@ -1587,9 +1587,9 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
         } else if (tokens.canConsume("NOT", "NULL")) {
             columnNode.setProperty(NULLABLE, "NOT NULL");
             result = true;
-        } else if (tokens.matches("CONSTRAINT")) {
+        } else if (tokens.matches(CONSTRAINT)) {
             result = true;
-            tokens.consume("CONSTRAINT");
+            tokens.consume(CONSTRAINT);
             String constraintName = parseName(tokens);
             AstNode constraintNode = nodeFactory().node(constraintName, columnNode.getParent(), mixinType);
 
@@ -1696,11 +1696,11 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
 
             parseReferences(tokens, constraintNode);
             parseConstraintAttributes(tokens, constraintNode);
-        } else if (tokens.matches("CHECK")) {
+        } else if (tokens.matches(CHECK)) {
             result = true;
-            tokens.consume("CHECK"); // CHECK
+            tokens.consume(CHECK); // CHECK
 
-            String ck_name = "CHECK_1";
+            String ck_name = UNNAMED_CHECK_NODE_NAME;
 
             AstNode constraintNode = nodeFactory().node(ck_name, columnNode.getParent(), mixinType);
             constraintNode.setProperty(CONSTRAINT_TYPE, CHECK);
@@ -1823,7 +1823,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
 
                 consumeComment(tokens);
             }
-        } else if (tokens.matches("CONSTRAINT", TokenStream.ANY_VALUE, "UNIQUE")) {
+        } else if (tokens.matches(CONSTRAINT, TokenStream.ANY_VALUE, "UNIQUE")) {
             // CONSTRAINT P_KEY_2a UNIQUE (PERMISSIONUID)
             tokens.consume(); // CONSTRAINT
             String uc_name = parseName(tokens); // UNIQUE CONSTRAINT NAME
@@ -1838,9 +1838,9 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
             parseConstraintAttributes(tokens, constraintNode);
 
             consumeComment(tokens);
-        } else if (tokens.matches("CONSTRAINT", TokenStream.ANY_VALUE, "PRIMARY", "KEY")) {
+        } else if (tokens.matches(CONSTRAINT, TokenStream.ANY_VALUE, "PRIMARY", "KEY")) {
             // CONSTRAINT U_KEY_2a PRIMARY KEY (PERMISSIONUID)
-            tokens.consume("CONSTRAINT"); // CONSTRAINT
+            tokens.consume(CONSTRAINT); // CONSTRAINT
             String pk_name = parseName(tokens); // PRIMARY KEY NAME
             tokens.consume("PRIMARY", "KEY"); // PRIMARY KEY
 
@@ -1854,9 +1854,9 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
 
             consumeComment(tokens);
 
-        } else if (tokens.matches("CONSTRAINT", TokenStream.ANY_VALUE, "FOREIGN", "KEY")) {
+        } else if (tokens.matches(CONSTRAINT, TokenStream.ANY_VALUE, "FOREIGN", "KEY")) {
             // CONSTRAINT F_KEY_2a FOREIGN KEY (PERMISSIONUID)
-            tokens.consume("CONSTRAINT"); // CONSTRAINT
+            tokens.consume(CONSTRAINT); // CONSTRAINT
             String fk_name = parseName(tokens); // FOREIGN KEY NAME
             tokens.consume("FOREIGN", "KEY"); // FOREIGN KEY
 
@@ -1874,19 +1874,24 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
 
             consumeComment(tokens);
 
-        } else if (tokens.matches("CONSTRAINT", TokenStream.ANY_VALUE, "CHECK")) {
+        } else if (tokens.matches(CONSTRAINT, TokenStream.ANY_VALUE, CHECK)) {
             // CONSTRAINT zipchk CHECK (char_length(zipcode) = 5);
-            tokens.consume("CONSTRAINT"); // CONSTRAINT
+            tokens.consume(CONSTRAINT); // CONSTRAINT
             String ck_name = parseName(tokens); // NAME
-            tokens.consume("CHECK"); // CHECK
-
-            AstNode constraintNode = nodeFactory().node(ck_name, tableNode, mixinType);
-            constraintNode.setProperty(CONSTRAINT_TYPE, CHECK);
-
-            String clause = consumeParenBoundedTokens(tokens, true);
-            constraintNode.setProperty(CHECK_SEARCH_CONDITION, clause);
+            parseCheckConstraint(tokens, tableNode, mixinType, ck_name);
+        }  else if (tokens.matches(CHECK)) {
+             parseCheckConstraint(tokens, tableNode, mixinType, UNNAMED_CHECK_NODE_NAME);
         }
+    }
 
+    protected void parseCheckConstraint(DdlTokenStream tokens, AstNode tableNode, String mixinType, String constraintName) {
+        tokens.consume(CHECK); // CHECK
+
+        AstNode constraintNode = nodeFactory().node(constraintName, tableNode, mixinType);
+        constraintNode.setProperty(CONSTRAINT_TYPE, CHECK);
+
+        String clause = consumeParenBoundedTokens(tokens, true);
+        constraintNode.setProperty(CHECK_SEARCH_CONDITION, clause);
     }
 
     /**
@@ -2122,7 +2127,7 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
 
         node = nodeFactory().node(name, parentNode, TYPE_CREATE_ASSERTION_STATEMENT);
 
-        tokens.consume("CHECK");
+        tokens.consume(CHECK);
 
         String searchCondition = consumeParenBoundedTokens(tokens, false);
 
@@ -2347,13 +2352,14 @@ public class StandardDdlParser implements DdlParser, DdlConstants, DdlConstants.
     protected boolean isTableConstraint( DdlTokenStream tokens ) throws ParsingException {
         boolean result = false;
 
-        if ((tokens.matches("PRIMARY", "KEY")) || (tokens.matches("FOREIGN", "KEY")) || (tokens.matches("UNIQUE"))) {
+        if ((tokens.matches("PRIMARY", "KEY")) || (tokens.matches("FOREIGN", "KEY")) || (tokens.matches("UNIQUE")) || tokens.matches(
+                CHECK)) {
             result = true;
-        } else if (tokens.matches("CONSTRAINT")) {
-            if (tokens.matches("CONSTRAINT", TokenStream.ANY_VALUE, "UNIQUE")
-                || tokens.matches("CONSTRAINT", TokenStream.ANY_VALUE, "PRIMARY", "KEY")
-                || tokens.matches("CONSTRAINT", TokenStream.ANY_VALUE, "FOREIGN", "KEY")
-                || tokens.matches("CONSTRAINT", TokenStream.ANY_VALUE, "CHECK")) {
+        } else if (tokens.matches(CONSTRAINT)) {
+            if (tokens.matches(CONSTRAINT, TokenStream.ANY_VALUE, "UNIQUE")
+                || tokens.matches(CONSTRAINT, TokenStream.ANY_VALUE, "PRIMARY", "KEY")
+                || tokens.matches(CONSTRAINT, TokenStream.ANY_VALUE, "FOREIGN", "KEY")
+                || tokens.matches(CONSTRAINT, TokenStream.ANY_VALUE, CHECK)) {
                 result = true;
             }
         }

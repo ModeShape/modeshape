@@ -15,12 +15,12 @@
  */
 package org.modeshape.sequencer.ddl.dialect.oracle;
 
+import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
-import static org.hamcrest.CoreMatchers.hasItems;
 import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_ALTER_TABLE_STATEMENT;
 import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_GRANT_STATEMENT;
 import static org.modeshape.sequencer.ddl.StandardDdlLexicon.TYPE_PROBLEM;
@@ -697,4 +697,21 @@ public class OracleDdlParserTest extends DdlParserTestHelper {
         assertThat(tableNode.childrenWithName("COL$D").size(), is(1));
     }
 
+    @Test
+    @FixFor( "MODE-2604" )
+    public void shouldParseCreateTableStatementsWithCheckConstraints() throws Exception {
+        String content = getFileContent("ddl/create_table_check_constraint.ddl");
+        assertScoreAndParse(content, "create_table_check_constraint.ddl", 2);
+        List<AstNode> constraintNodes = parser.nodeFactory().getChildrenForType(rootNode, StandardDdlLexicon.TYPE_TABLE_CONSTRAINT);
+        assertEquals(2, constraintNodes.size());
+    }
+
+    @Test
+    @FixFor( "MODE-2604" )
+    public void shouldParseAlterTableStatementsWithCheckConstraints() throws Exception {
+        String content = getFileContent("ddl/alter_table_check_constraint.ddl");
+        assertScoreAndParse(content, "alter_table_check_constraint.ddl", 2);
+        List<AstNode> constraintNodes = parser.nodeFactory().getChildrenForType(rootNode, StandardDdlLexicon.TYPE_ADD_TABLE_CONSTRAINT_DEFINITION);
+        assertEquals(2, constraintNodes.size());
+    }
 }
