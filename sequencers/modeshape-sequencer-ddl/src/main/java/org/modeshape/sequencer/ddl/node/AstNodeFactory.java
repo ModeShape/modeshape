@@ -112,6 +112,8 @@ public final class AstNodeFactory {
             if (hasMixinType(child, nodeType)) {
                 childrenOfType.add(child);
             }
+            List<AstNode> subChildrenOfType = getChildrenForType(child, nodeType);
+            childrenOfType.addAll(subChildrenOfType);
         }
 
         return childrenOfType;

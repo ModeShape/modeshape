@@ -1035,4 +1035,28 @@ public class StandardDdlParserTest extends DdlParserTestHelper {
                          + "     create view view_1 (col1, col2) as select*from a with check option" + NEWLINE + ";";
         assertScoreAndParse(content, null, 1);
     }
+    
+    @Test
+    @FixFor( "MODE-2604" )
+    public void shouldParseCreateTableStatementsWithCheckConstraints() throws Exception {
+        String content = getFileContent(DDL_FILE_PATH + "create_table_check_constraint.ddl");
+
+        assertScoreAndParse(content, "create_table_check_constraint.ddl", 2);
+        List<AstNode> constraintNodes = parser.nodeFactory().getChildrenForType(rootNode, StandardDdlLexicon.TYPE_TABLE_CONSTRAINT);
+        assertEquals(2, constraintNodes.size());
+        assertEquals(DdlConstants.UNNAMED_CHECK_NODE_NAME, constraintNodes.get(0).getName());
+        assertEquals("chk_Person", constraintNodes.get(1).getName());
+    }
+    
+    @Test
+    @FixFor( "MODE-2604" )
+    public void shouldParseAlterTableStatementsWithCheckConstraints() throws Exception {
+        String content = getFileContent(DDL_FILE_PATH + "alter_table_check_constraint.ddl");
+
+        assertScoreAndParse(content, "alter_table_check_constraint.ddl", 2);
+        List<AstNode> constraintNodes = parser.nodeFactory().getChildrenForType(rootNode, StandardDdlLexicon.TYPE_ADD_TABLE_CONSTRAINT_DEFINITION);
+        assertEquals(2, constraintNodes.size());
+        assertEquals(DdlConstants.UNNAMED_CHECK_NODE_NAME, constraintNodes.get(0).getName());
+        assertEquals("chk_Person", constraintNodes.get(1).getName());
+    }
 }

@@ -50,6 +50,7 @@ public interface DdlConstants {
     public static final String PRIMARY_KEY = "PRIMARY KEY";
     public static final String FOREIGN_KEY = "FOREIGN KEY";
 
+    String UNNAMED_CHECK_NODE_NAME = "CHECK_1";
     /*
      * Common DDL Keywords
      */
@@ -81,7 +82,7 @@ public interface DdlConstants {
     public static final String NULL = "NULL";
 
     public static final String MISSING_TERMINATOR_NODE_LITERAL = "missingTerminator";
-
+    
     interface DropBehavior {
         public static final String CASCADE = "CASCADE";
         public static final String RESTRICT = "RESTRICT";
