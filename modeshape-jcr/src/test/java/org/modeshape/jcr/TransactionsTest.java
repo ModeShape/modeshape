@@ -540,6 +540,42 @@ public class TransactionsTest extends SingleUseAbstractTest {
         IntStream.range(0, threadCount).parallel().forEach(this::insertAndQueryNodes);
     }
 
+    @Test
+    @FixFor( "MODE-2607" )
+    public void shouldBeAbleToUpdateParentNodeWithOneSessionAndRemoveChildNodeWithAnotherSession() throws Exception {
+        final String parentPath = "/parent";
+        final String childPath = "/parent/child";
+ 
+        //create parent and child node with some properties in a tx
+        startTransaction();
+        Session session = newSession();
+        Node parent = session.getRootNode().addNode("parent");
+        parent.setProperty("foo", "parent");
+        Node child = parent.addNode("child");
+        child.setProperty("foo", "child");
+        session.save();
+        commitTransaction();
+
+        //edit the parent and remove the child in a new tx
+        startTransaction();
+        session = newSession();
+        parent = session.getNode(parentPath);
+        parent.setProperty("foo", "bar2");
+        session.save();
+        
+        child = session.getNode(childPath);
+        child.remove();
+        session.save();//Fail
+        commitTransaction();
+
+        //check that the editing worked in a new tx
+        startTransaction();
+        parent = session.getNode(parentPath);
+        assertEquals("bar2", parent.getProperty("foo").getString());
+        assertNoNode("/parent/child");
+        commitTransaction();
+    }
+    
     private void insertAndQueryNodes(int i) {
         Session session = null;
 

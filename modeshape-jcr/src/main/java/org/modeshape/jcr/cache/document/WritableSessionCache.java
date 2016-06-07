@@ -437,6 +437,7 @@ public class WritableSessionCache extends AbstractSessionCache {
      * should no longer use a transaction-specific workspace cache.
      */
     private void completeTransaction(final String txId) {
+        getWorkspace().clear();
         // reset the ws cache to the shared (global one)
         setWorkspaceCache(sharedWorkspaceCache());
         // and clear some tx specific data
