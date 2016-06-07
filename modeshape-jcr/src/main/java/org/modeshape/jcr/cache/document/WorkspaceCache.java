@@ -332,7 +332,6 @@ public class WorkspaceCache implements DocumentCache {
     }
 
     protected void loadFromDocumentStore(Set<String> keys) {
-        this.nodesByKey.clear();
         this.documentStore.load(keys).forEach(entry -> {
             String key = entry.id();
             Document document = entry.content();
