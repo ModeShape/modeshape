@@ -32,6 +32,8 @@ import javax.jcr.PropertyIterator;
 import javax.jcr.nodetype.NodeType;
 import javax.jcr.nodetype.NodeTypeIterator;
 import javax.jcr.nodetype.NodeTypeManager;
+import javax.jcr.security.AccessControlManager;
+import javax.jcr.security.AccessControlPolicy;
 import org.apache.chemistry.opencmis.client.api.Session;
 import org.apache.chemistry.opencmis.client.api.SessionFactory;
 import org.apache.chemistry.opencmis.client.runtime.SessionFactoryImpl;
@@ -234,7 +236,7 @@ public class CmisConnectorIT extends MultiUseAbstractTest {
         assertTrue(date != null);
     }
 
-    // @Test
+//     @Test
     public void shouldAccessModificationDatePropertyForFolder() throws Exception {
         Node node = getSession().getNode("/cmis/My_Folder-0-0");
         Calendar date = node.getProperty("jcr:lastModified").getDate();
@@ -268,7 +270,6 @@ public class CmisConnectorIT extends MultiUseAbstractTest {
     @Test
     public void shouldCreateFolderAndDocument() throws Exception {
         Node root = getSession().getNode("/cmis");
-
         String name = "test" + System.currentTimeMillis();
         Node node = root.addNode(name, "nt:folder");
         assertTrue(name.equals(node.getName()));
@@ -319,6 +320,13 @@ public class CmisConnectorIT extends MultiUseAbstractTest {
         //undo the moves so that the original folder and document are unchaged (they are used by the other tests as well)
         ((Workspace) session.getWorkspace()).move("/cmis/My_Folder-0-1/My_Document-1-X", "/cmis/My_Folder-0-X/My_Document-1-0");
         ((Workspace) session.getWorkspace()).move("/cmis/My_Folder-0-X", "/cmis/My_Folder-0-0");
+    }
+    
+    @Test
+    public void shouldContainAccessList() throws Exception {
+        AccessControlManager acm = session.getAccessControlManager();
+        AccessControlPolicy[] policies = acm.getPolicies("/cmis/My_Folder-0-0");
+        assertEquals(1, policies.length);
     }
 
 }

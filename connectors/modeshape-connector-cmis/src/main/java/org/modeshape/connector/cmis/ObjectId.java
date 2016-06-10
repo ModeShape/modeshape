@@ -30,7 +30,9 @@ public class ObjectId {
     public enum Type {
         REPOSITORY_INFO,
         CONTENT,
-        OBJECT
+        OBJECT,
+        ACL,
+        PERMISSIONS
     }
 
     private Type type;
@@ -77,6 +79,14 @@ public class ObjectId {
         if (p < 0) {
             return new ObjectId(Type.OBJECT, uuid);
         }
+        
+        int p1 = p;
+        while (p > 0) {
+            p1 = p;
+            p = uuid.indexOf("/", p + 1);
+        }
+        
+        p = p1;
         String ident = uuid.substring(0, p);
         String type = uuid.substring(p + 1);
 

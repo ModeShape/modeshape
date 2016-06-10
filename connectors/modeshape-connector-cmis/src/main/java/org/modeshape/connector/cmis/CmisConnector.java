@@ -36,13 +36,17 @@ import org.apache.chemistry.opencmis.client.api.FileableCmisObject;
 import org.apache.chemistry.opencmis.client.api.Folder;
 import org.apache.chemistry.opencmis.client.api.ItemIterable;
 import org.apache.chemistry.opencmis.client.api.ObjectType;
+import org.apache.chemistry.opencmis.client.api.OperationContext;
 import org.apache.chemistry.opencmis.client.api.Property;
 import org.apache.chemistry.opencmis.client.api.Session;
 import org.apache.chemistry.opencmis.client.api.Tree;
 import org.apache.chemistry.opencmis.client.bindings.spi.StandardAuthenticationProvider;
+import org.apache.chemistry.opencmis.client.runtime.OperationContextImpl;
 import org.apache.chemistry.opencmis.client.runtime.SessionFactoryImpl;
 import org.apache.chemistry.opencmis.commons.PropertyIds;
 import org.apache.chemistry.opencmis.commons.SessionParameter;
+import org.apache.chemistry.opencmis.commons.data.Ace;
+import org.apache.chemistry.opencmis.commons.data.Acl;
 import org.apache.chemistry.opencmis.commons.data.ContentStream;
 import org.apache.chemistry.opencmis.commons.data.RepositoryInfo;
 import org.apache.chemistry.opencmis.commons.definitions.PropertyDefinition;
@@ -52,6 +56,7 @@ import org.apache.chemistry.opencmis.commons.enums.VersioningState;
 import org.apache.chemistry.opencmis.commons.exceptions.CmisObjectNotFoundException;
 import org.apache.chemistry.opencmis.commons.impl.dataobjects.ContentStreamImpl;
 import org.modeshape.jcr.JcrLexicon;
+import org.modeshape.jcr.ModeShapeLexicon;
 import org.modeshape.jcr.api.JcrConstants;
 import org.modeshape.jcr.api.nodetype.NodeTypeManager;
 import org.modeshape.jcr.spi.federation.Connector;
@@ -147,9 +152,11 @@ public class CmisConnector extends Connector {
     private Nodes nodes;
 
     private Prefix prefixes = new Prefix();
-
+    private final OperationContext ctx = new OperationContextImpl();
+    
     public CmisConnector() {
         super();
+        ctx.setIncludeAcls(true);
     }
 
     @SuppressWarnings( "deprecation" )
@@ -220,6 +227,10 @@ public class CmisConnector extends Connector {
             case OBJECT:
                 // converts cmis folders and documents into jcr folders and files
                 return cmisObject(objectId.getIdentifier());
+            case ACL :
+                return cmisAccessList(objectId.getIdentifier());
+            case PERMISSIONS :
+                return cmisPermission(objectId.getIdentifier());
             default:
                 return null;
         }
@@ -283,7 +294,12 @@ public class CmisConnector extends Connector {
             case OBJECT:
                 // these type points to either cmis:document or cmis:folder so
                 // we can just delete it using original identifier defined in cmis domain.
-                CmisObject object = session.getObject(objectId.getIdentifier());
+                CmisObject object = null;
+                try {
+                    session.getObject(objectId.getIdentifier());
+                } catch (CmisObjectNotFoundException e) {
+                    return false;
+                }
 
                 // check that object exist
                 if (object == null) {
@@ -318,6 +334,9 @@ public class CmisConnector extends Connector {
 
                 // now checking that this document exists
                 return session.getObject(cmisId) != null;
+            case ACL :
+            case PERMISSIONS :
+                return true;
             default:
                 // here we checking cmis:folder and cmis:document
                 return session.getObject(id) != null;
@@ -329,6 +348,13 @@ public class CmisConnector extends Connector {
         // object id is a composite key which holds information about
         // unique object identifier and about its type
         ObjectId objectId = ObjectId.valueOf(document.getString("key"));
+        ObjectId parentId = ObjectId.valueOf(document.getString("parent"));
+        
+        //if parent is ACL then handle this document as permission entry
+        if (parentId.getType() == ObjectId.Type.ACL) {
+            //bypass this
+            return;
+        }
 
         // this action depends from object type
         switch (objectId.getType()) {
@@ -435,6 +461,11 @@ public class CmisConnector extends Connector {
 
     @Override
     public void updateDocument( DocumentChanges delta ) {
+        ObjectId parentId = ObjectId.valueOf(delta.getDocument().getString("parent"));
+        if (parentId.getType().equals(ObjectId.Type.ACL)) {
+            //skip modification
+            return;
+        }
         // object id is a composite key which holds information about
         // unique object identifier and about its type
         ObjectId objectId = ObjectId.valueOf(delta.getDocumentId());
@@ -590,6 +621,9 @@ public class CmisConnector extends Connector {
                 }
                 
                 break;
+                
+            case ACL :
+                break;
         }
     }
 
@@ -681,7 +715,12 @@ public class CmisConnector extends Connector {
      * @return JCR node document.
      */
     private Document cmisObject( String id ) {
-        CmisObject cmisObject = session.getObject(id);
+        CmisObject cmisObject;
+        try {
+             cmisObject   = session.getObject(id);
+        } catch (CmisObjectNotFoundException e) {
+            return null;
+        }
 
         // object does not exist? return null
         if (cmisObject == null) {
@@ -727,6 +766,9 @@ public class CmisConnector extends Connector {
         cmisProperties(folder, writer);
         cmisChildren(folder, writer);
 
+        writer.addMixinType("mode:accessControllable");
+        writer.addChild(ObjectId.toString(ObjectId.Type.ACL, folder.getId()), "mode:acl");
+        
         // append repository information to the root node
         if (folder.isRootFolder()) {
             writer.addChild(ObjectId.toString(ObjectId.Type.REPOSITORY_INFO, ""), REPOSITORY_INFO_NODE_NAME);
@@ -764,6 +806,9 @@ public class CmisConnector extends Connector {
         cmisProperties(doc, writer);
         writer.addChild(ObjectId.toString(ObjectId.Type.CONTENT, doc.getId()), JcrConstants.JCR_CONTENT);
 
+        writer.addMixinType("mode:accessControllable");
+        writer.addChild(ObjectId.toString(ObjectId.Type.ACL, cmisObject.getId()), "mode:acl");
+        
         return writer.document();
     }
 
@@ -861,6 +906,47 @@ public class CmisConnector extends Connector {
         return writer.document();
     }
 
+    private Document cmisAccessList(String id) {
+        DocumentWriter writer = newDocument(ObjectId.toString(ObjectId.Type.ACL, id));
+        writer.setPrimaryType(ModeShapeLexicon.ACCESS_LIST_NODE_TYPE_STRING);
+        writer.setParent(id);
+
+        CmisObject obj = session.getObject(id);
+        obj = session.getObject(obj, ctx);
+
+        Acl acl = obj.getAcl();
+        List<Ace> entries = acl.getAces();
+        for (Ace entry : entries) {
+            String entryId = AclObjectId.encode(id, entry.getPrincipalId());
+            writer.addChild(ObjectId.toString(ObjectId.Type.PERMISSIONS, entryId), 
+                    ModeShapeLexicon.PERMISSION.toString());
+        }
+        
+        return writer.document();
+    }
+    
+    private Document cmisPermission( String id ) {
+        String cmisObjectId = AclObjectId.cmisObjectId(id);
+        String entryId = AclObjectId.entryId(id);
+
+        DocumentWriter writer = newDocument(ObjectId.toString(ObjectId.Type.PERMISSIONS, id));
+        writer.setPrimaryType(ModeShapeLexicon.PERMISSION.toString());
+        writer.setParent(id);
+        
+        Acl acl = session.getObject(cmisObjectId, ctx).getAcl();
+        List<Ace> entries = acl.getAces();
+        for (Ace entry : entries) {
+            if (entry.getPrincipalId().equals(entryId)) {
+                String name = entry.getPrincipal().getId();
+                name = Converter.jcrPrincipal(name);
+                writer.addProperty(ModeShapeLexicon.PERMISSION_PRINCIPAL_NAME.getLocalName(), name);
+                List<String> perms = entry.getPermissions();
+                writer.addProperty(ModeShapeLexicon.PERMISSION_PRIVILEGES_NAME.getLocalName(), Converter.jcrPermissions(perms));
+            }
+        }
+        return writer.document();
+    }
+    
     /**
      * Creates content stream using JCR node.
      * 
@@ -1015,5 +1101,5 @@ public class CmisConnector extends Connector {
         // register type
         NodeTypeDefinition[] nodeDefs = new NodeTypeDefinition[] {type};
         typeManager.registerNodeTypes(nodeDefs, true);
-    }
+    }    
 }
