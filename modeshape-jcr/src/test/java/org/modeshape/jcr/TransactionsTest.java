@@ -542,7 +542,7 @@ public class TransactionsTest extends SingleUseAbstractTest {
 
     @Test
     @FixFor( "MODE-2607" )
-    public void shouldBeAbleToUpdateParentNodeWithOneSessionAndRemoveChildNodeWithAnotherSession() throws Exception {
+    public void shouldUpdateParentAndRemoveChildWithDifferentTransactions1() throws Exception {
         final String parentPath = "/parent";
         final String childPath = "/parent/child";
  
@@ -565,7 +565,7 @@ public class TransactionsTest extends SingleUseAbstractTest {
         
         child = session.getNode(childPath);
         child.remove();
-        session.save();//Fail
+        session.save();
         commitTransaction();
 
         //check that the editing worked in a new tx
@@ -573,6 +573,37 @@ public class TransactionsTest extends SingleUseAbstractTest {
         parent = session.getNode(parentPath);
         assertEquals("bar2", parent.getProperty("foo").getString());
         assertNoNode("/parent/child");
+        commitTransaction();
+    }
+
+    @Test
+    @FixFor( "MODE-2610" )
+    public void shouldUpdateParentAndRemoveChildWithDifferentTransactions2() throws Exception {
+        final String parentPath = "/parent";
+        final String childPath = "/parent/child";
+       
+        startTransaction();
+        Node parent = session.getRootNode().addNode("parent");
+        parent.setProperty("foo", "parent");
+        Node child = parent.addNode("child");
+        child.setProperty("foo", "child");
+        session.save();
+        commitTransaction();
+
+        startTransaction();
+        child = session.getNode(childPath);
+        parent = session.getNode(parentPath);
+        parent.setProperty("foo", "bar2");
+        session.save();
+        child.remove();
+        session.save();
+        commitTransaction();
+
+        startTransaction();
+        parent = session.getNode(parentPath);
+        assertEquals("bar2", parent.getProperty("foo").getString());   
+        assertNoNode("/parent/child");
+        session.logout();
         commitTransaction();
     }
     

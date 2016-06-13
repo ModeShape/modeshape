@@ -336,6 +336,7 @@ public class WorkspaceCache implements DocumentCache {
             String key = entry.id();
             Document document = entry.content();
             NodeKey nodeKey = new NodeKey(key);
+            // in some cases (user transactions) we may be replacing a node, but it's important to do so
             this.nodesByKey.put(nodeKey, new LazyCachedNode(nodeKey, document));
             if (LOGGER.isDebugEnabled()) {
                 LOGGER.debug("Read a fresh copy from the document store for '{0}' and stored it in the tx ws cache as '{1}'",

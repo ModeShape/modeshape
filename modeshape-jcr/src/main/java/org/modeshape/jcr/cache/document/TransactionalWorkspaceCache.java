@@ -72,12 +72,12 @@ public class TransactionalWorkspaceCache extends WorkspaceCache {
      * @see Transactions#updateCache(WorkspaceCache, ChangeSet, org.modeshape.jcr.txn.Transactions.Transaction)
      */
     public void changedWithinTransaction( final ChangeSet changes ) {
-        txWorkspaceCaches.workspaceCachesFor(txn).forEach(cache -> cache.internalChangedWithinTransaction(changes));
+        txWorkspaceCaches.dispatchChangesForTransaction(txn, changes);
     }
 
     @Override
     public void clear() {
-        txWorkspaceCaches.workspaceCachesFor(txn).forEach(TransactionalWorkspaceCache::internalClear);
+        txWorkspaceCaches.clearAllCachesForTransaction(txn);
     }
 
    protected void internalClear() {
