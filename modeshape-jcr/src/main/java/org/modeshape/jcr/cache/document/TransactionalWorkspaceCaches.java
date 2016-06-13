@@ -17,10 +17,9 @@ package org.modeshape.jcr.cache.document;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Stream;
+import java.util.concurrent.ConcurrentHashMap;
 import javax.transaction.RollbackException;
 import javax.transaction.Status;
 import javax.transaction.Synchronization;
@@ -30,6 +29,7 @@ import javax.transaction.TransactionManager;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.jcr.JcrI18n;
+import org.modeshape.jcr.cache.change.ChangeSet;
 import org.modeshape.jcr.txn.Transactions;
 
 /**
@@ -39,7 +39,7 @@ public class TransactionalWorkspaceCaches {
     private static final Logger LOGGER = Logger.getLogger(TransactionalWorkspaceCache.class);
     
     private final TransactionManager txnMgr;
-    private final Map<Transaction, Map<String, TransactionalWorkspaceCache>> transactionalCachesByTransaction = new HashMap<>();
+    private final Map<Transaction, Map<String, TransactionalWorkspaceCache>> transactionalCachesByTransaction = new ConcurrentHashMap<>();
 
     public TransactionalWorkspaceCaches( Transactions transactions ) {
         CheckArg.isNotNull(transactions, "transactions");
@@ -51,22 +51,40 @@ public class TransactionalWorkspaceCaches {
         Transaction txn = txnMgr.getTransaction();
         if (txn == null || txn.getStatus() != Status.STATUS_ACTIVE) return globalWorkspaceCache;
 
-
-        synchronized (this) {
-            String workspaceName = globalWorkspaceCache.getWorkspaceName();
-            return transactionalCachesByTransaction.computeIfAbsent(txn, tx -> new HashMap<>())
-                                                   .computeIfAbsent(workspaceName,
-                                                                    wsName -> createCache(globalWorkspaceCache, txn));
-        }
+        String workspaceName = globalWorkspaceCache.getWorkspaceName();
+        return transactionalCachesByTransaction.computeIfAbsent(txn, this::newCacheMapForTransaction)
+                                               .computeIfAbsent(workspaceName, wsName -> new TransactionalWorkspaceCache(globalWorkspaceCache, this, txn));
     }
-    
+
+    private Map<String, TransactionalWorkspaceCache> newCacheMapForTransaction(final Transaction txn) {
+        try {
+            txn.registerSynchronization(new Synchronization() {
+                @Override
+                public void beforeCompletion() {
+                    // do nothing ...
+                }
+
+                @Override
+                public void afterCompletion(int status) {
+                    // No matter what, remove this transactional cache from the maps ...
+                    Map<String, TransactionalWorkspaceCache> cachesByWsName = transactionalCachesByTransaction.remove(txn);
+                    cachesByWsName.clear();
+                }
+            });
+        } catch (RollbackException | SystemException e) {
+            throw new RuntimeException(e);
+        }
+        return new ConcurrentHashMap<>();
+    }
+
     public synchronized void rollbackActiveTransactionsForWorkspace(String workspaceName) {
         List<Transaction> toRemove = new ArrayList<>();
         // first rollback all active transactions and collect them at the same time...
-        transactionalCachesByTransaction.entrySet().stream()
+        transactionalCachesByTransaction.entrySet()
+                                        .stream()
                                         .filter(entry -> entry.getValue().containsKey(workspaceName))
-                                        .map(Map.Entry::getKey)
-                                        .forEach(tx -> {
+                                        .forEach(entry -> {
+                                            Transaction tx = entry.getKey();
                                             toRemove.add(tx);
                                             try {
                                                 tx.rollback();
@@ -77,36 +95,16 @@ public class TransactionalWorkspaceCaches {
                                             }
                                         });
         // then remove them from the map
-        toRemove.stream().forEach(transactionalCachesByTransaction::remove);         
+        transactionalCachesByTransaction.keySet().removeAll(toRemove);         
     }
 
-    protected synchronized void remove( Transaction txn ) {
-        transactionalCachesByTransaction.remove(txn);
-    }
-    
-    protected synchronized Stream<TransactionalWorkspaceCache> workspaceCachesFor(final Transaction txn) {
-        return transactionalCachesByTransaction.getOrDefault(txn, Collections.emptyMap()).values().stream();
+    protected void clearAllCachesForTransaction(final Transaction txn) {
+        transactionalCachesByTransaction.getOrDefault(txn, Collections.emptyMap())
+                                        .forEach((wsName, txWsCache) -> txWsCache.internalClear());
     }
 
-    private TransactionalWorkspaceCache createCache(WorkspaceCache sharedWorkspaceCache,
-                                                    final Transaction txn) {
-        final TransactionalWorkspaceCache cache = new TransactionalWorkspaceCache(sharedWorkspaceCache, this, txn);
-        try {
-            txn.registerSynchronization(new Synchronization() {
-                @Override
-                public void beforeCompletion() {
-                    // do nothing ...
-                }
-    
-                @Override
-                public void afterCompletion( int status ) {
-                    // No matter what, remove this transactional cache from the maps ...
-                    remove(txn);
-                }
-            });
-        } catch (RollbackException | SystemException e) {
-            throw new RuntimeException(e);
-        } 
-        return cache;
+    protected void dispatchChangesForTransaction(final Transaction txn, final ChangeSet changes) {
+        transactionalCachesByTransaction.getOrDefault(txn, Collections.emptyMap())
+                                        .forEach((wsName, txWsCache) -> txWsCache.internalChangedWithinTransaction(changes));
     }
 }

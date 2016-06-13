@@ -35,7 +35,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.stream.Collectors;
 import javax.transaction.HeuristicMixedException;
 import javax.transaction.HeuristicRollbackException;
 import javax.transaction.NotSupportedException;
@@ -407,8 +406,13 @@ public class WritableSessionCache extends AbstractSessionCache {
             Transactions transactions = repositoryEnvironment.getTransactions();
             javax.transaction.Transaction txn = transactions.getTransactionManager().getTransaction();
             if (txn != null && txn.getStatus() == Status.STATUS_ACTIVE) {
+                WorkspaceCache workspaceCache = getWorkspace();
+                if (workspaceCache instanceof TransactionalWorkspaceCache) {
+                    // we're already inside a transaction and have a tx workspace cache set
+                    return;
+                }
                 // There is an active transaction, so we need a transaction-specific workspace cache ...
-                setWorkspaceCache(txWorkspaceCaches.getTransactionalCache(getWorkspace()));
+                setWorkspaceCache(txWorkspaceCaches.getTransactionalCache(workspaceCache));
                 // only register the function if there's an active ModeShape transaction because we need to run the
                 // function *only after* the persistent storage has been updated
                 // if there isn't an active ModeShape transaction, one will become active later during "save"
@@ -1521,61 +1525,64 @@ public class WritableSessionCache extends AbstractSessionCache {
             }
         }
         // Try to acquire from the DocumentStore locks for all the nodes that we're going to change ...
-        Set<String> keysToLock = changedNodesInOrder.stream().map(this::keysToLockForNode).collect(TreeSet::new, 
-                                                                                                   TreeSet::addAll,
-                                                                                                   TreeSet::addAll);
+        Set<String> changedNodesKeys = changedNodesInOrder.stream().map(this::keysToLockForNode).collect(TreeSet::new,
+                                                                                                         TreeSet::addAll,
+                                                                                                         TreeSet::addAll);
 
         // we may already have a list of locked nodes, so remove the ones that we've already locked (and we hold the lock for)
         Transaction modeshapeTx = repositoryEnvironment.getTransactions().currentTransaction();
         assert modeshapeTx != null;
         String txId = modeshapeTx.id();
         Set<String> lockedKeysForTx = LOCKED_KEYS_BY_TX_ID.computeIfAbsent(txId, id -> new LinkedHashSet<>());
-        if (keysToLock.removeAll(lockedKeysForTx)) {
+        if (lockedKeysForTx.containsAll(changedNodesKeys)) {
             if (LOGGER.isDebugEnabled()) {
                 LOGGER.debug("The keys {0} have been locked previously as part of the transaction {1}; skipping them...",
-                             lockedKeysForTx, txId);    
+                             changedNodesKeys, txId);    
             }             
-        }
-        // no new locks that we don't already own are required, so just return...
-        if (keysToLock.isEmpty()) {
-            return;   
+        } else {
+            // there are new nodes that we need to lock...
+            Set<String> newKeysToLock = new TreeSet<>(changedNodesKeys);
+            newKeysToLock.removeAll(lockedKeysForTx);
+            int retryCountOnLockTimeout = 3;
+            boolean locksAcquired = false;
+            while (!locksAcquired && retryCountOnLockTimeout > 0) {
+                locksAcquired = documentStore.lockDocuments(newKeysToLock);
+                if (locksAcquired) {
+                    if (LOGGER.isDebugEnabled()) {
+                        LOGGER.debug("Locked the nodes: {0}", newKeysToLock);
+                    }
+                } else {
+                    if (LOGGER.isDebugEnabled()) {
+                        LOGGER.debug("Timeout while attempting to lock keys {0}. Retrying....", newKeysToLock);
+                    }
+                    --retryCountOnLockTimeout;
+                }
+            }
+            if (!locksAcquired) {
+                throw new TimeoutException(
+                        "Timeout while attempting to lock the keys " + changedNodesKeys + " after " + retryCountOnLockTimeout +
+                        " retry attempts.");
+            }
+            lockedKeysForTx.addAll(newKeysToLock);
         }
 
-        int retryCountOnLockTimeout = 3;
-        boolean locksAcquired = false;
-        while (!locksAcquired && retryCountOnLockTimeout > 0) {
-            locksAcquired = documentStore.lockDocuments(keysToLock);
-            if (locksAcquired) {
-                if (LOGGER.isDebugEnabled()) {
-                    LOGGER.debug("Locked the nodes: {0}", keysToLock);
-                }
-            } else {
-                if (LOGGER.isDebugEnabled()) {
-                    LOGGER.debug("Timeout while attempting to lock keys {0}. Retrying....", keysToLock);
-                }
-                --retryCountOnLockTimeout;
-            }
-        }
-        if (!locksAcquired) {
-            throw new TimeoutException("Timeout while attempting to lock the keys " + keysToLock + " after " + retryCountOnLockTimeout +
-                                       " retry attempts.");
-        }
-        lockedKeysForTx.addAll(keysToLock);
         // now that we've locked the keys, load all of the from the document store
         // note that some of the keys may be new but it's important to pass the entire set down to the document store
-        workspaceCache.loadFromDocumentStore(keysToLock);
+        workspaceCache.loadFromDocumentStore(changedNodesKeys);
     }
     
     private Set<String> keysToLockForNode(NodeKey key) {
         Set<String> keys = new TreeSet<>();
         //always the node itself
         keys.add(key.toString());
-        //and potentially any binary keys it references for which we'll need to change references
-        TreeSet<String> binaryRefKeys = binaryReferencesByNodeKey.getOrDefault(key, Collections.emptySet()).stream()
-                                                                 .map(binaryKey -> translator().keyForBinaryReferenceDocument(
-                                                                         binaryKey.toString()))
-                                                                 .collect(Collectors.toCollection(TreeSet::new));
-        keys.addAll(binaryRefKeys);
+        Set<BinaryKey> binaryReferencesForNode = binaryReferencesByNodeKey.get(key);
+        if (binaryReferencesForNode == null || binaryReferencesForNode.isEmpty()) {
+            return keys;
+        }
+        DocumentTranslator translator = translator();
+        for (BinaryKey binaryKey : binaryReferencesForNode) {
+            keys.add(translator.keyForBinaryReferenceDocument(binaryKey.toString()));
+        }
         return keys;
     }
    
