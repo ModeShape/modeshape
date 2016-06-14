@@ -414,15 +414,17 @@ final class JcrVersionManager implements org.modeshape.jcr.api.version.VersionMa
                     JcrVersionHistoryNode history = node.getVersionHistory();
                     org.modeshape.jcr.value.Property primaryType = propertyFactory().create(JcrLexicon.PRIMARY_TYPE,
                                                                                             JcrNtLexicon.VERSIONED_CHILD);
-                    org.modeshape.jcr.value.Property childVersionHistory = propertyFactory().create(JcrLexicon.CHILD_VERSION_HISTORY,
-                                                                                                    history.key().toString());
+                    Reference childVersionHistoryValue = session.referenceFactory().create(history.key(), true);                    
+                    org.modeshape.jcr.value.Property childVersionHistory = propertyFactory().create(
+                            JcrLexicon.CHILD_VERSION_HISTORY,
+                            childVersionHistoryValue);
                     parentInVersionHistory.createChild(versionHistoryCache, key, nodeName, primaryType, childVersionHistory);
                     return;
                 }
 
                 // Otherwise, treat it as a copy, as per section 3.13.9 bullet item 5 in JSR-283, so DO NOT break ...
             case OnParentVersionAction.COPY:
-                // Per section 3.13.9 item 5 in JSR-283, an OPV of COPY or VERSION (iff not versionable)
+                // Per section 3.13.9 item 5 in JSR-283, an OPV of COPY or VERSION (if not versionable)
                 // results in COPY behavior "regardless of the OPV values of the sub-items".
                 // We can achieve this by making the onParentVersionAction always COPY for the
                 // recursive call ...
