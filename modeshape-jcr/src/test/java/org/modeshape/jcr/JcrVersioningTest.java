@@ -1203,6 +1203,42 @@ public class JcrVersioningTest extends SingleUseAbstractTest {
         session.save();
     }
 
+    @Test
+    @FixFor( "MODE-2609" )
+    public void shouldReadChildVersionHistoryProperty() throws Exception {
+        // Create a versionable parent node and add a single version.
+        Node parentNode = session.getRootNode().addNode("parent");
+        parentNode.addMixin("mix:versionable");
+        session.save();
+        
+        VersionManager vm = parentNode.getSession().getWorkspace().getVersionManager();
+        vm.checkout(parentNode.getPath());
+        vm.checkin(parentNode.getPath());
+        vm.checkout(parentNode.getPath());
+
+        // Create a versionable child node for a previously created parent and add a single version.
+        Node childNode = parentNode.addNode("child");
+        childNode.addMixin("mix:versionable");
+        session.save();
+        vm.checkout(childNode.getPath());
+        vm.checkin(childNode.getPath());
+        vm.checkin(parentNode.getPath());
+
+        // Obtain the base version of the parent node.
+        Version baseParentVersion = vm.getBaseVersion(parentNode.getPath());
+        Node frozenNode = baseParentVersion.getFrozenNode();
+        NodeIterator nodeIterator = frozenNode.getNodes();
+
+        while (nodeIterator.hasNext()) {
+            Node child = nodeIterator.nextNode();
+            assertThat(child.getProperty("jcr:primaryType").getString(), is("nt:versionedChild"));
+            Property property = child.getProperty("jcr:childVersionHistory");
+            VersionHistory versionHistory = (VersionHistory) property.getNode();
+            // Do something about obtained version history...
+            assertNotNull(versionHistory);
+        }
+    }
+
     private List<String> allChildrenPaths( Node root ) throws Exception {
         List<String> paths = new ArrayList<String>();
         NodeIterator nodeIterator = root.getNodes();

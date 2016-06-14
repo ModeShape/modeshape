@@ -385,6 +385,12 @@ abstract class AbstractJcrProperty extends AbstractJcrItem implements org.modesh
                     throw new IllegalArgumentException("Unknown reference type: " + value.getClass().getSimpleName());
                 }
                 return session().node(key, null);
+            } else if (value instanceof String ) {
+                String valueString = (String) value;
+                // see MODE-2609 - some reference properties may have been incorrectly stored as strings, so try to resolve them
+                if (NodeKey.isValidFormat(valueString)) {
+                    return session().node(new NodeKey(valueString), null);
+                }                 
             }
             // STRING, PATH and NAME values will be convertable to a Path object ...
             Path path = factories.getPathFactory().create(value);
