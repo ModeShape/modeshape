@@ -1,3 +1,7 @@
+[![License](http://img.shields.io/:license-apache%202.0-brightgreen.svg)](http://www.apache.org/licenses/LICENSE-2.0.html)
+[![Maven Central](https://maven-badges.herokuapp.com/maven-central/org.modeshape/modeshape-parent/badge.svg)](http://search.maven.org/#search%7Cga%7C1%7Cg%3A%22org.modeshape%22)
+[![Build Status](https://travis-ci.org/modeshape/modeshape.svg?branch=master)](https://travis-ci.org/modeshape/modeshape)
+
 Copyright 2008-2016 ModeShape Project.
 Licensed under the Apache License, Version 2.0.
 

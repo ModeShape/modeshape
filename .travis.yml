@@ -1,0 +1,19 @@
+language: java
+
+# Travis by defaults runs the following `install` command:
+#
+#    install: mvn isntall -DskipTests=true -Dmaven.javadoc.skip=true -B -V
+#
+# though we have to add `-s settings.xml` for our build to work:
+#
+#    install: mvn -s settings.xml install -DskipTests=true -Dmaven.javadoc.skip=true -B -V
+#
+# But we actually want to skip this so that it doesn't take as long to fail
+# so we skip the `install` phase:
+install: true
+
+# We have to use our local `settings.xml`, and the clustering tests require IPv4 on the Travis infra
+script: mvn -s settings.xml clean install -Pintegration -DpreferIpv4
+
+jdk:
+  - oraclejdk8
