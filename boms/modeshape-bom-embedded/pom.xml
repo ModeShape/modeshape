@@ -4,7 +4,7 @@
 
     <groupId>org.modeshape.bom</groupId>
     <artifactId>modeshape-bom-embedded</artifactId>
-    <version>5.1-SNAPSHOT</version>
+    <version>5.1.0.Final</version>
 
     <name>ModeShape BOM for embedded usage</name>
 
