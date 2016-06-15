@@ -52,6 +52,7 @@ import org.apache.chemistry.opencmis.commons.data.RepositoryInfo;
 import org.apache.chemistry.opencmis.commons.definitions.PropertyDefinition;
 import org.apache.chemistry.opencmis.commons.enums.BaseTypeId;
 import org.apache.chemistry.opencmis.commons.enums.BindingType;
+import org.apache.chemistry.opencmis.commons.enums.Updatability;
 import org.apache.chemistry.opencmis.commons.enums.VersioningState;
 import org.apache.chemistry.opencmis.commons.exceptions.CmisObjectNotFoundException;
 import org.apache.chemistry.opencmis.commons.impl.dataobjects.ContentStreamImpl;
@@ -542,17 +543,19 @@ public class CmisConnector extends Connector {
 
                     // in cmis domain this property is defined as
                     PropertyDefinition<?> pdef = propDefs.get(cmisPropertyName);
-
+                    
                     // unknown property?
                     if (pdef == null) {
                         // ignore
                         continue;
                     }
 
-                    // convert value and store
-                    Document jcrValues = props.getDocument(name.getNamespaceUri());
-                    updateProperties.put(cmisPropertyName, properties.cmisValue(pdef, name.getLocalName(), jcrValues));
-
+                    Updatability updatability = pdef.getUpdatability();
+                    if (updatability == Updatability.READWRITE) {
+                        // convert value and store
+                        Document jcrValues = props.getDocument(name.getNamespaceUri());
+                        updateProperties.put(cmisPropertyName, properties.cmisValue(pdef, name.getLocalName(), jcrValues));
+                    }
                 }
 
                 // step #2: nullify removed properties
@@ -762,6 +765,7 @@ public class CmisConnector extends Connector {
 
         writer.setParent(folder.getParentId());
         writer.addMixinType(NodeType.MIX_REFERENCEABLE);
+        writer.addMixinType(NodeType.MIX_LAST_MODIFIED);
 
         cmisProperties(folder, writer);
         cmisChildren(folder, writer);
@@ -801,6 +805,7 @@ public class CmisConnector extends Connector {
 
         writer.setParents(parentIds);
         writer.addMixinType(NodeType.MIX_REFERENCEABLE);
+        writer.addMixinType(NodeType.MIX_LAST_MODIFIED);
 
         // document specific property conversation
         cmisProperties(doc, writer);

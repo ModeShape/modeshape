@@ -236,7 +236,7 @@ public class CmisConnectorIT extends MultiUseAbstractTest {
         assertTrue(date != null);
     }
 
-//     @Test
+    @Test
     public void shouldAccessModificationDatePropertyForFolder() throws Exception {
         Node node = getSession().getNode("/cmis/My_Folder-0-0");
         Calendar date = node.getProperty("jcr:lastModified").getDate();
@@ -260,14 +260,14 @@ public class CmisConnectorIT extends MultiUseAbstractTest {
         assertEquals("unknown", name);
     }
 
-    @Test
+     @Test
     public void shouldAccessCreationDatePropertyForDocument() throws Exception {
         Node node = getSession().getNode("/cmis/My_Folder-0-0/My_Document-1-0");
         Calendar date = node.getProperty("jcr:created").getDate();
         assertTrue(date != null);
     }
 
-    @Test
+     @Test
     public void shouldCreateFolderAndDocument() throws Exception {
         Node root = getSession().getNode("/cmis");
         String name = "test" + System.currentTimeMillis();
@@ -288,9 +288,7 @@ public class CmisConnectorIT extends MultiUseAbstractTest {
         contentNode.setProperty("jcr:data", binary);
         contentNode.setProperty("jcr:lastModified", Calendar.getInstance());
 
-        // System.out.println("Test: trying to save");
         getSession().save();
-        // System.out.println("Test: checking result");
 
     }
 
