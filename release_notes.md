@@ -5,25 +5,16 @@ We hope you enjoy it!
 
 ## What's new
 
-This is the first major release from the 5.x series. This release addresses 52 issues in total, 20 of which are bug fixes while
-the rest are new features or improvements.
+This release addresses 16 bugs and 11 enhancements, most notably:
+- several bug fixes around the new persistence support
 
-We strongly recommend looking at all the new changes in detail by reading the ModeShape 5 [documentation](https://docs.jboss.org/author/display/MODE50/Home)
+- 5 new sequencers: ModeShape can now sequence EPUB, PDF and ODF files together with several audio and video formats 
 
-Some of he most notable changes for ModeShape 5 include:
+- simplified Wildfly configuration for built-in components like sequencers, connectors, index providers etc
+  (see [this issue](https://issues.jboss.org/browse/MODE-2602) for more information)  
 
-- **Improved consistency** - ModeShape 5 no longer uses Infinispan and provides instead its own persistence stores. We suggest reading
-[this forum post](https://developer.jboss.org/message/945504) for an in depth explanation of this decision
-- **JDK 8 support** - ModeShape 5 is compiled with and runs on Java 8
-- **Wildfly 10 support** - ModeShape 5 fully integrates with Wildfly 10, while still supporting Wildfly 9. Note that starting from this
-release **ModeShape will not support Wildfly 8 or earlier**
-- **Simplified configuration** - not using Infinispan means the additional cache configuration files that users of ModeShape 3 and ModeShape 4 
-are familiar with, are no longer required. The entire repository configuration is self-contained in either the JSON or 
-JBoss AS files (with the exception that in certain clustering cases a separate JGroups configuration is required)
-- **Storage options** - ModeShape 5 provides out-of-the-box support for storing content either in memory, relational databases (via JDBC)
-or the file system. Make sure you take a look at the [new persistence documentation](https://docs.jboss.org/author/display/MODE50/Persistence)
-- **Storage SPI** - A new storage SPI is available meaning that there's always the option of implementing additional stores, 
-as long as they are transactional and support a key-value storage model
+- the REST service's backup and restore operations now support node batches, useful for avoiding OOM errors when backing up and
+  restoring large repositories
 
 ## Migrating from ModeShape 3 or ModeShape 4 
 
@@ -95,7 +86,7 @@ and while the server is running.
 - Visual repository explorer web application
 
 
-All of the JCR 2.0 features previously supported in 2.x are currently supported:
+All of the JCR 2.0 features supported in previous versions are still supported:
 
 ### Accessing the Repository
 - RepositoryFactory access
@@ -152,7 +143,7 @@ All of the JCR 2.0 features previously supported in 2.x are currently supported:
 ### Other JCR Optional Features
 - Observation
 - Locking
-- Versioning
+- Full Versioning
 - Shareable nodes
 - Access controls
 - Event journal
@@ -178,14 +169,19 @@ ModeShape also has features that go beyond the JCR API:
 - JDBC metadata connector (read-only)
 
 ### ModeShape Sequencers
+- Audio Sequencer
 - Compact Node Definition (CND) Sequencer
 - DDL Sequencer
+- EPUB Sequencer
 - Image Sequencer
 - Java Source Sequencer
 - Java Class Sequencer
-- MP3 Sequencer
+- MP3 Sequencer (deprecated)
 - MS Office Sequencer
+- ODF Sequencer
+- PDF Sequencer
 - Text Sequencers (Delimited and Fixed Width)
+- Video Sequencer
 - XML Sequencer
 - XML Schema Document (XSD) Sequencer
 - Web Service Definition Lanaguage (WSDL) 1.1 Sequencer

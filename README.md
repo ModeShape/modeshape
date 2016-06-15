@@ -7,8 +7,8 @@ This is the official Git repository for the ModeShape project.
 
 ModeShape is an open source implementation of the JCR 2.0 ([JSR-283](http://www.jcp.org/en/jsr/detail?id=283])) specification and standard API.
 To your applications, ModeShape looks and behaves like a regular JCR repository. Applications can search, query, navigate, change, version, listen for changes, etc.
-But ModeShape can store that content in a variety of back-end stores (including relational databases, Infinispan data grids, JBoss Cache, etc.), or it can
-access and update existing content from *other* kinds of systems (including file systems, SVN repositories, JDBC database metadata, and other JCR repositories).
+But ModeShape can store that content in a variety of back-end stores (including relational databases, the filesystem, etc.), or it can
+access and update existing content from *other* kinds of systems (including file systems, Git repositories, JDBC database metadata, and other JCR repositories which support CMIS).
 ModeShape's connector architecture means that you can write custom connectors to access any kind of system. And ModeShape can even federate multiple back-end systems
 into a single, unified virtual repository.
 
@@ -44,22 +44,14 @@ Then, we use Maven 3.x to build our software. The following command compiles all
 
 	$ mvn clean install -s settings.xml
 
-BTW, that '-s settings.xml' argument uses the 'settings.xml' file in our codebase, which is set up to use 2 Maven repositories:
+BTW, that '-s settings.xml' argument uses the 'settings.xml' file in our codebase, which is set up to use the JBoss Maven repository
 
-     The JBoss Maven repository - is the main repository, where most of the required artifacts are located
-     The JBoss EAP Techpreview repository - is an additional repository which contains the artifacts necessary for building ModeShape's EAP kit.
-
-Normally, during a normal "$ mvn clean install" build, the EAP kit is not built and therefore only the JBoss Maven repository would suffice.
-
-However, if you are interested in building & contributing to the EAP kit as well, you need to make sure the second Maven repository is active _and_ you need to download the EAP kit and place it into your local Maven repository where the build can find it. To do the latter, simply go to [JBoss.org|https://www.jboss.org/products/eap.html], download the EAP 6.1.1, then run the following script that is in our codebase:
-
-    $ bin/install-eap.sh path/to/jboss-eap-6.1.0.zip
-
-You can then run the following command (instead of the earlier command) to build all modules, including the EAP kit, using our "integration" profile:
+If you are interested in building & contributing to the Wildfly kit as well, you need to run the following command (instead of the earlier command) 
+to build all modules, including the Wildfly kit, using our "integration" profile:
 
     $ mvn clean install -s settings.xml -Pintegration
 
-To build everything, including the ModeShape kit for EAP, our JavaDoc, and our other assemblies, use the "assembly" profile instead:
+To build everything, including the ModeShape kit for Wildfly, our JavaDoc, and our other assemblies, use the "assembly" profile instead:
 
     $ mvn clean install -s settings.xml -Passembly
 
