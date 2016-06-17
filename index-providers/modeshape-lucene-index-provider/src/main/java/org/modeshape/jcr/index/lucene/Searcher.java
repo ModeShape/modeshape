@@ -16,6 +16,7 @@
 package org.modeshape.jcr.index.lucene;
 
 import java.io.IOException;
+import java.io.InterruptedIOException;
 import java.util.BitSet;
 import java.util.Collection;
 import java.util.Collections;
@@ -83,7 +84,7 @@ public class Searcher {
         this.queryCache = new LRUQueryCache(MAX_QUERIES_TO_CACHE, MAX_RAM_BYTES_TO_USE);
         this.searchManagerRefreshService = Executors.newScheduledThreadPool(1, new NamedThreadFactory(
                 name + "-lucene-search-manager-refresher"));
-        this.searchManagerRefreshResult = this.searchManagerRefreshService.scheduleWithFixedDelay(new SearchManagerRefresher(),
+        this.searchManagerRefreshResult = this.searchManagerRefreshService.scheduleWithFixedDelay(this::refreshSearchManager,
                                                                                                   0,
                                                                                                   config.refreshTimeSeconds(),
                                                                                                   TimeUnit.SECONDS);
@@ -91,7 +92,7 @@ public class Searcher {
     
     protected void close() {
         try {
-            searchManagerRefreshResult.cancel(true);
+            searchManagerRefreshResult.cancel(false);
             searchManagerRefreshService.shutdown();
             searchManager.close();
         } catch (IOException e) {
@@ -138,13 +139,11 @@ public class Searcher {
         }
     }
 
-    protected void refreshSearchManager(boolean async)  {
+    protected void refreshSearchManager()  {
         try {
-            if (!async) {
-                searchManager.maybeRefreshBlocking();
-            } else if (!searchManager.maybeRefresh()){
-                LOGGER.debug("Attempted to perform a search manager refresh, but another thread is already doing this.");
-            }
+            searchManager.maybeRefreshBlocking();
+        } catch (InterruptedIOException ie) {
+            Thread.currentThread().interrupt();
         } catch (IOException e) {
             LOGGER.warn(e, LuceneIndexProviderI18n.warnErrorWhileClosingSearcher);
         }
@@ -152,7 +151,7 @@ public class Searcher {
 
     protected <T> T search(Searchable<T> searchable, boolean refreshReader) {
         if (refreshReader) {
-            refreshSearchManager(false);
+            refreshSearchManager();
         }
         IndexSearcher searcher = null;
         try {
@@ -369,14 +368,7 @@ public class Searcher {
     protected interface Searchable<T> {
         T search(IndexSearcher searcher) throws IOException;
     }
-    
-    protected class SearchManagerRefresher implements Runnable {
-        @Override
-        public void run() {
-            refreshSearchManager(true);
-        }
-    }
-
+  
     private static class DocumentByIdCollector extends SimpleCollector {
 
         private LeafReader currentReader;
