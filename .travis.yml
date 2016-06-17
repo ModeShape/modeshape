@@ -1,5 +1,9 @@
 language: java
 
+# Our Git tests require information from early branches/versions so we need to make sure Travis gets everything when cloning
+git:
+  depth: 9999
+   
 # Travis by defaults runs the following `install` command:
 #
 #    install: mvn isntall -DskipTests=true -Dmaven.javadoc.skip=true -B -V
@@ -12,8 +16,15 @@ language: java
 # so we skip the `install` phase:
 install: true
 
-# We have to use our local `settings.xml`, and the clustering tests require IPv4 on the Travis infra
-script: mvn -s settings.xml clean install -Pintegration -DpreferIpv4
+# Cache the Maven repository per branch, so that we avoid downloading artifacts each time...
+cache:
+  directories:
+    - $HOME/.m2
+    
+# We have to use our local `settings.xml`, and the clustering tests require IPv4 on the Travis infrastructure
+# We're also changing the Maven default logging to avoid printing out all the 'Downloading' messages which can cause the Travis
+# build to fail when the log size exceeds 4MB
+script: mvn -s settings.xml clean install -Pintegration -DpreferIpv4 -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer=warn -B
 
 jdk:
   - oraclejdk8

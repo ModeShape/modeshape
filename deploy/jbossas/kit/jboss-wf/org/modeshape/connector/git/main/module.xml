@@ -19,7 +19,8 @@
     <resources>
         <resource-root path="modeshape-connector-git-${project.version}.jar" />
         <resource-root path="org.eclipse.jgit-${version.org.eclipse.jgit}.jar" />
-        <resource-root path="jsch-${version.com.jcraft}.jar" />
+        <resource-root path="jsch-0.1.53.jar" />
+        <resource-root path="JavaEWAH-0.7.9.jar" />
     </resources>
 
     <dependencies>

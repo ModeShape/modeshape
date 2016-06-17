@@ -194,6 +194,7 @@
                 <include>org.modeshape:modeshape-connector-git:jar</include>
                 <include>org.eclipse.jgit:org.eclipse.jgit:jar</include>
                 <include>com.jcraft:jsch:jar</include>
+                <include>com.googlecode.javaewah:JavaEWAH:jar</include>
             </includes>
         </dependencySet>
 
