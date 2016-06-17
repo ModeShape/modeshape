@@ -21,12 +21,20 @@ import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsSame.sameInstance;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
+import java.io.File;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 import javax.jcr.Item;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.Property;
 import javax.jcr.PropertyIterator;
 import javax.jcr.Value;
+import org.eclipse.jgit.api.Git;
+import org.eclipse.jgit.api.ListBranchCommand;
+import org.eclipse.jgit.transport.RefSpec;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -46,6 +54,8 @@ public class GitConnectorTest extends MultiUseAbstractTest {
 
     @BeforeClass
     public static void beforeAll() throws Exception {
+        loadGitRepositoryData();
+
         RepositoryConfiguration config = RepositoryConfiguration.read("config/repo-config-git-federation.json");
         startRepository(config);
 
@@ -58,8 +68,40 @@ public class GitConnectorTest extends MultiUseAbstractTest {
         fedMgr.createProjection(testRoot.getPath(), "local-git-repo", "/", "git-modeshape-local");
     }
 
+    private static void loadGitRepositoryData() throws Exception {
+        try (Git git = Git.open(new File("../.."))) {
+            // the tests expect a series of remote branches and tags from origin, so if they're not present in the clone 
+            // where the test is running, we need to load them...
+            List<RefSpec> refsToFetch = new ArrayList<>();
+            List<String> tagNames = git.tagList().call().stream()
+                                       .map(ref -> ref.getName().replace("refs/tags/", ""))
+                                       .collect(Collectors.toList());
+
+            Arrays.stream(expectedTagNames())
+                  .filter(tagName -> !tagNames.contains(tagName))
+                  .map(tagName -> new RefSpec("+refs/tags/" + tagName + ":refs/remotes/origin/" + tagName))
+                  .forEach(refsToFetch::add);
+
+            List<String> branchNames = git.branchList().setListMode(ListBranchCommand.ListMode.ALL).call()
+                                          .stream()
+                                          .map(ref -> ref.getName()
+                                                         .replace("refs/heads/", "")
+                                                         .replace("refs/remotes/origin/", ""))
+                                          .collect(Collectors.toList());
+            Arrays.stream(expectedRemoteBranchNames())
+                  .filter(branchName -> !branchNames.contains(branchName))
+                  .map(branchName -> new RefSpec("+refs/heads/" + branchName + ":refs/remotes/origin/" + branchName))
+                  .forEach(refsToFetch::add);
+
+            if (!refsToFetch.isEmpty()) {
+                // next fetch all the remote refs which we need for the test
+                git.fetch().setRefSpecs(refsToFetch).call();
+            }
+        }
+    }
+
     @AfterClass
-    public static final void afterAll() throws Exception {
+    public static void afterAll() throws Exception {
         MultiUseAbstractTest.afterAll();
     }
 
@@ -70,8 +112,8 @@ public class GitConnectorTest extends MultiUseAbstractTest {
 
     protected Node gitRemoteNode() throws Exception {
         return testRoot.getNode("git-modeshape-remote");
-    } 
-    
+    }
+
     protected Node gitLocalNode() throws Exception {
         return testRoot.getNode("git-modeshape-local");
     }
@@ -312,38 +354,30 @@ public class GitConnectorTest extends MultiUseAbstractTest {
     /**
      * The <i>minimal</i> names of the files and/or folders that are expected to exist at the top-level of the Git repository.
      * Additional file and folder names will be acceptable.
-     * 
+     *
      * @return the file and folder names; never null
      */
-    protected String[] expectedTopLevelFileAndFolderNames() {
-        return new String[] {"modeshape-parent", "pom.xml"};
+    protected static String[] expectedTopLevelFileAndFolderNames() {
+        return new String[]{"modeshape-parent", "pom.xml"};
     }
 
     /**
      * The <i>minimal</i> names of the branches that are expected to exist. Additional branch names will be acceptable.
-     * 
+     * Note that if any of these branches do not exist at startup, the tests will attempt to retrieve them from remote/origin
+     *
      * @return the branch names; never null
      */
-    protected String[] expectedRemoteBranchNames() {
-        return new String[] {"master", "2.2.x", "2.5.x", "2.8.x", "2.x", "3.0.x"};
+    protected static String[] expectedRemoteBranchNames() {
+        return new String[]{"master", "2.x", "3.x", "4.x"};
     }
 
     /**
      * The <i>minimal</i> names of the tags that are expected to exist. Additional tag names will be acceptable.
-     * 
+     * Note that if any of these tags do not exist at startup, the tests will attempt to retrieve them from remote/origin
+     *
      * @return the tag names; never null
      */
-    protected String[] expectedTagNames() {
-        return new String[] {"modeshape-3.0.1.Final", "modeshape-3.0.0.Final", "modeshape-3.0.0.CR3", "modeshape-3.0.0.CR2",
-            "modeshape-3.0.0.CR1", "modeshape-3.0.0.Beta4", "modeshape-3.0.0.Beta3", "modeshape-3.0.0.Beta2",
-            "modeshape-3.0.0.Beta1", "modeshape-3.0.0.Alpha6", "modeshape-3.0.0.Alpha5", "modeshape-3.0.0.Alpha4",
-            "modeshape-3.0.0.Alpha3", "modeshape-3.0.0.Alpha2", "modeshape-3.0.0.Alpha1", "modeshape-2.8.3.Final",
-            "modeshape-2.8.2.Final", "modeshape-2.8.1.GA", "modeshape-2.8.1.Final", "modeshape-2.8.0.Final",
-            "modeshape-2.7.0.Final", "modeshape-2.6.0.Final", "modeshape-2.6.0.Beta2", "modeshape-2.6.0.Beta1",
-            "modeshape-2.5.0.Final", "modeshape-2.5.0.Beta2", "modeshape-2.5.0.Beta1", "modeshape-2.4.0.Final",
-            "modeshape-2.3.0.Final", "modeshape-2.2.0.Final", "modeshape-2.1.0.Final", "modeshape-2.0.0.Final",
-            "modeshape-1.2.0.Final", "modeshape-1.1.0.Final", "modeshape-1.0.0.Final", "modeshape-1.0.0.Beta1", "dna-0.7",
-            "dna-0.6", "dna-0.5", "dna-0.4", "dna-0.3", "dna-0.2", "dna-0.1"};
+    protected static String[] expectedTagNames() {
+        return new String[]{"modeshape-3.0.0.Final", "dna-0.2"};
     }
-
 }
