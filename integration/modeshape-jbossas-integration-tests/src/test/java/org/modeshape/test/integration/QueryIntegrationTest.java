@@ -15,9 +15,7 @@
  */
 package org.modeshape.test.integration;
 
-import static org.junit.Assert.assertTrue;
 import java.io.File;
-import java.io.InputStream;
 import javax.annotation.Resource;
 import javax.jcr.Node;
 import javax.jcr.Session;
@@ -33,11 +31,9 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.modeshape.common.util.FileUtil;
 import org.modeshape.jcr.JcrRepository;
 import org.modeshape.jcr.ValidateQuery;
 import org.modeshape.jcr.ValidateQuery.ValidationBuilder;
-import org.modeshape.jcr.api.JcrTools;
 
 /**
  * Arquillian integration tests that uses the predefined repository that
@@ -47,12 +43,12 @@ import org.modeshape.jcr.api.JcrTools;
 @RunWith(Arquillian.class)
 public class QueryIntegrationTest {
 
-    @Resource(mappedName = "/jcr/artifacts")
+    @Resource(mappedName = "/jcr/query")
     private JcrRepository repository;
     private Session session;
+    private Node testRoot;
     private boolean print;
-    private JcrTools tools;
-
+   
     @Deployment
     public static WebArchive createDeployment() {
         File[] testDeps = Maven.configureResolver()
@@ -68,23 +64,20 @@ public class QueryIntegrationTest {
 
     @Before
     public void beforeEach() throws Exception {
-        File serverDataDir = new File(System.getProperty("jboss.server.data.dir"));
-        assertTrue("Cannot read server data dir !", serverDataDir.exists() && serverDataDir.canRead());
-        FileUtil.delete(new File(serverDataDir, "modeshape/store/artifacts"));
-        
         session = repository.login("default");
         print = false;
-        tools = new JcrTools();
     }
 
     @After
     public void afterEach() throws Exception {
-        if (session != null) {
-            try {
-                session.logout();
-            } finally {
-                session = null;
-            }
+        if (session == null) {
+            return;
+        }
+        try {
+            testRoot.remove();
+            session.save();
+        } finally {
+            session.logout();
         }
     }
 
@@ -94,21 +87,16 @@ public class QueryIntegrationTest {
 
     @Test
     public void shouldQueryForAllUnstructuredNodes() throws Exception {
-        Node node = session.getRootNode().addNode("query_test");
+        testRoot = session.getRootNode().addNode("query_test");
         session.save();
-        try {
-            String sql = "select [jcr:path] from [nt:base] where [jcr:name] = 'query_test'";
-            Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
-            validateQuery().rowCount(1).useIndex("names").validate(query, query.execute());
-        } finally {
-            node.remove();
-            session.save();
-        }
+        String sql = "select [jcr:path] from [nt:base] where [jcr:name] = 'query_test'";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        validateQuery().rowCount(1).useIndex("names").validate(query, query.execute());
     }
 
     @Test
     public void shouldQueryForMixTitle() throws Exception {
-        Node testRoot = session.getRootNode().addNode("root");
+        testRoot = session.getRootNode().addNode("root");
         Node node1 = testRoot.addNode("node1");
         node1.addMixin("mix:title");
         node1.setProperty("jcr:title", "title_1");
@@ -116,38 +104,9 @@ public class QueryIntegrationTest {
         node2.addMixin("mix:title");
         node2.setProperty("jcr:title", "title_2");
         session.save();
-
-        try {
-            String sql = "select [jcr:path] from [mix:title] where [jcr:title] LIKE 'ti%'";
-            Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
-            validateQuery().rowCount(2).hasNodesAtPaths("/root/node1", "/root/node2").useIndex("titles").validate(query, query.execute());
-        } finally {
-            testRoot.remove();
-            session.save();
-        }
-    }
-
-    @Test
-    public void shouldQueryForTextContent() throws Exception {
-        Node testRoot = session.getRootNode().addNode("root");
-        tools.uploadFile(session, "/root/file1", resourceStream("text-file.txt"));
-        tools.uploadFile(session, "/root/file2", resourceStream("text-file.txt"));
-        session.save();
-
-        try {
-            String sql = "select [jcr:path] from [nt:resource] where contains([jcr:data], 'red jumps')";
-            Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
-            validateQuery().rowCount(2)
-                    .hasNodesAtPaths("/root/file1/jcr:content", "/root/file2/jcr:content")
-                    .useIndex("textFromFiles")
-                    .validate(query, query.execute());
-        } finally {
-            testRoot.remove();
-            session.save();
-        }
-    }
-
-    private InputStream resourceStream(String path) {
-        return QueryIntegrationTest.class.getClassLoader().getResourceAsStream(path);
+     
+        String sql = "select [jcr:path] from [mix:title] where [jcr:title] LIKE 'ti%'";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        validateQuery().rowCount(2).hasNodesAtPaths("/root/node1", "/root/node2").useIndex("titles").validate(query, query.execute());
     }
 }

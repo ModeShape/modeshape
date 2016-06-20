@@ -335,7 +335,7 @@
             
             <!-- A second sample repository that defines additional non-default components such as extra workspaces and sequencers. -->
             <repository name="artifacts" anonymous-roles="admin" >
-                <file-persistence path="${jboss.server.data.dir}/modeshape/store/artifacts"/>
+                <file-persistence path="${jboss.server.data.dir}/modeshape/artifacts/store"/>
                 <!-- Define 3 workspaces to exist upon startup -->
                 <workspaces default-workspace="default" allow-workspace-creation="false">
                     <workspace name="default">
@@ -344,19 +344,6 @@
                     <workspace name="other"/>
                     <workspace name="extra"/>
                 </workspaces>
-                <!-- Define some indexes -->
-                <index-providers>
-                    <index-provider name="local" classname="local" path="modeshape/artifacts/indexes_local" relative-to="jboss.server.data.dir" />
-                    <index-provider name="local_custom_settings" classname="local" path="modeshape/artifacts/indexes_local_custom/" relative-to="jboss.server.data.dir"
-                                    cacheLRUEnable="true" mmapFileEnable="true" commitFileSyncDisable="true" transactionDisable="true"
-                                    asyncWrite="true" cacheSize="100"/>
-                    <index-provider classname="lucene" path="modeshape/artifacts/indexes_lucene" relative-to="jboss.server.data.dir"/> 
-                </index-providers>
-                <indexes>
-                    <index name="names" provider-name="local" synchronous="true" kind="value" node-type="nt:base" columns="jcr:name(NAME)" />
-                    <index name="titles" provider-name="lucene" synchronous="true" kind="value" node-type="mix:title" columns="jcr:title(STRING)" workspaces="default"/>
-                    <index name="textFromFiles" provider-name="lucene" synchronous="true" kind="text" node-type="nt:resource" columns="jcr:data(BINARY)"/>
-                </indexes>
                 <!--
                 Define a bunch of sequencers. Carefully note the differences in the path expressions; some sequencers
                 do not generate a node to represent a file, while other sequencers (e.g., XML, XSD, WSDL, ZIP) always
@@ -431,6 +418,34 @@
                         <path-expression>/files(//*.(odt|ods|odp|odg|odc|ott|ots|otp|otg|otc)[*])/jcr:content[@jcr:data] => /derived/odf/$1</path-expression>
                     </sequencer>
                 </sequencers> 
+                <text-extractors max-pool-size="5" thread-pool-name="test-text-extractor">
+                    <text-extractor name="tika-extractor" classname="tika"/>
+                </text-extractors>
+                <file-binary-storage mime-type-detection="content"/>
+            </repository> 
+            <repository name="query" anonymous-roles="admin" >
+                <file-persistence path="${jboss.server.data.dir}/modeshape/query/store"/>
+                <!-- Define 3 workspaces to exist upon startup -->
+                <workspaces default-workspace="default" allow-workspace-creation="false">
+                    <workspace name="default"/>
+                    <workspace name="other"/>
+                    <workspace name="extra"/>
+                </workspaces>
+                <!-- Define some indexes -->
+                <index-providers>
+                    <index-provider name="local" classname="local" path="modeshape/artifacts/indexes_local" relative-to="jboss.server.data.dir" />
+                    <index-provider name="local_custom_settings" classname="local" path="modeshape/artifacts/indexes_local_custom/" relative-to="jboss.server.data.dir"
+                                    cacheLRUEnable="true" mmapFileEnable="true" commitFileSyncDisable="true" transactionDisable="true"
+                                    asyncWrite="true" cacheSize="100"/>
+                    <index-provider classname="lucene" path="modeshape/artifacts/indexes_lucene" relative-to="jboss.server.data.dir"/> 
+                </index-providers>
+                <indexes>
+                    <index name="names" provider-name="local" synchronous="true" kind="value" node-type="nt:base" columns="jcr:name(NAME)" />
+                    <index name="titles" provider-name="lucene" synchronous="true" kind="value" node-type="mix:title" columns="jcr:title(STRING)" workspaces="default"/>
+                    <index name="textFromFiles" provider-name="lucene" synchronous="true" kind="text" node-type="nt:resource" columns="jcr:data(BINARY)"/>
+                </indexes>
+                <!-- we don't want any reindexing to happen async -->
+                <reindexing async="false"/>
                 <text-extractors max-pool-size="5" thread-pool-name="test-text-extractor">
                     <text-extractor name="tika-extractor" classname="tika"/>
                 </text-extractors>
