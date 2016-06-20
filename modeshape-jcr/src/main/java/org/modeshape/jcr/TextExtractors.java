@@ -57,8 +57,8 @@ public final class TextExtractors {
     }
 
     protected TextExtractors( JcrRepository.RunningState repository,
-                    RepositoryConfiguration.TextExtraction extracting ) {
-        this(repository.context().getCachedTreadPool(extracting.getThreadPoolName(), extracting.getMaxPoolSize()), 
+                              RepositoryConfiguration.TextExtraction extracting ) {
+        this(repository.context().getCachedTreadPool(extracting.getThreadPoolName(), extracting.getMaxPoolSize()),
              getConfiguredExtractors(repository, extracting));
     }
 
@@ -66,7 +66,7 @@ public final class TextExtractors {
         this.active = false;
         this.extractors.clear();
         this.extractingQueue.shutdown();
-        for (Future<?>  extractionResult : extractionResults ) {
+        for (Future<?> extractionResult : extractionResults) {
             extractionResult.cancel(true);
         }
         extractionResults.clear();
@@ -189,10 +189,10 @@ public final class TextExtractors {
                 }
 
                 String extractedText = output.getText();
-                if (extractedText != null && !StringUtil.isBlank(extractedText)) {
+                if (!StringUtil.isBlank(extractedText)) {
                     store.storeExtractedText(binaryValue, extractedText);
                 }
-            }  catch (InterruptedException ie) {
+            } catch (InterruptedException ie) {
                 Thread.interrupted();
                 LOGGER.warn(RepositoryI18n.shutdownWhileExtractingText, binaryValue.getKey(), ie.getMessage());
             } catch (Throwable t) {

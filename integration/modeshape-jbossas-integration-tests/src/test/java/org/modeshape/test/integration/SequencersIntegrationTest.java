@@ -40,11 +40,11 @@ import org.jboss.shrinkwrap.api.ArchivePaths;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.EmptyAsset;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.modeshape.common.FixFor;
-import org.modeshape.common.util.FileUtil;
 import org.modeshape.jcr.JcrRepository;
 import org.modeshape.jcr.JcrSession;
 import org.modeshape.jcr.RepositoryConfiguration;
@@ -55,7 +55,7 @@ import org.modeshape.jcr.api.observation.Event;
  * Arquillian integration tests that uses the predefined repository which contains sequencers, to test that sequencing is
  * successful. This test verifies that: - each of the built-in sequencers are configured in the repository - each sequencer, given
  * an input file at the preconfigured path, sequences that file in the preconfigured output (see standalone-modeshape.xml)
- * 
+ *
  * @author Horia Chiorean
  */
 
@@ -78,15 +78,41 @@ public class SequencersIntegrationTest {
     }
 
     @Before
-    public void before() {
-        File serverDataDir = new File(System.getProperty("jboss.server.data.dir"));
-        assertTrue("Cannot read server data dir !", serverDataDir.exists() && serverDataDir.canRead());
-        FileUtil.delete(new File(serverDataDir, "modeshape/store/artifacts"));        
+    public void before() throws Exception {
+        JcrSession session = repository.login();
+        try {
+            jcrTools.findOrCreateChild(session.getRootNode(), SEQUENCING_EXPRESSION_INPUT_ROOT);
+        } catch (RepositoryException e) {
+            session.logout();
+        }
     }
-    
+
+    @After
+    public void after() throws Exception {
+        JcrSession session = repository.login();
+        try {
+            remove(session, "/" + SEQUENCING_EXPRESSION_INPUT_ROOT);
+            remove(session, "/derived");
+            session.save();
+        } finally {
+            session.logout();
+        }
+    }
+
+    private void remove( JcrSession session, String absPath ) throws RepositoryException {
+        Node node = null;
+        try {
+            node = session.getNode(absPath);
+            node.remove();
+        } catch (PathNotFoundException e) {
+            //ignore   
+        }
+    }
+
     @Test
     public void shouldSequenceImage() throws Exception {
-        uploadFileAndAssertSequenced("/image_file.jpg", "/derived/image", "org.modeshape.sequencer.image.ImageMetadataSequencer");
+        uploadFileAndAssertSequenced("/image_file.jpg", "/derived/image",
+                                     "org.modeshape.sequencer.image.ImageMetadataSequencer");
     }
 
     @Test
@@ -160,23 +186,23 @@ public class SequencersIntegrationTest {
     @Test
     public void shouldSequenceXSDFile() throws Exception {
         uploadFileAndAssertSequenced("/xsd_file.xsd", "/derived/xsd", "org.modeshape.sequencer.xsd.XsdSequencer");
-    }  
-    
+    }
+
     @Test
     public void shouldSequencePDFFile() throws Exception {
         uploadFileAndAssertSequenced("/sample.pdf", "/derived/pdf", "org.modeshape.sequencer.pdf.PdfMetadataSequencer");
     }
-     
+
     @Test
     public void shouldSequenceEpubFile() throws Exception {
         uploadFileAndAssertSequenced("/sample.epub", "/derived/epub", "org.modeshape.sequencer.epub.EpubMetadataSequencer");
-    } 
-    
+    }
+
     @Test
     public void shouldSequenceODFFile() throws Exception {
         uploadFileAndAssertSequenced("/text.odt", "/derived/odf", "org.modeshape.sequencer.odf.OdfMetadataSequencer");
     }
-    
+
     @Test
     @FixFor( "MODE-2288" )
     public void shouldManuallySequenceZip() throws Exception {
@@ -210,8 +236,6 @@ public class SequencersIntegrationTest {
         SequencingListener listener = new SequencingListener(latch);
         observationManager.addEventListener(listener, NODE_SEQUENCED, null, true, null, null, false);
 
-        ensureTestRootNodeExists(session);
-
         String inputNodePath = "/files" + fileName;
         InputStream resourceAsStream = getClass().getClassLoader().getResourceAsStream("sequencer" + fileName);
         assertNotNull(resourceAsStream);
@@ -222,16 +246,9 @@ public class SequencersIntegrationTest {
         jcrTools.uploadFile(session, inputNodePath, resourceAsStream);
         session.save();
 
-        try {
-            assertTrue(latch.await(15, TimeUnit.SECONDS));
-            String outputNodePath = listener.getSequencedNodePath();
-            assertTrue(outputNodePath.startsWith(outputPathPrefix));
-            Node outputNode = session.getNode(outputNodePath);
-            outputNode.remove();
-        } finally {
-            session.getNode(inputNodePath).remove();
-            session.save();
-        }
+        assertTrue(latch.await(15, TimeUnit.SECONDS));
+        String outputNodePath = listener.getSequencedNodePath();
+        assertTrue(outputNodePath.startsWith(outputPathPrefix));
     }
 
     private void assertSequencerConfigured( String expectedSequencerClassConfigured ) {
@@ -254,14 +271,6 @@ public class SequencersIntegrationTest {
                    sequencerConfigured);
     }
 
-    private void ensureTestRootNodeExists( Session session ) throws RepositoryException {
-        try {
-            session.getRootNode().getNode(SEQUENCING_EXPRESSION_INPUT_ROOT);
-        } catch (PathNotFoundException e) {
-            session.getRootNode().addNode(SEQUENCING_EXPRESSION_INPUT_ROOT).getPath();
-            session.save();
-        }
-    }
 
     protected static final class SequencingListener implements EventListener {
         private final CountDownLatch latch;
@@ -274,7 +283,7 @@ public class SequencersIntegrationTest {
         @Override
         public void onEvent( EventIterator events ) {
             try {
-                Event event = (Event)events.nextEvent();
+                Event event = (Event) events.nextEvent();
                 this.sequencedNodePath = event.getPath();
                 latch.countDown();
             } catch (Exception e) {
