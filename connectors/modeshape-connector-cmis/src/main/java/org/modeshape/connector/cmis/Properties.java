@@ -44,7 +44,7 @@ public class Properties {
     // we have a small amount of such relations and simple linear search give us
     // better performance for small sets.
     private final static String[] map = new String[] {"cmis:objectId = jcr:uuid", "cmis:createdBy = jcr:createdBy",
-        "cmis:creationDate = jcr:created", "cmis:lastModificationDate = -", "cmis:lastModifiedBy = -"};
+        "cmis:creationDate = jcr:created", "cmis:lastModificationDate = jcr:lastModified", "cmis:lastModifiedBy = -"};
 
     // this is value factory used for converation of the values
     private ValueFactories valueFactories;
