@@ -23,13 +23,16 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.zip.GZIPInputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import javax.jcr.Binary;
@@ -415,6 +418,28 @@ public class RepositoryBackupAndRestoreTest extends SingleUseAbstractTest {
         assertNoProblems(problems);
 
         verifyBinaryContent();
+    }
+
+    @Test
+    @FixFor( "MODE-2611" )
+    public void backupShouldHaveUniqueIDs() throws Exception {
+        loadContent();
+        makeBackup(BackupOptions.DEFAULT);
+        
+        File backup = backupDirectory.listFiles((dir, name) -> name.contains("documents"))[0];
+        String idPrefix = "{ \"metadata\" : { \"id\" : \"";
+        try (GZIPInputStream gzipInputStream = new GZIPInputStream(new FileInputStream(backup))) {
+            String fileContent = IoUtil.read(gzipInputStream);
+            String lines[] = fileContent.split("\\r?\\n");
+            Set<String> ids = Arrays.stream(lines)
+                                    .map(s -> s.substring(s.indexOf(idPrefix) + idPrefix.length(), s.indexOf("\" }")))
+                                    .collect(HashSet::new, (set, id) -> {
+                                        if (!set.add(id)) {
+                                            fail("Duplicate id found: " + id);
+                                        }
+                                    }, HashSet::addAll);
+            assertEquals(lines.length, ids.size());
+        }
     }
 
     private File extractZip( String zipFile, File destination ) throws IOException {

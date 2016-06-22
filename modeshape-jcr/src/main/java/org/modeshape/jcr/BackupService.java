@@ -380,6 +380,7 @@ public class BackupService {
                                                           options.compress(),
                                                           problems);
             long numBinaryValues = 0L;
+            NodeKey metadataKey = repositoryCache.getRepositoryMetadataDocumentKey();
 
             try {
                 final AtomicBoolean continueWritingChangedDocuments = new AtomicBoolean(true);
@@ -392,7 +393,7 @@ public class BackupService {
                         while (continueWritingChangedDocuments.get()) {
                             // Poll for a changed document, but wait at most 1 second ...
                             NodeKey key = changedDocumentQueue.poll(1L, TimeUnit.SECONDS);
-                            if (key != null) {
+                            if (key != null && !key.equals(metadataKey)) {
                                 // Write out the document to the changed area ...
                                 SchematicEntry entry = documentStore.get(key.toString());
                                 writeToChangedArea(entry, changesWriter);
@@ -406,7 +407,7 @@ public class BackupService {
                     while (!changedDocumentQueue.isEmpty()) {
                         // Poll for a changed document, but at most only
                         NodeKey key = changedDocumentQueue.poll();
-                        if (key != null) {
+                        if (key != null && !key.equals(metadataKey)) {
                             // Write out the document to the changed area ...
                             SchematicEntry entry = documentStore.get(key.toString());
                             writeToChangedArea(entry, changesWriter);
@@ -426,6 +427,8 @@ public class BackupService {
                     // Perform the backup of the repository cache content ...
                     AtomicInteger counter = new AtomicInteger();
                     List<String> keys = documentStore.keys();
+                    // remove the metadata key since we want that to always export that last
+                    keys.remove(metadataKey.toString());
                     int startIdx = 0;
                     int totalDocumentsCount = keys.size();
                     int batchSize = options.batchSize();
@@ -445,7 +448,6 @@ public class BackupService {
 
                     // PHASE 2:
                     // Write out the repository metadata document (which may have not changed) ...
-                    NodeKey metadataKey = repositoryCache.getRepositoryMetadataDocumentKey();
                     SchematicEntry entry = documentStore.get(metadataKey.toString());
                     writeToContentArea(entry, contentWriter);
                 } catch (Exception e) {
