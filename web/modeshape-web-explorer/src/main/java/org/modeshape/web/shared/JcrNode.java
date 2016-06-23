@@ -33,6 +33,7 @@ public class JcrNode implements Serializable, IsSerializable {
     private String name;
     private String path;
     private String primaryType;
+    private long childCount;
     
     private Acl acll;
     
@@ -85,7 +86,7 @@ public class JcrNode implements Serializable, IsSerializable {
     public Collection<JcrNode> children() {
         return children;
     }
-    
+
     public void addChild(JcrNode child) {
         children.add(child);
     }
@@ -129,5 +130,13 @@ public class JcrNode implements Serializable, IsSerializable {
     
     public String[] getPropertyDefs() {
         return propertyDefs;
+    }
+    
+    public long getChildCount() {
+        return childCount;
+    }
+    
+    public void setChildCount(long childCount) {
+        this.childCount = childCount;
     }
 }

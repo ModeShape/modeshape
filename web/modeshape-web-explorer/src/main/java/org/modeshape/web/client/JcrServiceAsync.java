@@ -51,6 +51,8 @@ public interface JcrServiceAsync {
         
     public void node(String repository, String workspace, String path, AsyncCallback<JcrNode> result);
 
+    public void childNodes(String repository, String workspace, String path, int index, int count, AsyncCallback<Collection<JcrNode>> res);
+
     public void repositoryInfo(String repository, AsyncCallback<JcrRepositoryDescriptor> result);
 
     public void nodeTypes(String repository, String workspace, AsyncCallback<Collection<JcrNodeType>> result);

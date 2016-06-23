@@ -32,7 +32,8 @@ import java.util.Collection;
 public abstract class Grid<R extends HLayout, V> extends VLayout {
     private R[] records;
     private final VLayout viewPort = new VLayout();
-
+    private final HLayout bottomPanel = new HLayout();
+    
     public Grid(String caption) {
         super();
         init(caption);
@@ -77,11 +78,13 @@ public abstract class Grid<R extends HLayout, V> extends VLayout {
 
         setAutoHeight();
 
-        HLayout bottomPanel = new HLayout();
         bottomPanel.setHeight(30);
         bottomPanel.setBackgroundColor("#e6f1f6");
-
+        bottomPanel.setLayoutAlign(VerticalAlignment.CENTER);
+        bottomPanel.setDefaultLayoutAlign(VerticalAlignment.CENTER);
+        
         viewPort.setAutoHeight();
+        
         background.addMember(viewPort);
         background.addMember(bottomPanel);
     }
@@ -120,6 +123,11 @@ public abstract class Grid<R extends HLayout, V> extends VLayout {
     }
     
     protected abstract void updateRecord(int pos, R record, V value);
+    
+    public void setFooterContent(HLayout component) {
+        component.setWidth(100);
+        bottomPanel.addMember(component);
+    }
     
     protected class Strut extends HLayout {
         public Strut(int size) {

@@ -93,8 +93,30 @@ public interface JcrService extends RemoteService {
      */
     public String logout();
     
+    /**
+     * Gets node at the given path.
+     * 
+     * @param repository
+     * @param workspace
+     * @param path
+     * @return
+     * @throws RemoteException 
+     */
     public JcrNode node(String repository, String workspace, String path) throws RemoteException;
 
+    /**
+     * Gets set of child nodes for the node at the given path.
+     * 
+     * @param repository
+     * @param workspace
+     * @param path
+     * @param index
+     * @param count
+     * @return
+     * @throws RemoteException 
+     */
+    public Collection<JcrNode> childNodes(String repository, String workspace, String path, int index, int count) throws RemoteException;
+    
     /**
      * Gets repository capabilities.
      *
