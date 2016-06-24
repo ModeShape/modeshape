@@ -15,6 +15,7 @@
  */
 package org.modeshape.web.client.contents;
 
+import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.smartgwt.client.types.Alignment;
 import com.smartgwt.client.types.VerticalAlignment;
 import com.smartgwt.client.util.BooleanCallback;
@@ -23,8 +24,10 @@ import com.smartgwt.client.widgets.Label;
 import com.smartgwt.client.widgets.events.ClickEvent;
 import com.smartgwt.client.widgets.events.ClickHandler;
 import com.smartgwt.client.widgets.layout.HLayout;
+import java.util.Collection;
 import org.modeshape.web.client.contents.ChildrenEditor.NodeRecord;
 import org.modeshape.web.client.grid.Grid;
+import org.modeshape.web.client.grid.Pager;
 import org.modeshape.web.shared.Align;
 import org.modeshape.web.shared.Columns;
 import org.modeshape.web.shared.JcrNode;
@@ -38,19 +41,23 @@ public class ChildrenEditor extends Grid<NodeRecord, JcrNode> {
     private JcrNode node;    
     private final Contents contents;
     private final RenameNodeDialog renameNodeDialog;
-
+    private final ChildNodesPager pager = new ChildNodesPager();
+    
      
     private Label hint;
     
     public ChildrenEditor(Contents contents) {
         super("Child nodes");
         this.contents = contents;
+        this.setFooterContent(pager);
         renameNodeDialog = new RenameNodeDialog(contents);
     }
 
     public void show(JcrNode node) {
         this.node = node;
-        setValues(node.children());
+        
+        pager.setRecordsAmount((int)node.getChildCount());
+        pager.fetch(0);
         
         String hintText = node.hasBinaryContent() ? 
                 "This node has binary content attached. See bellow" :
@@ -274,5 +281,27 @@ public class ChildrenEditor extends Grid<NodeRecord, JcrNode> {
         protected void setNode(JcrNode node) {
             this.node = node;
         }
+    }
+    
+    private class ChildNodesPager extends Pager {
+
+        @Override
+        public void fetch(int index) {
+            contents.jcrService().childNodes(contents.repository(), 
+                    contents.workspace(), contents.path(), 
+                    index  * pager.getRecordsPerPage(), 
+                    pager.getRecordsPerPage(), new AsyncCallback<Collection<JcrNode>>() {
+                @Override
+                public void onFailure(Throwable caught) {
+                    SC.say(caught.getMessage());
+                }
+
+                @Override
+                public void onSuccess(Collection<JcrNode> nodes) {
+                    setValues(nodes);
+                }
+            });
+        }
+        
     }
 }

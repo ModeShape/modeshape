@@ -218,10 +218,7 @@ public class JcrServiceImpl extends RemoteServiceServlet implements JcrService {
             }
 
             NodeIterator it = n.getNodes();
-            while (it.hasNext()) {
-                Node child = it.nextNode();
-                node.addChild(new JcrNode(repository, workspace, child.getName(), child.getPath(), child.getPrimaryNodeType().getName()));
-            }
+            node.setChildCount(it.getSize());
             return node;
         } catch (RepositoryException e) {
             logger.error(e,  JcrI18n.unexpectedException, e.getMessage());
@@ -229,6 +226,32 @@ public class JcrServiceImpl extends RemoteServiceServlet implements JcrService {
         }
     }
 
+    @Override
+    public Collection<JcrNode> childNodes(String repository, String workspace, String path, int index, int count) throws RemoteException {
+        if (repository == null || workspace == null) {
+            return null;
+        }
+        try {
+            Session session = connector().find(repository).session(workspace);
+            Node n = session.getNode(path);
+
+            NodeIterator it = n.getNodes();
+            
+            ArrayList<JcrNode> res = new ArrayList();
+            int i = 0;
+            while (it.hasNext()) {
+                Node child = it.nextNode();
+                if (i >= index && i < (index + count)) {
+                    res.add(new JcrNode(repository, workspace, child.getName(), child.getPath(), child.getPrimaryNodeType().getName()));
+                }
+                i++;
+            }
+            return res;
+        } catch (RepositoryException e) {
+            logger.error(e,  JcrI18n.unexpectedException, e.getMessage());
+            throw new RemoteException(e.getMessage());
+        }
+    }
     
     private String[] mixinTypes( Node node ) throws RepositoryException {
         NodeType[] values = node.getMixinNodeTypes();
@@ -1044,8 +1067,8 @@ public class JcrServiceImpl extends RemoteServiceServlet implements JcrService {
     public String[] getTimeUnits() throws RemoteException {
         return TimeUnit.names();
     }
-    
-    
+
+        
     private class SimplePrincipal implements Principal {
 
         private String name;

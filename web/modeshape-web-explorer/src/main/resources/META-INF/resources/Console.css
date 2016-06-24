@@ -189,3 +189,18 @@ h1 {
 .session-hint {
     border-top: 1px solid #f0c36d;
 }
+
+.page-index {
+    font-family:Arial, Helvetica, sans-serif;
+    font-size: 14px;
+    cursor: pointer; 
+}
+
+.page-index-selected {
+    font-family:Arial, Helvetica, sans-serif;
+    font-weight: bold;
+    font-size: 14px;
+    cursor: pointer; 
+}
+
+
