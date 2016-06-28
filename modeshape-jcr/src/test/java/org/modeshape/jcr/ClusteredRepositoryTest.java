@@ -185,6 +185,7 @@ public class ClusteredRepositoryTest {
         assertTrue(paths.contains("/testNode/jcr:primaryType"));
 
         // check whether the node can be found in the second repository ...
+        Thread.sleep(500);
         try {
             session2.refresh(false);
             session2.getNode(testNodePath);

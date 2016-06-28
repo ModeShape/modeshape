@@ -33,7 +33,7 @@ import org.modeshape.jcr.value.Property;
  * An adapter class that processes {@link ChangeSet} instances and for each {@link Change} calls the appropriate protected method
  * that, by default, do nothing. Implementations simply override at least one of the relevant methods for the kind of changes they
  * expect.
- * 
+ *
  * @author Randall Hauch (rhauch@redhat.com)
  */
 public abstract class ChangeSetAdapter implements ChangeSetListener {
@@ -51,12 +51,12 @@ public abstract class ChangeSetAdapter implements ChangeSetListener {
 
         /**
          * Determine if the given primary type and mixin types are queryable according to this predicate, in the JSR-283 sense.
-         * 
+         *
          * @param primaryType the primary type of a node
          * @param mixinTypes the set of nodes mixins; never null but possibly empty
          * @return false if there's at least one type which is marked as 'noquery', true otherwise.
          */
-        boolean isQueryable(Name primaryType, Set<Name> mixinTypes);
+        boolean isQueryable( Name primaryType, Set<Name> mixinTypes );
     }
 
     protected final ExecutionContext context;
@@ -89,58 +89,64 @@ public abstract class ChangeSetAdapter implements ChangeSetListener {
                     Set<Name> lastMixinTypes = null;
                     for (Change change : changeSet) {
                         if (change instanceof AbstractNodeChange) {
-                            AbstractNodeChange anc = (AbstractNodeChange)change;
+                            AbstractNodeChange anc = (AbstractNodeChange) change;
                             Name primaryType = anc.getPrimaryType();
                             Set<Name> mixinTypes = anc.getMixinTypes();
-                            if (!matchesType(primaryType, mixinTypes)) continue;
-                            if (!isQueryable(primaryType, mixinTypes)) continue;
+                            if (!matchesType(primaryType, mixinTypes)) {
+                                continue;
+                            }
+                            if (!isQueryable(primaryType, mixinTypes)) {
+                                continue;
+                            }
 
                             if (change instanceof NodeAdded) {
                                 firePropertyChanges(lastKey, lastPrimaryType, lastMixinTypes, propChanges);
-                                NodeAdded added = (NodeAdded)change;
+                                NodeAdded added = (NodeAdded) change;
                                 addNode(workspaceName, added.getKey(), added.getPath(), added.getPrimaryType(),
                                         added.getMixinTypes(), props(added.getProperties()));
                             } else if (change instanceof NodeRemoved) {
                                 firePropertyChanges(lastKey, lastPrimaryType, lastMixinTypes, propChanges);
-                                NodeRemoved removed = (NodeRemoved)change;
+                                NodeRemoved removed = (NodeRemoved) change;
                                 removeNode(workspaceName, removed.getKey(), removed.getParentKey(), removed.getPath(),
                                            removed.getPrimaryType(), removed.getMixinTypes());
                             } else if (change instanceof AbstractPropertyChange) {
-                                AbstractPropertyChange propChange = (AbstractPropertyChange)change;
-                                if (!propChange.getKey().equals(lastKey)) firePropertyChanges(lastKey, lastPrimaryType, lastMixinTypes,
-                                                                                              propChanges);
+                                AbstractPropertyChange propChange = (AbstractPropertyChange) change;
+                                if (!propChange.getKey().equals(lastKey)) {
+                                    firePropertyChanges(lastKey, lastPrimaryType, lastMixinTypes,
+                                                        propChanges);
+                                }
                                 propChanges.put(propChange.getProperty().getName(), propChange);
                             } else if (change instanceof NodeChanged) {
                                 firePropertyChanges(lastKey, lastPrimaryType, lastMixinTypes, propChanges);
-                                NodeChanged nodeChanged = (NodeChanged)change;
+                                NodeChanged nodeChanged = (NodeChanged) change;
                                 changeNode(workspaceName, nodeChanged.getKey(), nodeChanged.getPath(),
                                            nodeChanged.getPrimaryType(), nodeChanged.getMixinTypes());
                             } else if (change instanceof NodeMoved) {
                                 firePropertyChanges(lastKey, lastPrimaryType, lastMixinTypes, propChanges);
-                                NodeMoved moved = (NodeMoved)change;
+                                NodeMoved moved = (NodeMoved) change;
                                 moveNode(workspaceName, moved.getKey(), moved.getPrimaryType(), moved.getMixinTypes(),
                                          moved.getNewParent(), moved.getOldParent(), moved.getNewPath(), moved.getOldPath()
                                         );
                             } else if (change instanceof NodeRenamed) {
                                 firePropertyChanges(lastKey, lastPrimaryType, lastMixinTypes, propChanges);
-                                NodeRenamed renamed = (NodeRenamed)change;
+                                NodeRenamed renamed = (NodeRenamed) change;
                                 renameNode(workspaceName, renamed.getKey(), renamed.getPath(), renamed.getOldSegment(),
                                            renamed.getPrimaryType(), renamed.getMixinTypes());
                             } else if (change instanceof NodeReordered) {
                                 firePropertyChanges(lastKey, lastPrimaryType, lastMixinTypes, propChanges);
-                                NodeReordered reordered = (NodeReordered)change;
+                                NodeReordered reordered = (NodeReordered) change;
                                 reorderNode(workspaceName, reordered.getKey(), reordered.getPrimaryType(),
                                             reordered.getMixinTypes(), reordered.getParent(), reordered.getPath(),
-                                            reordered.getOldPath(), reordered.getReorderedBeforePath());
+                                            reordered.getOldPath(), reordered.getReorderedBeforePath(), reordered.getSnsPathChangesByNodeKey());
                             } else if (change instanceof NodeSequenced) {
                                 firePropertyChanges(lastKey, lastPrimaryType, lastMixinTypes, propChanges);
-                                NodeSequenced s = (NodeSequenced)change;
+                                NodeSequenced s = (NodeSequenced) change;
                                 sequenced(workspaceName, s.getKey(), s.getPath(), s.getPrimaryType(), s.getMixinTypes(),
                                           s.getOutputNodeKey(), s.getOutputNodePath(), s.getOutputPath(), s.getUserId(),
                                           s.getSelectedPath(), s.getSequencerName());
                             } else if (change instanceof NodeSequencingFailure) {
                                 firePropertyChanges(lastKey, lastPrimaryType, lastMixinTypes, propChanges);
-                                NodeSequencingFailure f = (NodeSequencingFailure)change;
+                                NodeSequencingFailure f = (NodeSequencingFailure) change;
                                 sequenceFailure(workspaceName, f.getKey(), f.getPath(), f.getPrimaryType(), f.getMixinTypes(),
                                                 f.getOutputPath(), f.getUserId(), f.getSelectedPath(), f.getSequencerName(),
                                                 f.getCause());
@@ -161,15 +167,15 @@ public abstract class ChangeSetAdapter implements ChangeSetListener {
             beginChanges();
             for (Change change : changeSet) {
                 if (change instanceof WorkspaceAdded) {
-                    WorkspaceAdded added = (WorkspaceAdded)change;
+                    WorkspaceAdded added = (WorkspaceAdded) change;
                     addWorkspace(added.getWorkspaceName());
                 } else if (change instanceof WorkspaceRemoved) {
-                    WorkspaceRemoved removed = (WorkspaceRemoved)change;
+                    WorkspaceRemoved removed = (WorkspaceRemoved) change;
                     removeWorkspace(removed.getWorkspaceName());
                 } else if (change instanceof RepositoryMetadataChanged) {
                     repositoryMetadataChanged();
                 } else if (change instanceof BinaryValueUnused) {
-                    BinaryValueUnused bvu = (BinaryValueUnused)change;
+                    BinaryValueUnused bvu = (BinaryValueUnused) change;
                     binaryValueUnused(bvu.getKey());
                 }
             }
@@ -221,8 +227,8 @@ public abstract class ChangeSetAdapter implements ChangeSetListener {
     }
 
     private void firePropertyChanges( NodeKey key,
-                                      Name primaryType, 
-                                      Set<Name> mixinTypes, 
+                                      Name primaryType,
+                                      Set<Name> mixinTypes,
                                       Map<Name, AbstractPropertyChange> propChanges ) {
         if (!propChanges.isEmpty()) {
             modifyProperties(key, primaryType, mixinTypes, propChanges);
@@ -240,8 +246,8 @@ public abstract class ChangeSetAdapter implements ChangeSetListener {
      * @param propChanges the map of property modification events, keyed by the names of the properties; never null and never
      */
     protected void modifyProperties( NodeKey key,
-                                     Name primaryType, 
-                                     Set<Name> mixinTypes, 
+                                     Name primaryType,
+                                     Set<Name> mixinTypes,
                                      Map<Name, AbstractPropertyChange> propChanges ) {
     }
 
@@ -262,7 +268,7 @@ public abstract class ChangeSetAdapter implements ChangeSetListener {
     /**
      * Determine whether changes in the named workspace should be processed. By default this method returns {@code true}, which
      * means changes to content in all workspaces are handled by this adapter.
-     * 
+     *
      * @param workspaceName the workspace that has changes in content
      * @return true if the changes should be processed, or false otherwise
      */
@@ -272,6 +278,7 @@ public abstract class ChangeSetAdapter implements ChangeSetListener {
 
     /**
      * Handle the addition of a node.
+     *
      * @param workspaceName the workspace in which the node information should be available; may not be null
      * @param key the unique key for the node; may not be null
      * @param path the path of the node; may not be null
@@ -309,6 +316,7 @@ public abstract class ChangeSetAdapter implements ChangeSetListener {
 
     /**
      * Handle the removal of a node.
+     *
      * @param workspaceName the workspace in which the node information should be available; may not be null
      * @param key the unique key for the node; may not be null
      * @param parentKey the unique key for the parent of the node; may not be null
@@ -327,6 +335,7 @@ public abstract class ChangeSetAdapter implements ChangeSetListener {
 
     /**
      * Handle the change of a node.
+     *
      * @param workspaceName the workspace in which the node information should be available; may not be null
      * @param key the unique key for the node; may not be null
      * @param path the path of the node; may not be null
@@ -342,6 +351,7 @@ public abstract class ChangeSetAdapter implements ChangeSetListener {
 
     /**
      * Handle the move of a node.
+     *
      * @param workspaceName the workspace in which the node information should be available; may not be null
      * @param key the unique key for the node; may not be null
      * @param primaryType the primary type of the node; may not be null
@@ -364,6 +374,7 @@ public abstract class ChangeSetAdapter implements ChangeSetListener {
 
     /**
      * Handle the renaming of a node.
+     *
      * @param workspaceName the workspace in which the node information should be available; may not be null
      * @param key the unique key for the node; may not be null
      * @param newPath the new path of the node after it was moved; may not be null
@@ -391,6 +402,7 @@ public abstract class ChangeSetAdapter implements ChangeSetListener {
      * @param newPath the new path of the node after it was moved; may not be null
      * @param oldPath the old path of the node before it was moved; may not be null
      * @param reorderedBeforePath the path of the node before which the node was placed; null if it was moved to the end
+     * @param snsPathChangesByNodeKey a map which may contain additional path changes if the reordering was performed on a SNS
      */
     protected void reorderNode( String workspaceName,
                                 NodeKey key,
@@ -399,7 +411,8 @@ public abstract class ChangeSetAdapter implements ChangeSetListener {
                                 NodeKey parent,
                                 Path newPath,
                                 Path oldPath,
-                                Path reorderedBeforePath ) {
+                                Path reorderedBeforePath,
+                                Map<NodeKey, Map<Path, Path>> snsPathChangesByNodeKey ) {
 
     }
 
@@ -438,7 +451,7 @@ public abstract class ChangeSetAdapter implements ChangeSetListener {
 
     /**
      * Handle the marking of a binary value as being unused.
-     * 
+     *
      * @param key the binary key of the binary value that is no longer used; may not be null
      */
     protected void binaryValueUnused( BinaryKey key ) {
@@ -446,7 +459,7 @@ public abstract class ChangeSetAdapter implements ChangeSetListener {
 
     /**
      * Handle the addition of a new workspace in the repository.
-     * 
+     *
      * @param workspaceName the name of the workspace that was added; may not be null
      */
     protected void addWorkspace( String workspaceName ) {
@@ -454,7 +467,7 @@ public abstract class ChangeSetAdapter implements ChangeSetListener {
 
     /**
      * Handle the removal of a workspace in the repository.
-     * 
+     *
      * @param workspaceName the name of the workspace that was removed; may not be null
      */
     protected void removeWorkspace( String workspaceName ) {
