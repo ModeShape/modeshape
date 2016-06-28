@@ -372,13 +372,15 @@ public class IndexChangeAdapters {
 
         @Override
         protected void reorderNode( String workspaceName, NodeKey key, Name primaryType, Set<Name> mixinTypes, NodeKey parent,
-                                    Path newPath, Path oldPath, Path reorderedBeforePath ) {
+                                    Path newPath, Path oldPath, Path reorderedBeforePath,
+                                    Map<NodeKey, Map<Path, Path>> snsPathChangesByNodeKey ) {
             // only the path based adapters should be interested in this since properties are handled via modify properties
             if (pathAdapters.isEmpty()) {
                 return;
             }
             for (PathBasedChangeAdapter<?> pathAdapter : pathAdapters) {
-                pathAdapter.reorderNode(workspaceName, key, primaryType, mixinTypes, parent, newPath, oldPath, reorderedBeforePath);
+                pathAdapter.reorderNode(workspaceName, key, primaryType, mixinTypes, parent, newPath, oldPath, reorderedBeforePath, 
+                                        snsPathChangesByNodeKey);
             }
         }
     }
@@ -468,16 +470,27 @@ public class IndexChangeAdapters {
         }
 
         @Override
-        protected void reorderNode( String workspaceName, 
-                                    NodeKey key, 
-                                    Name primaryType, 
-                                    Set<Name> mixinTypes, 
+        protected void reorderNode( String workspaceName,
+                                    NodeKey key,
+                                    Name primaryType,
+                                    Set<Name> mixinTypes,
                                     NodeKey parent,
-                                    Path newPath, 
-                                    Path oldPath, 
-                                    Path reorderedBeforePath ) {
+                                    Path newPath,
+                                    Path oldPath,
+                                    Path reorderedBeforePath, 
+                                    Map<NodeKey, Map<Path, Path>> snsPathChangesByNodeKey ) {
             if (newPath.getLastSegment().hasIndex() || oldPath.getLastSegment().hasIndex()) {
-                //TODO author=Horia Chiorean date=01/10/2015 description=See https://issues.jboss.org/browse/MODE-2510
+                // SNS reorderings can cause a path to change (see https://issues.jboss.org/browse/MODE-2510)
+                String nodeKey = nodeKey(key);
+                index().remove(nodeKey, propertyName, valueOf(oldPath));
+                index().add(nodeKey, propertyName, valueOf(newPath));
+                // now look if there are additional SNSs which changed their path and if so, update the indexes for each
+                snsPathChangesByNodeKey.forEach(( snsKey, pathMap ) -> {
+                    String snsKeyString = nodeKey(snsKey);
+                    Map.Entry<Path, Path> pathChangeEntry = pathMap.entrySet().iterator().next();
+                    index().remove(snsKeyString, propertyName, valueOf(pathChangeEntry.getKey()));
+                    index().add(snsKeyString, propertyName, valueOf(pathChangeEntry.getValue()));
+                });
             }
             //otherwise no SNS are involved so the nodekey and path information doesn't need to change
         }
@@ -526,7 +539,8 @@ public class IndexChangeAdapters {
 
         @Override
         protected void reorderNode( String workspaceName, NodeKey key, Name primaryType, Set<Name> mixinTypes, NodeKey parent,
-                                    Path newPath, Path oldPath, Path reorderedBeforePath ) {
+                                    Path newPath, Path oldPath, Path reorderedBeforePath,
+                                    Map<NodeKey, Map<Path, Path>> snsPathChangesByNodeKey ) {
             // reordering should not really change the name...
         }
     }
@@ -551,7 +565,8 @@ public class IndexChangeAdapters {
 
         @Override
         protected void reorderNode( String workspaceName, NodeKey key, Name primaryType, Set<Name> mixinTypes, NodeKey parent,
-                                    Path newPath, Path oldPath, Path reorderedBeforePath ) {
+                                    Path newPath, Path oldPath, Path reorderedBeforePath,
+                                    Map<NodeKey, Map<Path, Path>> snsPathChangesByNodeKey ) {
             // reordering should not really change the name...
         }
     }

@@ -142,7 +142,7 @@ public abstract class AbstractChildReferences implements ChildReferences {
 
                     this.next = next;
                 }
-                if (iter != delegate) {
+                if (next == null && iter != delegate) {
                     // This was an insertion iterator, so switch back to the delegate iterator ...
                     try {
                         iter = delegate;

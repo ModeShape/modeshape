@@ -1224,22 +1224,28 @@ public class WritableSessionCache extends AbstractSessionCache {
                         translator.addChildrenToBuckets(doc, appended);
                     }
                 } else if (changedChildren != null && !changedChildren.isEmpty()) {
+                    ChildReferences childReferences = node.getChildReferences(this);
                     if (!changedChildren.getRemovals().isEmpty() && !isUnorderedCollection) {
                         // This node is not being removed (or added), but it has removals, and we have to calculate the paths
                         // of the removed nodes before we actually change the child references of this node.
                         for (NodeKey removed : changedChildren.getRemovals()) {
-                            CachedNode persistent = persistedCache.getNode(removed);
-                            if (persistent != null) {
-                                if (appended != null && appended.hasChild(persistent.getKey())) {
+                            CachedNode persistedChild = persistedCache.getNode(removed);
+                            if (persistedChild != null) {
+                                NodeKey childKey = persistedChild.getKey();
+                                if (appended != null && appended.hasChild(childKey)) {
                                     // the same node has been both removed and appended => reordered at the end
-                                    ChildReference appendedChildRef = node.getChildReferences(this).getChild(persistent.getKey());
+                                    ChildReference appendedChildRef = childReferences.getChild(childKey);
                                     Path newNodePath = pathFactory().create(newPath, appendedChildRef.getSegment());
-                                    Path oldNodePath = workspacePaths.getPath(persistent);
-                                    changes.nodeReordered(persistent.getKey(), primaryType, mixinTypes, node.getKey(), newNodePath,
-                                                          oldNodePath, null);
+                                    Path oldNodePath = workspacePaths.getPath(persistedChild);
+                                    Map<NodeKey, Map<Path, Path>> pathChangesForSNS = computePathChangesForSNS(workspacePaths, 
+                                                                                                              newPath, childReferences,
+                                                                                                              appendedChildRef,
+                                                                                                              newNodePath, oldNodePath);
+                                    changes.nodeReordered(childKey, persistedChild.getPrimaryType(this),
+                                                          persistedChild.getMixinTypes(this), node.getKey(), newNodePath,
+                                                          oldNodePath, null, pathChangesForSNS);
                                 }
                             }
-
                         }
                     }
 
@@ -1297,9 +1303,14 @@ public class WritableSessionCache extends AbstractSessionCache {
                     for (SessionNode.Insertions insertion : insertionsByBeforeKey.values()) {
                         for (ChildReference insertedRef : insertion.inserted()) {
                             CachedNode insertedNodePersistent = persistedCache.getNode(insertedRef);
+                            // if the node is new and reordered at the same time (most likely due to either a version restore
+                            // or explicit reordering of transient nodes) there is no "old path"
                             CachedNode insertedNode = getNode(insertedRef.getKey());
-                            Path nodeNewPath = sessionPaths.getPath(insertedNode);
                             if (insertedNodePersistent != null) {
+                                // the reordered node exists (is not new) so to get its new path (after the reordering) we need
+                                // to look at the session's view of the parent
+                                ChildReference nodeNewRef = childReferences.getChild(insertedRef.getKey());
+                                Path nodeNewPath = pathFactory().create(newPath, nodeNewRef.getSegment());
                                 Path nodeOldPath = workspacePaths.getPath(insertedNodePersistent);
                                 Path insertedBeforePath = null;
                                 CachedNode insertedBeforeNode = persistedCache.getNode(insertion.insertedBefore());
@@ -1311,13 +1322,14 @@ public class WritableSessionCache extends AbstractSessionCache {
                                         nodeNewPath = insertedBeforePath;
                                     }
                                 }
+                                Map<NodeKey, Map<Path, Path>> snsPathChangesByNodeKey = computePathChangesForSNS(
+                                        workspacePaths, newPath, childReferences, insertedRef, nodeNewPath, nodeOldPath);
                                 changes.nodeReordered(insertedRef.getKey(), insertedNode.getPrimaryType(this),
                                                       insertedNode.getMixinTypes(this), node.getKey(), nodeNewPath, nodeOldPath,
-                                                      insertedBeforePath);
+                                                      insertedBeforePath, snsPathChangesByNodeKey);
 
                             } else {
-                                // if the node is new and reordered at the same time (most likely due to either a version restore
-                                // or explicit reordering of transient nodes) there is no "old path"
+                                Path nodeNewPath = sessionPaths.getPath(insertedNode);
                                 CachedNode insertedBeforeNode = getNode(insertion.insertedBefore().getKey());
                                 Path insertedBeforePath = sessionPaths.getPath(insertedBeforeNode);
                                 changes.nodeReordered(insertedRef.getKey(), insertedNode.getPrimaryType(this),
@@ -1507,6 +1519,36 @@ public class WritableSessionCache extends AbstractSessionCache {
         changes.setChangedNodes(changedNodes.keySet()); // don't need to make a copy
         changes.freeze(userId, userData, timestamp);
         return changes;
+    }
+
+    private Map<NodeKey, Map<Path, Path>> computePathChangesForSNS( PathCache workspacePaths,
+                                                                    Path parentPath,
+                                                                    ChildReferences childReferences,
+                                                                    ChildReference reorderedChildRef,
+                                                                    Path newChildPath,
+                                                                    Path oldChildPath ) {
+        Map<NodeKey, Map<Path, Path>> snsPathChangesByNodeKey = new HashMap<>();
+        if (oldChildPath.getLastSegment().hasIndex() || newChildPath.getLastSegment().hasIndex()) {
+            // we're reordering a SNS so we have to look at all the other SNSs
+            // and record for each their paths (see https://issues.jboss.org/browse/MODE-2510) 
+            for (ChildReference childReference : childReferences) {
+                NodeKey childKey = childReference.getKey();
+                if (childKey.equals(reorderedChildRef.getKey())) {
+                    continue;
+                }
+                if (childReference.getName().equals(reorderedChildRef.getName())) {
+                    // childReference is a SNS so we must record it's old and new path
+                    CachedNode sns = getNode(childKey);
+                    Path snsNewPath = pathFactory().create(parentPath, childReference.getSegment());
+                    Path snsOldPath = workspacePaths.getPath(sns);
+                    if (!snsOldPath.equals(snsNewPath)) {
+                        snsPathChangesByNodeKey.put(childKey,
+                                                    Collections.singletonMap(snsOldPath, snsNewPath));
+                    }
+                }
+            }
+        }
+        return snsPathChangesByNodeKey;
     }
 
     private void lockNodes(Collection<NodeKey> changedNodesInOrder) {

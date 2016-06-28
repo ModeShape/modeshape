@@ -157,6 +157,14 @@ public class RecordingChanges implements Changes, ChangeSet {
     }
 
     @Override
+    public void nodeReordered (NodeKey key, Name primaryType, Set<Name> mixinTypes, NodeKey parent, Path newPath, Path oldPath,
+                               Path reorderedBeforePath, Map<NodeKey, Map<Path, Path>> snsPathChangesByNodeKey) {
+
+        events.add(new NodeReordered(key, filterName(primaryType), filterNameSet(mixinTypes), parent, newPath, oldPath,
+                                     reorderedBeforePath, snsPathChangesByNodeKey));
+    }
+
+    @Override
     public void nodeChanged( NodeKey key,
                              Path path,
                              Name primaryType,

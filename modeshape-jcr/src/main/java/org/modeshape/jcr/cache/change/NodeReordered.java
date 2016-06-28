@@ -15,6 +15,8 @@
  */
 package org.modeshape.jcr.cache.change;
 
+import java.util.Collections;
+import java.util.Map;
 import java.util.Set;
 import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.value.Name;
@@ -32,18 +34,31 @@ public class NodeReordered extends AbstractNodeChange {
     private final Path oldPath;
     private final NodeKey parent;
     private final Path reorderedBeforePath;
+    private final Map<NodeKey, Map<Path, Path>> snsPathChangesByNodeKey;
 
-    public NodeReordered( NodeKey key,
-                          Name primaryType,
-                          Set<Name> mixinTypes,
-                          NodeKey parent,
-                          Path newPath,
-                          Path oldPath,
-                          Path reorderedBeforePath ) {
+    protected NodeReordered( NodeKey key,
+                             Name primaryType,
+                             Set<Name> mixinTypes,
+                             NodeKey parent,
+                             Path newPath,
+                             Path oldPath,
+                             Path reorderedBeforePath ) {
+        this(key, primaryType, mixinTypes, parent, newPath, oldPath, reorderedBeforePath, Collections.emptyMap());
+    }
+
+    protected NodeReordered( NodeKey key,
+                             Name primaryType,
+                             Set<Name> mixinTypes,
+                             NodeKey parent,
+                             Path newPath,
+                             Path oldPath,
+                             Path reorderedBeforePath,
+                             Map<NodeKey, Map<Path, Path>> snsPathChangesByNodeKey ) {
         super(key, newPath, primaryType, mixinTypes);
         this.oldPath = oldPath;
         this.parent = parent;
         this.reorderedBeforePath = reorderedBeforePath;
+        this.snsPathChangesByNodeKey = snsPathChangesByNodeKey;
     }
 
     public Path getOldPath() {
@@ -61,5 +76,14 @@ public class NodeReordered extends AbstractNodeChange {
      */
     public Path getReorderedBeforePath() {
         return reorderedBeforePath;
+    }
+
+    /**
+     * Returns a map with all the additional path changes caused by a SNS node reordering (see https://issues.jboss.org/browse/MODE-2510)
+     *
+     * @return a {@link Map} keyed by the node key and were each value is a 1-entry map which contains the old and the new path
+     */
+    public Map<NodeKey, Map<Path, Path>> getSnsPathChangesByNodeKey() {
+        return snsPathChangesByNodeKey;
     }
 }

@@ -1294,4 +1294,126 @@ public class LocalIndexProviderTest extends AbstractIndexProviderTest {
                 .hasNodesAtPaths("/node1")
                 .validate(query, query.execute());
     }
+    
+    @Test
+    @FixFor( "MODE-2510 ")
+    public void snsReorderingsShouldBeReflectedInIndexes() throws Exception {
+        registerNodeType("nt:testType");
+        registerValueIndex("pathIndex", "nt:testType", "Node path index", "*", "jcr:path", PropertyType.PATH);
+
+        session().getRootNode().addNode("A", "nt:testType");               //A
+        Node nodeB1 = session().getRootNode().addNode("B", "nt:testType"); //B[1]
+        session().getRootNode().addNode("C", "nt:testType");               //C
+        Node nodeB2 = session().getRootNode().addNode("B", "nt:testType"); //B[2]
+        Node nodeB3 = session().getRootNode().addNode("B", "nt:testType"); //B[3]
+        session().getRootNode().addNode("D", "nt:testType");               //D
+        Node nodeB4 = session().getRootNode().addNode("B", "nt:testType"); //B[4]
+        session.save();
+
+        String queryForB1 = "SELECT node.[jcr:path] FROM [nt:testType] as node WHERE node.[jcr:path] >= '/B[1]' AND node.[jcr:path] < '/B[2]'";
+        Query query = jcrSql2Query(queryForB1);
+        validateQuery()
+                .rowCount(1L)
+                .useIndex("pathIndex")
+                .onEachRow((rowNumber, row) -> assertEquals(row.getNode().getIdentifier(), nodeB1.getIdentifier()))
+                .validate(query, query.execute());
+        String queryForB2 = "SELECT node.[jcr:path] FROM [nt:testType] as node WHERE node.[jcr:path] >= '/B[2]' AND node.[jcr:path] < '/B[3]'";
+        query = jcrSql2Query(queryForB2);
+        validateQuery()
+                .rowCount(1L)
+                .useIndex("pathIndex")
+                .onEachRow((rowNumber, row) -> assertEquals(row.getNode().getIdentifier(), nodeB2.getIdentifier()))
+                .validate(query, query.execute());
+        String queryForB3 = "SELECT node.[jcr:path] FROM [nt:testType] as node WHERE node.[jcr:path] >= '/B[3]' AND node.[jcr:path] < '/B[4]' ";
+        query = jcrSql2Query(queryForB3);
+        validateQuery()
+                .rowCount(1L)
+                .useIndex("pathIndex")
+                .onEachRow((rowNumber, row) -> assertEquals(row.getNode().getIdentifier(), nodeB3.getIdentifier()))
+                .validate(query, query.execute());
+        String queryForB4 = "SELECT node.[jcr:path] FROM [nt:testType] as node WHERE node.[jcr:path] >= '/B[4]' AND node.[jcr:path] < '/B[5]' ";
+        query = jcrSql2Query(queryForB4);
+        validateQuery()
+                .rowCount(1L)
+                .useIndex("pathIndex")
+                .onEachRow((rowNumber, row) -> assertEquals(row.getNode().getIdentifier(), nodeB4.getIdentifier()))
+                .validate(query, query.execute());
+       
+        // reorder B[4] before C
+        session().getRootNode().orderBefore("B[4]", "C");
+        session().save();
+        
+        query = jcrSql2Query(queryForB1);
+        validateQuery()
+                .rowCount(1L)
+                .useIndex("pathIndex")
+                .onEachRow((rowNumber, row) -> assertEquals(row.getNode().getIdentifier(), nodeB1.getIdentifier()))
+                .validate(query, query.execute());
+
+        Node newB2 = assertNode("/B[2]");
+        assertEquals(nodeB4.getIdentifier(), newB2.getIdentifier());
+        queryForB2 = "SELECT node.[jcr:path] FROM [nt:testType] as node WHERE node.[jcr:path] >= '/B[2]' AND node.[jcr:path] < '/B[3]'";
+        query = jcrSql2Query(queryForB2);
+        validateQuery()
+                .rowCount(1L)
+                .useIndex("pathIndex")
+                .onEachRow((rowNumber, row) -> assertEquals(row.getNode().getIdentifier(), newB2.getIdentifier()))
+                .validate(query, query.execute());
+
+        Node newB3 = assertNode("/B[3]");
+        assertEquals(nodeB2.getIdentifier(), newB3.getIdentifier());
+        queryForB3 = "SELECT node.[jcr:path] FROM [nt:testType] as node WHERE node.[jcr:path] >= '/B[3]' AND node.[jcr:path] < '/B[4]' ";
+        query = jcrSql2Query(queryForB3);
+        validateQuery()
+                .rowCount(1L)
+                .useIndex("pathIndex")
+                .onEachRow((rowNumber, row) -> assertEquals(row.getNode().getIdentifier(), newB3.getIdentifier()))
+                .validate(query, query.execute());
+
+        Node newB4 = assertNode("/B[4]");
+        assertEquals(nodeB3.getIdentifier(), newB4.getIdentifier());
+        queryForB4 = "SELECT node.[jcr:path] FROM [nt:testType] as node WHERE node.[jcr:path] >= '/B[4]' AND node.[jcr:path] < '/B[5]' ";
+        query = jcrSql2Query(queryForB4);
+        validateQuery()
+                .rowCount(1L)
+                .useIndex("pathIndex")
+                .onEachRow((rowNumber, row) -> assertEquals(row.getNode().getIdentifier(), newB4.getIdentifier()))
+                .validate(query, query.execute());
+
+        // reorder B[3] at the end
+        session().getRootNode().orderBefore("B[3]", null);
+        session().save();
+
+        query = jcrSql2Query(queryForB1);
+        validateQuery()
+                .rowCount(1L)
+                .useIndex("pathIndex")
+                .onEachRow((rowNumber, row) -> assertEquals(row.getNode().getIdentifier(), nodeB1.getIdentifier()))
+                .validate(query, query.execute());
+
+        queryForB2 = "SELECT node.[jcr:path] FROM [nt:testType] as node WHERE node.[jcr:path] >= '/B[2]' AND node.[jcr:path] < '/B[3]'";
+        query = jcrSql2Query(queryForB2);
+        validateQuery()
+                .rowCount(1L)
+                .useIndex("pathIndex")
+                .onEachRow((rowNumber, row) -> assertEquals(row.getNode().getIdentifier(), newB2.getIdentifier()))
+                .validate(query, query.execute());
+
+        queryForB3 = "SELECT node.[jcr:path] FROM [nt:testType] as node WHERE node.[jcr:path] >= '/B[3]' AND node.[jcr:path] < '/B[4]' ";
+        query = jcrSql2Query(queryForB3);
+        validateQuery()
+                .rowCount(1L)
+                .useIndex("pathIndex")
+                .onEachRow((rowNumber, row) -> assertEquals(row.getNode().getIdentifier(), newB4.getIdentifier()))
+                .validate(query, query.execute());
+        
+        queryForB4 = "SELECT node.[jcr:path] FROM [nt:testType] as node WHERE node.[jcr:path] >= '/B[4]' AND node.[jcr:path] < '/B[5]' ";
+        query = jcrSql2Query(queryForB4);
+        validateQuery()
+                .rowCount(1L)
+                .useIndex("pathIndex")
+                .onEachRow((rowNumber, row) -> assertEquals(row.getNode().getIdentifier(), newB3.getIdentifier()))
+                .validate(query, query.execute());
+        
+    }
 }

@@ -133,6 +133,27 @@ public interface Changes {
                         Path reorderedBeforePath );
 
     /**
+     * Signal that a node was placed into a new location within the same parent.
+     *
+     * @param key the key for the node; may not be null
+     * @param primaryType the primary type of the node; may not be null
+     * @param mixinTypes the mixin types of the node; may not be null
+     * @param parent the key for the parent of the node; may not be null
+     * @param newPath the new path for the node after it has been reordered; may not be null
+     * @param oldPath the old path for the node before it was reordered; may be null in the case of transient reorderings
+     * @param reorderedBeforePath the path of the node before which the node was moved; or null if the node was reordered to the end
+     * @param snsPathChangesByNodeKey a map of additional path changes caused by reordering a SNS
+     */
+    void nodeReordered( NodeKey key,
+                        Name primaryType,
+                        Set<Name> mixinTypes,
+                        NodeKey parent,
+                        Path newPath,
+                        Path oldPath,
+                        Path reorderedBeforePath,
+                        Map<NodeKey, Map<Path, Path>> snsPathChangesByNodeKey);
+
+    /**
      * Create an event signifying that something about the node (other than the properties or location) changed.
      * @param key the node key; may not be null
      * @param path the path
