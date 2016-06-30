@@ -61,6 +61,7 @@ import org.modeshape.schematic.document.ObjectId;
 import org.modeshape.schematic.document.Symbol;
 import org.modeshape.schematic.document.Timestamp;
 import org.modeshape.schematic.internal.annotation.FixFor;
+import org.modeshape.schematic.internal.io.BufferCache;
 
 public class BsonReadingAndWritingTest {
 
@@ -331,6 +332,16 @@ public class BsonReadingAndWritingTest {
             Document document = new BasicDocument("largeString", str);
             assertRoundtrip(document, false);
         }
+    }
+
+    @Test
+    @FixFor( "MODE-2615" )
+    public void shouldHandleMultiByteCharactersAcrossBufferBoundaries() throws Exception{
+        char[] chars = new char[BufferCache.MINIMUM_SIZE * 2];
+        Arrays.fill(chars, 'a');
+        chars[BufferCache.MINIMUM_SIZE - 1]='\u00A3';
+        Document document = new BasicDocument("string", new String(chars));
+        assertRoundtrip(document);
     }
 
     protected String readFile(String filePath) throws IOException {
