@@ -256,11 +256,12 @@ public class BsonDataInput implements DataInput {
                     byteBuf.flip();
                 } else {
                     // We know exactly how much we should read ...
-                    int amountToRead = Math.min(len, byteBuf.remaining());
-                    amountToRead = Math.min(amountToRead, charBuf.remaining());
+                    int amountToRead = Math.min(len, Math.min(byteBuf.remaining(), charBuf.remaining()));
                     int offset = byteBuf.position(); // may have already read some bytes ...
                     dis.readFully(bytes, offset, amountToRead);
-                    byteBuf.limit(amountToRead);
+                    // take into account the offset because we might have carry-over bytes from a previous compaction 
+                    // this happens when decoding multi-byte UTF8 chars
+                    byteBuf.limit(amountToRead + offset); 
                     byteBuf.rewind();
                     // Adjust the number of bytes to read ...
                     len -= amountToRead;
