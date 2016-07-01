@@ -56,6 +56,7 @@ import org.infinispan.schematic.document.MinKey;
 import org.infinispan.schematic.document.ObjectId;
 import org.infinispan.schematic.document.Symbol;
 import org.infinispan.schematic.document.Timestamp;
+import org.infinispan.schematic.internal.io.BufferCache;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -330,6 +331,30 @@ public class BsonReadingAndWritingTest {
             Document document = new BasicDocument("largeString", str);
             assertRoundtrip(document, false);
         }
+    }
+
+    @Test
+    @FixFor( "MODE-2615" )
+    public void shouldRoundTripDocumentWithMultiByteUTF8Chars() throws Exception{
+        char[] chars = new char[BufferCache.MINIMUM_SIZE];
+        Arrays.fill(chars, 'a');
+        chars[BufferCache.MINIMUM_SIZE - 1] = '\u00A3'; // 2 bytes UTF-8
+        Document document = new BasicDocument("string", new String(chars));
+        assertRoundtrip(document);
+
+        chars[BufferCache.MINIMUM_SIZE - 1] = '\uFFFF'; // 3 bytes UTF-8
+        document = new BasicDocument("string", new String(chars));
+        assertRoundtrip(document);
+
+        chars[BufferCache.MINIMUM_SIZE - 1] = '\u00A3'; // 2 bytes UTF-8
+        chars[BufferCache.MINIMUM_SIZE - 2] = '\uFFFF'; // 3 bytes UTF-8
+        document = new BasicDocument("string", new String(chars));
+        assertRoundtrip(document);
+
+        chars[BufferCache.MINIMUM_SIZE - 1] = '\uFFFF'; // 3 bytes UTF-8
+        chars[BufferCache.MINIMUM_SIZE - 2] = '\u00A3'; // 2 bytes UTF-8
+        document = new BasicDocument("string", new String(chars));
+        assertRoundtrip(document);
     }
 
     protected String readFile(String filePath) throws IOException {
