@@ -90,7 +90,14 @@
                 <module>modeshape-performance-tests</module>
             </modules>
         </profile>
-		
+
+        <profile>
+            <id>persistence-integration</id>
+            <modules>
+                <module>modeshape-persistence-tests</module>
+            </modules>
+        </profile>
+                		
 		<!-- 
 		  This profile is used to build everything for a release, including all assemblies,
 			and must be activated manually, as in "mvn ... -Passembly ..."
