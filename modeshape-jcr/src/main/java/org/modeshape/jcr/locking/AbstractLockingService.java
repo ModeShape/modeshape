@@ -171,6 +171,10 @@ public abstract class AbstractLockingService<T extends Lock> implements LockingS
         return time > 0 ? lock.tryLock(time, timeUnit) : lock.tryLock();
     }
 
+    protected long getLockTimeoutMillis() {
+        return lockTimeoutMillis;
+    }
+
     protected abstract T createLock(String name);
     protected abstract void validateLock(T lock);
     protected abstract boolean releaseLock(T lock);

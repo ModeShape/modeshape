@@ -28,7 +28,7 @@ import org.modeshape.schematic.document.EditableDocument;
  * @author Horia Chiorean <hchiorea@redhat.com>
  * @since 5.0
  */
-public interface SchematicDb extends TransactionListener, Lifecycle {
+public interface SchematicDb extends TransactionListener, Lifecycle, Lockable {
 
     /**
      * Returns a unique identifier for this schematic DB. 
@@ -138,6 +138,12 @@ public interface SchematicDb extends TransactionListener, Lifecycle {
     @RequiresTransaction
     default void put( String key, Document content ) {
         put(key, SchematicEntry.create(key, content));
+    }
+
+    @Override
+    @RequiresTransaction
+    default boolean lockForWriting( List<String> locks ) {
+        throw new UnsupportedOperationException(getClass() +  " does not support exclusive locking");
     }
 
     /**

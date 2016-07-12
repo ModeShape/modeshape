@@ -695,6 +695,12 @@
                     "default" : "org/modeshape/jcr/clustering/jgroups-config.xml",
                     "description": "The path to the JGroups configuration file that should be used"
                 },
+                "locking" : {
+                    "type" : "string",
+                    "enum" : ["jgroups", "db"],
+                    "default" : "jgroups",
+                    "description" : "The locking mechanism to use while clustering. Defaults to JGroups"
+                },
                 "description": {
                     "type": "string",
                     "description": "The optional description of this section of the configuration. It is unused by ModeShape."

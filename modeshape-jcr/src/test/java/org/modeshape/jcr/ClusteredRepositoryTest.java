@@ -164,6 +164,28 @@ public class ClusteredRepositoryTest {
             TestingUtil.killRepositories(repository1, repository2);
         }
     }
+    
+    @Test
+    @FixFor( {"MODE-2077"} )
+    public void shouldPropagateNodeChangesInClusterWithDBLocking() throws Exception {
+        JcrRepository repository1 = TestingUtil.startClusteredRepositoryWithConfig("config/cluster/repo-config-clustered-db-locking.json",
+                                                                                   node1Id);
+        JcrSession session1 = repository1.login();
+        assertInitialContentPersisted(session1);
+
+        JcrRepository repository2 = TestingUtil.startClusteredRepositoryWithConfig("config/cluster/repo-config-clustered-db-locking.json",
+                                                                                   node2Id);
+        JcrSession session2 = repository2.login();
+        assertInitialContentPersisted(session2);
+
+        try {
+            assertChangesVisibleViaListener(session1, session2);
+            assertChangesArePropagatedInCluster(session1, session2, "node1");
+            assertChangesArePropagatedInCluster(session2, session1, "node2");
+        } finally {
+            TestingUtil.killRepositories(repository1, repository2);
+        }
+    }
 
     private void assertChangesVisibleViaListener(JcrSession session1,
                                                 JcrSession session2) throws RepositoryException, InterruptedException {

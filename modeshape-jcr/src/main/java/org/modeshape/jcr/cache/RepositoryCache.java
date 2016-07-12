@@ -79,7 +79,8 @@ import com.googlecode.concurrentlinkedhashmap.ConcurrentLinkedHashMap;
 public class RepositoryCache {
 
     public static final String REPOSITORY_INFO_KEY = "repository:info";
-    
+    public static final String INITIALIZATION_LOCK = "modeshape-init-lock";
+
     private static final Logger LOGGER = Logger.getLogger(RepositoryCache.class);
 
     private static final String SYSTEM_METADATA_IDENTIFIER = "jcr:system/mode:metadata";
@@ -94,8 +95,7 @@ public class RepositoryCache {
     private static final String REPOSITORY_UPGRADE_ID_FIELD_NAME = "lastUpgradeId";
     private static final String REPOSITORY_UPGRADED_AT_FIELD_NAME = "lastUpgradedAt";
     private static final String REPOSITORY_UPGRADER_FIELD_NAME = "upgrader";
-    private static final String INITIALIZATION_LOCK = "modeshape-init-lock";
-
+    
     private final ExecutionContext context;
     private final RepositoryConfiguration configuration;
     private final DocumentStore documentStore;
@@ -580,7 +580,7 @@ public class RepositoryCache {
                 translator.setProperty(doc, propFactory.create(name("accessControl"), accessControlEnabled), null, null);
 
                 return null;
-            }, 2, systemMetadataKeyStr);
+            }, 2, REPOSITORY_INFO_KEY);
         } catch (RuntimeException re) {
             LOGGER.error(JcrI18n.errorUpdatingRepositoryMetadata, name, re.getMessage());
             throw re;
@@ -820,7 +820,7 @@ public class RepositoryCache {
               }
             } 
             return result;
-        }, 0, rootKey.toString());
+        }, 0, REPOSITORY_INFO_KEY);
     }
     
     protected ConcurrentMap<NodeKey, CachedNode> cacheForWorkspace() {

@@ -30,7 +30,7 @@ import org.modeshape.common.annotation.ThreadSafe;
  * @since 5.0
  */
 @ThreadSafe
-public class ClusteredLockingService extends AbstractLockingService<Lock> {
+public class JGroupsLockingService extends AbstractLockingService<Lock> {
 
     /**
      * The service used for cluster-wide locking
@@ -46,7 +46,7 @@ public class ClusteredLockingService extends AbstractLockingService<Lock> {
      * @param channel a {@link Channel} instance; may not be null
      * @param lockTimeoutMillis the number of millis to wait before timing out when attempting to obtain a lock
      */
-    public ClusteredLockingService(Channel channel, long lockTimeoutMillis) {
+    public JGroupsLockingService(Channel channel, long lockTimeoutMillis) {
         super(lockTimeoutMillis);
         
         ProtocolStack protocolStack = channel.getProtocolStack();

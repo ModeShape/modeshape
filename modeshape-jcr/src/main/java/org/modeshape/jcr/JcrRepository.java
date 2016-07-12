@@ -100,7 +100,8 @@ import org.modeshape.jcr.federation.FederatedDocumentStore;
 import org.modeshape.jcr.journal.ChangeJournal;
 import org.modeshape.jcr.journal.ClusteredJournal;
 import org.modeshape.jcr.journal.LocalJournal;
-import org.modeshape.jcr.locking.ClusteredLockingService;
+import org.modeshape.jcr.locking.DbLockingService;
+import org.modeshape.jcr.locking.JGroupsLockingService;
 import org.modeshape.jcr.locking.LockingService;
 import org.modeshape.jcr.locking.StandaloneLockingService;
 import org.modeshape.jcr.mimetype.MimeTypeDetector;
@@ -1051,12 +1052,15 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                         } else {
                             this.clusteringService = ClusteringService.startStandalone(clusterName, clustering.getConfiguration());        
                         }
+                        JGroupsLockingService jgroupsLockingService = new JGroupsLockingService(this.clusteringService.getChannel(), 
+                                                                                                config.getLockTimeoutMillis());
+                        this.lockingService = clustering.useDbLocking() ? 
+                                              new DbLockingService(jgroupsLockingService, RepositoryCache.INITIALIZATION_LOCK,
+                                                                   this.schematicDb) : jgroupsLockingService;
                     } else {
                         this.clusteringService = null;
+                        this.lockingService =  new StandaloneLockingService(config.getLockTimeoutMillis());
                     }
-                    this.lockingService = this.clusteringService != null ? 
-                                          new ClusteredLockingService(this.clusteringService.getChannel(), config.getLockTimeoutMillis()) : 
-                                          new StandaloneLockingService(config.getLockTimeoutMillis());
                   
                     suspendExistingUserTransaction();
                     

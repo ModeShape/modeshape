@@ -26,7 +26,6 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.zip.GZIPInputStream;
@@ -120,21 +119,21 @@ public class DefaultStatements implements Statements {
         int batchLoadSize = batchLoadSize();
         List<R> results = new ArrayList<>();
         runBatchOperation(connection, getMultipleStatement, ids, batchLoadSize,
-                          ( dbConnection, statement, startIdx1, endIdx1, data ) -> results.addAll(loadIDs(dbConnection, statement,
-                                                                                                         startIdx1, endIdx1,
-                                                                                                          ids, parser)));
+                          (dbConnection, statement, data) -> {
+                              results.addAll(loadIDs(dbConnection, statement, ids, parser));
+                              return true;
+                          });
         return results;
     }
                     
-    private <R> List<R> loadIDs( Connection connection, String statement, int startIdx, int endIdx, List<String> ids,
-                                 Function<Document, R> parser) throws SQLException {
-        List<String> sublist = ids.subList(startIdx, endIdx);
-        String params = sublist.stream().map(id -> "?").collect(Collectors.joining(","));
+    private <R> List<R> loadIDs( Connection connection, String statement, List<String> ids, Function<Document, R> parser) 
+            throws SQLException {
+        String params = ids.stream().map(id -> "?").collect(Collectors.joining(","));
         String statementString = statement.replaceAll("#", params);
         try (PreparedStatement ps = connection.prepareStatement(statementString)) {
-            AtomicInteger counter = new AtomicInteger(1);
-            for (String id : sublist) {
-                ps.setString(counter.getAndIncrement(), id);
+            int paramIdx = 1;
+            for (String id : ids) {
+                ps.setString(paramIdx++, id);
             }
             
             try (ResultSet rs = ps.executeQuery()) {
@@ -147,7 +146,40 @@ public class DefaultStatements implements Statements {
             }
         }
     }
-                    
+
+    @Override
+    public boolean lockForWriting( Connection connection, List<String> ids ) throws SQLException {
+        if (logger.isDebugEnabled()) {
+            logger.debug("Attempting to lock ids {0} from {1}", ids.toString(), tableName());
+        }
+        String lockContent = statements.get(LOCK_CONTENT);
+        int batchLoadSize = batchLoadSize();
+        return runBatchOperation(connection, lockContent, ids, batchLoadSize, (dbConnection, statement, data) ->
+                lockIDs(dbConnection, statement, ids));
+    }
+
+    private boolean lockIDs( Connection connection, String statement, List<String> ids ) throws SQLException {
+        String params = ids.stream().map(id -> "?").collect(Collectors.joining(","));
+        String statementString = statement.replaceAll("#", params);
+        try (PreparedStatement ps = connection.prepareStatement(statementString)) {
+            int paramIdx = 1;
+            for (String id : ids) {
+                ps.setString(paramIdx++, id);
+            }
+            
+            try (ResultSet rs = ps.executeQuery()) {
+                // any failed lock should result in a timeout being eventually thrown by the DB
+                // ModeShape will frequently try to lock new nodes before inserting them, so it's important that this method 
+                // returns 'true' for those nodes
+                logger.debug("successfully locked ids");
+                return true;
+            } catch (SQLException e) {
+                logger.debug(e, " cannot lock ids");
+                return false;
+            }
+        } 
+    }
+
     @Override
     public DefaultBatchUpdate batchUpdate( Connection connection ) {
         return new DefaultBatchUpdate(connection);
@@ -209,30 +241,33 @@ public class DefaultStatements implements Statements {
         }
     }
 
-    private <T> void runBatchOperation( Connection connection, String statement, List<T> data, int batchSize,
-                                        BatchOperation<T> operation ) throws SQLException {
+    private <T> boolean runBatchOperation(Connection connection, String statement, List<T> data, int batchSize,
+                                          BatchOperation<T> operation) throws SQLException {
         if (data.isEmpty()) {
-            return;
+            return false;
         }
         
         int dataSize = data.size();
         if (dataSize <= batchSize) {
-            operation.run(connection, statement, 0, dataSize, data);
-            return;
+            return operation.run(connection, statement, data);
         }
 
         int startIdx = 0;
         while (startIdx < dataSize) {
             int endIdx = startIdx + batchSize > dataSize ? dataSize : startIdx + batchSize;
-            operation.run(connection, statement, startIdx, endIdx, data);
+            boolean result = operation.run(connection, statement, data.subList(startIdx, endIdx));
+            if (!result) {
+                return false;
+            }
             startIdx = endIdx;
         }    
+        return true;
     }
         
         
     @FunctionalInterface
     protected interface BatchOperation<T> {
-        void run(Connection connection, String statement, int startIdx, int endIdx, List<T> data) throws SQLException;
+        boolean run(Connection connection, String statement, List<T> data) throws SQLException;
     }    
 
     @NotThreadSafe
@@ -297,21 +332,20 @@ public class DefaultStatements implements Statements {
             runBatchOperation(connection, sql, ids, batchLoadSize(), this::batchRemove);    
         }
 
-        private void batchRemove( Connection connection, String statement, int startIdx, int endIdx, List<String> ids )
-                throws SQLException {
-            List<String> sublist = ids.subList(startIdx, endIdx);
-            String params = sublist.stream().map(id -> "?").collect(Collectors.joining(","));
+        private boolean batchRemove( Connection connection, String statement, List<String> ids ) throws SQLException {
+            String params = ids.stream().map(id -> "?").collect(Collectors.joining(","));
             String statementString = statement.replaceAll("#", params);
             if (logger.isDebugEnabled()) {
                 logger.debug("running statement: {0}", statementString);
             }
             try (PreparedStatement remove = connection.prepareStatement(statementString)) {
-                AtomicInteger counter = new AtomicInteger(1);
-                for (String id : sublist) {
-                    remove.setString(counter.getAndIncrement(), id);
+                int paramIdx = 1;
+                for (String id : ids) {
+                    remove.setString(paramIdx++, id);
                 }
                 remove.executeUpdate();
             }
+            return true;
         }
     }
 }
