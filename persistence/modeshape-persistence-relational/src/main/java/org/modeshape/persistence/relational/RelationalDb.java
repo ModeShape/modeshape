@@ -198,10 +198,10 @@ public class RelationalDb implements SchematicDb {
 
     @Override
     public boolean lockForWriting( List<String> locks ) {
-        TransactionsHolder.requireActiveTransaction();
         if (locks.isEmpty()) {
             return false;
         }
+        TransactionsHolder.requireActiveTransaction();
         return runWithConnection(connection -> statements.lockForWriting(connection, locks), true);
     }
 

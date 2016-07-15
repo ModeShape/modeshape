@@ -67,6 +67,10 @@ public class ModelAttributes {
                                                                                           RepositoryConfiguration.FieldValue.KIND_TEXT,
                                                                                           RepositoryConfiguration.FieldValue.KIND_UNIQUE,
                                                                                           RepositoryConfiguration.FieldValue.KIND_VALUE);
+    private static final ParameterValidator CLUSTER_LOCKING_VALIDATOR = new StringSetValidator(true,
+                                                                                               true,
+                                                                                               RepositoryConfiguration.FieldValue.LOCKING_JGROUPS,
+                                                                                               RepositoryConfiguration.FieldValue.LOCKING_DB);
     private static final ParameterValidator REINDEXING_MODE_VALIDATOR = new StringSetValidator(true,
                                                                                           true,
                                                                                           RepositoryConfiguration.ReindexingMode.IF_MISSING.name(),
@@ -208,6 +212,15 @@ public class ModelAttributes {
                     .setAllowExpression(true)
                     .setAllowNull(true)
                     .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+                    .build();
+    
+    public static final SimpleAttributeDefinition CLUSTER_LOCKING =
+            new SimpleAttributeDefinitionBuilder(ModelKeys.CLUSTER_LOCKING, ModelType.STRING)
+                    .setXmlName(Attribute.CLUSTER_LOCKING.getLocalName())
+                    .setAllowExpression(true)
+                    .setAllowNull(true)
+                    .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+                    .setValidator(CLUSTER_LOCKING_VALIDATOR)
                     .build();
 
     public static final MappedSimpleAttributeDefinition GARBAGE_COLLECTION_THREAD_POOL =
@@ -939,7 +952,7 @@ public class ModelAttributes {
     public static final AttributeDefinition[] WEBAPP_ATTRIBUTES = {EXPLODED};
 
     public static final AttributeDefinition[] REPOSITORY_ATTRIBUTES = {JNDI_NAME, ENABLE_MONITORING,
-        CLUSTER_NAME, CLUSTER_STACK, CLUSTER_CONFIG, REPOSITORY_MODULE_DEPENDENCIES,
+        CLUSTER_NAME, CLUSTER_STACK, CLUSTER_CONFIG, CLUSTER_LOCKING, REPOSITORY_MODULE_DEPENDENCIES,
         SECURITY_DOMAIN, ANONYMOUS_ROLES, ANONYMOUS_USERNAME, USE_ANONYMOUS_IF_AUTH_FAILED, NODE_TYPES, DEFAULT_WORKSPACE,
         PREDEFINED_WORKSPACE_NAMES, ALLOW_WORKSPACE_CREATION, WORKSPACES_CACHE_SIZE, DEFAULT_INITIAL_CONTENT,
         WORKSPACES_INITIAL_CONTENT, GARBAGE_COLLECTION_THREAD_POOL,

@@ -1044,6 +1044,8 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                     this.connectors = new Connectors(this, connectorComponents, extSources, preconfiguredProjectionsByWorkspace);                    
                    
                     RepositoryConfiguration.Clustering clustering = config.getClustering();
+                    LockingService startupLockingService = null;
+                    long lockTimeoutMillis = config.getLockTimeoutMillis();
                     if (clustering.isEnabled()) {
                         final String clusterName = clustering.getClusterName();
                         Channel channel = environment().getChannel(clusterName);
@@ -1052,14 +1054,12 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                         } else {
                             this.clusteringService = ClusteringService.startStandalone(clusterName, clustering.getConfiguration());        
                         }
-                        JGroupsLockingService jgroupsLockingService = new JGroupsLockingService(this.clusteringService.getChannel(), 
-                                                                                                config.getLockTimeoutMillis());
+                        startupLockingService = new JGroupsLockingService(this.clusteringService.getChannel(), lockTimeoutMillis);
                         this.lockingService = clustering.useDbLocking() ? 
-                                              new DbLockingService(jgroupsLockingService, RepositoryCache.INITIALIZATION_LOCK,
-                                                                   this.schematicDb) : jgroupsLockingService;
+                                              new DbLockingService(lockTimeoutMillis, this.schematicDb) : startupLockingService;
                     } else {
                         this.clusteringService = null;
-                        this.lockingService =  new StandaloneLockingService(config.getLockTimeoutMillis());
+                        this.lockingService =  new StandaloneLockingService(lockTimeoutMillis);
                     }
                   
                     suspendExistingUserTransaction();
@@ -1113,8 +1113,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                     this.documentStore = connectors.hasConnectors() ? new FederatedDocumentStore(connectors, localStore) : localStore;
 
                     // Set up the repository cache ...
-                    LockingService cacheLockingService = clusteringService != null ? lockingService : null;
-                    this.cache = new RepositoryCache(context, documentStore, cacheLockingService, config, systemContentInitializer,
+                    this.cache = new RepositoryCache(context, documentStore, startupLockingService, config, systemContentInitializer,
                                                      repositoryEnvironment, changeBus, Upgrades.STANDARD_UPGRADES);
 
                     // Set up the node type manager ...

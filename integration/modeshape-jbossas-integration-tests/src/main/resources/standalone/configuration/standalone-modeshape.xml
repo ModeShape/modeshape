@@ -520,13 +520,15 @@
             <repository name="repo-clustered3"
                         anonymous-roles="admin"
                         cluster-name="modeshape-wf-it2"
-                        cluster-stack="tcp">
+                        cluster-stack="tcp"
+                        cluster-locking="db">
                 <db-persistence data-source-jndi-name="java:jboss/datasources/ModeshapeClusterDS2"/>
             </repository>
             <repository name="repo-clustered4" 
                         anonymous-roles="admin"
                         cluster-name="modeshape-wf-it2"
-                        cluster-stack="tcp">
+                        cluster-stack="tcp"
+                        cluster-locking="db">
                 <db-persistence data-source-jndi-name="java:jboss/datasources/ModeshapeClusterDS2"/>
             </repository>
             <repository name="compositeBinaryStoreRepository" anonymous-roles="admin">

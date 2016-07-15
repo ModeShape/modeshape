@@ -225,7 +225,8 @@ public class AddRepository extends AbstractAddStepHandler {
         
         if (!StringUtil.isBlank(clusterName)) {
             final String clusterConfig = attribute(context, model, ModelAttributes.CLUSTER_CONFIG, null);
-            parseClustering(clusterName, clusterConfig, configDoc);
+            final String clusterLocking = attribute(context, model, ModelAttributes.CLUSTER_LOCKING, null);
+            parseClustering(clusterName, clusterConfig, clusterLocking, configDoc);
             final String clusterStackName = attribute(context, model, ModelAttributes.CLUSTER_STACK, null);
             if (!StringUtil.isBlank(clusterStackName)) {
                 repositoryServiceBuilder.addDependency(ServiceName.JBOSS.append("jgroups", "factory", clusterStackName),
@@ -302,11 +303,14 @@ public class AddRepository extends AbstractAddStepHandler {
         monitorBuilder.install();
     }
 
-    private void parseClustering(String clusterName, String clusterConfig, EditableDocument configDoc)  {
+    private void parseClustering(String clusterName, String clusterConfig, String clusterLocking, EditableDocument configDoc)  {
         EditableDocument clustering = configDoc.getOrCreateDocument(FieldName.CLUSTERING);
         clustering.setString(FieldName.CLUSTER_NAME, clusterName);
         if (!StringUtil.isBlank(clusterConfig)) {
             clustering.setString(FieldName.CLUSTER_CONFIGURATION, clusterConfig);                        
+        }
+        if (!StringUtil.isBlank(clusterLocking)) {
+            clustering.setString(FieldName.CLUSTER_LOCKING, clusterLocking);
         }
     }
 

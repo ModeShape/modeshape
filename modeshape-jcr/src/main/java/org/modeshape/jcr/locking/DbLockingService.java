@@ -15,7 +15,9 @@
  */
 package org.modeshape.jcr.locking;
 
+import java.util.Random;
 import java.util.concurrent.TimeUnit;
+import org.modeshape.common.util.CheckArg;
 import org.modeshape.schematic.Lockable;
 
 /**
@@ -26,61 +28,51 @@ import org.modeshape.schematic.Lockable;
  */
 public class DbLockingService implements LockingService {
     
-    private final JGroupsLockingService jgroupsLockingService;
-    private final String initializationLockName;
+    private static final Random RANDOM = new Random();
+    
     private final Lockable db;
+    private final long lockTimeoutMillis;
 
     /**
      * Creates a new db locking service instance.
-     * 
-     * @param jgroupsLockingService the {@link JGroupsLockingService} instance to which some locking may be delegated; never {@code null}
-     * @param initializationLockName the name of the lock used for cluster-wide initialization, which cannot be handled by this 
-     * service; never {@code null}
+     *
+     * @param lockTimeoutMillis the number of milliseconds to wait by default for a lock to be obtained, before timing out
      * @param db a {@link Lockable} instance; never {@code null}
      */
-    public DbLockingService(JGroupsLockingService jgroupsLockingService, String initializationLockName, Lockable db) {
-        this.jgroupsLockingService = jgroupsLockingService;
-        this.initializationLockName = initializationLockName;
+    public DbLockingService(long lockTimeoutMillis, Lockable db) {
+        CheckArg.isNonNegative(lockTimeoutMillis, "lockTimeout");
+        this.lockTimeoutMillis = lockTimeoutMillis;
         this.db = db;
     }
 
     @Override
     public boolean tryLock(long time, TimeUnit unit, String... names) throws InterruptedException {
-        if (isInitializationLock(names)) {
-            // the db cannot handle the initialization lock, so delegate to JG
-            return jgroupsLockingService.tryLock(time, unit, names[0]);
-        }
-        
         long start = System.nanoTime();
         boolean result = false;
+        long timeInMills = TimeUnit.MILLISECONDS.convert(time, unit);
         while (!(result = db.lockForWriting(names)) && 
-               TimeUnit.MILLISECONDS.convert((System.nanoTime() - start), TimeUnit.NANOSECONDS) < time) {
-            //wait a bit
-            Thread.sleep(1000);
+               TimeUnit.MILLISECONDS.convert((System.nanoTime() - start), TimeUnit.NANOSECONDS) < timeInMills) {
+            //wait a bit (between 50 and 300 ms)
+            long sleepDurationMillis = 50 + RANDOM.nextInt(251);
+            Thread.sleep(sleepDurationMillis);
         }
         return result;        
     }
 
-    private boolean isInitializationLock(String... names) {
-        return names.length == 1 && names[0].equals(initializationLockName);
-    }
-
     @Override
     public boolean tryLock(String... names) throws InterruptedException {
-        return tryLock(jgroupsLockingService.getLockTimeoutMillis(), TimeUnit.MILLISECONDS, names);
+        return tryLock(lockTimeoutMillis, TimeUnit.MILLISECONDS, names);
     }
 
     @Override
     public boolean unlock(String... names) {
-        if (isInitializationLock(names)) {
-            return jgroupsLockingService.unlock(names);
-        }
         // the DB should automatically release locks at the end of each transaction
         return true;
     }
 
     @Override
     public boolean shutdown() {
-        return jgroupsLockingService.shutdown();
+        // nothing to shutdown by default...
+        return true;
     }
 }

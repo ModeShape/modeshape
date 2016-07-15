@@ -128,8 +128,7 @@ public class DefaultStatements implements Statements {
                     
     private <R> List<R> loadIDs( Connection connection, String statement, List<String> ids, Function<Document, R> parser) 
             throws SQLException {
-        String params = ids.stream().map(id -> "?").collect(Collectors.joining(","));
-        String statementString = statement.replaceAll("#", params);
+        String statementString = formatStatementWithMultipleParams(statement, ids);
         try (PreparedStatement ps = connection.prepareStatement(statementString)) {
             int paramIdx = 1;
             for (String id : ids) {
@@ -147,6 +146,11 @@ public class DefaultStatements implements Statements {
         }
     }
 
+    private String formatStatementWithMultipleParams(String statement, List<String> ids) {
+        String params = ids.stream().map(id -> "?").collect(Collectors.joining(","));
+        return statement.replaceAll("#", params);
+    }
+
     @Override
     public boolean lockForWriting( Connection connection, List<String> ids ) throws SQLException {
         if (logger.isDebugEnabled()) {
@@ -159,8 +163,7 @@ public class DefaultStatements implements Statements {
     }
 
     private boolean lockIDs( Connection connection, String statement, List<String> ids ) throws SQLException {
-        String params = ids.stream().map(id -> "?").collect(Collectors.joining(","));
-        String statementString = statement.replaceAll("#", params);
+        String statementString = formatStatementWithMultipleParams(statement, ids);
         try (PreparedStatement ps = connection.prepareStatement(statementString)) {
             int paramIdx = 1;
             for (String id : ids) {
@@ -333,8 +336,7 @@ public class DefaultStatements implements Statements {
         }
 
         private boolean batchRemove( Connection connection, String statement, List<String> ids ) throws SQLException {
-            String params = ids.stream().map(id -> "?").collect(Collectors.joining(","));
-            String statementString = statement.replaceAll("#", params);
+            String statementString = formatStatementWithMultipleParams(statement, ids);
             if (logger.isDebugEnabled()) {
                 logger.debug("running statement: {0}", statementString);
             }

@@ -47,6 +47,7 @@ public class ModelKeys {
     static final String CLUSTER_NAME = "cluster-name";
     static final String CLUSTER_STACK = "cluster-stack";
     static final String CLUSTER_CONFIG = "cluster-config";
+    static final String CLUSTER_LOCKING = "cluster-locking";
     static final String GARBAGE_COLLECTION_THREAD_POOL = "garbage-collection-thread-pool";
     static final String GARBAGE_COLLECTION_INITIAL_TIME = "garbage-collection-initial-time";
     static final String GARBAGE_COLLECTION_INTERVAL = "garbage-collection-interval";
