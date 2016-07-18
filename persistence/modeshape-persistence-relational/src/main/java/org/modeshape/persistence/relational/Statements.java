@@ -43,6 +43,7 @@ public interface Statements {
     String REMOVE_CONTENT = "remove_content";
     String REMOVE_ALL_CONTENT = "remove_all_content";
     String GET_MULTIPLE = "get_multiple";
+    String LOCK_CONTENT = "lock_content";
 
     /**
      * Create a new table.
@@ -128,6 +129,19 @@ public interface Statements {
      * @throws SQLException if the operation fails.
      */
     Void removeAll( Connection connection ) throws SQLException;
+
+    /**
+     * Locks for writing the given list of ids. 
+     * <p>
+     * Note that if any of the ids are not present in the DB, they should not be taken into account and should simply be ignored 
+     * as opposed to causing the operation to fail.
+     * </p>
+     * @param connection a {@link Connection} instance, never {@code null}
+     * @param ids a {@link List} of IDs, never {@code null}
+     * @return {@code true} if locks were successfully obtained, false otherwise
+     * @throws SQLException if anything unexpected fails
+     */
+    boolean lockForWriting( Connection connection, List<String> ids ) throws SQLException;
 
     /**
      * A batch of table update operations.

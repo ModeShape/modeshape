@@ -79,7 +79,8 @@ import com.googlecode.concurrentlinkedhashmap.ConcurrentLinkedHashMap;
 public class RepositoryCache {
 
     public static final String REPOSITORY_INFO_KEY = "repository:info";
-    
+    public static final String INITIALIZATION_LOCK = "modeshape-init-lock";
+
     private static final Logger LOGGER = Logger.getLogger(RepositoryCache.class);
 
     private static final String SYSTEM_METADATA_IDENTIFIER = "jcr:system/mode:metadata";
@@ -94,8 +95,7 @@ public class RepositoryCache {
     private static final String REPOSITORY_UPGRADE_ID_FIELD_NAME = "lastUpgradeId";
     private static final String REPOSITORY_UPGRADED_AT_FIELD_NAME = "lastUpgradedAt";
     private static final String REPOSITORY_UPGRADER_FIELD_NAME = "upgrader";
-    private static final String INITIALIZATION_LOCK = "modeshape-init-lock";
-
+    
     private final ExecutionContext context;
     private final RepositoryConfiguration configuration;
     private final DocumentStore documentStore;
@@ -120,14 +120,14 @@ public class RepositoryCache {
     private volatile boolean initializingRepository = false;
     private volatile boolean upgradingRepository = false;
     private int lastUpgradeId;
-    private final LockingService lockingService;
+    private final LockingService startupLockingService;
     private volatile boolean isHoldingClusterLock = false;
     private final RepositoryFeaturesDetector repositoryFeaturesDetector;
     private final int workspaceCacheSize;
 
     public RepositoryCache( ExecutionContext context,
                             DocumentStore documentStore,
-                            LockingService lockingService,
+                            LockingService startupLockingService,
                             RepositoryConfiguration configuration,
                             ContentInitializer initializer,
                             RepositoryEnvironment repositoryEnvironment,
@@ -137,7 +137,7 @@ public class RepositoryCache {
         this.context = context;
         this.configuration = configuration;
         this.documentStore = documentStore;
-        this.lockingService = lockingService;
+        this.startupLockingService = startupLockingService;
         this.minimumStringLengthForBinaryStorage.set(configuration.getBinaryStorage().getMinimumStringSize());
         this.translator = new DocumentTranslator(this.context, this.documentStore, this.minimumStringLengthForBinaryStorage.get());
         this.repositoryEnvironment = repositoryEnvironment;
@@ -154,11 +154,11 @@ public class RepositoryCache {
         
         // if we're running in a cluster, try to acquire a global cluster lock to perform initialization or to force multiple 
         // nodes to wait for the one performing the initialization
-        if (lockingService != null) {
+        if (startupLockingService != null) {
             int minutesToWait = 10;
             LOGGER.debug("Waiting at most for {0} minutes while verifying the status of the '{1}' repository", minutesToWait,
                          name);
-            waitUntil(() -> lockingService.tryLock(0, TimeUnit.MILLISECONDS, INITIALIZATION_LOCK), minutesToWait, TimeUnit.MINUTES,
+            waitUntil(() -> startupLockingService.tryLock(0, TimeUnit.MILLISECONDS, INITIALIZATION_LOCK), minutesToWait, TimeUnit.MINUTES,
                       JcrI18n.repositoryWasNeverInitializedAfterMinutes);
             LOGGER.debug("Repository '{0}' acquired clustered-wide lock for performing initialization or verifying status", name);
             // at this point we should have a global cluster-wide lock
@@ -368,7 +368,7 @@ public class RepositoryCache {
         } finally {
             // if we have a global cluster-wide lock, make sure its released
             if (isHoldingClusterLock) {
-                lockingService.unlock(INITIALIZATION_LOCK);
+                startupLockingService.unlock(INITIALIZATION_LOCK);
                 isHoldingClusterLock = false;
                 LOGGER.debug("Repository '{0}' released clustered-wide lock after failing to start up ", name);
             }
@@ -454,7 +454,7 @@ public class RepositoryCache {
         } finally {
             // if we have a global cluster-wide lock, make sure its released
             if (isHoldingClusterLock) {
-                lockingService.unlock(INITIALIZATION_LOCK);
+                startupLockingService.unlock(INITIALIZATION_LOCK);
                 isHoldingClusterLock = false;
                 LOGGER.debug("Repository '{0}' released clustered-wide lock after successful startup", name);
             }
@@ -580,7 +580,7 @@ public class RepositoryCache {
                 translator.setProperty(doc, propFactory.create(name("accessControl"), accessControlEnabled), null, null);
 
                 return null;
-            }, 2, systemMetadataKeyStr);
+            }, 2, REPOSITORY_INFO_KEY);
         } catch (RuntimeException re) {
             LOGGER.error(JcrI18n.errorUpdatingRepositoryMetadata, name, re.getMessage());
             throw re;
@@ -820,7 +820,7 @@ public class RepositoryCache {
               }
             } 
             return result;
-        }, 0, rootKey.toString());
+        }, 0, REPOSITORY_INFO_KEY);
     }
     
     protected ConcurrentMap<NodeKey, CachedNode> cacheForWorkspace() {

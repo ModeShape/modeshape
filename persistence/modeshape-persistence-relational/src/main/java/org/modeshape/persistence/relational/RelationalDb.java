@@ -197,6 +197,15 @@ public class RelationalDb implements SchematicDb {
     }
 
     @Override
+    public boolean lockForWriting( List<String> locks ) {
+        if (locks.isEmpty()) {
+            return false;
+        }
+        TransactionsHolder.requireActiveTransaction();
+        return runWithConnection(connection -> statements.lockForWriting(connection, locks), true);
+    }
+
+    @Override
     public void put(String key, SchematicEntry entry) {
         // simply store the put into the cache
         transactionalCaches.putForWriting(key, entry.source());
@@ -363,8 +372,8 @@ public class RelationalDb implements SchematicDb {
     }
 
     protected Connection connectionForActiveTx() {
-        return connectionsByTxId.computeIfAbsent(TransactionsHolder.requireActiveTransaction(), 
-                                                    transactionId -> dsManager.newConnection(false, false));
+        return connectionsByTxId.computeIfAbsent(TransactionsHolder.requireActiveTransaction(),
+                                                 transactionId -> dsManager.newConnection(false, false));
     }
     
     protected RelationalDbConfig config() {

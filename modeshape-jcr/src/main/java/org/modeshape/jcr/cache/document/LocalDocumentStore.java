@@ -280,6 +280,7 @@ public class LocalDocumentStore implements DocumentStore {
     public  <V> V runInTransaction( Callable<V> operation, int retryCountOnLockTimeout, String... keysToLock ) {
         // Start a transaction ...
         Transactions txns = repoEnv.getTransactions();
+        int retryCount = retryCountOnLockTimeout;
         try {
             Transactions.Transaction txn = txns.begin();
             if (keysToLock.length > 0) {
@@ -291,7 +292,7 @@ public class LocalDocumentStore implements DocumentStore {
                 if (!locksAcquired) {
                     txn.rollback();
                     throw new org.modeshape.jcr.TimeoutException(
-                            "Cannot acquire locks on: " + Arrays.toString(keysToLock) + " after " + retryCountOnLockTimeout + " attempts");
+                            "Cannot acquire locks on: " + Arrays.toString(keysToLock) + " after " + retryCount + " attempts");
                 }
             }
             try {

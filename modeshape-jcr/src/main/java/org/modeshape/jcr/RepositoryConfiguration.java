@@ -263,9 +263,14 @@ public class RepositoryConfiguration {
         public static final String CLUSTER_NAME = "clusterName";
         
         /**
-         * The the path to the JGroups configuration file
+         * The path to the JGroups configuration file
          */
         public static final String CLUSTER_CONFIGURATION = "configuration";
+
+        /**
+         * The type of locking to use when clustering
+         */
+        public static final String CLUSTER_LOCKING = "locking";
 
         /**
          * The size threshold that dictates whether binary values should be stored in the binary store. Binary values smaller than
@@ -580,6 +585,9 @@ public class RepositoryConfiguration {
         public static final String MIMETYPE_DETECTION_NONE = "none";
         public static final String MIMETYPE_DETECTION_NAME = "name";
         public static final String MIMETYPE_DETECTION_CONTENT = "content";
+        
+        public static final String LOCKING_JGROUPS  = "jgroups";
+        public static final String LOCKING_DB  = "db";
     }
 
     protected static final Set<List<String>> DEPRECATED_FIELDS = Collections.emptySet();
@@ -2288,6 +2296,14 @@ public class RepositoryConfiguration {
 
         public String getConfiguration() {
             return clusteringDoc.getString(FieldName.CLUSTER_CONFIGURATION, Default.CLUSTER_CONFIG);
+        }
+        
+        protected String getLocking() {
+            return clusteringDoc.getString(FieldName.CLUSTER_LOCKING, FieldValue.LOCKING_JGROUPS);
+        }
+        
+        public boolean useDbLocking() {
+            return getLocking().equals(FieldValue.LOCKING_DB);
         }
     }
 

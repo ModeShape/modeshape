@@ -35,7 +35,7 @@ import org.modeshape.jcr.clustering.ClusteringService;
  * 
  * @author Horia Chiorean (hchiorea@redhat.com)
  */
-public class ClusteredLockingServiceTest extends StandaloneLockingServiceTest {
+public class JGroupsLockingServiceTest extends StandaloneLockingServiceTest {
     
     private static final int SERVICES_COUNT = 4;      
     
@@ -150,15 +150,15 @@ public class ClusteredLockingServiceTest extends StandaloneLockingServiceTest {
         assertFalse(service4.tryLock("lock4"));
     }
 
-    protected ClusteredLockingService newLockingService(int clusteredServiceIdx) {
+    protected JGroupsLockingService newLockingService(int clusteredServiceIdx) {
         ClusteringService service = clusteringServices.get(clusteredServiceIdx);  
-        ClusteredLockingService lockingService = new ClusteredLockingService(service.getChannel(), 100);
+        JGroupsLockingService lockingService = new JGroupsLockingService(service.getChannel(), 100);
         lockingServices.add(lockingService);        
         return lockingService;
     }
 
     @Override
     protected LockingService newLockingService() {
-        return new ClusteredLockingService(clusteringServices.get(0).getChannel(), 100);
+        return new JGroupsLockingService(clusteringServices.get(0).getChannel(), 100);
     }
 }

@@ -263,6 +263,14 @@
                     For example: ${jboss.server.config.dir}/modeshape/jgroups.xml
                 </xs:documentation>
             </xs:annotation>
+        </xs:attribute>  
+        <xs:attribute name="cluster-locking" type="cluster-locking-enum">
+            <xs:annotation>
+                <xs:documentation>
+                    Configures how ModeShape should obtain exclusive locks when running in a cluster. Defaults to JGroups 
+                    (using JGroups' LockService) but can also be configured to use DB exclusive locks.
+                </xs:documentation>
+            </xs:annotation>
         </xs:attribute>
         <xs:attribute name="garbage-collection-thread-pool" type="xs:string" use="optional" default="modeshape-gc">
             <xs:annotation>
@@ -1086,6 +1094,12 @@
             <xs:enumeration value="enumerated"/>
             <xs:enumeration value="text"/>
             <xs:enumeration value="nodetype"/>
+        </xs:restriction>
+    </xs:simpleType> 
+    <xs:simpleType name="cluster-locking-enum">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="jgroups"/>
+            <xs:enumeration value="db"/>
         </xs:restriction>
     </xs:simpleType>
     <xs:simpleType name="reindexing-mode">

@@ -16,9 +16,17 @@
 package org.modeshape.persistence.relational;
 
 import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertTrue;
 import static junit.framework.Assert.fail;
+import java.util.List;
+import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Test;
 import org.modeshape.schematic.AbstractSchematicDBTest;
 import org.modeshape.schematic.Schematic;
 import org.modeshape.schematic.SchematicDb;
@@ -53,5 +61,66 @@ public class RelationalDbTest extends AbstractSchematicDBTest {
         } catch (RelationalProviderException e) {
             //expected
         }
+    }
+    
+    @Test
+    public void shouldLockEntriesExclusively() throws Exception {
+        insertAndLock(100);
+    }
+
+    @Test
+    public void shouldLockEntriesExclusivelyUsingBatches() throws Exception {
+        insertAndLock(600);
+    }
+    
+    protected void insertAndLock(int entriesCount) throws Exception {
+        List<String> ids = insertMultipleEntries(entriesCount, Executors.newSingleThreadExecutor()).get();
+        // run and commit tx 1
+        boolean result = simulateTransaction(() -> db.lockForWriting(ids));
+        assertTrue("Locks should have been obtained", result);
+
+        // run and commit tx 2
+        result = simulateTransaction(() -> db.lockForWriting(ids));
+        assertTrue("Locks should have been obtained", result);
+    }
+
+    @Test
+    public void shouldReportNonExistentEntryAsLocked() throws Exception {
+        simulateTransaction(() -> {
+            Assert.assertTrue(db.lockForWriting("non_existant"));
+            return null;
+        });    
+    }
+
+    @Test(expected = RelationalProviderException.class)
+    public void shouldNotLockEntriesWithoutTransaction() throws Exception {
+        String id = writeSingleEntry().id();
+        db.lockForWriting(id);
+    }
+
+    @Test
+    public void concurrentThreadsShouldNotGetSameLock() throws Exception {
+        String id = writeSingleEntry().id();
+        CyclicBarrier barrier = new CyclicBarrier(2);
+        ExecutorService executorService = Executors.newFixedThreadPool(2);
+        Future<Boolean> t1 = executorService.submit(() -> {
+            db.txStarted("1");
+            boolean result = db.lockForWriting(id);
+            barrier.await();
+            db.txCommitted("1");    
+            return result;
+        });
+
+        Future<Boolean> t2 = executorService.submit(() -> {
+            db.txStarted("2");
+            boolean result = db.lockForWriting(id);
+            barrier.await();
+            db.txCommitted("2");
+            return result;
+        });
+
+        boolean t1Success = t1.get();
+        boolean t2Success = t2.get();
+        assertTrue("Only one of the threads should have been able to lock" , (t1Success  && !t2Success) || (!t1Success && t2Success));
     }
 }

@@ -1,9 +1,9 @@
 <subsystem xmlns="urn:jboss:domain:modeshape:3.0">
   <repository name="sample1" jndi-name="jcr/local/modeshape_repo1" cluster-name="cluster1" cluster-stack="tcp"/>
   <repository name="sample2" jndi-name="jcr/local/modeshape_repo2" cluster-name="cluster2" 
-              cluster-config="${jboss.server.config.dir}/modeshape/jgroups.xml"/>
+              cluster-config="${jboss.server.config.dir}/modeshape/jgroups.xml" cluster-locking="jgroups"/>
   <repository name="sample3" jndi-name="jcr/local/modeshape_repo3" cluster-name="cluster3" cluster-stack="udp" 
-              cluster-config="${jboss.server.config.dir}/modeshape/jgroups.xml"/>
+              cluster-config="${jboss.server.config.dir}/modeshape/jgroups.xml" cluster-locking="db"/>
 </subsystem>
 
 

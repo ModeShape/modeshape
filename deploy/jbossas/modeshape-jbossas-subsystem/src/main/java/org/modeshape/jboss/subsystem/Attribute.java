@@ -59,6 +59,7 @@ public enum Attribute {
     CLUSTER_NAME("cluster-name"),
     CLUSTER_STACK("cluster-stack"),
     CLUSTER_CONFIG("cluster-config"),
+    CLUSTER_LOCKING("cluster-locking"),
     GARBAGE_COLLECTION_THREAD_POOL("garbage-collection-thread-pool"),
     GARBAGE_COLLECTION_INITIAL_TIME("garbage-collection-initial-time"),
     GARBAGE_COLLECTION_INTERVAL("garbage-collection-interval"),

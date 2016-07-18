@@ -15,21 +15,28 @@
  */
 package org.modeshape.schematic;
 
+import java.util.Arrays;
+import java.util.List;
+
 /**
- * Interface for handling the lifecycle of a component.
+ * A {@link SchematicDb} which has the ability to lock.
  * 
  * @author Horia Chiorean (hchiorea@redhat.com)
- * @since 5.0
  */
-public interface Lifecycle {
+public interface Lockable {
 
     /**
-     * Announces that the repository is about to start using this DB.
+     * Locks a list of keys exclusively, for writing.
+     * 
+     * @param locks a list of locks
+     * @return {@code true} if the operation was successful and the locks were obtained, false otherwise
      */
-    void start();
+    boolean lockForWriting( List<String> locks );
 
     /**
-     * Announces that the repository is shutting down and will stop using this DB.
+     * @see Lockable#lockForWriting(List) 
      */
-    void stop();
+    default boolean lockForWriting( String...locks ) {
+        return lockForWriting(Arrays.asList(locks));        
+    }
 }
