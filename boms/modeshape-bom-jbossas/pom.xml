@@ -4,7 +4,7 @@
 
     <groupId>org.modeshape.bom</groupId>
     <artifactId>modeshape-bom-jbossas</artifactId>
-    <version>4.7-SNAPSHOT</version>
+    <version>4.6.1.Final</version>
 
     <name>ModeShape BOM for use within a JBoss App Server</name>
 
