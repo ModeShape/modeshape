@@ -178,7 +178,7 @@ public class LocalIndexProvider extends IndexProvider {
     @Override
     protected void postShutdown() {
         logger().debug("Shutting down the local index provider '{0}' in repository '{1}'", getName(), getRepositoryName());
-        if (db != null) {
+        if (db != null && !db.isClosed()) {
             try {
                 db.commit();
                 db.close();
