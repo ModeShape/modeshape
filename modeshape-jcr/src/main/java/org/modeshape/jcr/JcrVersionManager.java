@@ -374,8 +374,9 @@ final class JcrVersionManager implements org.modeshape.jcr.api.version.VersionMa
         } finally {
             // TODO: Versioning: may want to catch this block and retry, if the new version name couldn't be created
         }
-
-        return (JcrVersionNode)session.node(version, Type.VERSION);
+        // return the version node from the system cache, not this session's cache because this session is asynchronously 
+        // notified of system ws changes and may not always get the latest data immediately
+        return (JcrVersionNode)session.node(version, systemSession, Type.VERSION, null);
     }
 
     /**

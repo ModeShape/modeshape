@@ -32,6 +32,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 import java.util.UUID;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.CyclicBarrier;
@@ -48,11 +49,13 @@ import javax.jcr.NodeIterator;
 import javax.jcr.PathNotFoundException;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
+import javax.jcr.nodetype.NodeType;
 import javax.jcr.observation.EventIterator;
 import javax.jcr.observation.EventListener;
 import javax.jcr.query.Query;
 import javax.jcr.query.QueryManager;
 import javax.jcr.version.VersionHistory;
+import javax.jcr.version.VersionManager;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -139,6 +142,72 @@ public class ClusteredRepositoryTest {
                 fail("Should have found the '/testNode' created in other repository in this repository: ");
             }
         } finally {
+            TestingUtil.killRepositories(repository1, repository2);
+        }
+    }
+
+    @Test
+    @FixFor( "MODE-2617" )
+    public void shouldCheckinNodesConcurrentlyInCluster() throws Exception {
+        JcrRepository repository1 = TestingUtil.startRepositoryWithConfig("config/cluster/repo-config-clustered.json");
+        JcrSession session = repository1.login();
+
+        JcrRepository repository2 = TestingUtil.startRepositoryWithConfig("config/cluster/repo-config-clustered.json");
+        repository2.login();
+        int threadCount = 5;
+        ExecutorService executorService = Executors.newFixedThreadPool(threadCount);
+        try {
+            Node testRoot = session.getRootNode().addNode("testRoot");
+            String testRootPath = testRoot.getPath();
+            IntStream.range(0, threadCount).forEach(i -> {
+                try {
+                    Node parent = testRoot.addNode("parent-" + i);
+                    parent.addMixin(NodeType.MIX_VERSIONABLE);
+                } catch (RepositoryException e) {
+                    throw new RuntimeException(e);
+                }
+            });
+            session.save();
+            session.logout();
+
+            List<Callable<String>> tasks = IntStream.range(0, threadCount)
+                                                    .mapToObj(i -> (Callable<String>) () -> {
+                                                        JcrSession taskSession = repository1.login();
+                                                        try {
+                                                            VersionManager versionManager = taskSession.getWorkspace()
+                                                                                                       .getVersionManager();
+                                                            Node parent = taskSession.getNode(testRootPath + "/parent-" + i);
+                                                            versionManager.checkout(parent.getPath());
+                                                            Node child = parent.addNode("child-" + i);
+                                                            child.addMixin(NodeType.MIX_VERSIONABLE);
+                                                            child.getSession().save();
+                                                            versionManager.checkout(child.getPath());
+                                                            versionManager.checkin(child.getPath());
+                                                            versionManager.checkin(parent.getPath());
+                                                            return child.getPath();
+                                                        } finally {
+                                                            taskSession.logout();
+                                                        }
+                                                    })
+                                                    .collect(Collectors.toList());
+
+            List<String> expectedResults = IntStream.range(0, threadCount)
+                                                    .mapToObj(i -> testRootPath + "/parent-" + i + "/child-" + i)
+                                                    .collect(Collectors.toList());
+            List<String> actualResults = executorService.invokeAll(tasks)
+                                                        .stream()
+                                                        .map(result -> {
+                                                            try {
+                                                                return result.get(5, TimeUnit.SECONDS);
+                                                            } catch (Exception e) {
+                                                                throw new RuntimeException(e);
+                                                            }
+                                                        })
+                                                        .collect(Collectors.toList());
+            Collections.sort(actualResults);
+            assertEquals(expectedResults, actualResults);
+        } finally {
+            executorService.shutdown();
             TestingUtil.killRepositories(repository1, repository2);
         }
     }

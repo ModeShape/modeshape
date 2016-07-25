@@ -153,7 +153,7 @@ public abstract class ClusteringService {
             return false;
         }
         Address address = channel.getAddress();
-        LOGGER.debug("{0} Shutting down clustering service...", address);
+        LOGGER.debug("{0} shutting down clustering service...", address);
         consumers.clear();
 
         // Mark this as not accepting any more ...
@@ -165,7 +165,7 @@ public abstract class ClusteringService {
             channel.removeChannelListener(listener);
             channel.setReceiver(null);
             channel.close();
-            LOGGER.debug("{0} Successfully closed main channel", address);
+            LOGGER.debug("{0} successfully closed main channel", address);
         } finally {
             channel = null;
         }
@@ -230,7 +230,7 @@ public abstract class ClusteringService {
         }
 
         if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("{0} sending payload {1} in cluster {2} ", channel.getAddress(), payload, clusterName());
+            LOGGER.debug("{0} SENDING {1} ", toString(), payload);
         }
         try {
             byte[] messageData = toByteArray(payload);
@@ -337,7 +337,7 @@ public abstract class ClusteringService {
                 Serializable payload = fromByteArray(message.getBuffer(), getClass().getClassLoader());
 
                 if (LOGGER.isDebugEnabled()) {
-                    LOGGER.debug("{0} from cluster {1} received payload {2}", channel.getAddress(), clusterName(), payload);
+                    LOGGER.debug("{0} RECEIVED {1}", ClusteringService.this.toString(), payload);
                 }
 
                 for (MessageConsumer<Serializable> consumer : consumers) {
@@ -359,17 +359,19 @@ public abstract class ClusteringService {
 
         @Override
         public void viewAccepted( View newView ) {
-            LOGGER.trace("{0} Members of '{1}' cluster have changed: {2}, total count: {3}", channel.getAddress(), clusterName(), 
-                         newView, newView.getMembers().size());
-            membersInCluster.set(newView.getMembers().size());
+            int membersCount = newView.getMembers().size();
+            membersInCluster.set(membersCount);
             if (LOGGER.isDebugEnabled()) {
+                String clusterServiceInfo = ClusteringService.this.toString();
+                LOGGER.debug("{0}: new cluster member joined: {1}, total count: {2}", clusterServiceInfo, newView, membersCount);
+
                 if (membersInCluster.get() > 1) {
                     LOGGER.debug(
-                            "{0} There are now multiple members of cluster '{1}'; changes will be propagated throughout the cluster",
-                            channel.getAddress(), clusterName());
+                            "{0}: there are now multiple members in cluster; changes will be propagated throughout the cluster",
+                            clusterServiceInfo);
                 } else if (membersInCluster.get() == 1) {
-                    LOGGER.debug("{0} There is only one member of cluster '{1}'; changes will be propagated locally only",
-                                 channel.getAddress(), clusterName());
+                    LOGGER.debug("{0}: there is only one member in cluster; changes will be propagated only locally",
+                                 clusterServiceInfo);
                 }
             }
         }
