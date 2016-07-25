@@ -519,7 +519,7 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
     }
 
     /**
-     * Obtain the {@link Node JCR Node} object for the node with the supplied key.
+     * Obtain the {@link Node JCR Node} object for the cached node and this session's cache
      *
      * @param cachedNode the cached node; may not be null
      * @param expectedType the expected implementation type for the node, or null if it is not known
@@ -529,12 +529,27 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
     AbstractJcrNode node( CachedNode cachedNode,
                           AbstractJcrNode.Type expectedType,
                           NodeKey parentKey ) {
+        return node(cachedNode, cache, expectedType, parentKey);
+    }
+    
+    /**
+     * Obtain the {@link Node JCR Node} object for the cached node and cache instance
+     *
+     * @param cachedNode the cached node; may not be null
+     * @param cache the cache where {@code cachedNode} resides; may not be null
+     * @param expectedType the expected implementation type for the node, or null if it is not known
+     * @param parentKey the node key for the parent node, or null if the parent is not known
+     * @return the JCR node; never null
+     */
+    AbstractJcrNode node( CachedNode cachedNode,
+                          SessionCache cache,
+                          AbstractJcrNode.Type expectedType,
+                          NodeKey parentKey ) {
         assert cachedNode != null;
         NodeKey nodeKey = cachedNode.getKey();
         AbstractJcrNode node = jcrNodes.get(nodeKey);
         boolean mightBeShared = true;
         if (node == null) {
-
             if (expectedType == null) {
                 Name primaryType = cachedNode.getPrimaryType(cache);
                 expectedType = Type.typeForPrimaryType(primaryType);
