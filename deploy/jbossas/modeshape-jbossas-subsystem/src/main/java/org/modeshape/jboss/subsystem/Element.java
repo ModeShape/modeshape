@@ -32,6 +32,7 @@ public enum Element {
     DB_BINARY_STORAGE("db-binary-storage"),
     CASSANDRA_BINARY_STORAGE("cassandra-binary-storage"),
     MONGO_BINARY_STORAGE("mongo-binary-storage"),
+    S3_BINARY_STORAGE("s3-binary-storage"),
     FILE_BINARY_STORAGE("file-binary-storage"),
     TRANSIENT_BINARY_STORAGE("transient-binary-storage"),
     INDEX_PROVIDER("index-provider"),

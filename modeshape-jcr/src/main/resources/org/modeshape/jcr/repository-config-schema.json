@@ -467,6 +467,51 @@
                             "properties" : {
                                 "type" : {
                                     "type" : "string",
+                                    "description" : "The specification of the S3 binary store, which stores BINARY values in Amazon S3",
+                                    "enum" : [ "s3" ]
+                                },
+                                "username" : {
+                                    "type" : "string",
+                                    "description" : "The access key ID for the connection to Amazon S3.",
+                                    "required" : true
+                                },
+                                "password" : {
+                                    "type" : "string",
+                                    "description" : "The secret key for the connection to Amazon S3.",
+                                    "required" : true
+                                },
+                                "bucketName" : {
+                                    "type" : "string",
+                                    "description" : "The S3 bucket name in which binary values will be stored.",
+                                    "required" : true
+                                },
+                                "minimumBinarySizeInBytes" : {
+                                    "type" : "integer",
+                                    "default" : 4096,
+                                    "description" : "The size threshold that dictates whether binary values should be stored in the binary store. Binary values smaller than this value are stored with the node, whereas binary values with a size equal to or greater than this limit will be stored separately from the node and in the binary store, keyed by the SHA-1 hash of the value. This is a space and performance optimization that stores each unique large value only once. The default value is '4096' bytes, or 4 kilobytes."
+                                },
+                                "minimumStringSize" : {
+                                    "type" : "integer",
+                                    "description" : "The size threshold that dictates whether string values should be stored in the binary store. String values shorter than this length are stored with the node, whereas strings with a length equal to or greater than this limit will be stored separately from the node and in the binary store, keyed by the SHA-1 hash of the value. This is a space and performance optimization that stores each unique large value only once. The default value is to match the 'minimumBinarySizeInBytes' value."
+                                },
+                                "mimeTypeDetection" : {
+                                    "type" : "string",
+                                    "description" : "What type of mime-type detection should be performed when uploading binary values. Defaults to 'content' - i.e. reading the binary content (at least the headers) to determine the mime type",
+                                    "default" : "content",
+                                    "enum" : [ "none", "content", "name" ]
+                                },
+                                "description" : {
+                                    "type" : "string",
+                                    "description" : "The optional description of this section of the configuration. It is unused by ModeShape."
+                                }
+                            }
+                        },
+                        {
+                            "type" : "object",
+                            "additionalProperties" : false,
+                            "properties" : {
+                                "type" : {
+                                    "type" : "string",
                                     "description" : "The specification of a composite binary store.",
                                     "enum" : [ "composite" ]
                                 },

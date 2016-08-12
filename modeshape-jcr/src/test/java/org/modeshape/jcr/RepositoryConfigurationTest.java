@@ -150,6 +150,11 @@ public class RepositoryConfigurationTest {
     }
 
     @Test
+    public void shouldSuccessfullyValidateS3BinaryStorageConfiguration() {
+        assertValid("config/s3-binary-storage.json");
+    }
+
+    @Test
     public void shouldSuccessfullyValidateCompositeBinaryStorageConfiguration() {
         assertValid("config/composite-binary-storage.json");
     }

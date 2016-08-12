@@ -262,6 +262,10 @@ public class ModeShapeSubsystemXMLReader_3_0 implements XMLStreamConstants, XMLE
                     addBinaryStorageConfiguration(repositories, repositoryName);
                     binaryStorage = parseMongoBinaryStorage(reader, repositoryName, false);
                     break;
+                case S3_BINARY_STORAGE:
+                    addBinaryStorageConfiguration(repositories, repositoryName);
+                    binaryStorage = parseS3BinaryStorage(reader, repositoryName, false);
+                    break;
                 case COMPOSITE_BINARY_STORAGE:
                     addBinaryStorageConfiguration(repositories, repositoryName);
                     multipleStorageNodes = parseCompositeBinaryStorage(reader, repositoryName);
@@ -826,6 +830,50 @@ public class ModeShapeSubsystemXMLReader_3_0 implements XMLStreamConstants, XMLE
         }
         requireNoElements(reader);
         storageType.get(OP_ADDR).add(ModelKeys.STORAGE_TYPE, ModelKeys.MONGO_BINARY_STORAGE);
+        return storageType;
+    }
+
+    private ModelNode parseS3BinaryStorage(final XMLExtendedStreamReader reader,
+                                           final String repositoryName,
+                                           boolean nested) throws XMLStreamException {
+        final ModelNode storageType = new ModelNode();
+        storageType.get(OP).set(ADD);
+        storageType.get(OP_ADDR)
+                   .add(SUBSYSTEM, ModeShapeExtension.SUBSYSTEM_NAME)
+                   .add(ModelKeys.REPOSITORY, repositoryName)
+                   .add(ModelKeys.CONFIGURATION, ModelKeys.BINARY_STORAGE);
+
+        if (reader.getAttributeCount() > 0) {
+            for (int i = 0; i < reader.getAttributeCount(); i++) {
+                String attrName = reader.getAttributeLocalName(i);
+                String attrValue = reader.getAttributeValue(i);
+                Attribute attribute = Attribute.forName(attrName);
+                switch (attribute) {
+                    case BUCKET_NAME:
+                        ModelAttributes.S3_BUCKET_NAME.parseAndSetParameter(attrValue, storageType, reader);
+                        break;
+                    case USERNAME:
+                        ModelAttributes.S3_USERNAME.parseAndSetParameter(attrValue, storageType, reader);
+                        break;
+                    case PASSWORD:
+                        ModelAttributes.S3_PASSWORD.parseAndSetParameter(attrValue, storageType, reader);
+                        break;
+                    case MIN_VALUE_SIZE:
+                        ModelAttributes.MINIMUM_BINARY_SIZE.parseAndSetParameter(attrValue, storageType, reader);
+                        break;
+                    case MIN_STRING_SIZE:
+                        ModelAttributes.MINIMUM_STRING_SIZE.parseAndSetParameter(attrValue, storageType, reader);
+                        break;
+                    case MIME_TYPE_DETECTION:
+                        ModelAttributes.MIME_TYPE_DETECTION.parseAndSetParameter(attrValue, storageType, reader);
+                        break;
+                    default:
+                        throw ParseUtils.unexpectedAttribute(reader, i);
+                }
+            }
+        }
+        requireNoElements(reader);
+        storageType.get(OP_ADDR).add(ModelKeys.STORAGE_TYPE, ModelKeys.S3_BINARY_STORAGE);
         return storageType;
     }
 

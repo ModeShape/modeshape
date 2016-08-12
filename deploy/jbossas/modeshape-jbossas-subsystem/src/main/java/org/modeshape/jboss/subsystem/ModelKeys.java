@@ -88,6 +88,7 @@ public class ModelKeys {
     static final String DB_BINARY_STORAGE = "db-binary-storage";
     static final String CASSANDRA_BINARY_STORAGE = "cassandra-binary-storage";
     static final String MONGO_BINARY_STORAGE = "mongo-binary-storage";
+    static final String S3_BINARY_STORAGE = "s3-binary-storage";
     static final String COMPOSITE_BINARY_STORAGE = "composite-binary-storage";
     static final String CUSTOM_BINARY_STORAGE = "custom-binary-storage";
 

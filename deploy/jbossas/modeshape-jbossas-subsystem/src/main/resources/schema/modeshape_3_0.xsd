@@ -168,6 +168,11 @@
                         <xs:documentation>The binary files are stored in MongoDB.</xs:documentation>
                     </xs:annotation>
                 </xs:element>
+                <xs:element name="s3-binary-storage" type="s3-binary-storage">
+                    <xs:annotation>
+                        <xs:documentation>The binary files are stored in Amazon S3.</xs:documentation>
+                    </xs:annotation>
+                </xs:element>
                 <xs:element name="composite-binary-storage" type="composite-binary-storage">
                     <xs:annotation>
                         <xs:documentation>The binary files are stored in a one of any number of named binary stores.
@@ -877,6 +882,11 @@
         <xs:attributeGroup ref="binary-storage-attributes"/>
     </xs:complexType>
 
+    <xs:complexType name="s3-binary-storage">
+        <xs:attributeGroup ref="s3-storage-attributes"/>
+        <xs:attributeGroup ref="binary-storage-attributes"/>
+    </xs:complexType>
+
     <xs:complexType name="nested-file-binary-storage">
         <xs:attributeGroup ref="file-storage-attributes"/>
         <xs:attributeGroup ref="nested-binary-storage-attributes"/>
@@ -1067,6 +1077,23 @@
         <xs:attribute name="password" type="xs:string" use="optional">
             <xs:annotation>
                 <xs:documentation>The DB user password</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:attributeGroup>
+    <xs:attributeGroup name="s3-storage-attributes">
+        <xs:attribute name="username" type="xs:string" use="optional">
+            <xs:annotation>
+                <xs:documentation>The user name</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="password" type="xs:string" use="optional">
+            <xs:annotation>
+                <xs:documentation>The user password</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="bucket-name" type="xs:string" use="optional">
+            <xs:annotation>
+                <xs:documentation>The bucket name</xs:documentation>
             </xs:annotation>
         </xs:attribute>
     </xs:attributeGroup>
