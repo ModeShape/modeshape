@@ -1193,6 +1193,7 @@
                 <groupId>com.amazonaws</groupId>
                 <artifactId>aws-java-sdk-core</artifactId>
                 <version>${version.com.amazonaws}</version>
+                <scope>provided</scope>
                 <exclusions>
                     <exclusion>
                         <groupId>commons-logging</groupId>
@@ -1204,6 +1205,7 @@
                 <groupId>com.amazonaws</groupId>
                 <artifactId>aws-java-sdk-s3</artifactId>
                 <version>${version.com.amazonaws}</version>
+                <scope>provided</scope>
                 <exclusions>
                     <exclusion>
                         <groupId>commons-logging</groupId>
