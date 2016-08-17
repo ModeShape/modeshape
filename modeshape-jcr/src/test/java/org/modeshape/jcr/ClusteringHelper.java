@@ -51,11 +51,18 @@ public final class ClusteringHelper {
             if (preferIpv6 && localAddress instanceof Inet6Address) {
                 localHost = localAddress;
                 break;
-            } else if (!preferIpv6 && !(localAddress instanceof Inet6Address)) {
-                localHost = localAddress;
-                break;
             }
         }
+
+        if(localHost == null){
+            for (InetAddress localAddress : localHostAddresses) {
+                if (!(localAddress instanceof Inet6Address)) {
+                    localHost = localAddress;
+                    break;
+                }
+            }
+        }
+
         assert localHost != null;
         return localHost;
     }
