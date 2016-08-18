@@ -46,16 +46,24 @@ public final class ClusteringHelper {
         boolean preferIpv6 = Boolean.getBoolean(Global.IPv6);
 
         InetAddress localHost = null;
+        InetAddress nonInet6Address = null; 
         InetAddress[] localHostAddresses = InetAddress.getAllByName("localhost");
+        
         for (InetAddress localAddress : localHostAddresses) {
             if (preferIpv6 && localAddress instanceof Inet6Address) {
                 localHost = localAddress;
                 break;
-            } else if (!preferIpv6 && !(localAddress instanceof Inet6Address)) {
-                localHost = localAddress;
-                break;
+            }else{
+                if(nonInet6Address == null){
+                    nonInet6Address = localAddress;
+                }
             }
         }
+
+        if(localHost == null){
+            localHost = nonInet6Address;
+        }
+
         assert localHost != null;
         return localHost;
     }
