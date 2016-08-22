@@ -109,6 +109,7 @@ public class ModeShapeExtension implements Extension {
         binaryStorageSubmodel.registerSubModel(ModeShapeTransientBinaryStorageResource.DEFAULT);
         binaryStorageSubmodel.registerSubModel(ModeShapeCassandraBinaryStorageResource.DEFAULT);
         binaryStorageSubmodel.registerSubModel(ModeShapeMongoBinaryStorageResource.DEFAULT);
+        binaryStorageSubmodel.registerSubModel(ModeShapeS3BinaryStorageResource.DEFAULT);
 
         ManagementResourceRegistration compositeStorageSubmodel = binaryStorageSubmodel.registerSubModel(ModeShapeCompositeBinaryStorageResource.INSTANCE);
         compositeStorageSubmodel.registerSubModel(ModeShapeFileBinaryStorageResource.NESTED);

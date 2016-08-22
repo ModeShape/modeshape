@@ -118,6 +118,7 @@
         <version.junit>4.12</version.junit>
         <version.org.hamcrest>1.3</version.org.hamcrest>
         <version.org.mockito>1.10.19</version.org.mockito>
+        <version.org.easymock>3.4</version.org.easymock>
         <version.org.slf4j>1.7.7</version.org.slf4j>
         <version.log4j>1.2.17</version.log4j>
         <version.javax.jcr>2.0</version.javax.jcr>
@@ -190,6 +191,7 @@
         <version.mysql>5.1.38</version.mysql>
         <version.com.oracle>11.2.0.4</version.com.oracle>
         <version.com.microsoft.sqlserver>4.0.2206</version.com.microsoft.sqlserver>
+        <version.com.amazonaws>1.11.24</version.com.amazonaws>
        
         <!--Properties which must be used when installing locally a server ZIP distribution -->
         <version.org.wildfly>10.0.0.Final</version.org.wildfly>
@@ -1186,6 +1188,31 @@
                 <artifactId>HikariCP</artifactId>
                 <version>${version.com.zaxxer.HikariCP}</version>
             </dependency>
+            <!-- Used for Amazon S3 binary storage -->
+            <dependency>
+                <groupId>com.amazonaws</groupId>
+                <artifactId>aws-java-sdk-core</artifactId>
+                <version>${version.com.amazonaws}</version>
+                <scope>provided</scope>
+                <exclusions>
+                    <exclusion>
+                        <groupId>commons-logging</groupId>
+                        <artifactId>commons-logging</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>com.amazonaws</groupId>
+                <artifactId>aws-java-sdk-s3</artifactId>
+                <version>${version.com.amazonaws}</version>
+                <scope>provided</scope>
+                <exclusions>
+                    <exclusion>
+                        <groupId>commons-logging</groupId>
+                        <artifactId>commons-logging</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
             <!--
                 JGroups is used for the changes bus, but it's optional. Most of the times though, this will be in the classpath
                 because of ISPN.
@@ -1221,10 +1248,22 @@
                 <version>${version.org.mockito}</version>
                 <scope>test</scope>
             </dependency>
+            <dependency>
+                <groupId>org.easymock</groupId>
+                <artifactId>easymock</artifactId>
+                <version>${version.org.easymock}</version>
+                <scope>test</scope>
+            </dependency>
             <!-- Logging (all of the libraries should be optional, as the logging implementation falls back to JUL if nothing is found -->
             <dependency>
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-api</artifactId>
+                <version>${version.org.slf4j}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>jcl-over-slf4j</artifactId>
                 <version>${version.org.slf4j}</version>
                 <scope>test</scope>
             </dependency>

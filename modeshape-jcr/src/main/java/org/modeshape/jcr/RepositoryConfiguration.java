@@ -70,6 +70,7 @@ import org.modeshape.jcr.value.binary.CompositeBinaryStore;
 import org.modeshape.jcr.value.binary.DatabaseBinaryStore;
 import org.modeshape.jcr.value.binary.FileSystemBinaryStore;
 import org.modeshape.jcr.value.binary.MongodbBinaryStore;
+import org.modeshape.jcr.value.binary.S3BinaryStore;
 import org.modeshape.jcr.value.binary.TransientBinaryStore;
 import org.modeshape.schematic.SchemaLibrary;
 import org.modeshape.schematic.SchemaLibrary.Problem;
@@ -437,6 +438,7 @@ public class RepositoryConfiguration {
         public static final String DATABASE = "database";
         public static final String HOST = "host";
         public static final String PORT = "port";
+        public static final String BUCKET_NAME = "bucketName";
 
         public static final String GARBAGE_COLLECTION = "garbageCollection";
         public static final String INITIAL_TIME = "initialTime";
@@ -574,6 +576,7 @@ public class RepositoryConfiguration {
         public static final String BINARY_STORAGE_TYPE_COMPOSITE = "composite";
         public static final String BINARY_STORAGE_TYPE_CASSANDRA = "cassandra";
         public static final String BINARY_STORAGE_TYPE_MONGO = "mongo";
+        public static final String BINARY_STORAGE_TYPE_S3 = "s3";
         public static final String BINARY_STORAGE_TYPE_CUSTOM = "custom";
 
         public static final String KIND_VALUE = "value";
@@ -1200,6 +1203,11 @@ public class RepositoryConfiguration {
                 String username = binaryStorage.getString(FieldName.USER_NAME);
                 String password = binaryStorage.getString(FieldName.USER_PASSWORD);
                 store = new MongodbBinaryStore(host, port, database, username, password, null);                
+            } else if (type.equalsIgnoreCase(FieldValue.BINARY_STORAGE_TYPE_S3)) {
+                String username = binaryStorage.getString(FieldName.USER_NAME);
+                String password = binaryStorage.getString(FieldName.USER_PASSWORD);
+                String bucketName = binaryStorage.getString(FieldName.BUCKET_NAME);
+                store = new S3BinaryStore(username, password, bucketName);
             }
             if (store == null) store = TransientBinaryStore.get();
             store.setMinimumBinarySizeInBytes(getMinimumBinarySizeInBytes());

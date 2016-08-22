@@ -340,6 +340,12 @@ public class BinaryStorageIntegrationTest extends SingleUseAbstractTest {
         startRepositoryWithConfigurationFrom("config/mongo-binary-storage.json");        
     }
 
+    @Test
+    public void shouldStartWithS3BinaryStore() throws Exception {
+        // even though we don't connect to s3 in this test, the binary store is initialized ;)
+        startRepositoryWithConfigurationFrom("config/s3-binary-storage.json");
+    }
+
     private String randomString(long size) {
         StringBuilder builder = new StringBuilder("");
         while (builder.length() < size) {

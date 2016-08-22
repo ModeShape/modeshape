@@ -1,0 +1,12 @@
+{
+    "name" : "Test Repository",
+    "storage" : {
+        "binaryStorage" : {
+            "type"  : "s3",
+            "username" : "user",
+            "password" : "pass",
+            "bucketName" : "bucket"
+        }
+    }
+    
+}

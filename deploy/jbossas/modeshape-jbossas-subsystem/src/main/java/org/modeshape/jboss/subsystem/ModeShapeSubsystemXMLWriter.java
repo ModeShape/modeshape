@@ -341,6 +341,15 @@ public class ModeShapeSubsystemXMLWriter implements XMLStreamConstants, XMLEleme
             ModelAttributes.MONGO_USERNAME.marshallAsAttribute(storage, false, writer);
             ModelAttributes.MONGO_PASSWORD.marshallAsAttribute(storage, false, writer);
             writer.writeEndElement();
+        } else if (ModelKeys.S3_BINARY_STORAGE.equals(storageType)) {
+            writer.writeStartElement(Element.S3_BINARY_STORAGE.getLocalName());
+            ModelAttributes.MINIMUM_BINARY_SIZE.marshallAsAttribute(storage, false, writer);
+            ModelAttributes.MINIMUM_STRING_SIZE.marshallAsAttribute(storage, false, writer);
+            ModelAttributes.MIME_TYPE_DETECTION.marshallAsAttribute(storage, false, writer);
+            ModelAttributes.S3_BUCKET_NAME.marshallAsAttribute(storage, false, writer);
+            ModelAttributes.S3_USERNAME.marshallAsAttribute(storage, false, writer);
+            ModelAttributes.S3_PASSWORD.marshallAsAttribute(storage, false, writer);
+            writer.writeEndElement();
         } else if (ModelKeys.COMPOSITE_BINARY_STORAGE.equals(storageType)) {
             writer.writeStartElement(Element.COMPOSITE_BINARY_STORAGE.getLocalName());
             ModelAttributes.MINIMUM_BINARY_SIZE.marshallAsAttribute(storage, false, writer);

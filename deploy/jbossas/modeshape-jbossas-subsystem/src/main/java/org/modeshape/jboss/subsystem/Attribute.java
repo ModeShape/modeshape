@@ -108,7 +108,8 @@ public enum Attribute {
     HOST("host"),
     PORT("port"),
     DATABASE("database"),
-    REINDEXING_MODE("mode");
+    REINDEXING_MODE("mode"),
+    BUCKET_NAME("bucket-name");
 
     private final String name;
 
