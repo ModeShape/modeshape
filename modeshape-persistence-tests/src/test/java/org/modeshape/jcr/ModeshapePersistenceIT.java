@@ -15,6 +15,17 @@
  */
 package org.modeshape.jcr;
 
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNull.notNullValue;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
@@ -48,21 +59,9 @@ import javax.jcr.version.VersionHistory;
 import javax.jcr.version.VersionIterator;
 import javax.jcr.version.VersionManager;
 import javax.transaction.TransactionManager;
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsNull.notNullValue;
 import org.junit.After;
-import org.junit.AfterClass;
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.BeforeClass;
 import org.modeshape.common.util.FileUtil;
 import org.modeshape.common.util.IoUtil;
 import org.modeshape.connector.mock.MockConnector;
@@ -90,14 +89,6 @@ public class ModeshapePersistenceIT {
     private File backupDirectory;
     private File backupDirectory2;
     private File backupRepoDir;
-    
-    @BeforeClass
-    public static void beforeAll() throws Exception {
-    }
-
-    @AfterClass
-    public static void afterAll() throws Exception {
-    }
 
     @Before
     public void beforeEach() throws Exception {
@@ -112,18 +103,13 @@ public class ModeshapePersistenceIT {
         backupRepoDir = new File(backupArea, "backupRepo");
         backupRepoDir.mkdirs();
         new File(backupArea, "restoreRepo").mkdirs();
+        FileUtil.delete("target/startup_test_indexes");
     }
 
     @After
     public void afterEach() throws Exception {
-        testRepository.setCnd("cnd/cars.cnd");
-
-        try {
-            testRepository.setDropOnExit(true);
-            testRepository.restart();
-            testRepository.shutdown();
-        } catch (Exception e) {
-        }
+        testRepository.setDropOnExit(true);
+        testRepository.shutdown();
     }
 
     @Test
@@ -192,7 +178,7 @@ public class ModeshapePersistenceIT {
                 // expected
             }
             ws1Session.getNode("/testNode");
-        }, false, false);
+        }, false, true);
     }
 
     @Test
@@ -225,7 +211,7 @@ public class ModeshapePersistenceIT {
             Node doc2Federated = session.getNode("/testRoot" + MockConnector.DOC2_LOCATION);
             assertNotNull(doc2Federated);
 //            assertEquals(testRoot.getIdentifier(), doc2Federated.getParent().getIdentifier());
-        }, false, false);
+        }, false, true);
     }
 
     @Test
@@ -235,7 +221,7 @@ public class ModeshapePersistenceIT {
             assertNotNull(session.getNode("/preconfiguredProjection"));
         };
         startRunStop(checkPreconfiguredProjection, true, false);
-        startRunStop(checkPreconfiguredProjection, true, false);
+        startRunStop(checkPreconfiguredProjection, false, true);
     }
 
     @Test
@@ -326,8 +312,6 @@ public class ModeshapePersistenceIT {
 
     @Test
     public void reindexingLocalProviderShouldRemoveExistingDataFirst() throws Exception {
-        // clean the indexes
-        TestingUtil.waitUntilFolderCleanedUp("target/startup_test_indexes");
         startRunStop(repository -> {
             JcrSession session = repository.login();
             session.getRootNode().addNode("testRoot");
@@ -393,13 +377,11 @@ public class ModeshapePersistenceIT {
 
             session.getNode("/testNode").remove();
             session.save();
-        }, false, false);
+        }, false, true);
     }
 
     @Test
     public void shouldUseIndexesAfterRestarting() throws Exception {
-        // clean the indexes
-        TestingUtil.waitUntilFolderCleanedUp("target/startup_test_indexes");
         startRunStop(repository -> {
             JcrSession session = repository.login();
             session.getRootNode().addNode("testRoot");
@@ -1678,7 +1660,7 @@ public class ModeshapePersistenceIT {
             makeBackup(session, BackupOptions.DEFAULT);
         }, false, true);
         
-        this.restoreBackup();
+        this.restoreBackup(true);
         
         startRunStop(repository -> {
             JcrSession session = repository.login();
@@ -1724,7 +1706,7 @@ public class ModeshapePersistenceIT {
             makeBackup(session, backupOptions);
         }, false, true);
         
-        this.restoreBackup();
+        this.restoreBackup(true);
         
         startRunStop(repository -> {
             JcrSession session = repository.login();
@@ -1752,7 +1734,7 @@ public class ModeshapePersistenceIT {
             JcrSession session = repository.login();
         }, true, true);
         
-        this.restoreBackup();
+        this.restoreBackup(true);
         
         startRunStop(repository -> {
             JcrSession session = repository.login();
@@ -1764,7 +1746,7 @@ public class ModeshapePersistenceIT {
             JcrSession session = repository.login();
         }, true, true);
 
-        this.restoreBackup();
+        this.restoreBackup(true);
         startRunStop(repository -> {
             JcrSession session = repository.login();
             verifyBinaryContent(session);
@@ -1801,7 +1783,7 @@ public class ModeshapePersistenceIT {
         }, true, false);
 
 
-        this.restoreBackup();
+        this.restoreBackup(true);
 
         startRunStop(repository -> {
             JcrSession session = repository.login();
@@ -1827,11 +1809,11 @@ public class ModeshapePersistenceIT {
             txnMgr.begin();
             
             makeBackup(session, BackupOptions.DEFAULT);            
-            this.restoreBackup();
+            restoreBackup(false);
             
             txnMgr.rollback();
             assertContentInWorkspace(session);
-        }, true, false);
+        }, true, true);
     }
     
     @Test
@@ -1928,13 +1910,6 @@ public class ModeshapePersistenceIT {
         startRunStop(repository -> {
             JcrSession session = repository.login("ws2");
             Node node = session.getNode("/a/b/Cars/Utility/Ford F-150");
-            node.setProperty("car:year", "2009");
-            session.save();
-        }, false, false);
-
-        startRunStop(repository -> {
-            JcrSession session = repository.login("ws2");
-            Node node = session.getNode("/a/b/Cars/Utility/Ford F-150");
             assertEquals("2009", node.getProperty("car:year").getString());
             
             node.remove();
@@ -1949,7 +1924,7 @@ public class ModeshapePersistenceIT {
         startRunStop(repository -> {
             JcrSession session = repository.login();
             verifyBinaryContent(session);
-        }, false, false);
+        }, false, true);
         
     }    
 
@@ -2120,12 +2095,12 @@ public class ModeshapePersistenceIT {
     }
     
     private void makeBackup(JcrSession session, BackupOptions options) throws RepositoryException {
-        TestingUtil.waitUntilFolderCleanedUp(backupDirectory.getPath());
+        FileUtil.delete(backupDirectory.getPath());
         Problems problems = session.getWorkspace().getRepositoryManager().backupRepository(backupDirectory, options);
         assertNoProblems(problems);
     }
     
-    private void restoreBackup() throws Exception {
+    private void restoreBackup(boolean shutdownRepository) throws Exception {
         testRepository.setCreateOnStart(true);
         testRepository.setDropOnExit(false);
         testRepository.start();
@@ -2135,7 +2110,9 @@ public class ModeshapePersistenceIT {
             assertNoProblems(problems);
             session.logout();
         } finally {
-            testRepository.shutdown();
+            if (shutdownRepository) {
+                testRepository.shutdown();
+            }
         }
     }
 

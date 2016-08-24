@@ -108,12 +108,22 @@
     </dependencies>
     <build>
         <plugins>
+            <!--
+                We're only running integration tests, so skip regular unit tests
+            -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <skip>true</skip>
+                </configuration>
+            </plugin>
             <plugin>
                 <groupId>io.fabric8</groupId>
                 <artifactId>docker-maven-plugin</artifactId>
                 <executions>
                     <execution>
-                        <id>docker-postgres</id>
+                        <id>build-and-start</id>
                         <goals>
                             <goal>build</goal>
                             <goal>start</goal>
@@ -121,6 +131,7 @@
                         <phase>pre-integration-test</phase>                                    
                     </execution>
                     <execution>
+                        <id>stop</id>
                         <goals>
                             <goal>stop</goal>
                         </goals>
@@ -183,7 +194,6 @@
                 <activeByDefault>true</activeByDefault>
             </activation>
             <properties>
-                <database>postgresq9</database>
                 <database.name>postgres</database.name>
                 <database.username>postgres</database.username>
                 <database.password>postgres</database.password>
@@ -200,11 +210,18 @@
                 </dependency>
             </dependencies>
         </profile>
+        <!--
+            Define these as empty with the same name as the ones from the parent POM to deactivate the default profile
+            for this module which runs PostgreSQL
+         -->
+        <profile>
+            <id>mysql5</id>
+        </profile>
+        <profile>
+            <id>oracle11g</id>
+        </profile>
         <profile>
             <id>all-databases</id>
-            <activation>
-                <activeByDefault>false</activeByDefault>
-            </activation>
             <properties>
                 <oracle.database.username>system</oracle.database.username>
                 <oracle.database.password>oracle</oracle.database.password>
@@ -223,8 +240,113 @@
                 <mysql.database.driver>com.mysql.jdbc.Driver</mysql.database.driver>
                 <mysql.database.url>jdbc:mysql://${docker.host.address}:3306/${mysql.database.name}?autoReconnect=true&amp;useSSL=false</mysql.database.url>
             </properties>
+            <dependencies>
+                <dependency>
+                    <groupId>mysql</groupId>
+                    <artifactId>mysql-connector-java</artifactId>
+                    <version>${version.mysql}</version>
+                </dependency>
+                <dependency>
+                    <!--Must be JDBC 4 (Java 6) compliant-->
+                    <groupId>postgresql</groupId>
+                    <artifactId>postgresql</artifactId>
+                    <version>${version.postgresql.9}</version>
+                </dependency>
+                <dependency>
+                    <groupId>com.oracle</groupId>
+                    <artifactId>ojdbc6</artifactId>
+                    <version>${version.com.oracle}</version>
+                </dependency>
+            </dependencies>
             <build>
                 <plugins>
+                    <!--
+                        We need to override the parent configuration to be able to provide the correct image properties
+                    -->
+                    <plugin>
+                        <groupId>io.fabric8</groupId>
+                        <artifactId>docker-maven-plugin</artifactId>
+                        <configuration>
+                            <watchInterval>500</watchInterval>
+                            <logDate>default</logDate>
+                            <verbose>true</verbose>
+                            <autoPull>always</autoPull>
+                            <images>
+                                <image>
+                                    <name>postgres:${version.docker.postgresql}</name>
+                                    <alias>modeshape-postgres</alias>
+                                    <run>
+                                        <namingStrategy>alias</namingStrategy>
+                                        <env>
+                                            <POSTGRES_DB>${postgres.database.name}</POSTGRES_DB>
+                                            <POSTGRES_USER>${postgres.database.username}</POSTGRES_USER>
+                                            <POSTGRES_PASSWORD>${postgres.database.password}</POSTGRES_PASSWORD>
+                                        </env>
+                                        <ports>
+                                            <port>5432:5432</port>
+                                        </ports>
+                                        <log>
+                                            <prefix>postgress</prefix>
+                                            <enabled>true</enabled>
+                                            <color>yellow</color>
+                                        </log>
+                                        <wait>
+                                            <log>PostgreSQL init process complete; ready for start up.</log>
+                                            <time>120000</time>
+                                        </wait>
+                                    </run>
+                                </image>
+                                <image>
+                                    <name>mysql/mysql-server:${version.docker.mysql}</name>
+                                    <alias>modeshape-mysql</alias>
+                                    <run>
+                                        <namingStrategy>alias</namingStrategy>
+                                        <env>
+                                            <MYSQL_ROOT_PASSWORD>modeshape</MYSQL_ROOT_PASSWORD>
+                                            <MYSQL_DATABASE>${mysql.database.name}</MYSQL_DATABASE>
+                                            <MYSQL_USER>${mysql.database.username}</MYSQL_USER>
+                                            <MYSQL_PASSWORD>${mysql.database.password}</MYSQL_PASSWORD>
+                                        </env>
+                                        <ports>
+                                            <port>3306:3306</port>
+                                        </ports>
+                                        <log>
+                                            <prefix>mysql</prefix>
+                                            <enabled>true</enabled>
+                                            <color>yellow</color>
+                                        </log>
+                                        <wait>
+                                            <log>MySQL init process done. Ready for start up.</log>
+                                            <time>120000</time>
+                                        </wait>
+                                    </run>
+                                </image>
+                                <image>
+                                    <name>wnameless/oracle-xe-11g:${version.docker.oracle}</name>
+                                    <alias>modeshape-oracle</alias>
+                                    <run>
+                                        <namingStrategy>alias</namingStrategy>
+                                        <env>
+                                            <ORACLE_ALLOW_REMOTE>true</ORACLE_ALLOW_REMOTE>
+                                        </env>
+                                        <ports>
+                                            <port>49160:22</port>
+                                            <port>49161:1521</port>
+                                        </ports>
+                                        <log>
+                                            <prefix>oracle</prefix>
+                                            <enabled>true</enabled>
+                                            <color>yellow</color>
+                                        </log>
+                                        <wait>
+                                            <log>/usr/sbin/startup.sh: ignoring /docker-entrypoint-initdb.d/*</log>
+                                            <time>300000</time>
+                                        </wait>
+                                    </run>
+                                </image>
+                            </images>
+                        </configuration>
+                    </plugin>
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-failsafe-plugin</artifactId>
@@ -236,9 +358,9 @@
                                 </goals>
                                 <configuration>
                                     <systemPropertyVariables>
-                                        <db.driver>${mysql.database.driverClassName}</db.driver>
+                                        <db.driver>${mysql.database.driver}</db.driver>
                                         <db.url>${mysql.database.url}</db.url>
-                                        <db.user>${mysql.database.username}</db.user>
+                                        <db.username>${mysql.database.username}</db.username>
                                         <db.password>${mysql.database.password}</db.password>
                                     </systemPropertyVariables>
                                 </configuration>
@@ -250,9 +372,9 @@
                                 </goals>
                                 <configuration>
                                     <systemPropertyVariables>
-                                        <db.driver>${postgres.database.driverClassName}</db.driver>
+                                        <db.driver>${postgres.database.driver}</db.driver>
                                         <db.url>${postgres.database.url}</db.url>
-                                        <db.user>${postgres.database.username}</db.user>
+                                        <db.username>${postgres.database.username}</db.username>
                                         <db.password>${postgres.database.password}</db.password>
                                     </systemPropertyVariables>
                                 </configuration>
@@ -264,9 +386,9 @@
                                 </goals>
                                 <configuration>
                                     <systemPropertyVariables>
-                                        <db.driver>${oracle.database.driverClassName}</db.driver>
+                                        <db.driver>${oracle.database.driver}</db.driver>
                                         <db.url>${oracle.database.url}</db.url>
-                                        <db.user>${oracle.database.username}</db.user>
+                                        <db.username>${oracle.database.username}</db.username>
                                         <db.password>${oracle.database.password}</db.password>
                                     </systemPropertyVariables>
                                 </configuration>

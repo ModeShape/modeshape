@@ -17,7 +17,6 @@ package org.modeshape.jcr;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.concurrent.Future;
 import javax.jcr.ImportUUIDBehavior;
 import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
@@ -27,11 +26,10 @@ import org.modeshape.schematic.document.Document;
 import org.modeshape.schematic.document.Json;
 
 /**
- *
  * @author okulikov
  */
 public class TestRepository {
-
+    
     private final String configName = "config/test-repository.json";
     private RepositoryConfiguration config;
     private ModeShapeEngine engine;
@@ -39,11 +37,10 @@ public class TestRepository {
     private boolean dropOnExit;
     private boolean createOnStart = true;
     private String cnd = "cnd/cars.cnd";
-     
-    private Repository repository;
-    private Session session;
     
-    public void start() throws Exception {        
+    private JcrRepository repository;
+    
+    public void start() throws Exception {
         System.setProperty("dropOnExit", Boolean.toString(dropOnExit));
         System.setProperty("createOnStart", Boolean.toString(createOnStart));
         System.setProperty("node.types", cnd);
@@ -61,7 +58,7 @@ public class TestRepository {
     public void setDropOnExit(boolean dropOnExit) {
         this.dropOnExit = dropOnExit;
     }
-
+    
     public void setCreateOnStart(boolean createOnStart) {
         this.createOnStart = createOnStart;
     }
@@ -70,10 +67,10 @@ public class TestRepository {
         this.cnd = cnd;
     }
     
-    public Session login() throws RepositoryException {        
+    public Session login() throws RepositoryException {
         return repository.login();
     }
-
+    
     public Session login(String workspace) throws RepositoryException {
         return repository.login(workspace);
     }
@@ -83,13 +80,7 @@ public class TestRepository {
     }
     
     public void shutdown() {
-        Future f = engine.shutdown();
-        while (!f.isDone()) {
-            try {
-                Thread.sleep(500);
-            } catch (InterruptedException e) {
-            }
-        }
+       TestingUtil.killRepository(repository);
     }
     
     public void restart() throws Exception {
@@ -97,22 +88,10 @@ public class TestRepository {
         start();
     }
     
-    public Session session() {
-        return session;
-    }
     
     public void loadInitialContent(String resourceName, Session session) throws RepositoryException, IOException {
         InputStream stream = TestRepository.class.getClassLoader().getResourceAsStream(resourceName);
         Workspace workspace = session.getWorkspace();
         workspace.importXML("/", stream, ImportUUIDBehavior.IMPORT_UUID_CREATE_NEW);
     }
-    
-    public void registerNodeTypes( String resourceName, Session session) throws RepositoryException, IOException {
-        InputStream stream = TestRepository.class.getClassLoader().getResourceAsStream(resourceName);
-        
-        Workspace workspace = session.getWorkspace();
-        org.modeshape.jcr.api.nodetype.NodeTypeManager ntMgr = (org.modeshape.jcr.api.nodetype.NodeTypeManager)workspace.getNodeTypeManager();
-        ntMgr.registerNodeTypes(stream, true);
-    }
-    
 }

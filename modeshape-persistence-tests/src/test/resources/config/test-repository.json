@@ -12,8 +12,7 @@
         },
         "binaryStorage" : {
             "type" : "file",
-            "directory": "target/backupArea/backupRepo/binaries",
-            "minimumBinarySizeInBytes" : 40
+            "directory": "target/backupArea/backupRepo/binaries"
         }        
     },
     "node-types": ["${node.types}", "cnd/versioning.cnd", "cnd/jj.cnd"],
