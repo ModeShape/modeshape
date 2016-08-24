@@ -348,7 +348,7 @@
                 <database.username>postgres</database.username>
                 <database.password>postgres</database.password>
                 <database.driver>org.postgresql.Driver</database.driver>
-                <database.url>jdbc:postgresql://${docker.host.address}/${database.name}</database.url>
+                <database.url>jdbc:postgresql://${docker.host.address}:5432/${database.name}</database.url>
                 <docker.image>modeshape-postgres</docker.image>
             </properties>
             <dependencies>
