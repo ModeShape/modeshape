@@ -8,12 +8,12 @@
         "jdbc-meta" : {
             "classname" : "org.modeshape.connector.meta.jdbc.JdbcMetadataConnector",
             "dataSourceJndiName" : "java:/testDS",
-            "maximumConnectionsInPool" : "${dataSource.maximumConnectionsInPool}",
-            "minimumConnectionsInPool" : "${dataSource.minimumConnectionsInPool}",
-            "maximumConnectionIdleTimeInSeconds" : "${dataSource.maximumConnectionIdleTimeInSeconds}",
-            "maximumSizeOfStatementCache" : "${dataSource.maximumSizeOfStatementCache}",
-            "numberOfConnectionsToAcquireAsNeeded" : "${dataSource.numberOfConnectionsToAcquireAsNeeded}",
-            "retryLimit" : "${dataSource.retryLimit}"
+            "maximumConnectionsInPool" : "${database.maximumConnectionsInPool}",
+            "minimumConnectionsInPool" : "${database.minimumConnectionsInPool}",
+            "maximumConnectionIdleTimeInSeconds" : "${database.maximumConnectionIdleTimeInSeconds}",
+            "maximumSizeOfStatementCache" : "${database.maximumSizeOfStatementCache}",
+            "numberOfConnectionsToAcquireAsNeeded" : "${database.numberOfConnectionsToAcquireAsNeeded}",
+            "retryLimit" : "${database.retryLimit}"
         }
     }
 }

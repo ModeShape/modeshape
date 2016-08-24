@@ -1,0 +1,286 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>org.modeshape</groupId>
+        <artifactId>modeshape-parent</artifactId>
+        <version>5.2-SNAPSHOT</version>
+        <relativePath>../modeshape-parent</relativePath>
+    </parent>
+
+    <!-- The groupId and version values are inherited from parent -->
+    <artifactId>modeshape-persistence-tests</artifactId>
+    <packaging>jar</packaging>
+    <name>ModeShape Persistence Tests</name>
+    <description>ModeShape persistence tests</description>
+    <url>http://www.modeshape.org</url>
+    
+    <dependencies>
+        <!-- Public API (beyond JCR 2.0) -->
+        <dependency>
+            <groupId>org.modeshape</groupId>
+            <artifactId>modeshape-jcr-api</artifactId>
+        </dependency>
+        <!-- ModeShape JCR -->
+        <dependency>
+            <groupId>org.modeshape</groupId>
+            <artifactId>modeshape-jcr</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.modeshape</groupId>
+            <artifactId>modeshape-jcr</artifactId>
+            <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
+        <!-- This should eventually get refactored into this project -->
+        <dependency>
+            <groupId>org.modeshape</groupId>
+            <artifactId>modeshape-common</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.modeshape</groupId>
+            <artifactId>modeshape-common</artifactId>
+            <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.modeshape</groupId>
+            <artifactId>modeshape-schematic</artifactId>
+        </dependency>
+        <!--  Used in tests -->
+        <dependency>
+            <groupId>org.modeshape</groupId>
+            <artifactId>modeshape-schematic</artifactId>
+            <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
+        
+        <dependency>
+            <groupId>mysql</groupId>
+            <artifactId>mysql-connector-java</artifactId>
+            <version>${version.mysql}</version>
+        </dependency>
+
+
+                                        
+        <!--
+        These following are defined as 'provided' in the parent POM, since ModeShape
+        has code that is optional if these APIs are available.
+        -->
+        <dependency>
+            <groupId>org.jboss.spec.javax.servlet</groupId>
+            <artifactId>jboss-servlet-api_3.1_spec</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.jboss.spec.javax.security.jacc</groupId>
+            <artifactId>jboss-jacc-api_1.5_spec</artifactId>
+        </dependency>
+
+        <!--
+        Testing (note the scope)
+        -->
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.hamcrest</groupId>
+            <artifactId>hamcrest-library</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.narayana.jta</groupId>
+            <artifactId>narayana-jta</artifactId>
+        </dependency>
+        <!--
+        Logging (require SLF4J API for compiling, but use Log4J and its SLF4J binding for testing)
+        -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-log4j12</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>log4j</groupId>
+            <artifactId>log4j</artifactId>
+        </dependency>
+    </dependencies>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>io.fabric8</groupId>
+                <artifactId>docker-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>docker-postgres</id>
+                        <goals>
+                            <goal>build</goal>
+                            <goal>start</goal>
+                        </goals>
+                        <phase>pre-integration-test</phase>                                    
+                    </execution>
+                    <execution>
+                        <goals>
+                            <goal>stop</goal>
+                        </goals>
+                        <phase>post-integration-test</phase>
+                    </execution>
+                </executions>
+            </plugin>            
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <configuration>
+                    <skipTests>${skipITs}</skipTests>
+                    <enableAssertions>true</enableAssertions>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>integration-test-postgres</id>
+                        <goals>
+                            <goal>integration-test</goal>
+                        </goals>
+                        <configuration>
+                            <systemPropertyVariables>
+                                <db.driver>${database.driver}</db.driver>
+                                <db.url>${database.url}</db.url>
+                                <db.username>${database.username}</db.username>
+                                <db.password>${database.password}</db.password>
+                            </systemPropertyVariables>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>verify</id>
+                        <goals>
+                            <goal>verify</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>            
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-deploy-plugin</artifactId>
+                <configuration>
+                    <skip>true</skip>
+                </configuration>
+            </plugin>
+        </plugins>
+        <testResources>
+            <testResource>
+                <filtering>true</filtering>
+                <directory>src/test/resources</directory>
+                <includes>
+                    <include>**/*</include>
+                </includes>
+            </testResource>
+        </testResources>
+    </build>
+    <profiles>
+        <profile>
+            <id>default_dbms</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <properties>
+                <database>postgresq9</database>
+                <database.name>postgres</database.name>
+                <database.username>postgres</database.username>
+                <database.password>postgres</database.password>
+                <database.driver>org.postgresql.Driver</database.driver>
+                <database.url>jdbc:postgresql://${docker.host.address}/${database.name}</database.url>
+                <docker.image>modeshape-postgres</docker.image>
+            </properties>
+            <dependencies>
+                <dependency>
+                    <!--Must be JDBC 4 (Java 6) compliant-->
+                    <groupId>postgresql</groupId>
+                    <artifactId>postgresql</artifactId>
+                    <version>${version.postgresql.9}</version>
+                </dependency>
+            </dependencies>
+        </profile>
+        <profile>
+            <id>all-databases</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+            <properties>
+                <oracle.database.username>system</oracle.database.username>
+                <oracle.database.password>oracle</oracle.database.password>
+                <oracle.database.driver>oracle.jdbc.OracleDriver</oracle.database.driver>
+                <oracle.database.url>jdbc:oracle:thin:@${docker.host.address}:49161:xe</oracle.database.url>
+
+                <postgres.database.name>modeshape_db</postgres.database.name>
+                <postgres.database.username>ms_user</postgres.database.username>
+                <postgres.database.password>ms_password</postgres.database.password>
+                <postgres.database.driver>org.postgresql.Driver</postgres.database.driver>
+                <postgres.database.url>jdbc:postgresql://${docker.host.address}/${postgres.database.name}</postgres.database.url>
+
+                <mysql.database.name>modeshape_db</mysql.database.name>
+                <mysql.database.username>ms_user</mysql.database.username>
+                <mysql.database.password>ms_password</mysql.database.password>
+                <mysql.database.driver>com.mysql.jdbc.Driver</mysql.database.driver>
+                <mysql.database.url>jdbc:mysql://${docker.host.address}:3306/${mysql.database.name}?autoReconnect=true&amp;useSSL=false</mysql.database.url>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-failsafe-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>integration-test-mysql</id>
+                                <goals>
+                                    <goal>integration-test</goal>
+                                </goals>
+                                <configuration>
+                                    <systemPropertyVariables>
+                                        <db.driver>${mysql.database.driverClassName}</db.driver>
+                                        <db.url>${mysql.database.url}</db.url>
+                                        <db.user>${mysql.database.username}</db.user>
+                                        <db.password>${mysql.database.password}</db.password>
+                                    </systemPropertyVariables>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>integration-test-postgres</id>
+                                <goals>
+                                    <goal>integration-test</goal>
+                                </goals>
+                                <configuration>
+                                    <systemPropertyVariables>
+                                        <db.driver>${postgres.database.driverClassName}</db.driver>
+                                        <db.url>${postgres.database.url}</db.url>
+                                        <db.user>${postgres.database.username}</db.user>
+                                        <db.password>${postgres.database.password}</db.password>
+                                    </systemPropertyVariables>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>integration-test-oracle</id>
+                                <goals>
+                                    <goal>integration-test</goal>
+                                </goals>
+                                <configuration>
+                                    <systemPropertyVariables>
+                                        <db.driver>${oracle.database.driverClassName}</db.driver>
+                                        <db.url>${oracle.database.url}</db.url>
+                                        <db.user>${oracle.database.username}</db.user>
+                                        <db.password>${oracle.database.password}</db.password>
+                                    </systemPropertyVariables>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>verify</id>
+                                <goals>
+                                    <goal>verify</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+</project>

@@ -61,10 +61,32 @@
             </repositories>
         </profile>
         -->
+	<profile>
+		<id>jboss-public-jboss-repository</id>
+		<repositories> 
+			<repository> 
+				<id>jboss-pub-jboss-repository</id> 
+				<name>Jboss.org Developer repository</name> 
+				<url>https://repository.jboss.org/nexus/content/repositories/public-jboss/</url> 
+				<layout>default</layout> 
+				<releases> 
+					<enabled>true</enabled> 
+					<updatePolicy>never</updatePolicy> 
+				</releases> 
+				<snapshots>
+					<enabled>false</enabled>
+					<updatePolicy>never</updatePolicy>
+				</snapshots>
+
+			</repository> 
+		</repositories> 
+	</profile>
+        
     </profiles>
 
     <activeProfiles>
         <activeProfile>jboss-public-repository</activeProfile>
+        <activeProfile>jboss-public-jboss-repository</activeProfile>
         <!--<activeProfile>jboss-eap-repository</activeProfile>-->
     </activeProfiles>
 </settings>

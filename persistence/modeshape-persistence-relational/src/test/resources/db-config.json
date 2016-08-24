@@ -1,11 +1,11 @@
 {
     // Used for testing the actual DB interaction, filtered by Maven based on the active profile
     "type": "db",
-    "connectionUrl": "${dataSource.url}",
+    "connectionUrl": "${database.url}",
     "poolSize" : 200,
-    "driver": "${dataSource.driverClassName}",
-    "username": "${dataSource.username}",
-    "password": "${dataSource.password}",
+    "driver": "${database.driver}",
+    "username": "${database.username}",
+    "password": "${database.password}",
     "createOnStart": true,
     "dropOnExit": true
 }

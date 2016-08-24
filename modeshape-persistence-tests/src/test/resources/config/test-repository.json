@@ -1,0 +1,82 @@
+{
+    "name": "FS Repository",
+    "storage": {
+        "persistence": {
+            "type": "db",
+            "driver": "${db.driver}",
+            "connectionUrl": "${db.url}",
+            "username": "${db.username}",
+            "password": "${db.password}",
+            "createOnStart": "${createOnStart}",
+            "dropOnExit": "${dropOnExit}"
+        },
+        "binaryStorage" : {
+            "type" : "file",
+            "directory": "target/backupArea/backupRepo/binaries",
+            "minimumBinarySizeInBytes" : 40
+        }        
+    },
+    "node-types": ["${node.types}", "cnd/versioning.cnd", "cnd/jj.cnd"],
+    
+    "workspaces": {
+        "predefined": ["system"],
+        "default": "default",
+        "allowCreation": true,
+        "initialContent": {
+            "default": "data/cars.xml"
+        }
+    },
+    
+    "indexProviders" : {
+        "local" : {
+            "classname" : "org.modeshape.jcr.index.local.LocalIndexProvider",
+            "directory" : "target/startup_test_indexes"
+        }
+    },
+    "indexes" : {
+        "nodesByName": {
+            "kind": "value",
+            "provider": "local",
+            "nodeType": "nt:unstructured",
+            "columns" : "jcr:name(NAME)",
+            "description": "Name index"
+        }
+    },
+    
+    "journaling" : {
+        "location" : "target/persistent_repository/journal",
+        "maxDaysToKeepRecords" : 15,
+        "asyncWritesEnabled" : false,
+        "threadPool" : "modeshape-journaling-gc",
+        "initialTime" : "04:01",
+        "intervalInHours" : 5
+    },
+    "externalSources": {
+        "mock-source": {
+            "classname": "org.modeshape.connector.mock.MockConnector",
+            "persistentDataAcrossRestarts": true,
+            "cacheable": false
+        },
+        "mock-source-1" : {
+            "classname" : "org.modeshape.connector.mock.MockConnector",
+            "persistentDataAcrossRestarts" : true,
+            "cacheable" : false,
+            "projections" : [
+                "default:/preconfiguredProjection => /doc1"
+            ]
+        }
+    },
+    "sequencing": {
+        "sequencers": {
+            "Counting sequencer": {
+                "classname": "org.modeshape.jcr.TestSequencersHolder$DefaultSequencer"
+            }
+        }
+    },
+    "security": {
+        "anonymous": {
+            "roles": ["readonly", "readwrite", "admin"],
+            "useOnFailedLogin": false
+        }
+    }
+}

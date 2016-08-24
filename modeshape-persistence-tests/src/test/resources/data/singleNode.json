@@ -1,0 +1,21 @@
+{
+    "data" : [
+        {
+            "metadata" : {
+                "id" : "cafebabe-cafe-babe-cafe-babecafebabe"
+            },
+            "content" : {
+                "properties" : {
+                    "http://www.jcp.org/jcr/1.0" : {
+                        "primaryType" : {
+                            "$name" : "{http://www.modeshape.org/1.0}root"
+                        }
+                    }
+                },
+                "children" : {
+                    
+                }
+            }
+        }
+    ]
+}

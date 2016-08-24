@@ -3,19 +3,19 @@
     "storage" : {
         "persistence" : {
             "type" : "db",
-            "connectionUrl": "${dataSource.url}",
-            "driver": "${dataSource.driverClassName}",
-            "username": "${dataSource.username}",
-            "password": "${dataSource.password}",
+            "connectionUrl": "${database.url}",
+            "driver": "${database.driver}",
+            "username": "${database.username}",
+            "password": "${database.password}",
             "createOnStart": true,
             "dropOnExit": true
         },
         "binaryStorage" : {
             "type"  : "database",
-            "driverClass" : "${dataSource.driverClassName}",
-            "url" : "${dataSource.url}",
-            "username" : "${dataSource.username}",
-            "password" : "${dataSource.password}"
+            "driverClass" : "${database.driver}",
+            "url" : "${database.url}",
+            "username" : "${database.username}",
+            "password" : "${database.password}"
         }
     },
     "workspaces" : {

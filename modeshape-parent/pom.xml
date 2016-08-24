@@ -99,12 +99,12 @@
               include a 'testResources' fragment in the 'build' section of the
               child project POM to say which files need to be filtered.
           -->
-        <dataSource.maximumConnectionsInPool>2</dataSource.maximumConnectionsInPool>
-        <dataSource.minimumConnectionsInPool>1</dataSource.minimumConnectionsInPool>
-        <dataSource.numberOfConnectionsToAcquireAsNeeded>1</dataSource.numberOfConnectionsToAcquireAsNeeded>
-        <dataSource.maximumSizeOfStatementCache>100</dataSource.maximumSizeOfStatementCache>
-        <dataSource.maximumConnectionIdleTimeInSeconds>10</dataSource.maximumConnectionIdleTimeInSeconds>
-        <dataSource.retryLimit>0</dataSource.retryLimit>
+        <database.maximumConnectionsInPool>2</database.maximumConnectionsInPool>
+        <database.minimumConnectionsInPool>1</database.minimumConnectionsInPool>
+        <database.numberOfConnectionsToAcquireAsNeeded>1</database.numberOfConnectionsToAcquireAsNeeded>
+        <database.maximumSizeOfStatementCache>100</database.maximumSizeOfStatementCache>
+        <database.maximumConnectionIdleTimeInSeconds>10</database.maximumConnectionIdleTimeInSeconds>
+        <database.retryLimit>0</database.retryLimit>
 
         <!--By default, we use whatever the underlying machine supports. However, certain sub-modules may change this -->
         <preferIpv4>false</preferIpv4>
@@ -187,12 +187,14 @@
         
         <version.com.h2>1.4.191</version.com.h2>
         <version.postgresql.9>9.2-1002.jdbc4</version.postgresql.9>
-        <version.postgresql.8>8.4-702.jdbc4</version.postgresql.8>
-        <version.mysql>5.1.38</version.mysql>
-        <version.com.oracle>11.2.0.4</version.com.oracle>
-        <version.com.microsoft.sqlserver>4.0.2206</version.com.microsoft.sqlserver>
+        <version.mysql>5.1.39</version.mysql>
+        <version.com.oracle>11.2.0.1.0</version.com.oracle>
         <version.com.amazonaws>1.11.24</version.com.amazonaws>
-       
+
+        <version.docker.postgresql>9.5.4</version.docker.postgresql>
+        <version.docker.mysql>5.7</version.docker.mysql>
+        <version.docker.oracle>16.04</version.docker.oracle>
+              
         <!--Properties which must be used when installing locally a server ZIP distribution -->
         <version.org.wildfly>10.0.0.Final</version.org.wildfly>
         <version.org.wildfly.core>2.0.10.Final</version.org.wildfly.core>
@@ -284,8 +286,6 @@
             Database profiles to specify which DBMS is used for tests.
             ###################################################################
         -->
-
-        <!-- The default test environment is H2 -->
         <profile>
             <id>default_dbms</id>
             <activation>
@@ -301,14 +301,13 @@
             </dependencies>
             <properties>
                 <database>h2</database>
-                <dataSource.driverClassName>org.h2.Driver</dataSource.driverClassName>
-                <dataSource.url>jdbc:h2:file:./target/db</dataSource.url>
-                <dataSource.username>sa</dataSource.username>
-                <dataSource.password/>
+                <database.driver>org.h2.Driver</database.driver>
+                <database.url>jdbc:h2:file:./target/db</database.url>
+                <database.username>sa</database.username>
+                <database.password/>
             </properties>
         </profile>
 
-        <!-- The MySQL5 test environment -->
         <profile>
             <id>mysql5</id>
             <activation>
@@ -317,77 +316,22 @@
                     <value>mysql5</value>
                 </property>
             </activation>
+            <properties>
+                <database>mysql5</database>
+                <database.name>mysql</database.name>
+                <database.username>mysql</database.username>
+                <database.password>mysql</database.password>
+                <database.driver>com.mysql.jdbc.Driver</database.driver>
+                <database.url>jdbc:mysql://${docker.host.address}:3306/${database.name}?autoReconnect=true&amp;useSSL=false</database.url>
+                <docker.image>modeshape-mysql</docker.image>
+            </properties>
             <dependencies>
                 <dependency>
-                    <!--Must be JDBC 4 (Java 6) compliant-->
                     <groupId>mysql</groupId>
                     <artifactId>mysql-connector-java</artifactId>
                     <version>${version.mysql}</version>
-                    <scope>test</scope>
                 </dependency>
             </dependencies>
-            <properties>
-                <database>mysql5</database>
-                <dataSource.dialect>org.hibernate.dialect.MySQL5InnoDBDialect</dataSource.dialect>
-                <dataSource.driverClassName>com.mysql.jdbc.Driver</dataSource.driverClassName>
-                <dataSource.url>jdbc:mysql://db01.mw.lab.eng.bos.redhat.com:3306/dballo02</dataSource.url>
-                <dataSource.username>dballo02</dataSource.username>
-                <dataSource.password>dballo02</dataSource.password>
-            </properties>
-        </profile>
-
-        <profile>
-            <id>mysql5_local_docker</id>
-            <activation>
-                <property>
-                    <name>database</name>
-                    <value>mysql5</value>
-                </property>
-            </activation>
-            <dependencies>
-                <dependency>
-                    <!--Must be JDBC 4 (Java 6) compliant-->
-                    <groupId>mysql</groupId>
-                    <artifactId>mysql-connector-java</artifactId>
-                    <version>${version.mysql}</version>
-                    <scope>test</scope>
-                </dependency>
-            </dependencies>
-            <properties>
-                <database>mysql5</database>
-                <dataSource.dialect>org.hibernate.dialect.MySQL5InnoDBDialect</dataSource.dialect>
-                <dataSource.driverClassName>com.mysql.jdbc.Driver</dataSource.driverClassName>
-                <dataSource.url>jdbc:mysql://192.168.99.100:3306/mysql?autoReconnect=true&amp;useSSL=false</dataSource.url>
-                <dataSource.username>root</dataSource.username>
-                <dataSource.password>mysql</dataSource.password>
-            </properties>
-        </profile>
-
-        <!-- The PostgreSQL test environment -->
-        <profile>
-            <id>postgresql8</id>
-            <activation>
-                <property>
-                    <name>database</name>
-                    <value>postgresql8</value>
-                </property>
-            </activation>
-            <dependencies>
-                <dependency>
-                    <!--Must be JDBC 4 (Java 6) compliant-->
-                    <groupId>postgresql</groupId>
-                    <artifactId>postgresql</artifactId>
-                    <version>${version.postgresql.8}</version>
-                    <scope>test</scope>
-                </dependency>
-            </dependencies>
-            <properties>
-                <database>postgresql8</database>
-                <dataSource.driverClassName>org.postgresql.Driver</dataSource.driverClassName>
-                <dataSource.url>jdbc:postgresql://postgresql04.mw.lab.eng.bos.redhat.com:5432/dballo01</dataSource.url>
-                <dataSource.username>dballo01</dataSource.username>
-                <dataSource.password>dballo01</dataSource.password>
-            </properties>
         </profile>
 
         <profile>
@@ -398,80 +342,25 @@
                     <value>postgresql9</value>
                 </property>
             </activation>
-            <dependencies>
-                <dependency>
-                    <!--Must be JDBC 4 (Java 6) compliant-->
-                    <groupId>postgresql</groupId>
-                    <artifactId>postgresql</artifactId>
-                    <version>${version.postgresql.9}</version>
-                    <scope>test</scope>
-                </dependency>
-            </dependencies>
             <properties>
                 <database>postgresq9</database>
-                <dataSource.driverClassName>org.postgresql.Driver</dataSource.driverClassName>
-                <dataSource.url>jdbc:postgresql://db14.mw.lab.eng.bos.redhat.com:5432/dballo04</dataSource.url>
-                <dataSource.username>dballo04</dataSource.username>
-                <dataSource.password>dballo04</dataSource.password>
+                <database.name>postgres</database.name>
+                <database.username>postgres</database.username>
+                <database.password>postgres</database.password>
+                <database.driver>org.postgresql.Driver</database.driver>
+                <database.url>jdbc:postgresql://${docker.host.address}/${database.name}</database.url>
+                <docker.image>modeshape-postgres</docker.image>
             </properties>
-        </profile>
-
-        <profile>
-            <id>postgresql9_local_docker</id>
-            <activation>
-                <property>
-                    <name>database</name>
-                    <value>postgresql9</value>
-                </property>
-            </activation>
             <dependencies>
                 <dependency>
                     <!--Must be JDBC 4 (Java 6) compliant-->
                     <groupId>postgresql</groupId>
                     <artifactId>postgresql</artifactId>
                     <version>${version.postgresql.9}</version>
-                    <scope>test</scope>
                 </dependency>
             </dependencies>
-            <properties>
-                <database>postgresql</database>
-                <dataSource.dialect>org.hibernate.dialect.PostgreSQLDialect</dataSource.dialect>
-                <dataSource.driverClassName>org.postgresql.Driver</dataSource.driverClassName>
-                <dataSource.url>jdbc:postgresql://192.168.99.100:5432/postgres</dataSource.url>
-                <dataSource.username>postgres</dataSource.username>
-                <dataSource.password>postgres</dataSource.password>
-            </properties>
         </profile>
 
-        <!-- The Oracle10g test environment -->
-        <profile>
-            <id>oracle10g</id>
-            <activation>
-                <property>
-                    <name>database</name>
-                    <value>oracle10g</value>
-                </property>
-            </activation>
-            <dependencies>
-                <dependency>
-                    <!--Must be JDBC 4 (Java 6) compliant-->
-                    <groupId>com.oracle</groupId>
-                    <artifactId>ojdbc6</artifactId>
-                    <version>${version.com.oracle}</version>
-                    <scope>test</scope>
-                </dependency>
-            </dependencies>
-            <properties>
-                <database>oracle10g</database>
-                <dataSource.dialect>org.hibernate.dialect.Oracle10gDialect</dataSource.dialect>
-                <dataSource.driverClassName>oracle.jdbc.driver.OracleDriver</dataSource.driverClassName>
-                <dataSource.url>jdbc:oracle:thin:@vmg05.mw.lab.eng.bos.redhat.com:1521:qaora10</dataSource.url>
-                <dataSource.username>dballo03</dataSource.username>
-                <dataSource.password>dballo03</dataSource.password>
-            </properties>
-        </profile>
-
-        <!-- The Oracle11g test environment -->
         <profile>
             <id>oracle11g</id>
             <activation>
@@ -480,80 +369,21 @@
                     <value>oracle11g</value>
                 </property>
             </activation>
+            <properties>
+                <database>oracle11g</database>
+                <database.username>system</database.username>
+                <database.password>oracle</database.password>
+                <database.driver>oracle.jdbc.OracleDriver</database.driver>
+                <database.url>jdbc:oracle:thin:@${docker.host.address}:49161:xe</database.url>
+                <docker.image>modeshape-oracle</docker.image>
+            </properties>
             <dependencies>
                 <dependency>
-                    <!--Must be JDBC 4 (Java 6) compliant-->
                     <groupId>com.oracle</groupId>
                     <artifactId>ojdbc6</artifactId>
                     <version>${version.com.oracle}</version>
-                    <scope>test</scope>
                 </dependency>
             </dependencies>
-            <properties>
-                <database>oracle11g</database>
-                <dataSource.driverClassName>oracle.jdbc.driver.OracleDriver</dataSource.driverClassName>
-                <dataSource.url>jdbc:oracle:thin:@db04.mw.lab.eng.bos.redhat.com:1521:qaora11</dataSource.url>
-                <dataSource.username>DBALLO02</dataSource.username>
-                <dataSource.password>DBALLO02</dataSource.password>
-            </properties>
-        </profile>  
-        <!-- 
-            Oracle 11g docker profile from https://github.com/wnameless/docker-oracle-xe-11g
-        -->
-        <profile>
-            <id>oracle11g_local_docker</id>
-            <activation>
-                <property>
-                    <name>database</name>
-                    <value>oracle11g</value>
-                </property>
-            </activation>
-            <dependencies>
-                <dependency>
-                    <!--Must be JDBC 4 (Java 6) compliant-->
-                    <groupId>com.oracle</groupId>
-                    <artifactId>ojdbc6</artifactId>
-                    <version>${version.com.oracle}</version>
-                    <scope>test</scope>
-                </dependency>
-            </dependencies>
-            <properties>
-                <database>oracle11g</database>
-                <dataSource.driverClassName>oracle.jdbc.OracleDriver</dataSource.driverClassName>
-                <dataSource.url>jdbc:oracle:thin:@192.168.99.100:49161:xe</dataSource.url>
-                <dataSource.username>system</dataSource.username>
-                <dataSource.password>oracle</dataSource.password>
-            </properties>
-        </profile>
-
-        <!-- The SQLServer2008 (MS JDBC) test environment -->
-        <profile>
-            <id>mssql2008</id>
-            <activation>
-                <property>
-                    <name>database</name>
-                    <value>mssql2008</value>
-                </property>
-            </activation>
-            <dependencies>
-                <dependency>
-                    <!--Must be JDBC 4 (Java 6) compliant-->
-                    <groupId>com.microsoft.sqlserver</groupId>
-                    <artifactId>msjdbc</artifactId>
-                    <version>${version.com.microsoft.sqlserver}</version>
-                    <classifier>4</classifier>
-                    <scope>test</scope>
-                </dependency>
-            </dependencies>
-            <properties>
-                <database>mssql2008</database>
-                <metadata.collectorClassName>org.modeshape.connector.meta.jdbc.SqlServerMetadataCollector</metadata.collectorClassName>
-                <dataSource.dialect>org.hibernate.dialect.SQLServerDialect</dataSource.dialect>
-                <dataSource.driverClassName>com.microsoft.sqlserver.jdbc.SQLServerDriver</dataSource.driverClassName>
-                <dataSource.url>jdbc:sqlserver://mssql01.mw.lab.eng.bos.redhat.com:1433;DatabaseName=dballo00</dataSource.url>
-                <dataSource.username>dballo00</dataSource.username>
-                <dataSource.password>dballo00</dataSource.password>
-            </properties>
         </profile>
 
         <!--These profiles must have the same ID as the ones from the root pom-->
@@ -698,6 +528,92 @@
                     <groupId>org.wildfly.plugins</groupId>
                     <artifactId>wildfly-maven-plugin</artifactId>
                     <version>${version.org.wildfly.plugings.wildfly-maven-plugin}</version>
+                </plugin>
+                
+                <plugin>
+                    <groupId>io.fabric8</groupId>
+                    <artifactId>docker-maven-plugin</artifactId>
+                    <version>0.14.1</version>
+                    <configuration>
+                        <watchInterval>500</watchInterval>
+                        <logDate>default</logDate>
+                        <verbose>true</verbose>
+                        <autoPull>always</autoPull>
+                        <images>
+                            <image>
+                                <name>postgres:${version.docker.postgresql}</name>
+                                <alias>modeshape-postgres</alias>
+                                <run>
+                                    <namingStrategy>alias</namingStrategy>
+                                    <env>
+                                        <POSTGRES_DB>${database.name}</POSTGRES_DB>
+                                        <POSTGRES_USER>${database.username}</POSTGRES_USER>
+                                        <POSTGRES_PASSWORD>${database.password}</POSTGRES_PASSWORD>
+                                    </env>
+                                    <ports>
+                                        <port>5432:5432</port>
+                                    </ports>
+                                    <log>
+                                        <prefix>postgress</prefix>
+                                        <enabled>true</enabled>
+                                        <color>yellow</color>
+                                    </log>
+                                    <wait>
+                                        <log>PostgreSQL init process complete; ready for start up.</log>
+                                        <time>120000</time>
+                                    </wait>
+                                </run>
+                            </image>
+                            <image>
+                                <name>mysql/mysql-server:${version.docker.mysql}</name>
+                                <alias>modeshape-mysql</alias>
+                                <run>
+                                    <namingStrategy>alias</namingStrategy>
+                                    <env>
+                                        <MYSQL_ROOT_PASSWORD>modeshape</MYSQL_ROOT_PASSWORD>
+                                        <MYSQL_DATABASE>${database.name}</MYSQL_DATABASE>
+                                        <MYSQL_USER>${database.username}</MYSQL_USER>
+                                        <MYSQL_PASSWORD>${database.password}</MYSQL_PASSWORD>
+                                    </env>
+                                    <ports>
+                                        <port>3306:3306</port>
+                                    </ports>
+                                    <log>
+                                        <prefix>mysql</prefix>
+                                        <enabled>true</enabled>
+                                        <color>yellow</color>
+                                    </log>
+                                    <wait>
+                                        <log>MySQL init process done. Ready for start up.</log>
+                                        <time>120000</time>
+                                    </wait>
+                                </run>
+                            </image>
+                            <image>
+                                <name>wnameless/oracle-xe-11g:${version.docker.oracle}</name>
+                                <alias>modeshape-oracle</alias>
+                                <run>
+                                    <namingStrategy>alias</namingStrategy>
+                                    <env>
+                                        <ORACLE_ALLOW_REMOTE>true</ORACLE_ALLOW_REMOTE>
+                                    </env>
+                                    <ports>
+                                        <port>49160:22</port>
+                                        <port>49161:1521</port>
+                                    </ports>
+                                    <log>
+                                        <prefix>oracle</prefix>
+                                        <enabled>true</enabled>
+                                        <color>yellow</color>
+                                    </log>
+                                    <wait>
+                                        <log>/usr/sbin/startup.sh: ignoring /docker-entrypoint-initdb.d/*</log>
+                                        <time>300000</time> 
+                                    </wait>
+                                </run>
+                            </image>
+                        </images>
+                    </configuration>
                 </plugin>
             </plugins>
         </pluginManagement>
