@@ -194,19 +194,19 @@
                 <activeByDefault>true</activeByDefault>
             </activation>
             <properties>
-                <database.name>postgres</database.name>
-                <database.username>postgres</database.username>
-                <database.password>postgres</database.password>
-                <database.driver>org.postgresql.Driver</database.driver>
-                <database.url>jdbc:postgresql://${docker.host.address}/${database.name}</database.url>
-                <docker.image>modeshape-postgres</docker.image>
+                <database>mysql5</database>
+                <database.name>mysql</database.name>
+                <database.username>mysql</database.username>
+                <database.password>mysql</database.password>
+                <database.driver>com.mysql.jdbc.Driver</database.driver>
+                <database.url>jdbc:mysql://${docker.host.address}:3306/${database.name}?autoReconnect=true&amp;useSSL=false</database.url>
+                <docker.image>modeshape-mysql</docker.image>
             </properties>
             <dependencies>
                 <dependency>
-                    <!--Must be JDBC 4 (Java 6) compliant-->
-                    <groupId>postgresql</groupId>
-                    <artifactId>postgresql</artifactId>
-                    <version>${version.postgresql.9}</version>
+                    <groupId>mysql</groupId>
+                    <artifactId>mysql-connector-java</artifactId>
+                    <version>${version.mysql}</version>
                 </dependency>
             </dependencies>
         </profile>
@@ -215,7 +215,7 @@
             for this module which runs PostgreSQL
          -->
         <profile>
-            <id>mysql5</id>
+            <id>postgresql9</id>
         </profile>
         <profile>
             <id>oracle11g</id>
@@ -232,7 +232,7 @@
                 <postgres.database.username>ms_user</postgres.database.username>
                 <postgres.database.password>ms_password</postgres.database.password>
                 <postgres.database.driver>org.postgresql.Driver</postgres.database.driver>
-                <postgres.database.url>jdbc:postgresql://${docker.host.address}/${postgres.database.name}</postgres.database.url>
+                <postgres.database.url>jdbc:postgresql://${docker.host.address}:5432/${postgres.database.name}</postgres.database.url>
 
                 <mysql.database.name>modeshape_db</mysql.database.name>
                 <mysql.database.username>ms_user</mysql.database.username>
