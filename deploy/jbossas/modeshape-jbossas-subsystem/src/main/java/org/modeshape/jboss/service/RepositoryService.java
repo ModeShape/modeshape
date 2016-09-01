@@ -118,7 +118,7 @@ public class RepositoryService implements Service<JcrRepository>, Environment {
                                                         try {
                                                             return moduleLoader().loadModule(moduleId).getClassLoader();
                                                         } catch (ModuleLoadException e) {
-                                                            LOG.warnv(
+                                                            LOG.warnv(e,
                                                                     "Cannot load module from classpath entry with identifier: {0}",
                                                                     moduleId);
                                                             return null;

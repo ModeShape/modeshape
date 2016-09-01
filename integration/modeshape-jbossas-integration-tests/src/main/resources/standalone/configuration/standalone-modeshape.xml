@@ -503,6 +503,12 @@
             </repository>
             <repository name="transient" anonymous-roles="admin" >
                 <transient-binary-storage min-string-size="100" mime-type-detection="none"/>
+            </repository> 
+            <repository name="customBinaryStorage" anonymous-roles="admin" >
+                <custom-binary-storage min-string-size="100" 
+                                       mime-type-detection="none" 
+                                       classname="org.modeshape.test.integration.CustomTransientBinaryStore"
+                                       module="org.modeshape.test.integration"/>
             </repository>
             <repository name="repo-clustered1"
                         anonymous-roles="admin"

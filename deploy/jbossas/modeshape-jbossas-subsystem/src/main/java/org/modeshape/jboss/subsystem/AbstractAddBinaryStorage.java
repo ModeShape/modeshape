@@ -20,6 +20,7 @@ import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.dmr.ModelNode;
+import org.jboss.logging.Logger;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
@@ -31,8 +32,11 @@ import org.modeshape.schematic.Schematic;
 import org.modeshape.schematic.document.EditableDocument;
 
 public abstract class AbstractAddBinaryStorage extends AbstractAddStepHandler {
+    
+    protected Logger logger;
 
     protected AbstractAddBinaryStorage() {
+        logger = Logger.getLogger(getClass());
     }
 
     static void populate( ModelNode operation,

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module xmlns="urn:jboss:module:1.3" name="org.modeshape.test.integration">
+    <resources>
+        <resource-root path="."/>
+    </resources>
+
+    <dependencies>
+        <module name="org.modeshape"/>
+        
+        <!-- For logging ... -->
+        <module name="org.jboss.logging"/>
+    </dependencies>
+</module>
