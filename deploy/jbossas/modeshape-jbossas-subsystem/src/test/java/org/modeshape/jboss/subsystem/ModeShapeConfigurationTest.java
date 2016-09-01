@@ -129,6 +129,11 @@ public class ModeShapeConfigurationTest extends AbstractSubsystemBaseTest {
         standardSubsystemTest("modeshape-s3-binary-storage.xml");
     }
 
+    @Test
+    public void testConfigurationWithCustomBinaryStorage() throws Exception {
+        standardSubsystemTest("modeshape-custom-binary-storage.xml");
+    }
+
     @Test(expected = XMLStreamException.class)
     public void shouldValidateFileBinaryStoreAttributesAgainstSchema() throws Exception {
         standardSubsystemTest("modeshape-invalid-file-binary-storage.xml");

@@ -20,6 +20,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import javax.annotation.Resource;
@@ -67,6 +68,9 @@ public class PreconfiguredRepositoryIntegrationTest {
 
     @Resource( mappedName = "java:/jcr/transient" )
     private JcrRepository transientRepository;
+    
+    @Resource( mappedName = "java:/jcr/customBinaryStorage" )
+    private JcrRepository customBinaryStorageRepository;
 
     @Deployment
     public static WebArchive createDeployment() {
@@ -179,15 +183,27 @@ public class PreconfiguredRepositoryIntegrationTest {
     @Test
     @FixFor( "MODE-2512" )
     public void shouldEnableTransientBinaryStore() throws Exception {
-        Session session = transientRepository.login();
-        String value = "test string";
-        ByteArrayInputStream bis = new ByteArrayInputStream(value.getBytes());
-        JcrTools tools = new JcrTools();
-        tools.uploadFile(session, "/root/temp_file", bis);
-        session.save();
-        
-        String actualValue = IoUtil.read(session.getNode("/root/temp_file/jcr:content").getProperty("jcr:data").getBinary().getStream());
-        assertEquals(value, actualValue);
-        session.logout();                
+        uploadFileAndAssertBinary(transientRepository.login());                
+    }
+    
+    @Test
+    @FixFor("MODE-2626")
+    public void shouldEnableCustomBinaryStore() throws Exception {
+        uploadFileAndAssertBinary(customBinaryStorageRepository.login());
+    }
+    
+    private void uploadFileAndAssertBinary(Session session) throws RepositoryException, IOException {
+        try {
+            String value = "test string";
+            ByteArrayInputStream bis = new ByteArrayInputStream(value.getBytes());
+            JcrTools tools = new JcrTools();
+            tools.uploadFile(session, "/root/temp_file", bis);
+            session.save();
+            
+            String actualValue = IoUtil.read(session.getNode("/root/temp_file/jcr:content").getProperty("jcr:data").getBinary().getStream());
+            assertEquals(value, actualValue);
+        } finally {
+            session.logout();
+        }
     }
 }

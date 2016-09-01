@@ -313,6 +313,26 @@
                         </configuration>
                     </execution>  
                     <execution>
+                        <id>copy-test-module-classes</id>
+                        <phase>process-test-classes</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${project.build.directory}/wildfly-${version.org.wildfly}/modules/org/modeshape/test/integration/main</outputDirectory>
+                            <overwrite>true</overwrite>
+                            <resources>
+                                <resource>
+                                    <directory>${project.build.outputDirectory}</directory>
+                                    <filtering>false</filtering>
+                                    <includes>
+                                        <include>**/*BinaryStore.class</include>
+                                    </includes>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                    <execution>
                         <id>copy-es-module</id>
                         <phase>process-test-classes</phase>
                         <goals>

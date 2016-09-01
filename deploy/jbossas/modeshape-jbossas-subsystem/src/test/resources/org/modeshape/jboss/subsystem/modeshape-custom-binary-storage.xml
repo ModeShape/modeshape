@@ -1,0 +1,6 @@
+<subsystem xmlns="urn:jboss:domain:modeshape:3.0">
+  <repository name="sample">
+    <custom-binary-storage mime-type-detection="content" min-string-size="10" min-value-size="4096"
+                       classname="org.modeshape.test.SomeStore" module="org.modeshape.test"/>
+  </repository>
+</subsystem>
