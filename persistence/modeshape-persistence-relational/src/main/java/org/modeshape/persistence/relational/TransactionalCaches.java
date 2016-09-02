@@ -67,6 +67,9 @@ public final class TransactionalCaches {
     }
     
     protected void putForReading(String key, Document doc) {
+        if (!TransactionsHolder.hasActiveTransaction()) {
+            return;
+        }
         cacheForTransaction().putForReading(key, doc);    
     }
 
@@ -100,10 +103,16 @@ public final class TransactionalCaches {
     }
     
     protected void putNew(String key) {
+        if (!TransactionsHolder.hasActiveTransaction()) {
+            return;
+        }
         cacheForTransaction().putNew(key);
     }
 
     protected void putNew(Collection<String> keys) {
+        if (!TransactionsHolder.hasActiveTransaction()) {
+            return;
+        }
         cacheForTransaction().putNew(keys);
     }
     

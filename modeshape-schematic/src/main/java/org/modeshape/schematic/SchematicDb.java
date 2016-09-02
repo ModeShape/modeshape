@@ -69,8 +69,8 @@ public interface SchematicDb extends TransactionListener, Lifecycle, Lockable {
      * Loads a set of documents from the DB returning the corresponding schematic entries.
      * 
      * <p>
-     * If this method is called within an existing transaction, it should <b>not take into account</b> the transient transactional 
-     * context (i.e. any local but not yet committed changes) and should always return the latest persisted information.
+     * If this method is called within an existing transaction, it should <b>take into account</b> the transient transactional 
+     * context (i.e. any local but not yet committed changes) and either use that (if it exists) or the persisted information.
      * </p>
      * 
      * @param keys an {@link Collection} of keys; never {@code null}
@@ -184,7 +184,7 @@ public interface SchematicDb extends TransactionListener, Lifecycle, Lockable {
      */
     @RequiresTransaction
     default void putEntry(Document entryDocument) {
-        SchematicEntry entry = () -> entryDocument;
+        SchematicEntry entry = SchematicEntry.fromDocument(entryDocument);
         put(entry.id(), entry);
     }
 }

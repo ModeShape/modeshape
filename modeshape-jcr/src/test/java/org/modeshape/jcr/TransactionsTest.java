@@ -19,6 +19,7 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -39,6 +40,7 @@ import javax.jcr.NodeIterator;
 import javax.jcr.PathNotFoundException;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
+import javax.jcr.lock.LockManager;
 import javax.jcr.query.Query;
 import javax.jcr.query.QueryManager;
 import javax.jcr.query.QueryResult;
@@ -607,6 +609,23 @@ public class TransactionsTest extends SingleUseAbstractTest {
         commitTransaction();
     }
     
+    @FixFor( "MODE-2623" )
+    @Test
+    public void shouldAllowLockUnlockWithinTransaction() throws Exception {
+        final String path = "/test";
+        Node parent = session.getRootNode().addNode("test");
+        parent.addMixin("mix:lockable");
+        session.save();
+        
+        startTransaction();
+        LockManager lockMgr = session.getWorkspace().getLockManager();
+        lockMgr.lock(path, true, true, Long.MAX_VALUE, session.getUserID());
+        lockMgr.unlock(path);
+        commitTransaction();
+        
+        assertFalse(session.getNode(path).isLocked());
+    }
+  
     private void insertAndQueryNodes(int i) {
         Session session = null;
 
