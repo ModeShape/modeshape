@@ -22,6 +22,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -173,26 +174,37 @@ public class RelationalDb implements SchematicDb {
 
     @Override
     public List<SchematicEntry> load(Collection<String> keys) {
-        boolean hasActiveTransaction = TransactionsHolder.hasActiveTransaction();
-        Function<Document, SchematicEntry> documentParser = document -> {
-            SchematicEntry entry = () -> document;
-            String id = entry.id();
-            if (hasActiveTransaction) {
-                //always cache it to mark it as "existing"
-                transactionalCaches.putForReading(id, document);
-                keys.remove(id);
+        List<SchematicEntry> alreadyChangedInTransaction = new ArrayList<>();
+        if (TransactionsHolder.hasActiveTransaction()) {
+            // there's an active transaction so we want to look at stuff which we've already written in this tx and if there 
+            // is anything, use it
+            for (Iterator<String> keysIterator = keys.iterator(); keysIterator.hasNext(); ) {
+                String key = keysIterator.next();
+                Document alreadyWrittenForTx = transactionalCaches.getForWriting(key);
+                if (alreadyWrittenForTx != null) {
+                    // remove the key so we don't load it again from the DB
+                    keysIterator.remove();
+                    alreadyChangedInTransaction.add(() -> alreadyWrittenForTx);
+                }
             }
+        }
+
+        Function<Document, SchematicEntry> documentParser = document -> {
+            SchematicEntry entry = SchematicEntry.fromDocument(document);
+            String id = entry.id();
+            //always cache it to mark it as "existing"
+            transactionalCaches.putForReading(id, document);
+            keys.remove(id);
             return entry;
         };
+
         List<SchematicEntry> results = runWithConnection(connection -> statements.load(connection, new ArrayList<>(keys),
                                                                                        documentParser),
                                                          true);
-        
-        if (hasActiveTransaction) {
-            // if there's an active transaction make sure we also mark all the keys which were not found in the DB as 'new'
-            // to prevent further DB lookups
-            transactionalCaches.putNew(keys);
-        }
+        results.addAll(alreadyChangedInTransaction);
+        // if there's an active transaction make sure we also mark all the keys which were not found in the DB as 'new'
+        // to prevent further DB lookups
+        transactionalCaches.putNew(keys);
         return results;
     }
 

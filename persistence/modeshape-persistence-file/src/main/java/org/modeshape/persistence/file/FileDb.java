@@ -102,13 +102,13 @@ public class FileDb implements SchematicDb {
 
     @Override
     public List<SchematicEntry> load( Collection<String> keys ) {
+        final TransactionStore.TransactionMap<String, Document> txContent = transactionalContent(false);
+        final TransactionStore.TransactionMap<String, Document> actualContent = txContent != null ? txContent : persistedContent; 
         return keys.stream()
-                   .map(persistedContent::get)
+                   .map(actualContent::get)
                    .filter(Objects::nonNull)
-                   .map(document -> {
-                       SchematicEntry schematicEntry = () -> document;
-                       return schematicEntry;
-                   }).collect(Collectors.toList()); 
+                   .map(SchematicEntry::fromDocument)
+                   .collect(Collectors.toList()); 
     }
 
     @Override

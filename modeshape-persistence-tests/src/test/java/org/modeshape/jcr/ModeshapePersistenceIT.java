@@ -44,6 +44,7 @@ import javax.jcr.Property;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.UnsupportedRepositoryOperationException;
+import javax.jcr.lock.LockManager;
 import javax.jcr.nodetype.ConstraintViolationException;
 import javax.jcr.nodetype.NodeType;
 import javax.jcr.nodetype.NodeTypeManager;
@@ -62,6 +63,7 @@ import javax.transaction.TransactionManager;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.modeshape.common.FixFor;
 import org.modeshape.common.util.FileUtil;
 import org.modeshape.common.util.IoUtil;
 import org.modeshape.connector.mock.MockConnector;
@@ -1965,6 +1967,103 @@ public class ModeshapePersistenceIT {
             Node output = session.getNode("/output");
             assertTrue(output.hasNode(TestSequencersHolder.DERIVED_NODE_NAME));
         }, false, true);
+    }
+  
+    @Test
+    @FixFor( "MODE-2607" )
+    public void shouldUpdateParentAndRemoveChildWithDifferentTransactions1() throws Exception {
+        startRunStop(repository -> {
+            final String parentPath = "/parent";
+            final String childPath = "/parent/child";
+    
+            TransactionManager txManager = repository.transactionManager();
+            //create parent and child node with some properties in a tx
+    
+            txManager.begin();
+            JcrSession session = repository.login();
+            Node parent = session.getRootNode().addNode("parent");
+            parent.setProperty("foo", "parent");
+            Node child = parent.addNode("child");
+            child.setProperty("foo", "child");
+            session.save();
+            txManager.commit();
+    
+            //edit the parent and remove the child in a new tx
+            txManager.begin();
+            session = repository.login();
+            parent = session.getNode(parentPath);
+            parent.setProperty("foo", "bar2");
+            session.save();
+    
+            child = session.getNode(childPath);
+            child.remove();
+            session.save();
+            txManager.commit();
+    
+            //check that the editing worked in a new tx
+            txManager.begin();
+            parent = session.getNode(parentPath);
+            assertEquals("bar2", parent.getProperty("foo").getString());
+            assertNoNode(session, "/parent/child");
+            txManager.commit();    
+        }, true, true);
+    }
+    
+    @Test
+    @FixFor( "MODE-2610" )
+    public void shouldUpdateParentAndRemoveChildWithDifferentTransactions2() throws Exception {
+        startRunStop(repository -> {
+            final String parentPath = "/parent";
+            final String childPath = "/parent/child";
+    
+            JcrSession session = repository.login();
+            TransactionManager txManager = repository.transactionManager();
+            txManager.begin();
+            Node parent = session.getRootNode().addNode("parent");
+            parent.setProperty("foo", "parent");
+            Node child = parent.addNode("child");
+            child.setProperty("foo", "child");
+            session.save();
+            txManager.commit();
+    
+            txManager.begin();
+            child = session.getNode(childPath);
+            parent = session.getNode(parentPath);
+            parent.setProperty("foo", "bar2");
+            session.save();
+            child.remove();
+            session.save();
+            txManager.commit();
+    
+            txManager.begin();
+            parent = session.getNode(parentPath);
+            assertEquals("bar2", parent.getProperty("foo").getString());
+            assertNoNode(session, "/parent/child");
+            session.logout();
+            txManager.commit();
+        }, true, true);
+    }
+    
+    @FixFor( "MODE-2623" )
+    @Test
+    public void shouldAllowLockUnlockWithinTransaction() throws Exception {
+        startRunStop(repository -> {
+            JcrSession session = repository.login();
+            TransactionManager txManager = repository.transactionManager();
+            
+            final String path = "/test";
+            Node parent = session.getRootNode().addNode("test");
+            parent.addMixin("mix:lockable");
+            session.save();
+    
+            txManager.begin();
+            LockManager lockMgr = session.getWorkspace().getLockManager();
+            lockMgr.lock(path, true, true, Long.MAX_VALUE, session.getUserID());
+            lockMgr.unlock(path);
+            txManager.commit();
+            
+            assertFalse(session.getNode(path).isLocked());
+        }, true, true);
     }
     
     protected void startRunStop(RepositoryOperation operation,

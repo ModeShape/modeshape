@@ -139,4 +139,15 @@ public interface SchematicEntry {
     static Document content(Document entryDocument) {
         return entryDocument.getDocument(FieldName.CONTENT);
     }
+    
+    /**
+     * Creates a new schematic entry instance based on the given document.
+     * 
+     * @param entryDocument a {@link Document} instance; may not be {@code null}
+     * @return a {@link SchematicEntry} instance which wraps the underlying document; never {@code null}
+     */
+    static SchematicEntry fromDocument(Document entryDocument) {
+        Objects.requireNonNull(entryDocument, "document cannot be null");
+        return () -> entryDocument;
+    }
 }
