@@ -44,6 +44,8 @@ import javax.jcr.lock.LockManager;
 import javax.jcr.query.Query;
 import javax.jcr.query.QueryManager;
 import javax.jcr.query.QueryResult;
+import javax.jcr.security.AccessControlManager;
+import javax.jcr.security.Privilege;
 import javax.jcr.version.VersionManager;
 import javax.transaction.HeuristicMixedException;
 import javax.transaction.HeuristicRollbackException;
@@ -57,6 +59,9 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
 import org.modeshape.common.util.FileUtil;
+import org.modeshape.jcr.security.SimplePrincipal;
+import org.modeshape.jcr.security.acl.JcrAccessControlList;
+import org.modeshape.jcr.security.acl.Privileges;
 
 public class TransactionsTest extends SingleUseAbstractTest {
 
@@ -624,6 +629,45 @@ public class TransactionsTest extends SingleUseAbstractTest {
         commitTransaction();
         
         assertFalse(session.getNode(path).isLocked());
+    }
+    
+    @FixFor("MODE-2627")
+    @Test
+    public void shouldUpdateACLOnMovedNode() throws Exception {
+        AccessControlManager acm = session.getAccessControlManager();
+        final String childPath2 = "/parent/child2";
+        final String childDestinationNode = "/parent/child/child2";
+        JcrAccessControlList acl = new JcrAccessControlList(childDestinationNode);
+        Privileges privileges = new Privileges(session);
+        Privilege[] privilegeArray = new Privilege[] {
+            privileges.forName(Privilege.JCR_READ), 
+            privileges.forName(Privilege.JCR_WRITE), 
+            privileges.forName(Privilege.JCR_READ_ACCESS_CONTROL)
+        };
+        acl.addAccessControlEntry(SimplePrincipal.newInstance("anonymous"), privilegeArray);
+        
+        startTransaction();
+        Node parent = session.getRootNode().addNode("parent");
+        parent.addNode("child");
+        parent.addNode("child2");
+        session.save();
+        commitTransaction();
+        
+        startTransaction();
+        session.getWorkspace().move(childPath2, childDestinationNode);
+        session.save();
+        commitTransaction();
+        
+        startTransaction();
+        acm.setPolicy(childDestinationNode, acl);
+        session.save();
+        Node movedNode = session.getNode(childDestinationNode);
+        assertEquals(childDestinationNode, movedNode.getPath());
+        assertEquals(1, acm.getPolicies(childDestinationNode).length);
+        assertEquals(acm.getPolicies(childDestinationNode)[0], acl);
+        assertNoNode(childPath2);
+        session.logout();
+        commitTransaction();
     }
   
     private void insertAndQueryNodes(int i) {
