@@ -123,7 +123,7 @@ public class WritableSessionCache extends AbstractSessionCache {
      * Both the following maps holds some state based on ModeShape TX IDs which are UUIDs so we need to make them static because
      * ModeShape transactions can be nested.
      */
-    private final static ConcurrentHashMap<String, Transactions.TransactionFunction> COMPLETE_FUNCTION_BY_TX_ID = new ConcurrentHashMap<>();
+    private final static ConcurrentHashMap<String, Map<String, Transactions.TransactionFunction>> COMPLETE_FUNCTION_BY_TX_AND_WS = new ConcurrentHashMap<>();
     private final static ConcurrentHashMap<String, Set<String>> LOCKED_KEYS_BY_TX_ID = new ConcurrentHashMap<>();
 
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
@@ -420,11 +420,13 @@ public class WritableSessionCache extends AbstractSessionCache {
                 Transaction modeshapeTx = transactions.currentTransaction();
                 if (modeshapeTx != null) {
                     String txId = modeshapeTx.id();
-                    COMPLETE_FUNCTION_BY_TX_ID.computeIfAbsent(txId, transactionId -> {
-                        Transactions.TransactionFunction completeFunction = () -> completeTransaction(transactionId);
+                    Map<String, Transactions.TransactionFunction> funcsByTxId = 
+                            COMPLETE_FUNCTION_BY_TX_AND_WS.computeIfAbsent(txId, transactionId -> new ConcurrentHashMap<>());
+                    funcsByTxId.computeIfAbsent(workspaceName(), wsName -> {
+                        Transactions.TransactionFunction completeFunction = () -> completeTransaction(txId, wsName);
                         modeshapeTx.uponCompletion(completeFunction);
                         return completeFunction;
-                    });
+                    });                     
                 }
             } else {
                 // There is no active transaction, so just use the shared workspace cache ...
@@ -440,19 +442,26 @@ public class WritableSessionCache extends AbstractSessionCache {
      * Signal that the transaction that was active and in which this session participated has completed and that this session
      * should no longer use a transaction-specific workspace cache.
      */
-    private void completeTransaction(final String txId) {
+    private void completeTransaction(final String txId, String wsName) {
         getWorkspace().clear();
         // reset the ws cache to the shared (global one)
         setWorkspaceCache(sharedWorkspaceCache());
         // and clear some tx specific data
-        LOCKED_KEYS_BY_TX_ID.remove(txId);
-        COMPLETE_FUNCTION_BY_TX_ID.remove(txId);
+        COMPLETE_FUNCTION_BY_TX_AND_WS.compute(txId, (transactionId, funcsByWsName) -> {
+            funcsByWsName.remove(wsName);
+            if (funcsByWsName.isEmpty()) {
+                // this is the last ws cache we are clearing for this tx so mark all the keys as unlocked
+                LOCKED_KEYS_BY_TX_ID.remove(txId);
+                // and remove the map 
+                return null;                
+            }
+            // there are other ws caches which need clearing for this tx, so just return the updated map
+            return funcsByWsName;
+        });  
     }
 
-    protected final void logChangesBeingSaved( Iterable<NodeKey> firstNodesInOrder,
-                                               Map<NodeKey, SessionNode> firstNodes,
-                                               Iterable<NodeKey> secondNodesInOrder,
-                                               Map<NodeKey, SessionNode> secondNodes ) {
+    protected final void logChangesBeingSaved(Iterable<NodeKey> firstNodesInOrder,
+                                              Iterable<NodeKey> secondNodesInOrder) {
         if (SAVE_LOGGER.isTraceEnabled()) {
             String txn = txns.currentTransactionId();
 
@@ -461,7 +470,7 @@ public class WritableSessionCache extends AbstractSessionCache {
             // // the counter back down to 1. (Any thread that got a save number above 100 will simply use it.)
             final int s = SAVE_NUMBER.getAndIncrement();
             if (s == MAX_SAVE_NUMBER) SAVE_NUMBER.set(1); // only the 100th
-            int changes = 0;
+            final AtomicInteger changes = new AtomicInteger(0);
 
             // There are at least some changes ...
             ExecutionContext context = getContext();
@@ -471,24 +480,16 @@ public class WritableSessionCache extends AbstractSessionCache {
             if (username == null) username = "<anonymous>";
             SAVE_LOGGER.trace("Save #{0} (part of transaction '{1}') by session {2}({3}) is persisting the following changes:",
                               s, txn, username, id);
-            for (NodeKey key : firstNodesInOrder) {
+            UnionIterator<NodeKey> unionIterator = new UnionIterator<>(firstNodesInOrder.iterator(), secondNodesInOrder);
+            unionIterator.forEachRemaining(key -> {
                 SessionNode node = changedNodes.get(key);
                 if (node != null && node.hasChanges()) {
                     SAVE_LOGGER.trace(" #{0} {1}", s, node.getString(registry));
-                    ++changes;
+                    changes.incrementAndGet();
                 }
-            }
-            if (secondNodesInOrder != null) {
-                for (NodeKey key : secondNodesInOrder) {
-                    SessionNode node = changedNodes.get(key);
-                    if (node != null && node.hasChanges()) {
-                        SAVE_LOGGER.trace(" #{0} {1}", s, node.getString(registry));
-                        ++changes;
-                    }
-                }
-            }
+            });
             SAVE_LOGGER.trace("Save #{0} (part of transaction '{1}') by session {2}({3}) completed persisting changes to {4} nodes",
-                              s, txn, username, id, changes);
+                              s, txn, username, id, changes.get());
         }
     }
 
@@ -539,7 +540,7 @@ public class WritableSessionCache extends AbstractSessionCache {
                     runAfterLocking(preSaveOperation);
 
                     // Now persist the changes ...
-                    logChangesBeingSaved(this.changedNodesInOrder, this.changedNodes, null, null);
+                    logChangesBeingSaved(this.changedNodesInOrder, null);
                     events = persistChanges(this.changedNodesInOrder);
 
                     // If there are any binary changes, add a function which will update the binary store
@@ -716,8 +717,8 @@ public class WritableSessionCache extends AbstractSessionCache {
                         runAfterLocking(preSaveOperation);
 
                         // Now persist the changes ...
-                        logChangesBeingSaved(this.changedNodesInOrder, this.changedNodes, that.changedNodesInOrder,
-                                             that.changedNodes);
+                        logChangesBeingSaved(this.changedNodesInOrder, that.changedNodesInOrder
+                                            );
                         events1 = persistChanges(this.changedNodesInOrder);
                         // If there are any binary changes, add a function which will update the binary store
                         if (events1.hasBinaryChanges()) {
@@ -868,7 +869,7 @@ public class WritableSessionCache extends AbstractSessionCache {
                         runAfterLocking(preSaveOperation, toBeSaved);
 
                         // Now persist the changes ...
-                        logChangesBeingSaved(savedNodesInOrder, this.changedNodes, that.changedNodesInOrder, that.changedNodes);
+                        logChangesBeingSaved(savedNodesInOrder, that.changedNodesInOrder);
                         events1 = persistChanges(savedNodesInOrder);
                         // If there are any binary changes, add a function which will update the binary store
                         if (events1.hasBinaryChanges()) {
