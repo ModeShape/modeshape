@@ -56,6 +56,9 @@
         <version.javax.jcr>2.0</version.javax.jcr>
         <version.org.wildfly>10.0.0.Final</version.org.wildfly>
         <version.org.jboss.spec.jboss-javaee-7.0>1.0.3.Final</version.org.jboss.spec.jboss-javaee-7.0>
+        <version.org.mongodb.mongo-java-driver>2.14.0</version.org.mongodb.mongo-java-driver>
+        <version.com.datastax.cassandra>2.0.0-rc2</version.com.datastax.cassandra>
+        <version.com.amazonaws>1.11.24</version.com.amazonaws>
     </properties>
 
     <!--
@@ -109,6 +112,48 @@
                 <version>${version.org.wildfly}</version>
                 <type>pom</type>
                 <scope>import</scope>
+            </dependency>
+
+            <!-- MongoDB binary store -->
+            <dependency>
+                <groupId>org.mongodb</groupId>
+                <artifactId>mongo-java-driver</artifactId>
+                <version>${version.org.mongodb.mongo-java-driver}</version>
+                <scope>provided</scope>
+            </dependency>
+
+            <!-- Cassandra binary storage -->
+            <dependency>
+                <groupId>com.datastax.cassandra</groupId>
+                <artifactId>cassandra-driver-core</artifactId>
+                <version>${version.com.datastax.cassandra}</version>
+                <scope>provided</scope>
+            </dependency>
+
+            <!-- Used for Amazon S3 binary storage -->
+            <dependency>
+                <groupId>com.amazonaws</groupId>
+                <artifactId>aws-java-sdk-core</artifactId>
+                <version>${version.com.amazonaws}</version>
+                <scope>provided</scope>
+                <exclusions>
+                    <exclusion>
+                        <groupId>commons-logging</groupId>
+                        <artifactId>commons-logging</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>com.amazonaws</groupId>
+                <artifactId>aws-java-sdk-s3</artifactId>
+                <version>${version.com.amazonaws}</version>
+                <scope>provided</scope>
+                <exclusions>
+                    <exclusion>
+                        <groupId>commons-logging</groupId>
+                        <artifactId>commons-logging</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
         </dependencies>
     </dependencyManagement>
