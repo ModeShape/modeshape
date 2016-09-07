@@ -62,6 +62,7 @@
         <version.org.jboss.jbossts.jta>5.2.16.Final</version.org.jboss.jbossts.jta>
         <version.org.mongodb.mongo-java-driver>2.14.0</version.org.mongodb.mongo-java-driver>
         <version.com.datastax.cassandra>2.0.0-rc2</version.com.datastax.cassandra>
+        <version.com.amazonaws>1.11.24</version.com.amazonaws>
         <version.org.apache.tika>1.12</version.org.apache.tika>
         <version.org.eclipse.equinox.common>3.3.0-v20070426</version.org.eclipse.equinox.common>
         <version.org.eclipse.jdt.core>3.3.0-v_771</version.org.eclipse.jdt.core>
@@ -512,6 +513,32 @@
                 <artifactId>cassandra-driver-core</artifactId>
                 <version>${version.com.datastax.cassandra}</version>
                 <scope>provided</scope>
+            </dependency>
+
+            <!-- Used for Amazon S3 binary storage -->
+            <dependency>
+                <groupId>com.amazonaws</groupId>
+                <artifactId>aws-java-sdk-core</artifactId>
+                <version>${version.com.amazonaws}</version>
+                <scope>provided</scope>
+                <exclusions>
+                    <exclusion>
+                        <groupId>commons-logging</groupId>
+                        <artifactId>commons-logging</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>com.amazonaws</groupId>
+                <artifactId>aws-java-sdk-s3</artifactId>
+                <version>${version.com.amazonaws}</version>
+                <scope>provided</scope>
+                <exclusions>
+                    <exclusion>
+                        <groupId>commons-logging</groupId>
+                        <artifactId>commons-logging</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             
             <!-- 

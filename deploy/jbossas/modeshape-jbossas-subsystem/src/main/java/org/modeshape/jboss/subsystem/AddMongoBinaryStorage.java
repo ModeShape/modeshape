@@ -37,17 +37,26 @@ public class AddMongoBinaryStorage extends AbstractAddBinaryStorage {
                                                     OperationContext context,
                                                     ModelNode model,
                                                     EditableDocument binaries ) throws OperationFailedException {
-        binaries.set(FieldName.TYPE, FieldValue.BINARY_STORAGE_TYPE_CASSANDRA);
+        binaries.set(FieldName.TYPE, FieldValue.BINARY_STORAGE_TYPE_MONGO);
+        
         String host = ModelAttributes.MONGO_HOST.resolveModelAttribute(context, model).asString();
         binaries.setString(FieldName.HOST, host);
+        
         int port = ModelAttributes.MONGO_PORT.resolveModelAttribute(context, model).asInt();
         binaries.setNumber(FieldName.PORT, port);
-        String database = ModelAttributes.MONGO_DATABASE.resolveModelAttribute(context, model).asString();
-        binaries.setString(FieldName.DATABASE, database);
-        String username = ModelAttributes.MONGO_USERNAME.resolveModelAttribute(context, model).asString();
-        binaries.setString(FieldName.USER_NAME, username);
-        String password = ModelAttributes.MONGO_PASSWORD.resolveModelAttribute(context, model).asString();
-        binaries.setString(FieldName.USER_PASSWORD, password);
+        
+        ModelNode databaseModel = ModelAttributes.MONGO_DATABASE.resolveModelAttribute(context, model);
+        if (databaseModel.isDefined()) {
+            binaries.setString(FieldName.DATABASE, databaseModel.asString());
+        }
+        ModelNode userModel = ModelAttributes.MONGO_USERNAME.resolveModelAttribute(context, model);
+        if (userModel.isDefined()) {
+            binaries.setString(FieldName.USER_NAME, userModel.asString());
+        }
+        ModelNode passwordModel = ModelAttributes.MONGO_PASSWORD.resolveModelAttribute(context, model);
+        if (passwordModel.isDefined()) {
+            binaries.setString(FieldName.USER_PASSWORD, passwordModel.asString());
+        }
     }
 
     @Override
