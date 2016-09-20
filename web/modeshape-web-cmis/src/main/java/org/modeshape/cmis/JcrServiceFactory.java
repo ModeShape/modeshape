@@ -106,7 +106,7 @@ public class JcrServiceFactory extends AbstractServiceFactory {
         for (String repositoryId : names) {
             try {
                 Repository repository = RepositoryManager.getRepository(repositoryId);
-                list.put(repositoryId, new JcrRepository(repository, pathManager, typeManager, typeHandlerManager));
+                list.put(repositoryId, new JcrMsRepository(repository, pathManager, typeManager, typeHandlerManager));
                 log.debug("--- loaded repository " + repositoryId);
             } catch (NoSuchRepositoryException e) {
                 // should never happen;

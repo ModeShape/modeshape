@@ -13,7 +13,12 @@
     <description>ModeShape Servlet WAR which allows integration testing of the CMIS library</description>
     <url>http://www.modeshape.org</url>
     <dependencies>
-        <!--  TESTING DEPENDENCIES -->
+        <dependency>
+            <groupId>org.apache.chemistry.opencmis</groupId>
+            <artifactId>chemistry-opencmis-server-bindings-war</artifactId>
+            <type>war</type>
+        </dependency>
+
         <dependency>
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-web-cmis</artifactId>
@@ -27,7 +32,7 @@
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
-            <scope>runtime</scope>
+            <scope>provided</scope>
         </dependency>
         <!-- H2 is the default DB -->
         <dependency>
@@ -50,12 +55,6 @@
             <artifactId>chemistry-opencmis-client-impl</artifactId>
             <scope>test</scope>
         </dependency>
-
-        <dependency>
-            <groupId>org.apache.chemistry.opencmis</groupId>
-            <artifactId>chemistry-opencmis-server-bindings</artifactId>
-        </dependency>
-
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
@@ -84,26 +83,6 @@
                     <archive>
                         <manifestFile>${project.build.testOutputDirectory}/META-INF/MANIFEST.MF</manifestFile>
                     </archive>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-war-plugin</artifactId>
-                <configuration>
-                    <overlays>
-                        <overlay>
-                            <!--
-                                The chemistry-opencmis-server-bindings-war war is a transitive dependency of chemistry-opencmis-server-jcr
-                                and contains some libraries (pre-packaged) which are conflicting with some of our explicit versions
-                                So we're excluding them from the WAR
-                            -->
-                            <groupId>org.apache.chemistry.opencmis</groupId>
-                            <artifactId>chemistry-opencmis-server-bindings-war</artifactId>
-                            <excludes>
-                                <exclude>WEB-INF/lib/jaxb-impl-2.1.11.jar</exclude>
-                            </excludes>
-                        </overlay>
-                    </overlays>
                 </configuration>
             </plugin>
             <plugin>

@@ -70,7 +70,7 @@ public class ModeShapeCmisClientTest {
         parameter.put(SessionParameter.REPOSITORY_ID, "cmis_repo:default");
 
         // create session
-        session = factory.createSession(parameter, null, new StandardAuthenticationProvider(), null);
+        session = factory.createSession(parameter, null, new StandardAuthenticationProvider(), null, null);
     }
 
     @Test

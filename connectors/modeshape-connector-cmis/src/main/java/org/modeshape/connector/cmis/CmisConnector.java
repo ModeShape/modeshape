@@ -72,7 +72,6 @@ import org.modeshape.jcr.value.binary.ExternalBinaryValue;
 import org.modeshape.schematic.document.Binary;
 import org.modeshape.schematic.document.Document;
 import org.modeshape.schematic.document.Document.Field;
-import org.w3c.dom.Element;
 
 /**
  * This connector exposes the content of a CMIS repository.
@@ -192,15 +191,7 @@ public class CmisConnector extends Connector {
         parameter.put(SessionParameter.REPOSITORY_ID, repositoryId);
 
         SessionFactoryImpl factory = SessionFactoryImpl.newInstance();
-        session = factory.createSession(parameter, null, new StandardAuthenticationProvider() {
-            private static final long serialVersionUID = 1L;
-
-            @Override
-            public Element getSOAPHeaders( Object portObject ) {
-                // Place headers here
-                return super.getSOAPHeaders(portObject);
-            }
-        }, null);
+        session = factory.createSession(parameter, null, new StandardAuthenticationProvider(), null, null);
 
         registry.registerNamespace(CmisLexicon.Namespace.PREFIX, CmisLexicon.Namespace.URI);
         importTypes(session.getTypeDescendants(null, Integer.MAX_VALUE, true), nodeTypeManager, registry);
