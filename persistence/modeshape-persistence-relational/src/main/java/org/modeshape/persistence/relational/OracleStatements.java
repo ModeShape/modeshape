@@ -17,22 +17,34 @@ package org.modeshape.persistence.relational;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Statements specialization for Oracle DB.
  * 
  * @author Horia Chiorean (hchiorea@redhat.com)
+ * @author Illia Khokholkov
+ * 
  * @since 5.0
  */
 public class OracleStatements extends DefaultStatements {
 
     private static final List<Integer> IGNORABLE_ERROR_CODES = Arrays.asList(942, 955);
     
+    /**
+     * The maximum number of parameters the {@code IN} clause can have.
+     */
+    private static final int MAX_IN_CLAUSE_PARAMS = 1_000;
+    
+    private final Map<String, String> statements;
+    
     protected OracleStatements( RelationalDbConfig config, Map<String, String> statements ) {
         super(config, statements);
+        this.statements = statements;
     }
 
     @Override
@@ -61,5 +73,22 @@ public class OracleStatements extends DefaultStatements {
             }
             throw e;
         }
+    }
+    
+    @Override
+    String formatStatementWithMultipleParams(String statement, List<String> ids) {
+        List<List<String>> partitions = new ArrayList<>();
+        int totalElements = ids.size();
+        
+        for (int i = 0; i < totalElements; i += MAX_IN_CLAUSE_PARAMS) {
+            int end = Math.min(totalElements, i + MAX_IN_CLAUSE_PARAMS);
+            partitions.add(ids.subList(i, end));
+        }
+        
+        String conditionalInClause = partitions.stream()
+                .map(partition -> super.formatStatementWithMultipleParams(statements.get(Statements.ID_IN_CLAUSE), partition))
+                .collect(Collectors.joining(" OR "));
+        
+        return statement.replaceAll("#", conditionalInClause);
     }
 }

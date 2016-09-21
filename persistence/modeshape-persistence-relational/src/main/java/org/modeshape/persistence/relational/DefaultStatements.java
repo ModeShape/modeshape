@@ -146,7 +146,7 @@ public class DefaultStatements implements Statements {
         }
     }
 
-    private String formatStatementWithMultipleParams(String statement, List<String> ids) {
+    String formatStatementWithMultipleParams(String statement, List<String> ids) {
         String params = ids.stream().map(id -> "?").collect(Collectors.joining(","));
         return statement.replaceAll("#", params);
     }
