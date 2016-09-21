@@ -174,7 +174,8 @@
         <version.com.drewnoakes.metadata-extractor>2.6.2</version.com.drewnoakes.metadata-extractor>
         <version.org.apache.lucene>6.0.0</version.org.apache.lucene>
         <version.io.humble>0.2.1</version.io.humble>
-        <version.org.apache.chemistry.opencmis>0.11.0</version.org.apache.chemistry.opencmis>
+        <version.org.apache.chemistry.opencmis>1.0.0</version.org.apache.chemistry.opencmis>
+        <version.org.apache.chemistry.opencmis.server.jcr>0.11.0</version.org.apache.chemistry.opencmis.server.jcr>
         <version.com.google.gwt>2.5.1</version.com.google.gwt>
         <version.com.smartgwt>2.4</version.com.smartgwt>
         <version.com.googlecode.gwtmosaic>0.4.0-rc2</version.com.googlecode.gwtmosaic>
@@ -1218,16 +1219,26 @@
             <dependency>
                 <groupId>org.apache.chemistry.opencmis</groupId>
                 <artifactId>chemistry-opencmis-server-jcr</artifactId>
-                <version>${version.org.apache.chemistry.opencmis}</version>
+                <version>${version.org.apache.chemistry.opencmis.server.jcr}</version>
                 <classifier>classes</classifier>
+                <!--
+                    This is an older version compared to the latest CMIS artifacts
+                -->
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.apache.chemistry.opencmis</groupId>
+                        <artifactId>chemistry-opencmis-server-bindings-war</artifactId> 
+                    </exclusion>
+                </exclusions>
             </dependency>
-
+           
             <dependency>
                 <groupId>org.apache.chemistry.opencmis</groupId>
-                <artifactId>chemistry-opencmis-server-bindings</artifactId>
+                <artifactId>chemistry-opencmis-server-bindings-war</artifactId>                
                 <version>${version.org.apache.chemistry.opencmis}</version>
+                <type>war</type>
             </dependency>
-
+            
             <dependency>
                 <groupId>org.apache.chemistry.opencmis</groupId>
                 <artifactId>chemistry-opencmis-client-bindings</artifactId>

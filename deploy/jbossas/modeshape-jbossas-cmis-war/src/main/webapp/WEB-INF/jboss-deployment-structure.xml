@@ -1,11 +1,6 @@
 <jboss-deployment-structure>
     <deployment>
         <dependencies>
-            <!--
-                We should use the SAAJ implementation that's available in the container
-                see https://bugzilla.redhat.com/show_bug.cgi?id=1148297
-            -->
-            <module name="com.sun.xml.messaging.saaj"/>
             <!-- 
                The following 2 dependencies are required for the WAR to run in Wildfly 9
             -->
