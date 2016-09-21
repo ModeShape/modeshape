@@ -33,6 +33,7 @@ import org.modeshape.jcr.Connectors;
 import org.modeshape.jcr.JcrI18n;
 import org.modeshape.jcr.cache.MutableCachedNode;
 import org.modeshape.jcr.cache.NodeKey;
+import org.modeshape.jcr.cache.SessionCache;
 import org.modeshape.jcr.cache.document.DocumentStore;
 import org.modeshape.jcr.cache.document.DocumentTranslator;
 import org.modeshape.jcr.cache.document.LocalDocumentStore;
@@ -366,14 +367,15 @@ public class FederatedDocumentStore implements DocumentStore {
     public String createExternalProjection( String projectedNodeKey,
                                             String sourceName,
                                             String externalPath,
-                                            String alias ) {
+                                            String alias,
+                                            SessionCache systemSession ) {
         String sourceKey = NodeKey.keyForSourceName(sourceName);
         Connector connector = connectors.getConnectorForSourceKey(sourceKey);
         if (connector != null) {
             String externalNodeId = connector.getDocumentId(externalPath);
             if (externalNodeId != null) {
                 String externalNodeKey = documentIdToNodeKeyString(sourceName, externalNodeId);
-                connectors.addProjection(externalNodeKey, projectedNodeKey, alias);
+                connectors.addProjection(externalNodeKey, projectedNodeKey, alias, systemSession);
                 return externalNodeKey;
             }
         }

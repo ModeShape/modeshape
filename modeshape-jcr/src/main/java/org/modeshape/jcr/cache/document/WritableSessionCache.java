@@ -570,15 +570,14 @@ public class WritableSessionCache extends AbstractSessionCache {
                 } catch (IllegalStateException err) {
                     // Not associated with a txn??
                     throw new SystemFailureException(err);
-                } catch (RollbackException err) {
+                } catch (RollbackException | HeuristicMixedException | HeuristicRollbackException err) {
                     // Couldn't be committed, but the txn is already rolled back ...
-                    return;
-                } catch (HeuristicMixedException err) {
-                    // Rollback has occurred ...
-                    return;
-                } catch (HeuristicRollbackException err) {
-                    // Rollback has occurred ...
-                    return;
+                    txn = null;
+                    if (err.getCause() != null) {
+                        throw err.getCause();
+                    } else {
+                        throw new SystemFailureException(err);
+                    }
                 } catch (SystemException err) {
                     // System failed unexpectedly ...
                     throw new SystemFailureException(err);
@@ -767,13 +766,15 @@ public class WritableSessionCache extends AbstractSessionCache {
                 } catch (IllegalStateException err) {
                     // Not associated with a txn??
                     throw new SystemFailureException(err);
-                } catch (RollbackException err) {
+                } catch (RollbackException | HeuristicMixedException | HeuristicRollbackException err) {
                     // Couldn't be committed, but the txn is already rolled back ...
-                    return;
-                } catch (HeuristicMixedException err) {
-                } catch (HeuristicRollbackException err) {
-                    // Rollback has occurred ...
-                    return;
+                    txn = null;
+                    if (err.getCause() != null) {
+                        throw err.getCause();
+                    } else {
+                        throw new SystemFailureException(err);
+                    }
+                    //throw new SystemFailureException(err);
                 } catch (SystemException err) {
                     // System failed unexpectedly ...
                     throw new SystemFailureException(err);
@@ -785,8 +786,8 @@ public class WritableSessionCache extends AbstractSessionCache {
 
         } catch (RuntimeException e) {
             throw e;
-        } catch (Exception e) {
-            throw new WrappedException(e);
+        } catch (Throwable t) {
+            throw new WrappedException(t);
         } finally {
             try {
                 thatLock.unlock();
@@ -913,13 +914,14 @@ public class WritableSessionCache extends AbstractSessionCache {
                 } catch (IllegalStateException err) {
                     // Not associated with a txn??
                     throw new SystemFailureException(err);
-                } catch (RollbackException err) {
+                } catch (RollbackException | HeuristicMixedException | HeuristicRollbackException err) {
                     // Couldn't be committed, but the txn is already rolled back ...
-                    return;
-                } catch (HeuristicMixedException err) {
-                } catch (HeuristicRollbackException err) {
-                    // Rollback has occurred ...
-                    return;
+                    txn = null;
+                    if (err.getCause() != null) {
+                        throw err.getCause();
+                    } else {
+                        throw new SystemFailureException(err);
+                    }
                 } catch (SystemException err) {
                     // System failed unexpectedly ...
                     throw new SystemFailureException(err);
@@ -931,8 +933,8 @@ public class WritableSessionCache extends AbstractSessionCache {
 
         } catch (RuntimeException e) {
             throw e;
-        } catch (Exception e) {
-            throw new WrappedException(e);
+        } catch (Throwable t) {
+            throw new WrappedException(t);
         } finally {
             try {
                 thatLock.unlock();
