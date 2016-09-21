@@ -1,0 +1,51 @@
+/*
+ * ModeShape (http://www.modeshape.org)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+ 
+//------------------------------------------------------------------------------
+// N A M E S P A C E S
+//------------------------------------------------------------------------------
+<jcr='http://www.jcp.org/jcr/1.0'>
+<nt='http://www.jcp.org/jcr/nt/1.0'>
+<mix='http://www.jcp.org/jcr/mix/1.0'>
+<audio='http://www.modeshape.org/audio/1.0'>
+
+
+//------------------------------------------------------------------------------
+// N O D E T Y P E S
+//------------------------------------------------------------------------------
+
+[audio:metadata] > nt:unstructured, mix:mimeType
+  - audio:formatName (string) mandatory
+    < 'mp3', 'mp4', 'ogg', 'flac', 'wma', 'real', 'wav'
+  - audio:bitrate (long)
+  - audio:sampleRate (long)
+  - audio:channels (string)
+  - audio:duration (double)
+  + audio:tag (audio:tag) = audio:tag
+
+[audio:tag] > nt:unstructured
+  - audio:title (string)
+  - audio:artist (string)
+  - audio:album (string)
+  - audio:year (string)
+  - audio:comment (string)
+  - audio:track (string)
+  - audio:genre (string)
+  + audio:artwork (audio:artwork)
+
+[audio:artwork] > nt:unstructured, mix:mimeType
+  - audio:artworkType (long)
+  - jcr:data (binary)
