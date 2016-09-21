@@ -1,13 +1,21 @@
 {
     "name" : "Garbage collecting repository",
     "workspaces" : {
-        "predefined" : ["ws1", "ws2"],
         "default" : "default",
         "allowCreation" : true
     },
+    "security" : {
+        "anonymous" : {
+            "roles" : ["readonly","readwrite","admin"],
+            "useOnFailedLogin" : true
+        },
+    },
     "garbageCollection" : {
-        "threadPool" : "modeshape-gc-pool",
-        "initialTime" : "04:01",
+        "initialTime" : "05:00",
         "intervalInHours" : 5,
+        "lockCleanup" : {
+            "lockCleanupInitialDelayInMinutes" : 0,
+            "lockCleanupIntervalInMinutes" : 1
+        }
     }
 }

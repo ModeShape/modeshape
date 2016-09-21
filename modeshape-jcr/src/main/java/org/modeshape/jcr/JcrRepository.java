@@ -1317,13 +1317,17 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 String threadPoolName = gcConfig.getThreadPoolName();
                 long gcInitialTimeInMillis = determineInitialDelay(gcConfig.getInitialTimeExpression());
                 long gcIntervalInMillis = gcConfig.getIntervalInMillis();
-             
+                
                 assert gcInitialTimeInMillis >= 0;
+                
+                long lockCleanupInitialDelayInMillis = gcConfig.getLockCleanup().getLockCleanupInitialDelayInMillis().orElse(gcInitialTimeInMillis);
+                long lockCleanupIntervalInMillis = gcConfig.getLockCleanup().getLockCleanupIntervalInMillis().orElse(gcIntervalInMillis);
+                
                 ScheduledExecutorService garbageCollectionService = this.context.getScheduledThreadPool(threadPoolName);
                 backgroundProcesses.add(garbageCollectionService.scheduleAtFixedRate(new LockGarbageCollectionTask(
                                                                                                                    JcrRepository.this),
-                                                                                     gcInitialTimeInMillis,
-                                                                                     gcIntervalInMillis,
+                                                                                     lockCleanupInitialDelayInMillis,
+                                                                                     lockCleanupIntervalInMillis,
                                                                                      TimeUnit.MILLISECONDS));
                 backgroundProcesses.add(garbageCollectionService.scheduleAtFixedRate(new BinaryValueGarbageCollectionTask(
                                                                                                                           JcrRepository.this),

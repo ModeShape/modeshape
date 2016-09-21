@@ -24,6 +24,8 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import java.util.EnumSet;
+import java.util.concurrent.TimeUnit;
+
 import org.modeshape.schematic.Schematic;
 import org.modeshape.schematic.document.Document;
 import org.junit.Before;
@@ -36,6 +38,7 @@ import org.modeshape.jcr.RepositoryConfiguration.DocumentOptimization;
 import org.modeshape.jcr.RepositoryConfiguration.FieldName;
 import org.modeshape.jcr.RepositoryConfiguration.Indexes;
 import org.modeshape.jcr.RepositoryConfiguration.JaasSecurity;
+import org.modeshape.jcr.RepositoryConfiguration.LockCleanup;
 import org.modeshape.jcr.RepositoryConfiguration.Security;
 import org.modeshape.jcr.api.index.IndexDefinition;
 import org.modeshape.jcr.api.index.IndexDefinition.IndexKind;
@@ -193,7 +196,18 @@ public class RepositoryConfigurationTest {
     public void shouldSuccessfullyValidateConfigurationWithGarbageCollection() {
         assertValid("config/repo-config-garbage-collection.json");
     }
-
+    
+    @Test
+    public void shouldSuccessfullyReadGarbageCollectionLockCleanupConfiguration() throws Exception {
+        RepositoryConfiguration repositoryConfiguration = RepositoryConfiguration.read(
+                "config/repo-config-garbage-collection.json");
+        
+        LockCleanup lockCleanup = repositoryConfiguration.getGarbageCollection().getLockCleanup();
+        
+        assertEquals(0, lockCleanup.getLockCleanupInitialDelayInMillis().get().longValue());
+        assertEquals(TimeUnit.MINUTES.toMillis(1), lockCleanup.getLockCleanupIntervalInMillis().get().longValue());
+    }
+    
     @Test
     public void shouldAlwaysReturnNonNullSecurityComponent() {
         RepositoryConfiguration config = new RepositoryConfiguration("repoName");
