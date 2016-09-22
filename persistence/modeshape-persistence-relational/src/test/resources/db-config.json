@@ -1,11 +1,11 @@
 {
-    // Used for testing the actual DB interaction, filtered by Maven based on the active profile
+    // Used for docker integration testing where the values for the properties are set as system properties
     "type": "db",
-    "connectionUrl": "${database.url}",
-    "poolSize" : 200,
-    "driver": "${database.driver}",
-    "username": "${database.username}",
-    "password": "${database.password}",
+    "connectionUrl": "${db.url}",
+    "poolSize" : 100,
+    "driver": "${db.driver}",
+    "username": "${db.username}",
+    "password": "${db.password}",
     "createOnStart": true,
     "dropOnExit": true
 }

@@ -59,10 +59,6 @@
             <plugin>
                 <artifactId>maven-failsafe-plugin</artifactId>
                 <version>${version.failsafe.plugin}</version>
-                <configuration>
-                    <encoding>UTF-8</encoding>
-                    <skip>${skipTests}</skip>
-                </configuration>
                 <executions>
                     <execution>
                         <goals>

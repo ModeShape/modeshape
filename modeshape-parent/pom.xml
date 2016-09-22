@@ -306,6 +306,7 @@
                 <database.url>jdbc:h2:file:./target/db</database.url>
                 <database.username>sa</database.username>
                 <database.password/>
+                <docker.image/>
             </properties>
         </profile>
 
@@ -614,6 +615,22 @@
                                 </run>
                             </image>
                         </images>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-failsafe-plugin</artifactId>
+                    <configuration>
+                        <skipTests>${skipITs}</skipTests>
+                        <encoding>UTF-8</encoding>
+                        <enableAssertions>true</enableAssertions>
+                        <argLine>-Xmx1524M ${debug.argline} -Xss1024k</argLine>
+                        <systemPropertyVariables>
+                            <db.driver>${database.driver}</db.driver>
+                            <db.url>${database.url}</db.url>
+                            <db.username>${database.username}</db.username>
+                            <db.password>${database.password}</db.password>
+                        </systemPropertyVariables>
                     </configuration>
                 </plugin>
             </plugins>

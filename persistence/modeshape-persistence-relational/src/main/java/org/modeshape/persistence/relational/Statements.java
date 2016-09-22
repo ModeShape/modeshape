@@ -44,6 +44,7 @@ public interface Statements {
     String REMOVE_ALL_CONTENT = "remove_all_content";
     String GET_MULTIPLE = "get_multiple";
     String LOCK_CONTENT = "lock_content";
+    String MULTIPLE_SELECTION = "multiple_selection_clause";
 
     /**
      * Create a new table.
