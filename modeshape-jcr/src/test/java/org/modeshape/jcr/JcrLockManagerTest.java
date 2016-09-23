@@ -18,7 +18,10 @@ package org.modeshape.jcr;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+
+import java.util.concurrent.TimeUnit;
 import javax.jcr.InvalidItemStateException;
+import javax.jcr.Node;
 import javax.jcr.Session;
 import javax.jcr.lock.Lock;
 import javax.jcr.lock.LockManager;
@@ -28,11 +31,11 @@ import org.modeshape.common.FixFor;
 
 /**
  * Unit test for {@link JcrLockManager}
- * 
+ *
  * @author Horia Chiorean (hchiorea@redhat.com)
  */
 public class JcrLockManagerTest extends SingleUseAbstractTest {
-
+    
     @Test
     @FixFor( "MODE-2047" )
     public void shouldNotAllowLockOnTransientNode() throws Exception {
@@ -46,7 +49,7 @@ public class JcrLockManagerTest extends SingleUseAbstractTest {
             // expected
         }
     }
-
+    
     @Test
     @FixFor( "MODE-2342" )
     public void lockTokensShouldBeRemovedFromSessionUponLogout() throws Exception {
@@ -55,11 +58,11 @@ public class JcrLockManagerTest extends SingleUseAbstractTest {
         testNode.addMixin("mix:lockable");
         session.save();
         final Lock lock = session.getWorkspace().getLockManager().lock(path,
-                false, false, Long.MAX_VALUE, session.getUserID());
+                                                                       false, false, Long.MAX_VALUE, session.getUserID());
         final String token = lock.getLockToken();
         Assert.assertNotNull(token);
         session.logout();
-
+        
         Session session2 = repository.login();
         final LockManager lockManager = session2.getWorkspace().getLockManager();
         lockManager.addLockToken(token);
@@ -68,14 +71,14 @@ public class JcrLockManagerTest extends SingleUseAbstractTest {
     
     @Test
     @FixFor( "MODE-2424" )
-    public void shouldAllowAddingMixinOnLockedNodeForLockOwner() throws  Exception {
+    public void shouldAllowAddingMixinOnLockedNodeForLockOwner() throws Exception {
         final AbstractJcrNode testNode = session.getRootNode().addNode("test");
         final String path = testNode.getPath();
         testNode.addMixin("mix:lockable");
         session.save();
         session.getWorkspace().getLockManager().lock(path, false, true, Long.MAX_VALUE, session.getUserID());
         
-        testNode.addMixin("mix:created");        
+        testNode.addMixin("mix:created");
         session.save();
     }
     
@@ -86,7 +89,7 @@ public class JcrLockManagerTest extends SingleUseAbstractTest {
         final String path = testNode.getPath();
         testNode.addMixin("mix:lockable");
         session.save();
-        final org.modeshape.jcr.RepositoryLockManager.Lock lock = (RepositoryLockManager.Lock) 
+        final org.modeshape.jcr.RepositoryLockManager.Lock lock = (RepositoryLockManager.Lock)
                 session.getWorkspace().getLockManager().lock(path, false, false, Long.MAX_VALUE, session.getUserID());
         Assert.assertNotNull(lock);
         session.logout();
@@ -106,5 +109,30 @@ public class JcrLockManagerTest extends SingleUseAbstractTest {
         // issue another refresh and verify the node is still unlocked
         lockManager.refreshFromSystem();
         assertFalse(session.getWorkspace().getLockManager().isLocked("/test"));
+    }
+    
+    @Test
+    @FixFor( "MODE-2633" )
+    public void shouldExpireOpenScopedLocks() throws Exception {
+        // Create a new lockable node
+        Node node = session.getRootNode().addNode("test");
+        node.addMixin("mix:lockable");
+        session.save();
+        
+        // Lock the node
+        JcrLockManager lockManager = session.getWorkspace().getLockManager();
+        lockManager.lock(node.getPath(), false, false, 1, null);
+        assertTrue(node.isLocked());
+        
+        // Wait enough time for the lock to be expired
+        Thread.sleep(TimeUnit.SECONDS.toMillis(2));
+        
+        // The old lock should still be there even though it's expired 
+        assertFalse(node.isLocked());
+        assertFalse(lockManager.getLock(node.getPath()).isLive());
+        
+        // Check that a new lock can be obtained
+        lockManager.lock(node.getPath(), false, false, 10, null);
+        assertTrue(node.isLocked());
     }
 }

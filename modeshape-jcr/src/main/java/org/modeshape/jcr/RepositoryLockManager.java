@@ -57,6 +57,7 @@ import org.modeshape.jcr.value.Path;
 import org.modeshape.jcr.value.PathFactory;
 import org.modeshape.jcr.value.Property;
 import org.modeshape.jcr.value.PropertyFactory;
+import org.modeshape.jcr.value.basic.ModeShapeDateTime;
 
 @ThreadSafe
 class RepositoryLockManager implements ChangeSetListener {
@@ -351,10 +352,17 @@ class RepositoryLockManager implements ChangeSetListener {
 
         ModeShapeLock existing = locksByNodeKey.putIfAbsent(nodeKey, lock);
         if (existing != null) {
-            NodeCache cache = session.cache();
-            CachedNode locked = cache.getNode(existing.getLockedNodeKey());
-            String lockedPath = session.stringFactory().create(locked.getPath(cache));
-            throw new LockException(JcrI18n.alreadyLocked.text(lockedPath));
+            if (!existing.isExpired()) {
+                throwAlreadyLocked(session, existing);
+            }
+            // there's an existing lock which has expired, so we have to unlock first
+            unlock(session, existing.lockedNodeKey);
+            // try adding the new lock
+            existing = locksByNodeKey.putIfAbsent(nodeKey, lock);
+            if (existing != null) {
+                // some other thread has already replaced the old value
+                throwAlreadyLocked(session, existing);
+            }
         }
 
         try {
@@ -389,7 +397,15 @@ class RepositoryLockManager implements ChangeSetListener {
         }
         return lock;
     }
-
+    
+    private ModeShapeLock throwAlreadyLocked(JcrSession session,
+                                             ModeShapeLock existing) throws LockException {
+        NodeCache cache = session.cache();
+        CachedNode locked = cache.getNode(existing.getLockedNodeKey());
+        String lockedPath = session.stringFactory().create(locked.getPath(cache));
+        throw new LockException(JcrI18n.alreadyLocked.text(lockedPath));
+    }
+    
     /**
      * Updates the underlying repository directly (i.e., outside the scope of the {@link Session}) to mark the token for the given
      * lock as being held (or not held) by some {@link Session}. Note that this method does not identify <i>which</i> (if any)
@@ -630,7 +646,12 @@ class RepositoryLockManager implements ChangeSetListener {
         }
 
         public boolean isLive() {
-            return isLocked(lockedNodeKey);
+            return isLocked(lockedNodeKey) && !isExpired();
+        }
+        
+        protected boolean isExpired() {
+            DateTime now = new ModeShapeDateTime(); 
+            return expiryTime.isBefore(now);
         }
 
         public NodeKey getLockKey() {
