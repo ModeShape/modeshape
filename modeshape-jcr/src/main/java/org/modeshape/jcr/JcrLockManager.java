@@ -153,32 +153,32 @@ class JcrLockManager implements LockManager {
 
     @Override
     public boolean isLocked( String absPath ) throws PathNotFoundException, RepositoryException {
-        return getLowestLockAlongPath(session.node(session.absolutePathFor(absPath))) != null;
+        return getLowestLockAlongPath(session.node(session.absolutePathFor(absPath)), true) != null;
     }
 
     public boolean isLocked( AbstractJcrNode node ) throws PathNotFoundException, RepositoryException {
-        return getLowestLockAlongPath(node) != null;
+        return getLowestLockAlongPath(node, true) != null;
     }
 
     @Override
     public Lock getLock( String absPath ) throws PathNotFoundException, LockException, AccessDeniedException, RepositoryException {
-        ModeShapeLock lock = getLowestLockAlongPath(session.node(session.absolutePathFor(absPath)));
+        ModeShapeLock lock = getLowestLockAlongPath(session.node(session.absolutePathFor(absPath)), false);
         if (lock != null) return lock.lockFor(session);
         throw new LockException(JcrI18n.notLocked.text(absPath));
     }
 
     public Lock getLock( AbstractJcrNode node ) throws LockException, AccessDeniedException, RepositoryException {
-        ModeShapeLock lock = getLowestLockAlongPath(node);
+        ModeShapeLock lock = getLowestLockAlongPath(node, false);
         if (lock != null) return lock.lockFor(session);
         throw new LockException(JcrI18n.notLocked.text(node.getPath()));
     }
 
     public Lock getLockIfExists( AbstractJcrNode node ) throws AccessDeniedException, RepositoryException {
-        ModeShapeLock lock = getLowestLockAlongPath(node);
+        ModeShapeLock lock = getLowestLockAlongPath(node, false);
         return lock == null ? null : lock.lockFor(session);
     }
 
-    public ModeShapeLock getLowestLockAlongPath( final AbstractJcrNode node )
+    private ModeShapeLock getLowestLockAlongPath(final AbstractJcrNode node, boolean skipExpiredLocks)
         throws PathNotFoundException, AccessDeniedException, RepositoryException {
         session.checkLive();
         if (!this.session.repository().lockingUsed()) {
@@ -192,9 +192,11 @@ class JcrLockManager implements LockManager {
         while (key != null) {
             ModeShapeLock lock = lockManager.findLockFor(key);
             if (lock != null && (lock.isDeep() || nodeKey.equals(lock.getLockedNodeKey()))) {
-                // There is a lock that applies to 'node', either because the lock is actually on 'node' or because
-                // an ancestor node is locked with a deep lock...
-                return lock;
+                if (!lock.isExpired() || !skipExpiredLocks) {
+                    // There is a lock that applies to 'node', either because the lock is actually on 'node' or because
+                    // an ancestor node is locked with a deep lock...
+                    return lock;
+                }
             }
             // Otherwise, get the parent, but use the cache directly ...
             CachedNode cachedNode = cache.getNode(key);
