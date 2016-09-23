@@ -142,24 +142,12 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
-                <configuration>
-                    <skipTests>${skipITs}</skipTests>
-                    <enableAssertions>true</enableAssertions>
-                </configuration>
                 <executions>
                     <execution>
                         <id>integration-test-postgres</id>
                         <goals>
                             <goal>integration-test</goal>
                         </goals>
-                        <configuration>
-                            <systemPropertyVariables>
-                                <db.driver>${database.driver}</db.driver>
-                                <db.url>${database.url}</db.url>
-                                <db.username>${database.username}</db.username>
-                                <db.password>${database.password}</db.password>
-                            </systemPropertyVariables>
-                        </configuration>
                     </execution>
                     <execution>
                         <id>verify</id>

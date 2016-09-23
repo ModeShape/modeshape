@@ -188,23 +188,23 @@ public class RelationalDb implements SchematicDb {
                 }
             }
         }
+        
+        List<String> keysList = new ArrayList<>(keys);
 
         Function<Document, SchematicEntry> documentParser = document -> {
             SchematicEntry entry = SchematicEntry.fromDocument(document);
             String id = entry.id();
             //always cache it to mark it as "existing"
             transactionalCaches.putForReading(id, document);
-            keys.remove(id);
+            keysList.remove(id);
             return entry;
         };
 
-        List<SchematicEntry> results = runWithConnection(connection -> statements.load(connection, new ArrayList<>(keys),
-                                                                                       documentParser),
-                                                         true);
+        List<SchematicEntry> results = runWithConnection(connection -> statements.load(connection, keysList, documentParser), true);
         results.addAll(alreadyChangedInTransaction);
         // if there's an active transaction make sure we also mark all the keys which were not found in the DB as 'new'
         // to prevent further DB lookups
-        transactionalCaches.putNew(keys);
+        transactionalCaches.putNew(keysList);
         return results;
     }
 
@@ -413,9 +413,13 @@ public class RelationalDb implements SchematicDb {
             Properties statements = new Properties();
             statements.load(fileStream);
             return statements.entrySet().stream().collect(Collectors.toMap(entry -> entry.getKey().toString(),
-                                                                           entry -> StringUtil.createString(
-                                                                                   entry.getValue().toString(),
-                                                                                   config.tableName())));
+                                                                           entry -> {
+                                                                               String value = entry.getValue().toString();
+                                                                               return !value.contains("{0}") ?
+                                                                                      value :
+                                                                                      StringUtil.createString(value,
+                                                                                                              config.tableName());
+                                                                           }));
         } catch (IOException e) {
             throw new RelationalProviderException(e);
         }

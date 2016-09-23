@@ -39,7 +39,7 @@ public class Schematic extends DocumentFactory {
      * @throws ParsingException if the given input stream is not a valid JSON document
      */
     public static <T extends SchematicDb> T getDb(InputStream configInputStream) throws ParsingException, RuntimeException {
-        Document document = Json.read(configInputStream);
+        Document document = Json.read(configInputStream).withVariablesReplacedWithSystemProperties();
         return getDb(document, Schematic.class.getClassLoader());
     }
      

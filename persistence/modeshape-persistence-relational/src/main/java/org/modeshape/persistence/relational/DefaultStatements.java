@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 import org.modeshape.common.annotation.NotThreadSafe;
@@ -42,6 +43,9 @@ import org.modeshape.schematic.document.Document;
  * @since 5.0
  */
 public class DefaultStatements implements Statements {
+    
+    protected static final int DEFAULT_MAX_STATEMENT_PARAM_COUNT = 1000;
+    private static final String PLACEHOLDER_STRING = "#";
     
     protected final Logger logger = Logger.getLogger(getClass());
     
@@ -115,26 +119,17 @@ public class DefaultStatements implements Statements {
         if (logger.isDebugEnabled()) {
             logger.debug("Loading ids {0} from {1}", ids.toString(), tableName());
         }
+        if (ids.isEmpty()) {
+            return new ArrayList<>();
+        }
         String getMultipleStatement = statements.get(GET_MULTIPLE);
-        int batchLoadSize = batchLoadSize();
-        List<R> results = new ArrayList<>();
-        runBatchOperation(connection, getMultipleStatement, ids, batchLoadSize,
-                          (dbConnection, statement, data) -> {
-                              results.addAll(loadIDs(dbConnection, statement, ids, parser));
-                              return true;
-                          });
-        return results;
-    }
-                    
-    private <R> List<R> loadIDs( Connection connection, String statement, List<String> ids, Function<Document, R> parser) 
-            throws SQLException {
-        String statementString = formatStatementWithMultipleParams(statement, ids);
-        try (PreparedStatement ps = connection.prepareStatement(statementString)) {
+        String formattedStatement = formatStatementWithMultipleParams(getMultipleStatement, ids.size());
+        try (PreparedStatement ps = connection.prepareStatement(formattedStatement)) {
             int paramIdx = 1;
             for (String id : ids) {
                 ps.setString(paramIdx++, id);
             }
-            
+        
             try (ResultSet rs = ps.executeQuery()) {
                 List<R> results = new ArrayList<>();
                 while (rs.next()) {
@@ -146,9 +141,39 @@ public class DefaultStatements implements Statements {
         }
     }
 
-    private String formatStatementWithMultipleParams(String statement, List<String> ids) {
-        String params = ids.stream().map(id -> "?").collect(Collectors.joining(","));
-        return statement.replaceAll("#", params);
+    private String formatStatementWithMultipleParams(String statement, int paramCount) {
+        String multipleSelectionClause = statements.get(MULTIPLE_SELECTION);
+        
+        int maxStatementParamCount = maxStatementParamCount();
+        int inClauseSegments = paramCount / maxStatementParamCount;
+        int lastInClauseSize = paramCount % maxStatementParamCount;
+        StringBuilder multipleSelectionStatement = new StringBuilder();
+        
+        if (inClauseSegments > 0) {
+            String multipleSelectionSegment = multipleSelectionClause.replace(PLACEHOLDER_STRING,
+                                                                              IntStream.range(0, maxStatementParamCount)
+                                                                                       .mapToObj(nr -> "?")
+                                                                                       .collect(Collectors.joining(",")));     
+            IntStream.range(0, inClauseSegments).forEach(i -> {
+                if (multipleSelectionStatement.length() > 0) {
+                    multipleSelectionStatement.append(" OR ");
+                }
+                multipleSelectionStatement.append(multipleSelectionSegment);   
+            });
+        }
+      
+        if (lastInClauseSize > 0) {
+            String lastSelectionSegment = multipleSelectionClause.replace(PLACEHOLDER_STRING,
+                                                                          IntStream.range(0, lastInClauseSize)
+                                                                                   .mapToObj(nr -> "?")
+                                                                                   .collect(Collectors.joining(",")));
+            if (multipleSelectionStatement.length() > 0) {
+                multipleSelectionStatement.append(" OR ");
+            } 
+            multipleSelectionStatement.append(lastSelectionSegment);
+        }
+        
+        return statement.replaceAll(PLACEHOLDER_STRING, multipleSelectionStatement.toString());
     }
 
     @Override
@@ -156,20 +181,17 @@ public class DefaultStatements implements Statements {
         if (logger.isDebugEnabled()) {
             logger.debug("Attempting to lock ids {0} from {1}", ids.toString(), tableName());
         }
-        String lockContent = statements.get(LOCK_CONTENT);
-        int batchLoadSize = batchLoadSize();
-        return runBatchOperation(connection, lockContent, ids, batchLoadSize, (dbConnection, statement, data) ->
-                lockIDs(dbConnection, statement, ids));
-    }
-
-    private boolean lockIDs( Connection connection, String statement, List<String> ids ) throws SQLException {
-        String statementString = formatStatementWithMultipleParams(statement, ids);
-        try (PreparedStatement ps = connection.prepareStatement(statementString)) {
+        String lockContentStatement = statements.get(LOCK_CONTENT);
+        if (ids.isEmpty()) {
+            return false;
+        }
+        String formattedStatement = formatStatementWithMultipleParams(lockContentStatement, ids.size());
+        try (PreparedStatement ps = connection.prepareStatement(formattedStatement)) {
             int paramIdx = 1;
             for (String id : ids) {
                 ps.setString(paramIdx++, id);
             }
-            
+        
             try (ResultSet rs = ps.executeQuery()) {
                 // any failed lock should result in a timeout being eventually thrown by the DB
                 // ModeShape will frequently try to lock new nodes before inserting them, so it's important that this method 
@@ -180,7 +202,7 @@ public class DefaultStatements implements Statements {
                 logger.debug(e, " cannot lock ids");
                 return false;
             }
-        } 
+        }
     }
 
     @Override
@@ -210,8 +232,8 @@ public class DefaultStatements implements Statements {
         return null;
     }
     
-    protected int batchLoadSize() {
-        return 500;
+    protected int maxStatementParamCount() {
+        return DEFAULT_MAX_STATEMENT_PARAM_COUNT;
     }
    
     protected void logTableInfo( String message ) {
@@ -242,35 +264,6 @@ public class DefaultStatements implements Statements {
         } catch (IOException e) {
             throw new RelationalProviderException(e);
         }
-    }
-
-    private <T> boolean runBatchOperation(Connection connection, String statement, List<T> data, int batchSize,
-                                          BatchOperation<T> operation) throws SQLException {
-        if (data.isEmpty()) {
-            return false;
-        }
-        
-        int dataSize = data.size();
-        if (dataSize <= batchSize) {
-            return operation.run(connection, statement, data);
-        }
-
-        int startIdx = 0;
-        while (startIdx < dataSize) {
-            int endIdx = startIdx + batchSize > dataSize ? dataSize : startIdx + batchSize;
-            boolean result = operation.run(connection, statement, data.subList(startIdx, endIdx));
-            if (!result) {
-                return false;
-            }
-            startIdx = endIdx;
-        }    
-        return true;
-    }
-        
-        
-    @FunctionalInterface
-    protected interface BatchOperation<T> {
-        boolean run(Connection connection, String statement, List<T> data) throws SQLException;
     }    
 
     @NotThreadSafe
@@ -282,7 +275,10 @@ public class DefaultStatements implements Statements {
         }
 
         @Override
-        public void insert( Map<String, Document> documentsById ) throws SQLException {
+        public void insert( Map<String, Document> documentsById ) throws SQLException {   
+            if (documentsById.isEmpty()) {
+                return;
+            }
             String sql = statements.get(INSERT_CONTENT);
             PreparedStatement insert = connection.prepareStatement(sql);
             documentsById.forEach(( id, document ) -> {
@@ -307,6 +303,9 @@ public class DefaultStatements implements Statements {
 
         @Override
         public void update( Map<String, Document> documentsById ) throws SQLException {
+            if (documentsById.isEmpty()) {
+                return;
+            }
             String sql = statements.get(UPDATE_CONTENT);
             PreparedStatement update = connection.prepareStatement(sql);
             documentsById.forEach(( id, document ) -> {
@@ -331,23 +330,21 @@ public class DefaultStatements implements Statements {
 
         @Override
         public void remove( List<String> ids ) throws SQLException {
-            String sql = statements.get(REMOVE_CONTENT);
-            runBatchOperation(connection, sql, ids, batchLoadSize(), this::batchRemove);    
-        }
-
-        private boolean batchRemove( Connection connection, String statement, List<String> ids ) throws SQLException {
-            String statementString = formatStatementWithMultipleParams(statement, ids);
-            if (logger.isDebugEnabled()) {
-                logger.debug("running statement: {0}", statementString);
+            if (ids.isEmpty()) {
+                return;
             }
-            try (PreparedStatement remove = connection.prepareStatement(statementString)) {
+            String removeStatement = statements.get(REMOVE_CONTENT);
+            String formattedStatement = formatStatementWithMultipleParams(removeStatement, ids.size());
+            if (logger.isDebugEnabled()) {
+                logger.debug("running statement: {0}", formattedStatement);
+            }
+            try (PreparedStatement remove = connection.prepareStatement(formattedStatement)) {
                 int paramIdx = 1;
                 for (String id : ids) {
                     remove.setString(paramIdx++, id);
                 }
                 remove.executeUpdate();
-            }
-            return true;
+            }             
         }
     }
 }
