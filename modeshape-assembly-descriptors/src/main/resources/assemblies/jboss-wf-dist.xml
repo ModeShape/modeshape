@@ -145,7 +145,7 @@
                 <include>org.modeshape:modeshape-jcr:jar</include>
                 <include>org.modeshape:modeshape-jbossas-subsystem:jar</include>
                 <include>org.mapdb:mapdb:jar</include>
-                <include>com.googlecode.concurrentlinkedhashmap:concurrentlinkedhashmap-lru:jar</include>
+                <include>com.github.ben-manes.caffeine:caffeine:jar</include>
             </includes>
             <unpack>false</unpack>
         </dependencySet>

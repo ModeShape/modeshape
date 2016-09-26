@@ -21,7 +21,7 @@
         <resource-root path="modeshape-jcr-${project.version}.jar"/>
         <resource-root path="modeshape-jbossas-subsystem-${project.version}.jar"/>
         <resource-root path="mapdb-${version.org.mapdb}.jar"/>
-        <resource-root path="concurrentlinkedhashmap-lru-${version.com.googlecode.concurrentlinkedhashmap}.jar"/>
+        <resource-root path="caffeine-${version.com.github.ben-manes.caffeine}.jar"/>
         <resource-root path="res"/>
         <resource-root path="deployments"/>
     </resources>

@@ -52,7 +52,7 @@
         <version.org.jgroups>3.6.8.Final</version.org.jgroups>
         <version.com.h2>1.4.191</version.com.h2>
         <version.com.zaxxer.HikariCP>2.4.3</version.com.zaxxer.HikariCP>
-        <version.com.googlecode.concurrentlinkedhashmap>1.4.2</version.com.googlecode.concurrentlinkedhashmap>
+        <version.com.github.ben-manes.caffeine>2.3.3</version.com.github.ben-manes.caffeine>
         <version.org.mapdb>1.0.9</version.org.mapdb>
         <version.org.slf4j>1.7.7</version.org.slf4j>
         <version.log4j>1.2.17</version.log4j>
@@ -365,10 +365,11 @@
             <!-- 
                 Cache used by modeshape-jcr
             -->
+
             <dependency>
-                <groupId>com.googlecode.concurrentlinkedhashmap</groupId>
-                <artifactId>concurrentlinkedhashmap-lru</artifactId>
-                <version>${version.com.googlecode.concurrentlinkedhashmap}</version>
+                <groupId>com.github.ben-manes.caffeine</groupId>
+                <artifactId>caffeine</artifactId>
+                <version>${version.com.github.ben-manes.caffeine}</version>
             </dependency>
 
             <!--

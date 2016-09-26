@@ -130,7 +130,7 @@
         <version.com.zaxxer.HikariCP>2.4.3</version.com.zaxxer.HikariCP>
         
         <version.org.jboss.spec.javax.transaction.jboss-transaction-api_1.2_spec>1.0.1.Final</version.org.jboss.spec.javax.transaction.jboss-transaction-api_1.2_spec>
-        <version.com.googlecode.concurrentlinkedhashmap>1.4.2</version.com.googlecode.concurrentlinkedhashmap>
+        <version.com.github.ben-manes.caffeine>2.3.3</version.com.github.ben-manes.caffeine>
         <!--Make sure the jgroups version is the same as the one used by ISPN -->
         <version.org.jgroups>3.6.8.Final</version.org.jgroups>
         <jgroups.module.slot>main</jgroups.module.slot>
@@ -1097,11 +1097,11 @@
             </dependency>
 
             <dependency>
-                <groupId>com.googlecode.concurrentlinkedhashmap</groupId>
-                <artifactId>concurrentlinkedhashmap-lru</artifactId>
-                <version>${version.com.googlecode.concurrentlinkedhashmap}</version>
+                <groupId>com.github.ben-manes.caffeine</groupId>
+                <artifactId>caffeine</artifactId>
+                <version>${version.com.github.ben-manes.caffeine}</version>
             </dependency>
-
+          
             <dependency>
                 <groupId>org.jboss.spec.javax.transaction</groupId>
                 <artifactId>jboss-transaction-api_1.2_spec</artifactId>
