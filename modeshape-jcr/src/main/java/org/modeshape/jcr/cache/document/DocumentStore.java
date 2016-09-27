@@ -20,7 +20,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import org.modeshape.jcr.cache.DocumentStoreException;
-import org.modeshape.jcr.cache.SessionCache;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.binary.ExternalBinaryValue;
 import org.modeshape.schematic.SchematicEntry;
@@ -203,8 +202,7 @@ public interface DocumentStore {
     public String createExternalProjection( String projectedNodeKey,
                                             String sourceName,
                                             String externalPath,
-                                            String alias,
-                                            SessionCache systemSession );
+                                            String alias );
     /**
      * Returns a document representing a block of children, that has the given key.
      *

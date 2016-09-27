@@ -294,10 +294,11 @@ public final class Connectors {
         }
     }
 
-    private void storeProjection( Projection projection, SessionCache systemSession ) {
+    private void storeProjection( Projection projection ) {
         PropertyFactory propertyFactory = repository.context().getPropertyFactory();
 
         // we need to store the projection mappings so that we don't loose that information
+        SessionCache systemSession = repository.createSystemSession(repository.context(), false);
         NodeKey systemNodeKey = getSystemNode(systemSession).getKey();
         MutableCachedNode systemNode = systemSession.mutable(systemNodeKey);
         ChildReference federationNodeRef = systemNode.getChildReferences(systemSession).getChild(ModeShapeLexicon.FEDERATION);
@@ -308,6 +309,7 @@ public final class Connectors {
                 Property primaryType = propertyFactory.create(JcrLexicon.PRIMARY_TYPE, ModeShapeLexicon.FEDERATION);
                 systemNode.createChild(systemSession, systemNodeKey.withId("mode:federation"), ModeShapeLexicon.FEDERATION,
                                        primaryType);
+                systemSession.save();
                 federationNodeRef = systemNode.getChildReferences(systemSession).getChild(ModeShapeLexicon.FEDERATION);
             } catch (Exception e) {
                 throw new RuntimeException(e);
@@ -326,6 +328,7 @@ public final class Connectors {
         federationNode.createChild(systemSession, federationNodeKey.withRandomId(), ModeShapeLexicon.PROJECTION, primaryType,
                                    externalNodeKeyProp, projectedNodeKeyProp, alias);
 
+        systemSession.save();
     }
 
     /**
@@ -352,10 +355,9 @@ public final class Connectors {
      */
     public synchronized void addProjection( String externalNodeKey,
                                             String projectedNodeKey,
-                                            String alias,
-                                            SessionCache systemSession) {
+                                            String alias ) {
         Projection projection = new Projection(externalNodeKey, projectedNodeKey, alias);
-        storeProjection(projection, systemSession);
+        storeProjection(projection);
         Snapshot current = this.snapshot.get();
         Snapshot updated = current.withProjection(projection);
         this.snapshot.compareAndSet(current, updated);
