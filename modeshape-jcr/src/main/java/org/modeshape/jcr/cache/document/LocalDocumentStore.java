@@ -29,6 +29,7 @@ import javax.transaction.Transaction;
 import org.modeshape.common.SystemFailureException;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.jcr.RepositoryEnvironment;
+import org.modeshape.jcr.cache.SessionCache;
 import org.modeshape.jcr.locking.LockingService;
 import org.modeshape.jcr.txn.Transactions;
 import org.modeshape.jcr.value.Name;
@@ -197,7 +198,8 @@ public class LocalDocumentStore implements DocumentStore {
     public String createExternalProjection( String projectedNodeKey,
                                             String sourceName,
                                             String externalPath,
-                                            String alias ) {
+                                            String alias,
+                                            SessionCache systemSession ) {
         throw new UnsupportedOperationException("External projections are not supported in the local document store");
     }
 
