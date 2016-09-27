@@ -71,7 +71,8 @@ import org.modeshape.schematic.SchematicEntry;
 import org.modeshape.schematic.document.Document;
 import org.modeshape.schematic.document.EditableArray;
 import org.modeshape.schematic.document.EditableDocument;
-import com.googlecode.concurrentlinkedhashmap.ConcurrentLinkedHashMap;
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 
 /**
  *
@@ -775,7 +776,7 @@ public class RepositoryCache {
         NodeKey rootKey = new NodeKey(sourceKey, workspaceKey, rootNodeId);
 
         return localStore().runInLocalTransaction(() -> {
-            ConcurrentMap<NodeKey, CachedNode> nodeCache = cacheForWorkspace();
+            ConcurrentMap<NodeKey, CachedNode> nodeCache = cacheForWorkspace().asMap();
             ExecutionContext context = context();
             logger.debug("Attempting to initialize a new ws cache for workspace '{0}' in repository '{1}' with root key '{2}'", name, 
                          getName(), rootKey);
@@ -823,8 +824,9 @@ public class RepositoryCache {
         }, 0, REPOSITORY_INFO_KEY);
     }
     
-    protected ConcurrentMap<NodeKey, CachedNode> cacheForWorkspace() {
-        return new ConcurrentLinkedHashMap.Builder<NodeKey, CachedNode>().maximumWeightedCapacity(workspaceCacheSize).build();
+    protected Cache<NodeKey, CachedNode> cacheForWorkspace() {
+        // make sure eviction runs in the same thread
+        return Caffeine.newBuilder().maximumSize(workspaceCacheSize).executor(Runnable::run).build();
     }
 
     public final DocumentTranslator getDocumentTranslator() {
@@ -990,7 +992,7 @@ public class RepositoryCache {
         this.workspaceNames.add(workspaceName);
         refreshRepositoryMetadata(true);
 
-        ConcurrentMap<NodeKey, CachedNode> nodeCache = cacheForWorkspace();
+        ConcurrentMap<NodeKey, CachedNode> nodeCache = cacheForWorkspace().asMap();
         ExecutionContext context = context();
         
         //the name of the external connector is used for source name and workspace name
