@@ -69,17 +69,11 @@ public class ModeShapeFederationManager implements FederationManager {
 
 
         SessionCache sessionCache = this.session.spawnSessionCache(false);
-        SessionCache systemSession = session.repository.createSystemSession(
-                session.context(), false);
-        String externalNodeKey = documentStore.createExternalProjection(
-                parentNodeToBecomeFederatedKey.toString(), 
-                sourceName,
-                externalPath, 
-                projectionAlias,
-                systemSession);
+        String externalNodeKey = documentStore.createExternalProjection(parentNodeToBecomeFederatedKey.toString(), sourceName,
+                                                                        externalPath, projectionAlias);
         MutableCachedNode mutable = sessionCache.mutable(parentNodeToBecomeFederatedKey);
         mutable.addFederatedSegment(externalNodeKey, projectionAlias);
-        systemSession.save(sessionCache, null);
+        sessionCache.save();
     }
 
     @Override
@@ -95,9 +89,6 @@ public class ModeShapeFederationManager implements FederationManager {
         NodeKey externalNodeKey = session.getNode(path.getString()).key();
 
         SessionCache sessionCache = session.spawnSessionCache(false);
-        SessionCache systemSession = session.repository.createSystemSession(
-                session.context(), false);
-        
         MutableCachedNode federatedNode = sessionCache.mutable(federatedNodeKey);
         federatedNode.removeFederatedSegment(externalNodeKey.toString());
         sessionCache.save();
