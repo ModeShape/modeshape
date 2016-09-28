@@ -5,16 +5,12 @@ We hope you enjoy it!
 
 ## What's new
 
-This release addresses 16 bugs and 11 enhancements, most notably:
-- several bug fixes around the new persistence support
+This release addresses 13 bugs and 5 enhancements, most notably:
+- add minimal partition support so that in case of network partitions a cluster of ModeShape repositories won't corrupt data
 
-- 5 new sequencers: ModeShape can now sequence EPUB, PDF and ODF files together with several audio and video formats 
+- update CMIS to use OpenCMIS 1.0 and also support ACLs for the CMIS connector 
 
-- simplified Wildfly configuration for built-in components like sequencers, connectors, index providers etc
-  (see [this issue](https://issues.jboss.org/browse/MODE-2602) for more information)  
-
-- the REST service's backup and restore operations now support node batches, useful for avoiding OOM errors when backing up and
-  restoring large repositories
+- store binary files in Amazon S3
 
 ## Migrating from ModeShape 3 or ModeShape 4 
 
