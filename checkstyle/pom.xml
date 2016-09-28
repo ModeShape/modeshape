@@ -4,7 +4,7 @@
 
    <groupId>org.modeshape</groupId>
    <artifactId>modeshape-checkstyle</artifactId>
-   <version>5.2-SNAPSHOT</version>
+   <version>5.2.0.Final</version>
    <name>ModeShape Checkstyle Rules</name>
    <description>Contains the definitions for the ModeShape commons code style and conventions</description>
 
