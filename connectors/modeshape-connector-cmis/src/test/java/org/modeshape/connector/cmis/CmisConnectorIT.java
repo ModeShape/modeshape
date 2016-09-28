@@ -64,9 +64,6 @@ public class CmisConnectorIT extends MultiUseAbstractTest {
 
     @BeforeClass
     public static void beforeAll() throws Exception {
-        RepositoryConfiguration config = RepositoryConfiguration.read("config/repository-1.json");
-        startRepository(config);
-
         // waiting when CMIS repository will be ready
         boolean isReady = false;
 
@@ -95,6 +92,9 @@ public class CmisConnectorIT extends MultiUseAbstractTest {
             throw new IllegalStateException("CMIS repository did not respond withing " + maxTime + " milliseconds");
         }
         logger.info("CMIS repository has been started successfuly");
+        
+        RepositoryConfiguration config = RepositoryConfiguration.read("config/repository-1.json");
+        startRepository(config);
     }
 
     @AfterClass

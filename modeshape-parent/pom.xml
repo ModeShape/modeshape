@@ -10,7 +10,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.modeshape</groupId>
     <artifactId>modeshape-parent</artifactId>
-    <version>5.2-SNAPSHOT</version>
+    <version>5.3-SNAPSHOT</version>
     <name>ModeShape Parent</name>
 
     <url>http://www.modeshape.org</url>
@@ -474,7 +474,7 @@
                             <home>${project.build.directory}/cargo</home>
                             <type>embedded</type>
                         </container>
-                        <configuration >
+                        <configuration>
                             <properties>
                                 <cargo.logging>high</cargo.logging>
                                 <cargo.servlet.users>dnauser:password:connect,readwrite,admin|unauthorized:password:bogus</cargo.servlet.users>
@@ -621,7 +621,7 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-failsafe-plugin</artifactId>
                     <configuration>
-                        <skipTests>${skipITs}</skipTests>
+                        <skipTests>${skipTests}</skipTests>
                         <encoding>UTF-8</encoding>
                         <enableAssertions>true</enableAssertions>
                         <argLine>-Xmx1524M ${debug.argline} -Xss1024k</argLine>
