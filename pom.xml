@@ -45,7 +45,9 @@
           JCA Resource adapter
     	-->
     	<module>modeshape-jca</module>
-
+        
+        <!-- Shell module -->
+        <module>modeshape-shell</module>
         <!--
           The JBoss AS7 subsystem needs the web components and (local) JDBC drivers.
         -->

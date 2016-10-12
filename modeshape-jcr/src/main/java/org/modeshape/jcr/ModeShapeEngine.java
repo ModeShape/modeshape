@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
@@ -44,6 +45,7 @@ import org.modeshape.common.util.CheckArg;
 import org.modeshape.common.util.ImmediateFuture;
 import org.modeshape.common.util.NamedThreadFactory;
 import org.modeshape.jcr.api.Repositories;
+import org.modeshape.shell.ShellServer;
 
 /**
  * A container for repositories.
@@ -59,6 +61,10 @@ public class ModeShapeEngine implements Repositories {
     private ExecutorService repositoryStarterService;
     private volatile State state = State.NOT_RUNNING;
 
+    //allows specify engine configuration
+    private Properties config;
+    private ShellServer sshServer;
+    
     public enum State {
         NOT_RUNNING,
         STARTING,
@@ -70,6 +76,16 @@ public class ModeShapeEngine implements Repositories {
     public ModeShapeEngine() {
     }
 
+    /**
+     * Creates engine with specific parameters.
+     * 
+     * MODE-1660: Enable specify shell server bootstrap parameters.
+     * @param config 
+     */
+    public ModeShapeEngine(Properties config) {
+        this.config = config;
+    }
+    
     protected final boolean checkRunning() {
         if (state == State.RUNNING) return true;
         throw new IllegalStateException(JcrI18n.engineIsNotRunning.text());
@@ -100,6 +116,13 @@ public class ModeShapeEngine implements Repositories {
             ThreadFactory threadFactory = new NamedThreadFactory("modeshape-start-repo");
             repositoryStarterService = Executors.newCachedThreadPool(threadFactory);
 
+            if (config != null && config.containsKey("ssh.server.enabled")) {
+                boolean enabled = Boolean.parseBoolean(config.getProperty("ssh.server.enabled"));
+                if (enabled) {
+                    sshServer = new ShellServer(this, config);
+                    sshServer.start();
+                }
+            }
             state = State.RUNNING;
         } catch (RuntimeException e) {
             state = State.NOT_RUNNING;
@@ -220,11 +243,17 @@ public class ModeShapeEngine implements Repositories {
                 repositoryStarterService.shutdown();
                 repositoryStarterService = null;
 
+//                this.unregisterMBean();
                 // Do not clear the set of repositories, so that restarting will work just fine ...
                 this.state = State.NOT_RUNNING;
             } else {
                 // Could not shut down all repositories, so keep running ..
                 this.state = State.RUNNING;
+            }
+            
+            //stop SSH server if it is exists
+            if (sshServer != null) {
+                sshServer.stop();
             }
         } catch (RuntimeException e) {
             this.state = State.RUNNING;
@@ -613,4 +642,5 @@ public class ModeShapeEngine implements Repositories {
             lock.unlock();
         }
     }
+    
 }
