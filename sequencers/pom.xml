@@ -93,6 +93,7 @@
         <module>modeshape-sequencer-xsd</module>
         <module>modeshape-sequencer-xml</module>
         <module>modeshape-sequencer-wsdl</module>
+        <module>modeshape-sequencer-pdf</module>
     </modules>
 
     <profiles>
