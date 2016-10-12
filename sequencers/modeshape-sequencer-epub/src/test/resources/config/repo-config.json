@@ -1,0 +1,11 @@
+{
+    "name" : "EPUB Format Sequencer Test Repository",
+    "sequencing" : {
+        "sequencers" : {
+            "EPUB Format sequencer" :  {
+                "classname" : "org.modeshape.sequencer.epub.EpubMetadataSequencer",
+                "pathExpressions" : ["default://(*.(epub))/jcr:content[@jcr:data] => default:/sequenced/epub" ]
+            }
+        }
+    }
+}
