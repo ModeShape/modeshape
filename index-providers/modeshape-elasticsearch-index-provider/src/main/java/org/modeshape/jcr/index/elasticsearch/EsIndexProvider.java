@@ -15,12 +15,6 @@
  */
 package org.modeshape.jcr.index.elasticsearch;
 
-import java.util.Collection;
-import javax.jcr.RepositoryException;
-import javax.jcr.query.qom.ChildNodeJoinCondition;
-import javax.jcr.query.qom.DescendantNodeJoinCondition;
-import javax.jcr.query.qom.DynamicOperand;
-import javax.jcr.query.qom.JoinCondition;
 import org.modeshape.common.collection.Problems;
 import org.modeshape.jcr.ExecutionContext;
 import org.modeshape.jcr.NodeTypes;
@@ -36,8 +30,14 @@ import org.modeshape.jcr.spi.index.provider.IndexProvider;
 import org.modeshape.jcr.spi.index.provider.IndexUsage;
 import org.modeshape.jcr.spi.index.provider.ManagedIndexBuilder;
 
+import javax.jcr.RepositoryException;
+import javax.jcr.query.qom.ChildNodeJoinCondition;
+import javax.jcr.query.qom.DescendantNodeJoinCondition;
+import javax.jcr.query.qom.DynamicOperand;
+import javax.jcr.query.qom.JoinCondition;
+import java.util.Collection;
+
 /**
- *
  * @author kulikov
  */
 public class EsIndexProvider extends IndexProvider {
@@ -45,50 +45,50 @@ public class EsIndexProvider extends IndexProvider {
     private String host = "localhost";
     private int port = 9200;
     private EsClient client;
-    
+
     @Override
     protected void doInitialize() throws RepositoryException {
-        logger().debug("Elasticsearch index provider for repository '{1}' "
-                    + "is trying to connect to cluster", getRepositoryName());
+        logger().debug("Elasticsearch index provider for repository '{0}' "
+                + "is trying to connect to cluster", getRepositoryName());
         client = new EsClient(host, port);
     }
 
     /**
      * Gets ES instance address.
-     * 
+     *
      * @return ip address or domain name.
      */
     public String getHost() {
         return host;
     }
-    
+
     /**
      * Assigns ES instance address.
-     * 
+     *
      * @param host ip address or domain name.
      */
     public void setHost(String host) {
         this.host = host;
     }
-    
+
     /**
      * Gets ES instance port number.
-     * 
+     *
      * @return port number
      */
     public int getPort() {
         return port;
     }
-    
+
     /**
      * Gets ES instance port number.
-     * 
+     *
      * @return port number
      */
     public void setPort(int port) {
         this.port = port;
     }
-    
+
     @Override
     protected void postShutdown() {
         logger().debug("Shutting down the elasticsearch index provider '{0}' in repository '{1}'", getName(), getRepositoryName());
@@ -101,17 +101,17 @@ public class EsIndexProvider extends IndexProvider {
 
     @Override
     public void validateProposedIndex(ExecutionContext context,
-            IndexDefinition defn,
-            NodeTypes.Supplier nodeTypeSupplier,
-            Problems problems) {
+                                      IndexDefinition defn,
+                                      NodeTypes.Supplier nodeTypeSupplier,
+                                      Problems problems) {
         // first perform some custom validations
     }
 
     @Override
     protected ManagedIndexBuilder getIndexBuilder(IndexDefinition defn,
-            String workspaceName,
-            NodeTypes.Supplier nodeTypesSupplier,
-            ChangeSetAdapter.NodeTypePredicate matcher) {
+                                                  String workspaceName,
+                                                  NodeTypes.Supplier nodeTypesSupplier,
+                                                  ChangeSetAdapter.NodeTypePredicate matcher) {
         return EsManagedIndexBuilder.create(client, context(), defn, nodeTypesSupplier, workspaceName, matcher);
     }
 
