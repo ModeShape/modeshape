@@ -23,12 +23,14 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.zip.GZIPInputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import javax.jcr.Binary;
@@ -373,6 +375,46 @@ public class RepositoryBackupAndRestoreTest extends SingleUseAbstractTest {
         assertContentInWorkspace(repository(), "default");
         assertContentInWorkspace(repository(), "ws2");
         assertContentInWorkspace(repository(), "ws3");
+    }
+
+    @Test
+    @FixFor( "MODE-2611" )
+    public void backupShouldHaveUniqueIDs() throws Exception {
+        loadContent();
+        makeBackup(BackupOptions.DEFAULT);
+
+        File backup = null;
+        for (File file : backupDirectory.listFiles()) {
+            if (file.getName().contains("documents")) {
+                backup = file;
+                break;
+            }
+        }
+
+        String idPrefix = "{ \"metadata\" : { \"id\" : \"";
+        try (GZIPInputStream gzipInputStream = new GZIPInputStream(new FileInputStream(backup))) {
+            String fileContent = IoUtil.read(gzipInputStream);
+            String lines[] = fileContent.split("\\r?\\n");
+            Set<String> ids = new HashSet<>();
+            for (String line : lines) {
+                String id = line.substring(line.indexOf(idPrefix) + idPrefix.length(), line.indexOf("\" }"));
+                if (!ids.add(id)) {
+                    fail("Duplicate id found: " + id);
+                }
+            }
+            assertEquals(lines.length, ids.size());
+        }
+    }
+
+    private void makeBackup(BackupOptions options) throws RepositoryException {
+        TestingUtil.waitUntilFolderCleanedUp(backupDirectory.getPath());
+        JcrSession session = repository().login();
+        try {
+            Problems problems = session.getWorkspace().getRepositoryManager().backupRepository(backupDirectory, options);
+            assertNoProblems(problems);
+        } finally {
+            session.logout();
+        }
     }
 
     private File extractZip( String zipFile, File destination ) throws IOException {

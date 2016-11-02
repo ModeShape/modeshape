@@ -377,6 +377,7 @@ public class BackupService {
                                                           options.compress(),
                                                           problems);
             long numBinaryValues = 0L;
+            final NodeKey metadataKey = repositoryCache.getRepositoryMetadataDocumentKey();
 
             try {
                 final AtomicBoolean continueWritingChangedDocuments = new AtomicBoolean(true);
@@ -391,7 +392,7 @@ public class BackupService {
                             while (continueWritingChangedDocuments.get()) {
                                 // Poll for a changed document, but wait at most 1 second ...
                                 NodeKey key = changedDocumentQueue.poll(1L, TimeUnit.SECONDS);
-                                if (key != null) {
+                                if (key != null && !key.equals(metadataKey)) {
                                     // Write out the document to the changed area ...
                                     SchematicEntry entry = documentStore.get(key.toString());
                                     writeToChangedArea(entry, changesWriter);
@@ -405,7 +406,7 @@ public class BackupService {
                         while (!changedDocumentQueue.isEmpty()) {
                             // Poll for a changed document, but at most only
                             NodeKey key = changedDocumentQueue.poll();
-                            if (key != null) {
+                            if (key != null && !key.equals(metadataKey)) {
                                 // Write out the document to the changed area ...
                                 SchematicEntry entry = documentStore.get(key.toString());
                                 writeToChangedArea(entry, changesWriter);
@@ -425,21 +426,24 @@ public class BackupService {
                     // PHASE 1:
                     // Perform the backup of the repository cache content ...
                     int counter = 0;
+                    // remove the metadata key since we want that to always export that last
                     Sequence<String> sequence = InfinispanUtil.getAllKeys(documentStore.localCache());
                     while (true) {
                         String key = sequence.next();
                         if (key == null) break;
-                        SchematicEntry entry = documentStore.get(key);
-                        if (entry != null) {
-                            writeToContentArea(entry, contentWriter);
-                            ++counter;
+
+                        if (!key.equals(metadataKey.toString())) {
+                            SchematicEntry entry = documentStore.get(key);
+                            if (entry != null) {
+                                writeToContentArea(entry, contentWriter);
+                                ++counter;
+                            }
                         }
                     }
                     LOGGER.debug("Wrote {0} documents to {1}", counter, backupDirectory.getAbsolutePath());
 
                     // PHASE 2:
                     // Write out the repository metadata document (which may have not changed) ...
-                    NodeKey metadataKey = repositoryCache.getRepositoryMetadataDocumentKey();
                     SchematicEntry entry = documentStore.get(metadataKey.toString());
                     writeToContentArea(entry, contentWriter);
                 } catch (Exception e) {
