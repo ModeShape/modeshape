@@ -23,6 +23,8 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
@@ -34,10 +36,12 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 import javax.jcr.RepositoryException;
 import javax.transaction.SystemException;
+
 import org.infinispan.Cache;
 import org.infinispan.schematic.Schematic;
 import org.infinispan.schematic.SchematicEntry;
@@ -45,6 +49,7 @@ import org.infinispan.schematic.document.Document;
 import org.infinispan.schematic.document.EditableArray;
 import org.infinispan.schematic.document.EditableDocument;
 import org.infinispan.schematic.document.Json;
+import org.infinispan.tasks.GlobalKeySetTask;
 import org.modeshape.common.annotation.NotThreadSafe;
 import org.modeshape.common.collection.Problems;
 import org.modeshape.common.collection.SimpleProblems;
@@ -146,7 +151,8 @@ public class BackupService {
                                                              final File backupDirectory,
                                                              final RestoreOptions options) throws RepositoryException {
         final String backupLocString = backupDirectory.getAbsolutePath();
-        LOGGER.debug("Beginning restore of '{0}' repository from {1}", repository.getName(), backupLocString);
+        LOGGER.debug("Beginning restore of '{0}' repository from {1} with options {2}", repository.getName(), backupLocString,
+                options);
         // Put the repository into the 'restoring' state ...
         repository.prepareToRestore();
 
@@ -425,20 +431,27 @@ public class BackupService {
                 try {
                     // PHASE 1:
                     // Perform the backup of the repository cache content ...
-                    int counter = 0;
-                    // remove the metadata key since we want that to always export that last
-                    Sequence<String> sequence = InfinispanUtil.getAllKeys(documentStore.localCache());
-                    while (true) {
-                        String key = sequence.next();
-                        if (key == null) break;
+                    AtomicInteger counter = new AtomicInteger();
+                    List<String> keys = new ArrayList<>();
+                    keys.addAll(GlobalKeySetTask.getGlobalKeySet(documentStore.localCache()));
 
-                        if (!key.equals(metadataKey.toString())) {
-                            SchematicEntry entry = documentStore.get(key);
-                            if (entry != null) {
-                                writeToContentArea(entry, contentWriter);
-                                ++counter;
-                            }
+                    // remove the metadata key since we want that to always export that last
+                    keys.remove(metadataKey.toString());
+
+                    int startIdx = 0;
+                    int totalDocumentsCount = keys.size();
+                    int batchSize = options.batchSize();
+                    while (startIdx < totalDocumentsCount) {
+                        int estimatedEndIdx = startIdx + batchSize;
+                        int endIdx = estimatedEndIdx < totalDocumentsCount ? estimatedEndIdx : totalDocumentsCount;
+                        LOGGER.debug("writing batch [{0}, {1}] of documents from the content store...", startIdx, endIdx);
+                        List<String> batchKeys = keys.subList(startIdx, endIdx);
+                        batchWriteDocuments(batchKeys, contentWriter);
+                        counter.addAndGet(batchKeys.size());
+                        if (endIdx == totalDocumentsCount) {
+                            break;
                         }
+                        startIdx += batchSize;
                     }
                     LOGGER.debug("Wrote {0} documents to {1}", counter, backupDirectory.getAbsolutePath());
 
@@ -462,6 +475,7 @@ public class BackupService {
                 }
 
                 if (options.includeBinaries()) {
+                    LOGGER.debug("writing used binaries to backup location...");
                     // PHASE 3:
                     // Perform the backup of the binary store ...
                     try {
@@ -486,6 +500,7 @@ public class BackupService {
                     // PHASE 4:
                     // Write all of the binary files that were added during the changes made while we worked ...
                     int counter = 0;
+                    LOGGER.debug("writing recently used binaries to backup location...");
                     for (BinaryKey binaryKey : observer.getUsedBinaryKeys()) {
                         try {
                             writeToContentArea(binaryKey, binaryStore.getInputStream(binaryKey));
@@ -500,6 +515,7 @@ public class BackupService {
 
                     // PHASE 5:
                     // And now write all binary keys for the binaries that were recorded as unused by the observer ...
+                    LOGGER.debug("writing unused binaries to the backup location...");
                     writeToChangedArea(observer.getUnusedBinaryKeys());
                 }
                 // Wait for the changes to be written
@@ -523,6 +539,17 @@ public class BackupService {
             }
 
             return problems;
+        }
+
+        private void batchWriteDocuments(List<String> keys, BackupDocumentWriter contentWriter) {
+            for (String key : keys) {
+                if (key == null) break;
+
+                SchematicEntry entry = documentStore.get(key);
+                if (entry != null) {
+                    writeToContentArea(entry, contentWriter);
+                }
+            }
         }
     }
 
