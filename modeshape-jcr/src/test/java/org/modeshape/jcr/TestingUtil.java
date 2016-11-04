@@ -138,4 +138,19 @@ public class TestingUtil {
         repository.start();
         return repository;
     }
+
+    public static void waitUntilFolderCleanedUp(String path) {
+        int maxAttempts = 10;
+        File folder = new File(path);
+        while (folder.exists() && !FileUtil.delete(folder) && --maxAttempts > 0) {
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                Thread.interrupted();
+            }
+        }
+        if (maxAttempts == 0 && !FileUtil.delete(folder)) {
+            throw new RuntimeException("Cannot remove folder '" + folder + "' and all its contents; investigate while file handles are still open");
+        }
+    }
 }
