@@ -5,14 +5,9 @@ We hope you enjoy it!
 
 ## What's new
 
-This release addresses 13 issues and 5 enhancements, most notably:                     
-
-- **Storing indexes in Elastic Search** - alongside the Local and Lucene index providers, ModeShape now has the ability to store
-indexes remotely, in an Elastic Search cluster. This means that when clustering, you don't necessarily have to store indexes
-locally on each cluster node anymore, but can rely on an external system to do that for you.
-See [the ModeShape documentation](https://docs.jboss.org/author/display/MODE40/Elasticsearch) for more information. 
-
-- **Compressing binaries in a repository backup** - see [this issue](https://issues.jboss.org/browse/MODE-2559) for more information
+This is a micro release which addresses two issues that prevent users from backing up their repositories in certain cases :
+- [MODE-2587](https://issues.jboss.org/browse/MODE-2587)
+- [MODE-2611](https://issues.jboss.org/browse/MODE-2611)
  
 ## Features
 
