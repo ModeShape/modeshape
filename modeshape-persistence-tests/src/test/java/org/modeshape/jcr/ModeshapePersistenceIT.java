@@ -30,6 +30,10 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -112,6 +116,7 @@ public class ModeshapePersistenceIT {
     public void afterEach() throws Exception {
         testRepository.setDropOnExit(true);
         testRepository.shutdown();
+        this.cleanDatabase();
     }
 
     @Test
@@ -2285,5 +2290,27 @@ public class ModeshapePersistenceIT {
     
     private void importInitialContent(String resourceName, Session session) throws RepositoryException, IOException {
         testRepository.loadInitialContent(resourceName, session);
+    }
+    
+    private void cleanDatabase() {
+        Connection conn = null;
+        try {
+            String driverName = System.getProperty("db.driver");
+            String username = System.getProperty("db.username");
+            String password = System.getProperty("db.password");
+            String url = System.getProperty("db.url");
+            
+            Class.forName(driverName);
+            conn = DriverManager.getConnection(url, username, password);
+            Statement deleteQuery = conn.createStatement();
+            deleteQuery.executeQuery("drop table MODESHAPE_REPOSITORY");
+        } catch (ClassNotFoundException | SQLException e) {
+        } finally {
+            if (conn != null) 
+                try {
+                    conn.close();
+                } catch (SQLException e) {
+                }
+        }
     }
 }

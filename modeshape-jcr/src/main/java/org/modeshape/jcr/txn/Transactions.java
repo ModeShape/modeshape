@@ -492,7 +492,7 @@ public class Transactions {
 
         @Override
         public void commit()
-                throws RollbackException, HeuristicMixedException, HeuristicRollbackException, SecurityException,
+                throws RollbackException, SecurityException,
                        IllegalStateException, SystemException {
             try {
                 // commit first
@@ -501,6 +501,12 @@ public class Transactions {
                 listener.txCommitted(id);
                 // run the ModeShape commit functions after we've notified the listener
                 executeFunctionsUponCommit();
+            } catch (RollbackException | HeuristicMixedException | HeuristicRollbackException e) {
+                listener.txRolledback(id);
+                throw new RollbackException(e.getMessage());
+            } catch (SystemException e) {
+                listener.txRolledback(id);
+                throw e;
             } finally {
                 // even if commit fails, we want to execute the complete functions to try and leave the repository into a consistent state
                 executeFunctionsUponCompletion();    
@@ -542,7 +548,7 @@ public class Transactions {
 
         @Override
         public void commit()
-                throws RollbackException, HeuristicMixedException, HeuristicRollbackException, SecurityException,
+                throws RollbackException, SecurityException,
                        IllegalStateException, SystemException {
             if (logger.isTraceEnabled()) {
                 super.commit();
@@ -571,7 +577,7 @@ public class Transactions {
         }
 
         @Override
-        public void commit() throws RollbackException, HeuristicMixedException, HeuristicRollbackException, SecurityException, 
+        public void commit() throws RollbackException,  SecurityException, 
                                     IllegalStateException, SystemException {
             if (nestedLevel.getAndDecrement() == 1) {
                 try {

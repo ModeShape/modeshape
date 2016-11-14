@@ -16,6 +16,7 @@
 package org.modeshape.jcr.cache;
 
 import java.util.Set;
+import javax.transaction.SystemException;
 import org.modeshape.jcr.ExecutionContext;
 import org.modeshape.jcr.api.value.DateTime;
 import org.modeshape.jcr.cache.document.WorkspaceCache;
@@ -260,8 +261,9 @@ public interface SessionCache extends NodeCache {
     /**
      * Check whether this session is running within a transaction. This is commonly called by components that change persistent
      * state. Such persistent state might not be noticed by this session cache.
+     * @throws javax.transaction.SystemException - unexpected error conditions encountered by transaction manager.
      */
-    public void checkForTransaction();
+    public void checkForTransaction() throws SystemException;
 
     @Override
     public SessionCache unwrap();
