@@ -69,11 +69,13 @@ public class ModeShapeFederationManager implements FederationManager {
 
 
         SessionCache sessionCache = this.session.spawnSessionCache(false);
+        SessionCache systemSession = session.repository.createSystemSession(session.context(), false);
+
         String externalNodeKey = documentStore.createExternalProjection(parentNodeToBecomeFederatedKey.toString(), sourceName,
-                                                                        externalPath, projectionAlias);
+                                                                        externalPath, projectionAlias, systemSession);
         MutableCachedNode mutable = sessionCache.mutable(parentNodeToBecomeFederatedKey);
         mutable.addFederatedSegment(externalNodeKey, projectionAlias);
-        sessionCache.save();
+        systemSession.save(sessionCache, null);
     }
 
     @Override

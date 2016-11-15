@@ -17,6 +17,7 @@ package org.modeshape.jcr.cache;
 
 import java.util.Iterator;
 import java.util.Set;
+import javax.transaction.SystemException;
 import org.modeshape.jcr.ExecutionContext;
 import org.modeshape.jcr.cache.document.WorkspaceCache;
 
@@ -168,7 +169,7 @@ public class SessionCacheWrapper implements SessionCache {
     }
 
     @Override
-    public void checkForTransaction() {
+    public void checkForTransaction() throws SystemException {
         delegate.checkForTransaction();
     }
 

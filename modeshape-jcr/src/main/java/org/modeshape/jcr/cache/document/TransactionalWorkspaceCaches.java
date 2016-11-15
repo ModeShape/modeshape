@@ -46,7 +46,7 @@ public class TransactionalWorkspaceCaches {
         this.txnMgr = transactions.getTransactionManager();
     }
     
-    protected WorkspaceCache getTransactionalCache(WorkspaceCache globalWorkspaceCache) throws Exception {
+    protected WorkspaceCache getTransactionalCache(WorkspaceCache globalWorkspaceCache) throws SystemException  {
         // Get the current transaction ...
         Transaction txn = txnMgr.getTransaction();
         if (txn == null || txn.getStatus() != Status.STATUS_ACTIVE) return globalWorkspaceCache;
