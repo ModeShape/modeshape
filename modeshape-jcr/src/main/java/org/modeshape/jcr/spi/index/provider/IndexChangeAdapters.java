@@ -834,9 +834,13 @@ public class IndexChangeAdapters {
                     newValues.addAll(Arrays.asList(newProperty.getValuesAsArray()));
                 }
             } else if (mixinsTypeChange instanceof PropertyAdded) {
-                newValues.addAll(Arrays.asList(mixinsTypeChange.getProperty().getValuesAsArray()));
+                if (!mixinsTypeChange.getProperty().isEmpty()) {
+                    newValues.addAll(Arrays.asList(mixinsTypeChange.getProperty().getValuesAsArray()));
+                }
             } else if (mixinsTypeChange instanceof PropertyRemoved) {
-                oldValues.addAll(Arrays.asList(mixinsTypeChange.getProperty().getValuesAsArray()));
+                if (!mixinsTypeChange.getProperty().isEmpty()) {
+                    oldValues.addAll(Arrays.asList(mixinsTypeChange.getProperty().getValuesAsArray()));
+                }
             }
 
             if (primaryTypeChange == null && mixinsTypeChange == null) {

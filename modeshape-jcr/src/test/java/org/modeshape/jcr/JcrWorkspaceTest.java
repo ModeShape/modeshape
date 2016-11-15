@@ -804,6 +804,24 @@ public class JcrWorkspaceTest extends SingleUseAbstractTest {
 
     }
 
+    
+    @Test
+    @FixFor("MODE-2637")
+    public void copyNodeWithEmptyMultiValueProperty() throws Exception {
+        // start a repository with some indexes
+        startRepositoryWithConfigurationFrom("config/repo-config-local-provider-and-nodetype-index.json");
+        session.getRootNode().addNode("a");
+        Node node = session.getNode("/a");
+        node.addMixin("mix:referenceable");
+        session.save();
+        node.removeMixin("mix:referenceable");
+        session.save();
+        assertTrue(node.hasProperty("jcr:mixinTypes"));
+        assertThat(node.getProperty("jcr:mixinTypes").getValues().length, is(0));
+        session.getWorkspace().copy(session.getNode("/a").getPath(), "/a2");
+        session.save();
+    } 
+    
     protected void checkCorrespondingPaths( String workspace,
                                             final String... otherWorkspaces ) throws Exception {
         final Session session = repository.login(workspace);
