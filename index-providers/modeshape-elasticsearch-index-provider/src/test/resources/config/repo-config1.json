@@ -1,6 +1,10 @@
 {
     "name": "Persistent repo no indexes",
     "storage": {
+        "persistence" : {
+            "type" : "file",
+            "path": "target/persistent_repository/db"
+        },        
         "binaryStorage": {
             "type": "file",
             "directory": "target/persistent_repository/binaries",

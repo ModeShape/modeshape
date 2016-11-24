@@ -23,12 +23,14 @@ import org.elasticsearch.node.NodeBuilder;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.modeshape.common.FixFor;
 import org.modeshape.common.util.FileUtil;
 import org.modeshape.jcr.EsValidateQuery;
 import org.modeshape.jcr.LocalIndexProviderTest;
 import org.modeshape.jcr.ValidateQuery;
 import org.modeshape.jcr.api.JcrTools;
 import org.modeshape.jcr.api.query.Query;
+import org.modeshape.jcr.query.engine.IndexPlanners;
 
 /**
  * Unit test for {@link EsIndexProvider}. 
@@ -124,5 +126,30 @@ public class EsIndexProviderTest extends LocalIndexProviderTest {
     @Override
     protected void assertStorageLocationUnchangedAfterRestart() throws Exception {
         //nothing to assert, ES does not store indexes locally....
+    }
+    
+    @Test
+    @FixFor("MODE-2645")
+    public void shouldNotRecreateIndexesAfterRestart() throws Exception {
+        Node root = session().getRootNode();
+        Node newNode1 = root.addNode("nodeA");
+        newNode1.setProperty("foo", "X");
+        newNode1.addMixin("mix:referenceable");
+        Node newNode2 = root.addNode("nodeB");
+        newNode2.setProperty("foo", "Y");
+        session().save();
+
+        // print = true;
+
+        // Compute a query plan that should use this index ...
+        final String pathValue = newNode1.getPath();
+        Query query = jcrSql2Query("SELECT [jcr:path] FROM [nt:unstructured] WHERE [jcr:path] = '" + pathValue + "'");
+        validateQuery().rowCount(1L).useIndex(IndexPlanners.NODE_BY_PATH_INDEX_NAME).validate(query, query.execute());
+
+        stopRepository();
+        startRepositoryWithConfiguration(repositoryConfiguration());
+        
+        query = jcrSql2Query("SELECT [jcr:path] FROM [nt:unstructured] WHERE [jcr:path] = '" + pathValue + "'");
+        validateQuery().rowCount(1L).useIndex(IndexPlanners.NODE_BY_PATH_INDEX_NAME).validate(query, query.execute());
     }
 }
