@@ -79,7 +79,7 @@ public class EsClient {
      */
     public boolean createIndex(String name, String type, EsRequest mappings) throws IOException {
         if (indexExists(name)) {
-            deleteIndex(name);
+            return true;
         }
 
         CloseableHttpClient client = HttpClients.createDefault();
