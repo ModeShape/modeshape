@@ -32,6 +32,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
@@ -72,6 +73,7 @@ import org.modeshape.jcr.value.binary.FileSystemBinaryStore;
 import org.modeshape.jcr.value.binary.MongodbBinaryStore;
 import org.modeshape.jcr.value.binary.S3BinaryStore;
 import org.modeshape.jcr.value.binary.TransientBinaryStore;
+import org.modeshape.schematic.DocumentFactory;
 import org.modeshape.schematic.SchemaLibrary;
 import org.modeshape.schematic.SchemaLibrary.Problem;
 import org.modeshape.schematic.SchemaLibrary.Results;
@@ -443,6 +445,10 @@ public class RepositoryConfiguration {
         public static final String GARBAGE_COLLECTION = "garbageCollection";
         public static final String INITIAL_TIME = "initialTime";
         public static final String INTERVAL_IN_HOURS = "intervalInHours";
+        
+        public static final String LOCK_CLEANUP = "lockCleanup";
+        public static final String LOCK_CLEANUP_INITIAL_DELAY_IN_MINUTES = "lockCleanupInitialDelayInMinutes";
+        public static final String LOCK_CLEANUP_INTERVAL_IN_MINUTES = "lockCleanupIntervalInMinutes";
 
         public static final String DOCUMENT_OPTIMIZATION = "documentOptimization";
         public static final String OPTIMIZATION_CHILD_COUNT_TARGET = "childCountTarget";
@@ -551,7 +557,6 @@ public class RepositoryConfiguration {
 
         public static final String GARBAGE_COLLECTION_INITIAL_TIME = "00:00";
         public static final int GARBAGE_COLLECTION_INTERVAL_IN_HOURS = 24;
-
         public static final String OPTIMIZATION_INITIAL_TIME = "02:00";
         public static final int OPTIMIZATION_INTERVAL_IN_HOURS = 24;
 
@@ -1936,8 +1941,72 @@ public class RepositoryConfiguration {
         public long getIntervalInMillis() {
             return TimeUnit.MILLISECONDS.convert(getIntervalInHours(), TimeUnit.HOURS);
         }
+        
+        /**
+         * Get the lock cleanup configuration.
+         * 
+         * @return the configuration; never null
+         */
+        public LockCleanup getLockCleanup() {
+            return new LockCleanup(gc.getDocument(FieldName.LOCK_CLEANUP));
+        }
     }
 
+    /**
+     * The lock cleanup settings as they come from the repository configuration file.
+     * 
+     * @author Illia Khokholkov
+     *
+     */
+    @Immutable
+    public class LockCleanup {
+        
+        private final Document configuration;
+
+        /**
+         * Creates a new instance.
+         * 
+         * @param configuration
+         *            the {@link FieldName#LOCK_CLEANUP} section of the configuration to parse; if
+         *            {@code null}, defaults to an {@link DocumentFactory#newDocument() empty} document
+         */
+        protected LockCleanup(Document configuration) {
+            this.configuration = configuration != null ? configuration : EMPTY;
+        }
+        
+        /**
+         * Get the lock cleanup initial delay in milliseconds.
+         *
+         * @return an {@link Optional#empty() empty} initial delay if configuration is not provided
+         *         or if supplied value is {@code < 0}; otherwise, the configured value wrapped in
+         *         {@link Optional} is returned
+         */
+        public Optional<Long> getLockCleanupInitialDelayInMillis() {
+            Integer minutes = configuration.getInteger(FieldName.LOCK_CLEANUP_INITIAL_DELAY_IN_MINUTES);
+            if (minutes == null || minutes < 0) {
+                return Optional.empty();
+            }
+            
+            return Optional.of(TimeUnit.MINUTES.toMillis(minutes));
+        }
+        
+        /**
+         * Get the lock cleanup interval in milliseconds.
+         *
+         * @return an {@link Optional#empty() empty} interval if configuration is not provided or if
+         *         supplied value is {@code <= 0}; otherwise, the configured value wrapped in
+         *         {@link Optional} is returned
+         */
+        public Optional<Long> getLockCleanupIntervalInMillis() {
+            Integer minutes = configuration.getInteger(FieldName.LOCK_CLEANUP_INTERVAL_IN_MINUTES);
+            if (minutes == null || minutes <= 0) {
+                return Optional.empty();
+            }
+            
+            return Optional.of(TimeUnit.MINUTES.toMillis(minutes));
+        }
+    }
+    
     /**
      * Get the configuration for the document optimization for this repository.
      *

@@ -46,3 +46,6 @@ ObjectStore
 # Atomikos
 *.lck
 *.epoch
+
+# ignore checkstyle files
+*.checkstyle

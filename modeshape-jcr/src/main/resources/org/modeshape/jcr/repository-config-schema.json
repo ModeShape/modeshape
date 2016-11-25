@@ -65,6 +65,21 @@
                     "default" : "24",
                     "description" : "The number of hours between garbage collection runs. By default the interval is 24 hours (meaning it runs once per day)."
                 },
+                "lockCleanup" : {
+                    "type" : "object",
+                    "description" : "The (optional) lock cleanup configuration.",
+                    "additionalProperties" : false,
+                    "properties" : {
+                        "lockCleanupInitialDelayInMinutes" : {
+                            "type" : "integer",
+                            "description" : "The (optional) time to wait before scheduling the lock cleanup process. At runtime, defaults to the converted value of 'initialTime'."
+                        },
+                        "lockCleanupIntervalInMinutes" : {
+                            "type" : "integer",
+                            "description" : "The (optional) number of minutes between lock cleanup runs. At runtime, defaults to the converted value of 'intervalInHours'."
+                        }
+                    }
+                }
             }
         },
         "storage" : {
