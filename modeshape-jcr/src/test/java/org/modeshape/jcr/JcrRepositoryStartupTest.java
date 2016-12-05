@@ -21,6 +21,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -32,6 +33,7 @@ import java.util.concurrent.TimeUnit;
 import javax.jcr.NoSuchWorkspaceException;
 import javax.jcr.Node;
 import javax.jcr.PathNotFoundException;
+import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.nodetype.NodeTypeManager;
@@ -49,6 +51,10 @@ import org.modeshape.common.util.IoUtil;
 import org.modeshape.connector.mock.MockConnector;
 import org.modeshape.jcr.api.Workspace;
 import org.modeshape.jcr.api.federation.FederationManager;
+import org.modeshape.jcr.api.index.IndexColumnDefinitionTemplate;
+import org.modeshape.jcr.api.index.IndexDefinition;
+import org.modeshape.jcr.api.index.IndexDefinitionTemplate;
+import org.modeshape.jcr.api.index.IndexManager;
 import org.modeshape.jcr.cache.CachedNode;
 import org.modeshape.jcr.cache.ChildReference;
 import org.modeshape.jcr.cache.ChildReferences;
@@ -714,16 +720,7 @@ public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
     public void reindexingLocalProviderShouldRemoveExistingDataFirst() throws Exception {
         // clean the indexes
         TestingUtil.waitUntilFolderCleanedUp("target/startup_test_indexes");
-        startRunStop(repository -> {
-            JcrSession session = repository.login();
-            session.getRootNode().addNode("testRoot");
-            session.save();
-            Thread.sleep(100);
-            String sql = "select [jcr:path] from [nt:unstructured] where [jcr:name] = 'testRoot'";
-            Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
-            ValidateQuery.validateQuery().rowCount(1).useIndex("nodesByName").validate(query, query.execute());
-            session.logout();
-        }, "config/repo-config-persistent-local-indexes.json");
+        startRunStop(this::addNodeAndAssertIndexUsed, "config/repo-config-persistent-local-indexes.json");
         startRunStop(repository -> {
             JcrSession session = repository.login();
             // force a re-index of the entire workspace - this should clear the existing indexes first
@@ -742,16 +739,7 @@ public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
     public void shouldUseIndexesAfterRestarting() throws Exception {
         // clean the indexes
         TestingUtil.waitUntilFolderCleanedUp("target/startup_test_indexes");
-        startRunStop(repository -> {
-            JcrSession session = repository.login();
-            session.getRootNode().addNode("testRoot");
-            session.save();
-            Thread.sleep(100);
-            String sql = "select [jcr:path] from [nt:unstructured] where [jcr:name] = 'testRoot'";
-            Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
-            ValidateQuery.validateQuery().rowCount(1).useIndex("nodesByName").validate(query, query.execute());
-            session.logout();
-        }, "config/repo-config-persistent-local-indexes.json"); 
+        startRunStop(this::addNodeAndAssertIndexUsed, "config/repo-config-persistent-local-indexes.json"); 
         
         startRunStop(repository -> {
             JcrSession session = repository.login();
@@ -767,16 +755,8 @@ public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
     public void shouldNotUseIndexesWhichHaveBeenRemovedFromConfiguration() throws Exception {
         // clean the indexes
         TestingUtil.waitUntilFolderCleanedUp("target/startup_test_indexes");
-        RepositoryConfiguration configuration = startRunStop(repository -> {
-            JcrSession session = repository.login();
-            session.getRootNode().addNode("testRoot");
-            session.save();
-            Thread.sleep(100);
-            String sql = "select [jcr:path] from [nt:unstructured] where [jcr:name] = 'testRoot'";
-            Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
-            ValidateQuery.validateQuery().rowCount(1).useIndex("nodesByName").validate(query, query.execute());
-            session.logout();
-        }, "config/repo-config-persistent-local-indexes.json");
+        RepositoryConfiguration configuration = startRunStop(this::addNodeAndAssertIndexUsed, 
+                                                             "config/repo-config-persistent-local-indexes.json");
 
         MutableDocument configDoc = configuration.edit().asMutableDocument();
         configDoc.remove(RepositoryConfiguration.FieldName.INDEXES);
@@ -791,6 +771,68 @@ public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
             ValidateQuery.validateQuery().rowCount(1).useNoIndexes().validate(query, query.execute());
             session.logout();
         }, new RepositoryConfiguration(configDoc, "updated_config"));
+    }
+    
+    @Test
+    @FixFor("MODE-2644")
+    public void shouldUseDynamicallyRegisteredIndexes() throws Exception {
+        // clean the indexes
+        TestingUtil.waitUntilFolderCleanedUp("target/startup_test_indexes");
+        startRunStop(this::registerIndexDefinitionAndCheckUsage, "config/repo-config-persistent-local-indexes.json");
+    
+        startRunStop(repository -> {
+            JcrSession session = repository.login();
+            String sql = "select [jcr:path] from [nt:unstructured] where testProp = 'test'";
+            Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+            ValidateQuery.validateQuery().rowCount(1).useIndex("testProp").validate(query, query.execute());
+            session.logout();
+        }, "config/repo-config-persistent-local-indexes.json");
+    }
+    
+    private void addNodeAndAssertIndexUsed(JcrRepository repository) throws RepositoryException, InterruptedException {
+        JcrSession session = repository.login();
+        session.getRootNode().addNode("testRoot");
+        session.save();
+        Thread.sleep(100);
+        String sql = "select [jcr:path] from [nt:unstructured] where [jcr:name] = 'testRoot'";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        ValidateQuery.validateQuery().rowCount(1).useIndex("nodesByName").validate(query, query.execute());
+        session.logout();
+    }
+    
+    private void registerIndexDefinitionAndCheckUsage(JcrRepository repository) throws Exception {
+        JcrSession session = repository.login();
+        try {
+            IndexManager indexManager = session.getWorkspace().getIndexManager();
+            IndexDefinitionTemplate indexDefinitionTemplate = indexManager.createIndexDefinitionTemplate();
+            // we suppose there's only an index provider
+            indexDefinitionTemplate.setProviderName("local");
+            indexDefinitionTemplate.setWorkspace("default");
+            indexDefinitionTemplate.setAllWorkspaces();
+            indexDefinitionTemplate.setKind(IndexDefinition.IndexKind.VALUE);
+            indexDefinitionTemplate.setSynchronous(true);
+            indexDefinitionTemplate.setNodeTypeName("nt:unstructured");
+            indexDefinitionTemplate.setName("testProp");
+        
+            IndexColumnDefinitionTemplate indexColumnDefinitionTemplate = indexManager.createIndexColumnDefinitionTemplate();
+            indexColumnDefinitionTemplate.setPropertyName("testProp");
+            indexColumnDefinitionTemplate.setColumnType(PropertyType.STRING);
+            indexDefinitionTemplate.setColumnDefinitions(indexColumnDefinitionTemplate);
+        
+            indexManager.registerIndex(indexDefinitionTemplate, true);
+    
+            Node testNode = session.getRootNode().addNode("testRoot");
+            testNode.setProperty("testProp", "test");
+            session.save();
+            Thread.sleep(100);
+            String sql = "select [jcr:path] from [nt:unstructured] where testProp = 'test'";
+            Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+            ValidateQuery.validateQuery().rowCount(1).useIndex("testProp").validate(query, query.execute());
+            session.logout();
+    
+        } finally {
+            session.logout();            
+        }
     }
 
     private void prepareExternalDirectory( String dirpath ) throws IOException {

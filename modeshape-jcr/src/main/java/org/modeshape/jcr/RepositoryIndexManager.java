@@ -25,12 +25,14 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 import javax.jcr.RepositoryException;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.annotation.ThreadSafe;
@@ -110,7 +112,6 @@ class RepositoryIndexManager implements IndexManager, NodeTypes.Listener {
     private final Collection<Component> components;
     private final ConcurrentMap<String, IndexProvider> providers = new ConcurrentHashMap<>();
     private final AtomicBoolean initialized = new AtomicBoolean(false);
-    private final Set<String> activeIndexNames = java.util.Collections.newSetFromMap(new ConcurrentHashMap<>());
     private volatile IndexWriter indexWriter;
 
     private final Logger logger = Logger.getLogger(getClass());
@@ -208,11 +209,11 @@ class RepositoryIndexManager implements IndexManager, NodeTypes.Listener {
     protected synchronized void importIndexDefinitions() throws RepositoryException {
         RepositoryConfiguration.Indexes indexes = config.getIndexes();
         if (indexes.isEmpty()) return;
-        List<IndexDefinition> defns = new ArrayList<>();
-        for (String indexName : indexes.getIndexNames()) {
-            IndexDefinition defn = indexes.getIndex(indexName);
-            if (defn != null) defns.add(defn);
-        }
+        List<IndexDefinition> defns = indexes.getIndexNames().stream()
+                                             .map(indexes::getIndex)
+                                             .filter(Objects::nonNull)
+                                             .collect(Collectors.toList());
+        
         if (!defns.isEmpty()) {
             IndexDefinition[] array = defns.toArray(new IndexDefinition[defns.size()]);
             registerIndexes(array, true);
@@ -497,7 +498,6 @@ class RepositoryIndexManager implements IndexManager, NodeTypes.Listener {
                 defn = RepositoryIndexDefinition.createFrom(defn, true);
 
                 validated.add(defn);
-                activeIndexNames.add(defn.getName());
             }
         }
         if (problems.hasErrors()) {
@@ -536,7 +536,6 @@ class RepositoryIndexManager implements IndexManager, NodeTypes.Listener {
                 throw new NoSuchIndexException(JcrI18n.indexDoesNotExist.text(indexName, repository.name()));
             }
             system.remove(defn);
-            activeIndexNames.remove(indexName);
         }
         system.save();
 
@@ -808,7 +807,7 @@ class RepositoryIndexManager implements IndexManager, NodeTypes.Listener {
             // Read the affected index definitions ...
             SessionCache systemCache = repository.createSystemSession(context, false);
             SystemContent system = new SystemContent(systemCache);
-            Collection<IndexDefinition> indexDefns = system.readAllIndexDefinitions(providers.keySet(), activeIndexNames);
+            Collection<IndexDefinition> indexDefns = system.readAllIndexDefinitions(providers.keySet());
             this.indexes = new Indexes(context, indexDefns, nodeTypes);
             return this.indexes;
         } catch (WorkspaceNotFoundException e) {
@@ -849,11 +848,7 @@ class RepositoryIndexManager implements IndexManager, NodeTypes.Listener {
 
                 // Now process all of the indexes ...
                 NameFactory names = context.getValueFactories().getNameFactory();
-                Set<Name> nodeTypeNames = new HashSet<>();
                 for (IndexDefinition defn : defns) {
-
-                    // Determine all of the node types that are subtypes of any columns
-                    nodeTypeNames.clear();
                     Name nodeTypeName = names.create(defn.getNodeTypeName());
 
                     if (!subtypesByName.containsKey(nodeTypeName)){
