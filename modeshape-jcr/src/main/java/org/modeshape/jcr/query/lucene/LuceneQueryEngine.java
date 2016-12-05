@@ -276,6 +276,7 @@ public class LuceneQueryEngine extends QueryEngine {
         @Override
         public List<Object[]> execute() {
             assert andedConstraints != null;
+            assert postConstraints != null;
             assert limit != null;
 
             // Create the Lucene queries ...
@@ -338,6 +339,12 @@ public class LuceneQueryEngine extends QueryEngine {
                     return Collections.emptyList();
                 } catch (IOException e) {
                     throw new LuceneException(e);
+                }
+            }
+
+            if (!postConstraints.isEmpty()) {
+                for (Constraint constraint : postConstraints) {
+                    queries.addConstraintForPostprocessing(constraint);
                 }
             }
 
