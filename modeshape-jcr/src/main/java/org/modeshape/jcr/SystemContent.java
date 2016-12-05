@@ -87,6 +87,7 @@ public class SystemContent {
                                                                                          ModeShapeLexicon.KIND,
                                                                                          ModeShapeLexicon.WORKSPACES,
                                                                                          JcrLexicon.DESCRIPTION);
+    private static final Logger LOGGER = Logger.getLogger(SystemContent.class);
 
     private final SessionCache system;
     private NodeKey systemKey;
@@ -554,31 +555,34 @@ public class SystemContent {
     }
 
     /**
-     * Read from system storage the index definitions. If the names of the providers are providers, then the resulting index
-     * definitions will each be {@link IndexDefinition#isEnabled() enabled} only if the definition's named provider is in the
-     * supplied set and the name of the index definition is present in the repository's indexes configuration; 
-     * otherwise, the definition will be marked as disabled.
+     * Read from system storage the index definitions for the given set of provider names. Only the index definitions
+     * which are {@link IndexDefinition#isEnabled() enabled} will be taken into account.
      *
      * @param providerNames the names of the providers that should be used to determine which index definitions are
      *        {@link IndexDefinition#isEnabled() enabled}; may be null if not known and all index definitions will be
      *        {@link IndexDefinition#isEnabled() enabled}
-     * @param indexNames the names of the indexes that should be used according to the repository's indexes configuration
      * @return the index definitions as read from the system storage
      */
-    public List<IndexDefinition> readAllIndexDefinitions(Set<String> providerNames, Set<String> indexNames) {
+    public List<IndexDefinition> readAllIndexDefinitions(Set<String> providerNames) {
         CachedNode indexes = indexesNode();
         List<IndexDefinition> defns = new ArrayList<>();
         for (ChildReference ref : indexes.getChildReferences(system)) {
             CachedNode provider = system.getNode(ref);
             Name providerName = provider.getName(system);
+            String providerLocalName = providerName.getLocalName();
+            boolean providerExists = providerNames == null || providerNames.contains(providerLocalName);
+            if (!providerExists) {
+                LOGGER.debug("Ignoring all index definitions for provider '{}' because it isn't present in the configuration",
+                             providerLocalName);
+                continue;
+            }
             for (ChildReference indexRef : provider.getChildReferences(system)) {
                 CachedNode indexDefn = system.getNode(indexRef);
                 IndexDefinition defn = readIndexDefinition(indexDefn, providerName);
-                if (providerNames.contains(defn.getProviderName()) && indexNames.contains(defn.getName())) {
+                if (defn.isEnabled()) {
                     defns.add(defn);
                 } else {
-                    // There is no provider by this name, so mark it as not enabled ...
-                    defn = RepositoryIndexDefinition.createFrom(defn, false);
+                    LOGGER.debug("Ignoring index definition '{}' because it's disabled", defn.getName());
                 }
             }
         }
