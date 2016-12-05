@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration xmlns:mode="http://www.modeshape.org/1.0" xmlns:jcr="http://www.jcp.org/jcr/1.0">
+    <!--
+    Define the JCR repositories
+    -->
+    <mode:repositories>
+        <!--
+        Define a JCR repository that accesses the 'Store' source
+        -->
+        <mode:repository jcr:name="My repository" mode:source="Store">
+            <mode:options jcr:primaryType="mode:options">
+                <mode:option jcr:name="systemSourceName" mode:value="system@Store"/>
+                <mode:option jcr:name="jaasLoginConfigName" mode:value="modeshape-jcr"/>
+            </mode:options>
+        </mode:repository>
+    </mode:repositories>
+    <!--
+    Define the sources for the content.  These sources are directly accessible using the ModeShape-specific
+    Graph API.
+    -->
+    <mode:sources>
+        <mode:source jcr:name="Store"
+                     mode:classname="org.modeshape.graph.connector.inmemory.InMemoryRepositorySource"
+                     mode:retryLimit="3" mode:defaultWorkspaceName="default" >
+            <predefinedWorkspaceNames>system</predefinedWorkspaceNames>
+            <predefinedWorkspaceNames>default</predefinedWorkspaceNames>
+        </mode:source>
+    </mode:sources>
+</configuration>

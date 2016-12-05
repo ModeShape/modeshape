@@ -1,0 +1,38 @@
+<!DOCTYPE Repository
+        PUBLIC "-//The Apache Software Foundation//DTD Jackrabbit 1.5//EN"
+        "http://jackrabbit.apache.org/dtd/repository-1.5.dtd">
+<Repository>
+    <FileSystem class="org.apache.jackrabbit.core.fs.mem.MemoryFileSystem"/>
+    <Security appName="JUnitTesting">
+        <!--<AccessManager class="org.apache.jackrabbit.core.security.DefaultAccessManager"/>-->
+        <LoginModule class="org.apache.jackrabbit.core.security.simple.SimpleLoginModule"/>
+    </Security>
+    <Workspaces rootPath="${project.build.testOutputDirectory}/workspaces" defaultWorkspace="test"/>
+
+    <Workspace name="test">
+
+        <FileSystem class="org.apache.jackrabbit.core.fs.mem.MemoryFileSystem"/>
+
+        <!-- store in memory -->
+        <PersistenceManager
+                class="org.apache.jackrabbit.core.persistence.bundle.BundleFsPersistenceManager">
+            <param name="blobFSBlockSize" value="1"/>
+        </PersistenceManager>
+
+        <SearchIndex class="org.apache.jackrabbit.core.query.lucene.SearchIndex">
+            <param name="directoryManagerClass" value="org.apache.jackrabbit.core.query.lucene.directory.RAMDirectoryManager"/>
+            <param name="path" value="${project.build.testOutputDirectory}/index"/>
+            <FileSystem class="org.apache.jackrabbit.core.fs.mem.MemoryFileSystem"/>
+        </SearchIndex>
+    </Workspace>
+
+    <Versioning rootPath="${project.build.testOutputDirectory}/versions">
+        <FileSystem class="org.apache.jackrabbit.core.fs.mem.MemoryFileSystem"/>
+        <!-- store in memory -->
+        <PersistenceManager
+                class="org.apache.jackrabbit.core.persistence.bundle.BundleFsPersistenceManager">
+            <param name="blobFSBlockSize" value="1"/>
+
+        </PersistenceManager>
+    </Versioning>
+</Repository>

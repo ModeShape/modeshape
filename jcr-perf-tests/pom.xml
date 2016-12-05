@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <packaging>pom</packaging>
+
+    <groupId>org.modeshape</groupId>
+    <artifactId>jcr-perf-tests</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+
+    <properties>
+       <junit.version>4.8.2</junit.version>
+		<slf4j.api.version>1.6.1</slf4j.api.version>
+		<slf4j.log4j.version>1.6.1</slf4j.log4j.version>
+		<log4j.version>1.2.16</log4j.version>
+		<jcr.version>2.0</jcr.version>
+    </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <!-- Java Content Repository API -->
+            <dependency>
+                <groupId>javax.jcr</groupId>
+                <artifactId>jcr</artifactId>
+                <version>${jcr.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-api</artifactId>
+                <version>${slf4j.api.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>junit</groupId>
+                <artifactId>junit</artifactId>
+                <version>${junit.version}</version>
+                <scope>test</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-log4j12</artifactId>
+                <version>${slf4j.log4j.version}</version>
+                <scope>test</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+
+    <build>
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>true</filtering>
+            </resource>
+        </resources>
+        <testResources>
+            <testResource>
+                <directory>src/test/resources</directory>
+                <filtering>true</filtering>
+            </testResource>
+        </testResources>
+        <plugins>
+            <plugin>
+               <groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-plugin</artifactId>
+                <version>2.10</version>
+                <configuration>
+                    <enableAssertions>true</enableAssertions>
+                    <argLine>-Xmx1024M</argLine>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
+    <modules>
+        <module>perf-tests-api</module>
+        <module>jackrabbit-tests</module>
+        <module>modeshape-2.x-tests</module>
+        <module>modeshape-3.x-tests</module>
+    </modules>
+</project>
