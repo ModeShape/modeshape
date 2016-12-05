@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module rename-to='explorer'>
+  <!-- Inherit the core Web Toolkit stuff.                        -->
+  <inherits name='com.google.gwt.user.User'/>
+  
+  	<!-- <inherits name="com.smartgwt.SmartGwt" />  -->
+	<inherits name="com.smartgwt.SmartGwtNoScript" /> 
+	<inherits name="com.smartclient.SmartClientDefault"/>
+	<inherits name="com.smartclient.theme.treefrog.TreeFrog"/> 
+	<!-- inherits name="com.smartclient.theme.fleet.Fleet"/ -->
+	<!-- <inherits name="com.smartclient.theme.blackops.BlackOps"/> -->
+	<!-- <inherits name="com.smartclient.theme.enterprise.Enterprise"/>  -->
+
+  <!-- Other module inherits                                      -->
+
+  <!-- Specify the app entry point class.                         -->
+  <entry-point class='org.modeshape.explorer.client.Explorer'/>
+
+  <!-- Specify the paths for translatable code                    -->
+  <source path='client'/>
+
+</module>
