@@ -27,9 +27,13 @@ jdk:
   
 # We use docker for the persistence integration tests
 services:
-    - docker
-    
+  - docker
+
+before_script:
+  - sudo docker ps -a 
+  
 # We have to use our local `settings.xml`, and the clustering tests require IPv4 on the Travis infrastructure
 # We're also changing the Maven default logging to avoid printing out all the 'Downloading' messages which can cause the Travis
 # build to fail when the log size exceeds 4MB
-script: mvn -s settings.xml clean install -Pintegration -Ppersistence-integration -DpreferIpv4 -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer=warn -B
+script: 
+  - mvn -s settings.xml clean install -Pintegration -Ppersistence-integration -DpreferIpv4 -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer=warn -B

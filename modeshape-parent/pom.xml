@@ -215,6 +215,7 @@
         <version.bundle.plugin>3.0.0</version.bundle.plugin>
         <version.gwt.maven.plugin>2.5.1</version.gwt.maven.plugin>
         <version.org.wildfly.plugings.wildfly-maven-plugin>1.0.2.Final</version.org.wildfly.plugings.wildfly-maven-plugin>
+        <version.fabric8.docker.plugin>0.18.1</version.fabric8.docker.plugin>
         <version.org.elasticsearch>2.1.0</version.org.elasticsearch>
         <version.jna>4.1.0</version.jna>
         <!--The name of the modeshape-client artifact used by tools-->
@@ -306,7 +307,7 @@
                 <database.url>jdbc:h2:file:./target/db</database.url>
                 <database.username>sa</database.username>
                 <database.password/>
-                <docker.image/>
+                <docker.filter/>
             </properties>
         </profile>
 
@@ -324,8 +325,9 @@
                 <database.username>mysql</database.username>
                 <database.password>mysql</database.password>
                 <database.driver>com.mysql.jdbc.Driver</database.driver>
-                <database.url>jdbc:mysql://${docker.host.address}:3306/${database.name}?autoReconnect=true&amp;useSSL=false</database.url>
-                <docker.image>modeshape-mysql</docker.image>
+                <database.port>3306</database.port>
+                <database.url>jdbc:mysql://${docker.host.address}:${database.port}/${database.name}?autoReconnect=true&amp;useSSL=false</database.url>
+                <docker.filter>mysql/mysql-server:${version.docker.mysql}</docker.filter>
             </properties>
             <dependencies>
                 <dependency>
@@ -350,8 +352,9 @@
                 <database.username>postgres</database.username>
                 <database.password>postgres</database.password>
                 <database.driver>org.postgresql.Driver</database.driver>
-                <database.url>jdbc:postgresql://${docker.host.address}:5432/${database.name}</database.url>
-                <docker.image>modeshape-postgres</docker.image>
+                <database.port>5432</database.port>
+                <database.url>jdbc:postgresql://${docker.host.address}:${database.port}/${database.name}</database.url>
+                <docker.filter>postgres:${version.docker.postgresql}</docker.filter>
             </properties>
             <dependencies>
                 <dependency>
@@ -376,8 +379,10 @@
                 <database.username>system</database.username>
                 <database.password>oracle</database.password>
                 <database.driver>oracle.jdbc.OracleDriver</database.driver>
-                <database.url>jdbc:oracle:thin:@${docker.host.address}:49161:xe</database.url>
-                <docker.image>modeshape-oracle</docker.image>
+                <database.port1>49161</database.port1>
+                <database.port2>49160</database.port2>
+                <database.url>jdbc:oracle:thin:@${docker.host.address}:${database.port1}:xe</database.url>
+                <docker.filter>wnameless/oracle-xe-11g:${version.docker.oracle}</docker.filter>
             </properties>
             <dependencies>
                 <dependency>
@@ -535,7 +540,7 @@
                 <plugin>
                     <groupId>io.fabric8</groupId>
                     <artifactId>docker-maven-plugin</artifactId>
-                    <version>0.14.1</version>
+                    <version>${version.fabric8.docker.plugin}</version>
                     <configuration>
                         <watchInterval>500</watchInterval>
                         <logDate>default</logDate>
@@ -544,16 +549,15 @@
                         <images>
                             <image>
                                 <name>postgres:${version.docker.postgresql}</name>
-                                <alias>modeshape-postgres</alias>
                                 <run>
-                                    <namingStrategy>alias</namingStrategy>
+                                    <namingStrategy>none</namingStrategy>
                                     <env>
                                         <POSTGRES_DB>${database.name}</POSTGRES_DB>
                                         <POSTGRES_USER>${database.username}</POSTGRES_USER>
                                         <POSTGRES_PASSWORD>${database.password}</POSTGRES_PASSWORD>
                                     </env>
                                     <ports>
-                                        <port>5432:5432</port>
+                                        <port>${database.port}:5432</port>
                                     </ports>
                                     <log>
                                         <prefix>postgress</prefix>
@@ -568,9 +572,8 @@
                             </image>
                             <image>
                                 <name>mysql/mysql-server:${version.docker.mysql}</name>
-                                <alias>modeshape-mysql</alias>
                                 <run>
-                                    <namingStrategy>alias</namingStrategy>
+                                    <namingStrategy>none</namingStrategy>
                                     <env>
                                         <MYSQL_ROOT_PASSWORD>modeshape</MYSQL_ROOT_PASSWORD>
                                         <MYSQL_DATABASE>${database.name}</MYSQL_DATABASE>
@@ -578,7 +581,7 @@
                                         <MYSQL_PASSWORD>${database.password}</MYSQL_PASSWORD>
                                     </env>
                                     <ports>
-                                        <port>3306:3306</port>
+                                        <port>${database.port}:3306</port>
                                     </ports>
                                     <log>
                                         <prefix>mysql</prefix>
@@ -593,15 +596,14 @@
                             </image>
                             <image>
                                 <name>wnameless/oracle-xe-11g:${version.docker.oracle}</name>
-                                <alias>modeshape-oracle</alias>
                                 <run>
-                                    <namingStrategy>alias</namingStrategy>
+                                    <namingStrategy>none</namingStrategy>
                                     <env>
                                         <ORACLE_ALLOW_REMOTE>true</ORACLE_ALLOW_REMOTE>
                                     </env>
                                     <ports>
-                                        <port>49160:22</port>
-                                        <port>49161:1521</port>
+                                        <port>${database.port2}:22</port>
+                                        <port>${database.port1}:1521</port>
                                     </ports>
                                     <log>
                                         <prefix>oracle</prefix>
