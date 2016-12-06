@@ -181,10 +181,7 @@ class JcrLockManager implements LockManager {
     private ModeShapeLock getLowestLockAlongPath(final AbstractJcrNode node, boolean skipExpiredLocks)
         throws PathNotFoundException, AccessDeniedException, RepositoryException {
         session.checkLive();
-        if (!this.session.repository().lockingUsed()) {
-            //if locking hasn't been used at all, there's nothing to check
-            return null;
-        }
+       
         SessionCache sessionCache = session.cache();
         NodeCache cache = sessionCache;
         NodeKey nodeKey = node.key();
