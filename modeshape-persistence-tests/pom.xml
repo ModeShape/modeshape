@@ -187,8 +187,9 @@
                 <database.username>mysql</database.username>
                 <database.password>mysql</database.password>
                 <database.driver>com.mysql.jdbc.Driver</database.driver>
-                <database.url>jdbc:mysql://${docker.host.address}:3306/${database.name}?autoReconnect=true&amp;useSSL=false</database.url>
-                <docker.image>modeshape-mysql</docker.image>
+                <database.port>6603</database.port>
+                <database.url>jdbc:mysql://${docker.host.address}:${database.port}/${database.name}?autoReconnect=true&amp;useSSL=false</database.url>
+                <docker.filter>mysql/mysql-server:${version.docker.mysql}</docker.filter>
             </properties>
             <dependencies>
                 <dependency>
@@ -214,19 +215,23 @@
                 <oracle.database.username>system</oracle.database.username>
                 <oracle.database.password>oracle</oracle.database.password>
                 <oracle.database.driver>oracle.jdbc.OracleDriver</oracle.database.driver>
-                <oracle.database.url>jdbc:oracle:thin:@${docker.host.address}:49161:xe</oracle.database.url>
+                <oracle.database.port1>49161</oracle.database.port1>
+                <oracle.database.port2>49160</oracle.database.port2>
+                <oracle.database.url>jdbc:oracle:thin:@${docker.host.address}:${oracle.database.port1}:xe</oracle.database.url>
 
                 <postgres.database.name>modeshape_db</postgres.database.name>
                 <postgres.database.username>ms_user</postgres.database.username>
                 <postgres.database.password>ms_password</postgres.database.password>
                 <postgres.database.driver>org.postgresql.Driver</postgres.database.driver>
-                <postgres.database.url>jdbc:postgresql://${docker.host.address}:5432/${postgres.database.name}</postgres.database.url>
+                <postgres.database.port>5432</postgres.database.port>
+                <postgres.database.url>jdbc:postgresql://${docker.host.address}:${postgres.database.port}/${postgres.database.name}</postgres.database.url>
 
                 <mysql.database.name>modeshape_db</mysql.database.name>
                 <mysql.database.username>ms_user</mysql.database.username>
                 <mysql.database.password>ms_password</mysql.database.password>
                 <mysql.database.driver>com.mysql.jdbc.Driver</mysql.database.driver>
-                <mysql.database.url>jdbc:mysql://${docker.host.address}:3306/${mysql.database.name}?autoReconnect=true&amp;useSSL=false</mysql.database.url>
+                <mysql.database.port>3306</mysql.database.port>
+                <mysql.database.url>jdbc:mysql://${docker.host.address}:${mysql.database.port}/${mysql.database.name}?autoReconnect=true&amp;useSSL=false</mysql.database.url>
             </properties>
             <dependencies>
                 <dependency>
@@ -262,16 +267,15 @@
                             <images>
                                 <image>
                                     <name>postgres:${version.docker.postgresql}</name>
-                                    <alias>modeshape-postgres</alias>
                                     <run>
-                                        <namingStrategy>alias</namingStrategy>
+                                        <namingStrategy>none</namingStrategy>
                                         <env>
                                             <POSTGRES_DB>${postgres.database.name}</POSTGRES_DB>
                                             <POSTGRES_USER>${postgres.database.username}</POSTGRES_USER>
                                             <POSTGRES_PASSWORD>${postgres.database.password}</POSTGRES_PASSWORD>
                                         </env>
                                         <ports>
-                                            <port>5432:5432</port>
+                                            <port>${postgres.database.port}:5432</port>
                                         </ports>
                                         <log>
                                             <prefix>postgress</prefix>
@@ -296,7 +300,7 @@
                                             <MYSQL_PASSWORD>${mysql.database.password}</MYSQL_PASSWORD>
                                         </env>
                                         <ports>
-                                            <port>3306:3306</port>
+                                            <port>${mysql.database.port}:3306</port>
                                         </ports>
                                         <log>
                                             <prefix>mysql</prefix>
@@ -318,8 +322,8 @@
                                             <ORACLE_ALLOW_REMOTE>true</ORACLE_ALLOW_REMOTE>
                                         </env>
                                         <ports>
-                                            <port>49160:22</port>
-                                            <port>49161:1521</port>
+                                            <port>${oracle.database.port2}:22</port>
+                                            <port>${oracle.database.port1}:1521</port>
                                         </ports>
                                         <log>
                                             <prefix>oracle</prefix>

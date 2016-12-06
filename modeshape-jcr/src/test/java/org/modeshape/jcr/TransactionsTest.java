@@ -23,6 +23,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -40,12 +41,14 @@ import javax.jcr.NodeIterator;
 import javax.jcr.PathNotFoundException;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
+import javax.jcr.lock.Lock;
 import javax.jcr.lock.LockManager;
 import javax.jcr.query.Query;
 import javax.jcr.query.QueryManager;
 import javax.jcr.query.QueryResult;
 import javax.jcr.security.AccessControlManager;
 import javax.jcr.security.Privilege;
+import javax.jcr.version.VersionException;
 import javax.jcr.version.VersionManager;
 import javax.transaction.HeuristicMixedException;
 import javax.transaction.HeuristicRollbackException;
@@ -182,6 +185,7 @@ public class TransactionsTest extends SingleUseAbstractTest {
     }
 
     @Test
+    @FixFor( "MODE-2642" )
     public void shouldBeAbleToVersionWithinUserTransactionAndDefaultTransactionManager() throws Exception {
         startTransaction();
         VersionManager vm = session.getWorkspace().getVersionManager();
@@ -192,6 +196,13 @@ public class TransactionsTest extends SingleUseAbstractTest {
         node.setProperty("code", "lalalal");
         session.save();
         vm.checkin(node.getPath());
+        assertFalse(node.isCheckedOut());
+        try {
+            node.addMixin("mix:lockable");
+            fail("Expected a version exception because the node is checked in");
+        } catch (VersionException e) {
+            //expected                                                                                        
+        }
         commitTransaction();
     }
 
@@ -669,7 +680,24 @@ public class TransactionsTest extends SingleUseAbstractTest {
         session.logout();
         commitTransaction();
     }
-  
+    
+    @Test
+    @FixFor( "MODE-2642" )
+    public void shouldLockNodeWithinTransaction() throws Exception {
+        Node node = session.getRootNode().addNode("test");
+        node.addMixin("mix:lockable");
+        session.save();
+        
+        startTransaction();
+        JcrLockManager lockManager = session.getWorkspace().getLockManager();
+        Lock lock = lockManager.lock(node.getPath(), false, false, Long.MAX_VALUE, null);
+        assertTrue(lock.isLive());
+        assertTrue("Node should be locked", node.isLocked());
+        commitTransaction();
+        assertTrue(node.isLocked());
+    }
+    
+    
     private void insertAndQueryNodes(int i) {
         Session session = null;
 

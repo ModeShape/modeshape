@@ -500,14 +500,6 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
     protected final ChangeJournal journal() {
         return runningState().journal();
     }
-
-    protected final boolean versioningUsed() {
-        return runningState().repositoryCache().versioningUsed();
-    }
-
-    protected final boolean lockingUsed() {
-        return runningState().repositoryCache().lockingUsed();
-    }
     
     protected final boolean mimeTypeDetectionEnabled() {
         return runningState().mimeTypeDetector() != NullMimeTypeDetector.INSTANCE;
