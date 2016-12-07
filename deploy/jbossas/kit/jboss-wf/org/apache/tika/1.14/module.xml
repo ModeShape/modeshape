@@ -16,32 +16,34 @@
   ~ See the License for the specific language governing permissions and
   ~ limitations under the License.
 -->
-<module xmlns="urn:jboss:module:1.3" name="org.apache.tika" slot="1.12">
+<module xmlns="urn:jboss:module:1.3" name="org.apache.tika" slot="${version.org.apache.tika}">
     <resources>
-        <resource-root path="tika-core-1.12.jar" />
-        <resource-root path="tika-parsers-1.12.jar" />
+        <resource-root path="tika-core-${version.org.apache.tika}.jar" />
+        <resource-root path="tika-parsers-${version.org.apache.tika}.jar" />
         <!--All the following are specific to Tika Should the tika version change, those need to change as well-->
         <resource-root path="asm-5.0.4.jar" />
         <resource-root path="apache-mime4j-core-0.7.2.jar" />
         <resource-root path="apache-mime4j-dom-0.7.2.jar" />
-        <resource-root path="commons-codec-1.9.jar" />
-        <resource-root path="commons-compress-1.10.jar" />
+        <resource-root path="commons-codec-1.10.jar" />
+        <resource-root path="commons-compress-1.12.jar" />
+        <resource-root path="commons-collections4-4.1.jar" />
+        <resource-root path="commons-logging-1.2.jar" />
         <resource-root path="commons-exec-1.3.jar" />
-        <resource-root path="commons-io-2.4.jar" />
-        <resource-root path="commons-logging-1.1.1.jar" />
-        <resource-root path="fontbox-1.8.10.jar" />
-        <resource-root path="jempbox-1.8.10.jar" />
+        <resource-root path="commons-io-2.5.jar" />
+        <resource-root path="fontbox-${version.org.apache.pdfbox}.jar" />
+        <resource-root path="jempbox-1.8.12.jar" />
         <resource-root path="juniversalchardet-1.0.3.jar" />
-        <resource-root path="pdfbox-1.8.10.jar" />
+        <resource-root path="pdfbox-${version.org.apache.pdfbox}.jar" />
         <resource-root path="poi-${version.org.apache.poi}.jar" />
         <resource-root path="poi-ooxml-${version.org.apache.poi}.jar" />
         <resource-root path="poi-ooxml-schemas-${version.org.apache.poi}.jar" />
         <resource-root path="poi-scratchpad-${version.org.apache.poi}.jar" />
         <resource-root path="xmlbeans-2.6.0.jar" />
         <resource-root path="tagsoup-1.2.1.jar" />
-        <resource-root path="vorbis-java-core-0.6.jar" />
-        <resource-root path="vorbis-java-tika-0.6.jar" />
+        <resource-root path="vorbis-java-core-0.8.jar" />
+        <resource-root path="vorbis-java-tika-0.8.jar" />
         <resource-root path="xz-1.5.jar" />
+        <resource-root path="jackson-core-2.8.1.jar" />
     </resources>
     <dependencies>
         <module name="javax.api" export="true"/>

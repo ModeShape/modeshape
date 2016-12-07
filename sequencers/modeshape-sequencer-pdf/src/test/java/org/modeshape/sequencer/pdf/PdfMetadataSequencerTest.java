@@ -17,37 +17,35 @@ package org.modeshape.sequencer.pdf;
 
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
+import static org.modeshape.sequencer.pdf.PdfMetadataLexicon.ATTACHMENT_NODE;
 import static org.modeshape.sequencer.pdf.PdfMetadataLexicon.AUTHOR;
+import static org.modeshape.sequencer.pdf.PdfMetadataLexicon.CREATION_DATE;
 import static org.modeshape.sequencer.pdf.PdfMetadataLexicon.CREATOR;
 import static org.modeshape.sequencer.pdf.PdfMetadataLexicon.ENCRYPTED;
 import static org.modeshape.sequencer.pdf.PdfMetadataLexicon.KEYWORDS;
+import static org.modeshape.sequencer.pdf.PdfMetadataLexicon.MODIFICATION_DATE;
+import static org.modeshape.sequencer.pdf.PdfMetadataLexicon.NAME;
 import static org.modeshape.sequencer.pdf.PdfMetadataLexicon.ORIENTATION;
 import static org.modeshape.sequencer.pdf.PdfMetadataLexicon.PAGE_COUNT;
+import static org.modeshape.sequencer.pdf.PdfMetadataLexicon.PAGE_NODE;
 import static org.modeshape.sequencer.pdf.PdfMetadataLexicon.PAGE_NUMBER;
 import static org.modeshape.sequencer.pdf.PdfMetadataLexicon.PRODUCER;
 import static org.modeshape.sequencer.pdf.PdfMetadataLexicon.SUBJECT;
 import static org.modeshape.sequencer.pdf.PdfMetadataLexicon.TITLE;
 import static org.modeshape.sequencer.pdf.PdfMetadataLexicon.VERSION;
 import static org.modeshape.sequencer.pdf.PdfMetadataLexicon.XMP_NODE;
-import static org.modeshape.sequencer.pdf.PdfMetadataLexicon.PAGE_NODE;
-import static org.modeshape.sequencer.pdf.PdfMetadataLexicon.ATTACHMENT_NODE;
-import static org.modeshape.sequencer.pdf.PdfMetadataLexicon.NAME;
-import static org.modeshape.sequencer.pdf.PdfMetadataLexicon.CREATION_DATE;
-import static org.modeshape.sequencer.pdf.PdfMetadataLexicon.MODIFICATION_DATE;
 import static org.modeshape.sequencer.pdf.XmpMetadataLexicon.BASE_URL;
 import static org.modeshape.sequencer.pdf.XmpMetadataLexicon.CREATE_DATE;
 import static org.modeshape.sequencer.pdf.XmpMetadataLexicon.CREATOR_TOOL;
 import static org.modeshape.sequencer.pdf.XmpMetadataLexicon.IDENTIFIER;
+import static org.modeshape.sequencer.pdf.XmpMetadataLexicon.LABEL;
 import static org.modeshape.sequencer.pdf.XmpMetadataLexicon.METADATA_DATE;
 import static org.modeshape.sequencer.pdf.XmpMetadataLexicon.MODIFY_DATE;
 import static org.modeshape.sequencer.pdf.XmpMetadataLexicon.NICKNAME;
 import static org.modeshape.sequencer.pdf.XmpMetadataLexicon.RATING;
-import static org.modeshape.sequencer.pdf.XmpMetadataLexicon.LABEL;
 
 import java.util.Calendar;
-
 import javax.jcr.Node;
-
 import org.junit.Test;
 import org.modeshape.jcr.api.JcrConstants;
 import org.modeshape.jcr.sequencer.AbstractSequencerTest;
@@ -110,24 +108,17 @@ public class PdfMetadataSequencerTest extends AbstractSequencerTest {
     }
 
     @Test
-    public void shouldSequenceEncryptedPdf() throws Exception {
+    public void shouldNotSequenceEncryptedPdf() throws Exception {
         // GIVEN
         String filename = "sample-encrypted.pdf";
 
         // WHEN
         createNodeWithContentFromFile(filename, filename);
 
-        // THEN
-        Node sequencedNode = getOutputNode(rootNode, "sequenced/pdf/" + filename);
-        assertThat(sequencedNode.getProperty(JcrConstants.JCR_MIME_TYPE).getString(), is("application/pdf"));
-        assertThat(sequencedNode.getProperty(PAGE_COUNT).getLong(), is(2L));
-        assertThat(sequencedNode.getProperty(ORIENTATION).getString(), is("portrait"));
-        assertThat(sequencedNode.getProperty(ENCRYPTED).getBoolean(), is(true));
-        assertThat(sequencedNode.getProperty(VERSION).getString(), is("1.4"));
-
-        assertThat(sequencedNode.hasProperty("Author"), is(false));
-
-        assertThat(sequencedNode.hasNode(XMP_NODE), is(false));
+        // as of MODE-2648 and PdfBox 2.x encrypted PDFs are not parseable since the API and dependencies have changed
+        // it turns out that prior to 2.x some basic metadata was still available; this is not the case anymore
+        Thread.sleep(100);
+        assertNoNode("/sequenced/pdf/" + filename);
     }
 
     @Test

@@ -20,16 +20,15 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
-
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDDocumentCatalog;
 import org.apache.pdfbox.pdmodel.PDDocumentInformation;
 import org.apache.pdfbox.pdmodel.PDPage;
-import org.apache.pdfbox.pdmodel.PDPageable;
 import org.apache.pdfbox.pdmodel.common.filespecification.PDComplexFileSpecification;
 import org.apache.pdfbox.pdmodel.common.filespecification.PDEmbeddedFile;
 import org.apache.pdfbox.pdmodel.interactive.annotation.PDAnnotation;
 import org.apache.pdfbox.pdmodel.interactive.annotation.PDAnnotationFileAttachment;
+import org.apache.pdfbox.printing.PDFPageable;
 
 /**
  * Utility for extracting Document Information Directory metadata from PDF files.
@@ -69,7 +68,7 @@ public class PdfBasicMetadata {
     public boolean check() throws Exception {
         try (PDDocument document = PDDocument.load(in)) {
             PDDocumentCatalog catalog = document.getDocumentCatalog();
-            PDPageable pageable = new PDPageable(document);
+            PDFPageable pageable = new PDFPageable(document);
             PageFormat firstPage = pageable.getPageFormat(0);
 
             encrypted = document.isEncrypted();
@@ -97,7 +96,7 @@ public class PdfBasicMetadata {
 
             // extract all attached files from all pages
             int pageNumber = 0;
-            for (Object page : catalog.getAllPages()) {
+            for (Object page : catalog.getPages()) {
                 pageNumber += 1;
                 PdfPageMetadata pageMetadata = new PdfPageMetadata();
                 pageMetadata.setPageNumber(pageNumber);
@@ -114,7 +113,7 @@ public class PdfBasicMetadata {
                         attachmentMetadata.setCreationDate(embeddedFile.getCreationDate());
                         attachmentMetadata.setModificationDate(embeddedFile.getModDate());
                         attachmentMetadata.setMimeType(embeddedFile.getSubtype());
-                        attachmentMetadata.setData(embeddedFile.getByteArray());
+                        attachmentMetadata.setData(embeddedFile.toByteArray());
 
                         pageMetadata.addAttachment(attachmentMetadata);
                     }

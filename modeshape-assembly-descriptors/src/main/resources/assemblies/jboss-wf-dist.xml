@@ -179,6 +179,7 @@
                 <include>org.ccil.cowan.tagsoup:*:jar</include>
                 <include>org.gagravarr:*:jar</include>
                 <include>org.ow2.asm:asm:jar</include>
+                <include>com.fasterxml.jackson.core:jackson-core:jar</include>
                 <!-- 
                 The following are not currently included by default; see ModeShape's parent POM
                 <include>org.bouncycastle:*:jar</include>
@@ -263,16 +264,6 @@
                 <include>org:jaudiotagger:jar</include>
             </includes>
         </dependencySet>
-      
-        <dependencySet>
-            <useProjectArtifact>false</useProjectArtifact>
-            <outputDirectory>modules/org/modeshape/sequencer/pdf/main</outputDirectory>
-            <includes>
-                <include>org.modeshape:modeshape-sequencer-pdf:jar</include>
-                <include>org.apache.pdfbox:*:jar</include>
-                <include>commons-logging:commons-logging:jar</include>
-            </includes>
-        </dependencySet> 
        
         <dependencySet>
             <useProjectArtifact>false</useProjectArtifact>
@@ -367,11 +358,13 @@
         </dependencySet>
 
         <dependencySet>
+            <useProjectArtifact>false</useProjectArtifact>
             <outputDirectory>modules/org/modeshape/sequencer/pdf/main</outputDirectory>
             <includes>
                 <include>org.modeshape:modeshape-sequencer-pdf:jar</include>
                 <include>org.apache.pdfbox:pdfbox:jar</include>
                 <include>org.apache.pdfbox:xmpbox:jar</include>
+                <include>commons-logging:commons-logging:jar</include>
             </includes>
         </dependencySet>
 
