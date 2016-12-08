@@ -19,13 +19,12 @@
     <resources>
         <resource-root path="modeshape-sequencer-pdf-${project.version}.jar" />
         <resource-root path="pdfbox-${version.org.apache.pdfbox}.jar" />
-        <resource-root path="jempbox-${version.org.apache.pdfbox}.jar" />
         <resource-root path="xmpbox-${version.org.apache.pdfbox}.jar" />
-        <resource-root path="fontbox-${version.org.apache.pdfbox}.jar" />
-        <resource-root path="commons-logging-1.1.1.jar" />
+        <resource-root path="commons-logging-1.2.jar" />
     </resources>
 
     <dependencies>
+        <module name="javax.xml.bind.api"/>
         <module name="org.modeshape.jcr.api"/>
         <module name="org.modeshape.common"/>
     </dependencies>

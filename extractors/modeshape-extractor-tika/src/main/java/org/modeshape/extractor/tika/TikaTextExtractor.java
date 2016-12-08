@@ -16,15 +16,15 @@
 package org.modeshape.extractor.tika;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.atomic.AtomicReference;
 import javax.jcr.RepositoryException;
+import org.apache.tika.config.ServiceLoader;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
+import org.apache.tika.mime.MediaTypeRegistry;
 import org.apache.tika.parser.DefaultParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
@@ -83,9 +83,9 @@ public class TikaTextExtractor extends TextExtractor {
             MediaType.application("x-tar"), MediaType.application("zip"), MediaType.application("vnd.teiid.vdb"),
             MediaType.image("*"), MediaType.audio("*"), MediaType.video("*"));
 
-    private final Set<MediaType> excludedMediaTypes = new HashSet<MediaType>();
-    private final Set<MediaType> includedMediaTypes = new HashSet<MediaType>();
-    private final Set<MediaType> parserSupportedMediaTypes = new HashSet<MediaType>();
+    private final Set<MediaType> excludedMediaTypes = new HashSet<>();
+    private final Set<MediaType> includedMediaTypes = new HashSet<>();
+    private final Set<MediaType> parserSupportedMediaTypes = new HashSet<>();
 
     /**
      * The write limit for the Tika parser, representing the maximum number of characters that should be extracted by the
@@ -93,8 +93,7 @@ public class TikaTextExtractor extends TextExtractor {
      */
     private Integer writeLimit;
 
-    private final Lock initLock = new ReentrantLock();
-    private DefaultParser parser;
+    private final AtomicReference<DefaultParser> parser = new AtomicReference<>();
 
     /**
      * No-arg constructor is required because this is instantiated by reflection.
@@ -130,33 +129,30 @@ public class TikaTextExtractor extends TextExtractor {
 
         final DefaultParser parser = initialize();
         final Integer writeLimit = this.writeLimit;
-        processStream(binary, new BinaryOperation<Object>() {
-            @Override
-            public Object execute( InputStream stream ) throws Exception {
-                Metadata metadata = prepareMetadata(binary, context);
-                //TODO author=Horia Chiorean date=1/30/13 description=//TIKA 1.2 TXTParser seems to have a bug, always adding 1 ignorable whitespace to the actual chars to be parsed
-                //https://issues.apache.org/jira/browse/TIKA-1069
-                ContentHandler textHandler = writeLimit == null ? new BodyContentHandler() : new BodyContentHandler(writeLimit + 1);
-                try {
-                    LOGGER.debug("Using TikaTextExtractor to extract text");
-                    // Parse the input stream ...
-                    parser.parse(stream, textHandler, metadata, new ParseContext());
-                } catch (SAXException sae) {
-                    LOGGER.warn(TikaI18n.parseExceptionWhileExtractingText, sae.getMessage());
-                } catch (NoClassDefFoundError ncdfe) {
-                    LOGGER.warn(TikaI18n.warnNoClassDefFound, ncdfe.getMessage());
-                } catch (Throwable e) {
-                    LOGGER.error(e, TikaI18n.errorWhileExtractingTextFrom, e.getMessage());
-                } finally {
-                    // Record all of the text in the body ...
-                    String text = textHandler.toString().trim();
-                    if (!StringUtil.isBlank(text)) {
-                        output.recordText(text);
-                        LOGGER.debug("TikaTextExtractor found text: " + text);
-                    }
+        processStream(binary, stream -> {
+            Metadata metadata = prepareMetadata(binary, context);
+            //TODO author=Horia Chiorean date=1/30/13 description=//TIKA 1.2 TXTParser seems to have a bug, always adding 1 ignorable whitespace to the actual chars to be parsed
+            //https://issues.apache.org/jira/browse/TIKA-1069
+            ContentHandler textHandler = writeLimit == null ? new BodyContentHandler() : new BodyContentHandler(writeLimit + 1);
+            try {
+                LOGGER.debug("Using TikaTextExtractor to extract text");
+                // Parse the input stream ...
+                parser.parse(stream, textHandler, metadata, new ParseContext());
+            } catch (SAXException sae) {
+                LOGGER.warn(TikaI18n.parseExceptionWhileExtractingText, sae.getMessage());
+            } catch (NoClassDefFoundError ncdfe) {
+                LOGGER.warn(TikaI18n.warnNoClassDefFound, ncdfe.getMessage());
+            } catch (Throwable e) {
+                LOGGER.error(e, TikaI18n.errorWhileExtractingTextFrom, e.getMessage());
+            } finally {
+                // Record all of the text in the body ...
+                String text = textHandler.toString().trim();
+                if (!StringUtil.isBlank(text)) {
+                    output.recordText(text);
+                    LOGGER.debug("TikaTextExtractor found text: " + text);
                 }
-                return null;
             }
+            return null;
         });
 
     }
@@ -185,36 +181,34 @@ public class TikaTextExtractor extends TextExtractor {
         }
         return metadata;
     }
-
+    
     /**
      * This class lazily initializes the {@link DefaultParser} instance.
-     * 
+     *
      * @return the default parser; same as {@link #parser}
      */
     protected DefaultParser initialize() {
-        if (parser == null) {
-            initLock.lock();
-            try {
-                if (parser == null) {
-                    parser = new DefaultParser(this.getClass().getClassLoader());
-                }
-                LOGGER.debug("Initializing Tika Text Extractor");
-                Map<MediaType, Parser> parsers = parser.getParsers();
-                LOGGER.debug("Tika parsers found: {0}",parsers.size());
-                for (MediaType mediaType : parsers.keySet()) {
-                    parserSupportedMediaTypes.add(mediaType);
-                    LOGGER.debug("Tika Text Extractor will support the {0} media-type",mediaType);
-                }
-                convertStringMimeTypesToMediaTypes(getExcludedMimeTypes(), excludedMediaTypes);
-                convertStringMimeTypesToMediaTypes(getIncludedMimeTypes(), includedMediaTypes);
-                LOGGER.debug("Initialized {0}", this);
-            } finally {
-                initLock.unlock();
-            }
-        }
-        return parser;
+        parser.compareAndSet(null, newDefaultParser());
+        return parser.get();
     }
-
+    
+    private DefaultParser newDefaultParser() {
+        ServiceLoader serviceLoader = new ServiceLoader(this.getClass().getClassLoader(),
+                                                        (classname, throwable) -> LOGGER.debug(throwable, "error while loading parser for {0}", classname));
+        DefaultParser defaultParser = new DefaultParser(MediaTypeRegistry.getDefaultRegistry(), serviceLoader);
+        LOGGER.debug("Initializing Tika Text Extractor");
+        Map<MediaType, Parser> parsers = defaultParser.getParsers();
+        LOGGER.debug("Tika parsers found: {0}",parsers.size());
+        for (MediaType mediaType : parsers.keySet()) {
+            parserSupportedMediaTypes.add(mediaType);
+            LOGGER.debug("Tika Text Extractor will support the {0} media-type",mediaType);
+        }
+        convertStringMimeTypesToMediaTypes(getExcludedMimeTypes(), excludedMediaTypes);
+        convertStringMimeTypesToMediaTypes(getIncludedMimeTypes(), includedMediaTypes);
+        LOGGER.debug("Initialized {0}", this);
+        return defaultParser;
+    }
+    
     private void convertStringMimeTypesToMediaTypes(Set<String> mimeTypes, Set<MediaType> mediaTypes) {
         for (String mimeTypeEntry : mimeTypes) {
             //allow each mime type entry to be an array in itself

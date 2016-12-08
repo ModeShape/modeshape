@@ -106,11 +106,23 @@ public class PdfMetadataSequencer extends Sequencer {
         Binary binaryValue = inputProperty.getBinary();
         CheckArg.isNotNull(binaryValue, "binary");
         Node sequencedNode = getPdfMetadataNode(outputNode);
-        boolean isBasicMetadataParsed = processBasicMetadata(sequencedNode, binaryValue);
-        if (isBasicMetadataParsed) {
-            processXMPMetadata(sequencedNode, binaryValue);
+        try {
+            if (processBasicMetadata(sequencedNode, binaryValue)) {
+                processXMPMetadata(sequencedNode, binaryValue);
+                return true;
+            } else {
+                getLogger().warn("Ignoring pdf from node {0} because basic metadata cannot be extracted",
+                                 inputProperty.getParent().getPath());
+                return false;
+            }
+        } catch (java.lang.NoClassDefFoundError ncdfe) {
+            if (ncdfe.getMessage().toLowerCase().contains("bouncycastle")) {
+                getLogger().warn("Ignoring pdf from node {0} because it's encrypted and encrypted PDFs are not supported", 
+                                 inputProperty.getParent().getPath());
+                return false;
+            }
+            throw ncdfe;
         }
-        return true;
     }
 
     private boolean processBasicMetadata( Node sequencedNode,
