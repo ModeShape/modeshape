@@ -494,7 +494,8 @@
                 </external-sources>
             </repository>
             <repository name="dbBinaryJDBCRepository" anonymous-roles="admin">
-                <db-persistence drop-on-exit="true" data-source-jndi-name="java:jboss/datasources/ModeshapePersistenceDS"/>
+                <db-persistence drop-on-exit="true" create-on-start="true" driver="org.h2.Driver" username="sa" password="sa"
+                                table-name="MODESHAPE_IT_REPO" url="jdbc:h2:mem:test;DB_CLOSE_DELAY=-1"/>
                 <workspaces allow-workspace-creation="true" default-workspace="default">
                     <workspace name="default"/>
                     <initial-content>initial-content-default.xml</initial-content>
