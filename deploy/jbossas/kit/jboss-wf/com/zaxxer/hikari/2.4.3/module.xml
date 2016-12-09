@@ -21,5 +21,17 @@
     </resources>
     <dependencies>
         <module name="javax.api" export="true"/>
+        <!-- For logging ... -->
+        <module name="org.slf4j"/>
+        <module name="org.slf4j.impl"/>
+        <module name="org.jboss.logging"/>
+        <!--
+            Add optional dependencies on drivers which may be installed in the server later on
+            Note that H2 is normally available by default
+        -->
+        <module name="com.h2database.h2" optional="true"/>
+        <module name="com.mysql.jdbc" optional="true"/>
+        <module name="org.postgresql" optional="true"/>
+        <module name="oracle.jdbc" optional="true"/>
     </dependencies>
 </module>

@@ -24,7 +24,6 @@ import javax.annotation.Resource;
 import javax.jcr.Binary;
 import javax.jcr.Node;
 import javax.jcr.PathNotFoundException;
-import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.query.Query;
@@ -38,13 +37,15 @@ import org.modeshape.common.FixFor;
 import org.modeshape.common.util.IoUtil;
 import org.modeshape.jcr.JcrRepository;
 import org.modeshape.jcr.api.JcrTools;
+import org.modeshape.schematic.document.Document;
+
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 
 /**
- * Smoke tests persistence in a repository backed by a JDBC cache store
+ * Smoke tests persistence in a repository that store all its information in a Database
  *
  * @author Horia Chiorean (hchiorea@redhat.com)
  */
@@ -54,7 +55,7 @@ public class JDBCRepositoryIntegrationTest {
     private static final JcrTools JCR_TOOLS = new JcrTools();
     
     @Resource (mappedName =  "/jcr/dbBinaryJDBCRepository")
-    private JcrRepository repositoryWithDbBinaryStorage;
+    private JcrRepository repository;
 
     @Deployment
     public static WebArchive createDeployment() {
@@ -64,18 +65,31 @@ public class JDBCRepositoryIntegrationTest {
         return archive;
     }
 
-    private void assertDataPersisted( Repository repository ) throws RepositoryException {
+    @Test
+    @FixFor( {"MODE-2194", "MODE-2636"} )
+    public void shouldPersistBinaryDataInDBBinaryStore() throws Exception {
+        assertConfiguration();
+        assertDataPersisted();
+        persistBinaryContent();
+    }
+    
+    private void assertConfiguration() throws Exception {
+        Document persistenceConfiguration = repository.getConfiguration().getPersistenceConfiguration();
+        assertEquals("MODESHAPE_IT_REPO", persistenceConfiguration.getString("tableName"));        
+    }
+    
+    private void assertDataPersisted() throws RepositoryException {
         assertNotNull(repository);
         Session session = repository.login();
         try {
             //check predefined content was imported
             assertNotNull(session.getNode("/files"));
             assertNotNull(session.getNode("/cars"));
-
+            
             //add a node and check it can be queried
             session.getRootNode().addNode("testNode");
             session.save();
-
+            
             Query query = session.getWorkspace()
                                  .getQueryManager()
                                  .createQuery("select [jcr:path] FROM [nt:base] WHERE [jcr:name] LIKE '%testNode%'",
@@ -86,14 +100,7 @@ public class JDBCRepositoryIntegrationTest {
         }
     }
 
-    @Test
-    @FixFor( "MODE-2194" )
-    public void shouldPersistBinaryDataInDBBinaryStore() throws Exception {
-        assertDataPersisted(repositoryWithDbBinaryStorage);
-        persistBinaryContent(repositoryWithDbBinaryStorage);
-    }
-
-    private void persistBinaryContent( JcrRepository repository ) throws RepositoryException, IOException {
+    private void persistBinaryContent() throws RepositoryException, IOException {
         assertNotNull(repository);
 
         long minimumBinarySize = repository.getConfiguration().getBinaryStorage().getMinimumBinarySizeInBytes();
