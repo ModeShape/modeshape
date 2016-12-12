@@ -109,7 +109,8 @@ public enum Attribute {
     PORT("port"),
     DATABASE("database"),
     REINDEXING_MODE("mode"),
-    BUCKET_NAME("bucket-name");
+    BUCKET_NAME("bucket-name"),
+    HOST_ADDRESSES("host-addresses");
 
     private final String name;
 

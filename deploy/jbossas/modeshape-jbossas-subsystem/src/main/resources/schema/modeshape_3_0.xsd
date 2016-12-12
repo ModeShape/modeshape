@@ -1078,6 +1078,11 @@
             <xs:annotation>
                 <xs:documentation>The DB user password</xs:documentation>
             </xs:annotation>
+        </xs:attribute>   
+        <xs:attribute name="host-addresses" type="xs:string" use="optional">
+            <xs:annotation>
+                <xs:documentation>The comma-separated list of hostname:port pairs for the servers which make up a MongoDB replica set</xs:documentation>
+            </xs:annotation>
         </xs:attribute>
     </xs:attributeGroup>
     <xs:attributeGroup name="s3-storage-attributes">

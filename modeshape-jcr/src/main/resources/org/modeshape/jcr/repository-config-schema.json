@@ -440,6 +440,11 @@
                                     "type" : "string",
                                     "description" : "The password to use when connecting to MongoDB",
                                 },
+                                "hostAddresses" : {
+                                    "type" : "array",
+                                    "uniqueItems" : true,
+                                    "description" : "The optional array of hostname:port values representing MongoDB server addresses for a replica set"
+                                },
                                 "minimumBinarySizeInBytes" : {
                                     "type" : "integer",
                                     "default" : 4096,

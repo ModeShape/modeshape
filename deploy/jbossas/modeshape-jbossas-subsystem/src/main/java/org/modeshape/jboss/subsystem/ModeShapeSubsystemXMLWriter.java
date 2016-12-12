@@ -340,6 +340,7 @@ public class ModeShapeSubsystemXMLWriter implements XMLStreamConstants, XMLEleme
             ModelAttributes.MONGO_DATABASE.marshallAsAttribute(storage, false, writer);
             ModelAttributes.MONGO_USERNAME.marshallAsAttribute(storage, false, writer);
             ModelAttributes.MONGO_PASSWORD.marshallAsAttribute(storage, false, writer);
+            ModelAttributes.MONGO_HOST_ADDRESSES.marshallAsAttribute(storage, false, writer);
             writer.writeEndElement();
         } else if (ModelKeys.S3_BINARY_STORAGE.equals(storageType)) {
             writer.writeStartElement(Element.S3_BINARY_STORAGE.getLocalName());

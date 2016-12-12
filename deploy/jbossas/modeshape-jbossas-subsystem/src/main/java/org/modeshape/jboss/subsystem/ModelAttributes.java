@@ -16,6 +16,7 @@
 package org.modeshape.jboss.subsystem;
 
 import static org.modeshape.jboss.subsystem.ModeShapeExtension.JBOSS_DATA_DIR_VARIABLE;
+
 import org.jboss.as.controller.AttributeDefinition;
 import org.jboss.as.controller.ListAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinition;
@@ -945,6 +946,14 @@ public class ModelAttributes {
                     .setAllowNull(true)
                     .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                     .build();
+    
+    public static final MappedSimpleAttributeDefinition MONGO_HOST_ADDRESSES =
+            new MappedAttributeDefinitionBuilder(Attribute.HOST_ADDRESSES.getLocalName(), ModelType.STRING,
+                                                 FieldName.STORAGE, FieldName.BINARY_STORAGE, FieldName.HOST_ADDRESSES)
+                    .setAllowExpression(true)
+                    .setAllowNull(true)
+                    .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+                    .build();
 
     public static final MappedSimpleAttributeDefinition S3_USERNAME =
             new MappedAttributeDefinitionBuilder(Attribute.USERNAME.getLocalName(), ModelType.STRING,
@@ -1001,8 +1010,8 @@ public class ModelAttributes {
     public static final AttributeDefinition[] S3_BINARY_STORAGE_ATTRIBUTES = {MINIMUM_BINARY_SIZE, MINIMUM_STRING_SIZE,
         MIME_TYPE_DETECTION, S3_USERNAME, S3_PASSWORD, S3_BUCKET_NAME};
 
-    public static final AttributeDefinition[] MONGO_BINARY_STORAGE_ATTRIBUTES = {MINIMUM_BINARY_SIZE, MINIMUM_STRING_SIZE,
-        MIME_TYPE_DETECTION, MONGO_HOST, MONGO_PORT, MONGO_DATABASE, MONGO_USERNAME, MONGO_PASSWORD};
+    public static final AttributeDefinition[] MONGO_BINARY_STORAGE_ATTRIBUTES = { MINIMUM_BINARY_SIZE, MINIMUM_STRING_SIZE,
+                                                                                  MIME_TYPE_DETECTION, MONGO_HOST, MONGO_PORT, MONGO_DATABASE, MONGO_USERNAME, MONGO_PASSWORD, MONGO_HOST_ADDRESSES };
 
     public static final AttributeDefinition[] COMPOSITE_BINARY_STORAGE_ATTRIBUTES = {MINIMUM_BINARY_SIZE, MINIMUM_STRING_SIZE,
         NESTED_STORES, MIME_TYPE_DETECTION};
