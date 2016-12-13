@@ -55,7 +55,10 @@ public class SelectorName implements Readable, Serializable {
      * @return a {@link org.modeshape.jcr.query.model.SelectorName} instance for which the name is always in qualified form; never null
      */
     public SelectorName qualifiedForm(NameFactory nameFactory) {
-        return expandedForm ? new SelectorName(nameFactory.create(this.name).getString()) : this;
+        if (expandedForm) {
+            return new SelectorName(nameFactory.create(this.name).getString(nameFactory.getNamespaceRegistry()));
+        }
+        return this;
     }
 
     @Override
