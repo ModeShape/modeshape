@@ -89,22 +89,28 @@ public class MongodbBinaryStore extends AbstractBinaryStore {
     /**
      * Creates a new mongo binary store instance using the supplied params.
      * 
-     * @param host the mongo primary host; may not be null
-     * @param port the port of the primary host 
+     * @param host the mongo primary host; may be null in which case {@code hostAddresses} has to be provided
+     * @param port the port of the primary host; may be null in which case {@code hostAddresses} has to be provided
      * @param database the name of the database; may be null in which case a default will be used
      * @param username the username; may be null 
      * @param password the password; may be null
      * @param hostAddresses a {@link List} of (host:port) pairs representing multiple server addresses; may be null
      */
-    public MongodbBinaryStore(String host, int port, String database, String username, String password, List<String> hostAddresses) {
+    public MongodbBinaryStore(String host, Integer port, String database, String username, String password, List<String> hostAddresses) {
         this.cache = TransientBinaryStore.get();
         this.database = !StringUtil.isBlank(database) ? database : DEFAULT_DB_NAME;
         this.username = username;
         this.password = password;
+        boolean hostAddressesProvided = hostAddresses != null && !hostAddresses.isEmpty();
         this.hostAddresses = new LinkedHashSet<>();
-        Objects.requireNonNull(host);
-        this.hostAddresses.add(host + ":" + port);
-        if (hostAddresses != null && !hostAddresses.isEmpty()) {
+        String defaultServer = !StringUtil.isBlank(host) && port != null ? host + ":" + port : null;
+        if (defaultServer == null && !hostAddressesProvided) {
+            throw new IllegalArgumentException("Invalid Mongo binary store configuration: either (host and port) or host addresses have to provided");
+        } 
+        if (defaultServer != null) {
+            this.hostAddresses.add(defaultServer);
+        }
+        if (hostAddressesProvided) {
             this.hostAddresses.addAll(hostAddresses);
         }
     }
