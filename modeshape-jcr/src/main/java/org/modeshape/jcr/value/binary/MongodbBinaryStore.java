@@ -19,12 +19,13 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 import org.modeshape.common.util.IoUtil;
 import org.modeshape.common.util.StringUtil;
 import org.modeshape.jcr.JcrI18n;
@@ -72,15 +73,12 @@ public class MongodbBinaryStore extends AbstractBinaryStore {
     // database name
     private String database;
 
-    private String host;
-    private int port;
-
     // credentials
     private String username;
     private String password;
 
-    // server address(es)
-    private Set<String> replicaSet = new HashSet<>();
+    // server address(es) - note that order is important
+    private Set<String> hostAddresses = new LinkedHashSet<>();
 
     // database instance
     private DB db;
@@ -89,36 +87,32 @@ public class MongodbBinaryStore extends AbstractBinaryStore {
     protected int chunkSize = 1024;
     
     /**
-     * Creates a new instance of the store, using a single MongoDB.
-     *
-     * @param host
-     * @param port
-     * @param database
-     */
-    public MongodbBinaryStore( String host,
-                               int port,
-                               String database ) {
-        this(host, port, database, null, null, null);
-    }
-
-    /**
      * Creates a new mongo binary store instance using the supplied params.
      * 
-     * @param host the mongo host; may not be null
-     * @param port the port 
+     * @param host the mongo primary host; may be null in which case {@code hostAddresses} has to be provided
+     * @param port the port of the primary host; may be null in which case {@code hostAddresses} has to be provided
      * @param database the name of the database; may be null in which case a default will be used
      * @param username the username; may be null 
      * @param password the password; may be null
-     * @param replicaSet a {@link Set} of (host:port) pairs representing multiple server addresses; may be null
+     * @param hostAddresses a {@link List} of (host:port) pairs representing multiple server addresses; may be null
      */
-    public MongodbBinaryStore(String host, int port, String database, String username, String password, Set<String> replicaSet) {
+    public MongodbBinaryStore(String host, Integer port, String database, String username, String password, List<String> hostAddresses) {
         this.cache = TransientBinaryStore.get();
-        this.host = Objects.requireNonNull(host);
-        this.port = port;
         this.database = !StringUtil.isBlank(database) ? database : DEFAULT_DB_NAME;
         this.username = username;
         this.password = password;
-        this.replicaSet = replicaSet == null ? Collections.emptySet() : replicaSet;
+        boolean hostAddressesProvided = hostAddresses != null && !hostAddresses.isEmpty();
+        this.hostAddresses = new LinkedHashSet<>();
+        String defaultServer = !StringUtil.isBlank(host) && port != null ? host + ":" + port : null;
+        if (defaultServer == null && !hostAddressesProvided) {
+            throw new IllegalArgumentException("Invalid Mongo binary store configuration: either (host and port) or host addresses have to provided");
+        } 
+        if (defaultServer != null) {
+            this.hostAddresses.add(defaultServer);
+        }
+        if (hostAddressesProvided) {
+            this.hostAddresses.addAll(hostAddresses);
+        }
     }
 
     /**
@@ -126,34 +120,42 @@ public class MongodbBinaryStore extends AbstractBinaryStore {
      *
      * @param addresses list of addresses in text format
      * @return list of mongodb addresses
-     * @throws UnknownHostException when at least one host is unknown
-     * @throws IllegalArgumentException if address has bad format
+     * @throws IllegalArgumentException if address has bad format or is not valid
      */
-    private List<ServerAddress> replicaSet( Set<String> addresses ) throws UnknownHostException {
-        List<ServerAddress> list = new ArrayList<ServerAddress>();
-        for (String address : addresses) {
-            // address has format <host:port>
-            String[] tokens = address.split(":");
-
-            // checking tokens number after split
-            if (tokens.length != 2) {
-                throw new IllegalArgumentException("Wrong address format: " + address);
-            }
-
-            String host = tokens[0];
-
-            // convert port number
-            int port;
-            try {
-                port = Integer.parseInt(tokens[1]);
-            } catch (NumberFormatException e) {
-                throw new IllegalArgumentException("Wrong address format: " + address);
-            }
-
-            list.add(new ServerAddress(host, port));
+    private List<ServerAddress> convertToServerAddresses(Set<String> addresses)  {
+        return addresses.stream()
+                        .map(this::stringToServerAddress)
+                        .filter(Objects::nonNull)
+                        .collect(Collectors.toList());
+    }
+    
+    private ServerAddress stringToServerAddress(String address) {
+        if (address == null || address.trim().length() == 0) {
+            return null;
         }
-
-        return list;
+        // address has format <host:port>
+        String[] tokens = address.split(":");
+    
+        // checking tokens number after split
+        if (tokens.length != 2) {
+            throw new IllegalArgumentException("Wrong address format: " + address + " (expected host:port)") ;
+        }
+    
+        String host = tokens[0];
+    
+        // convert port number
+        int port;
+        try {
+            port = Integer.parseInt(tokens[1]);
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("Wrong address format: " + address + " (expected host:port)");
+        }
+    
+        try {
+            return new ServerAddress(host, port);
+        } catch (UnknownHostException e) {
+            throw new IllegalArgumentException(e);
+        }
     }
 
     /**
@@ -307,7 +309,7 @@ public class MongodbBinaryStore extends AbstractBinaryStore {
             }
             DBCollection collection = db.getCollection(collectionName);
             boolean unused = (Boolean)getAttribute(collection, FIELD_UNUSED);
-            if ((unused && !onlyUsed) || !unused) {
+            if (!unused || !onlyUsed) {
                 storedKeys.add(collectionName);
             }
         }
@@ -333,20 +335,11 @@ public class MongodbBinaryStore extends AbstractBinaryStore {
         }
 
         // connect to database
-        try {
-            MongoClient client = null;
-            if (!replicaSet.isEmpty()) {
-                client = new MongoClient(replicaSet(replicaSet), credentials);
-            } else if (!StringUtil.isBlank(host)) {
-                client = new MongoClient(new ServerAddress(host, port), credentials);
-            } else {
-                client = new MongoClient(new ServerAddress(), credentials);
-            }
-            client.setWriteConcern(WriteConcern.ACKNOWLEDGED);
-            db = client.getDB(database);
-        } catch (UnknownHostException e) {
-            throw new RuntimeException(e);
-        }
+        MongoClient client = hostAddresses.size() > 1 ?
+                             new MongoClient(convertToServerAddresses(hostAddresses), credentials) :
+                             new MongoClient(stringToServerAddress(hostAddresses.iterator().next()), credentials);
+        client.setWriteConcern(WriteConcern.ACKNOWLEDGED);
+        db = client.getDB(database);
     }
 
     /**

@@ -57,6 +57,10 @@ public class AddMongoBinaryStorage extends AbstractAddBinaryStorage {
         if (passwordModel.isDefined()) {
             binaries.setString(FieldName.USER_PASSWORD, passwordModel.asString());
         }
+        ModelNode hostAddressesModel = ModelAttributes.MONGO_HOST_ADDRESSES.resolveModelAttribute(context, model);
+        if (hostAddressesModel.isDefined()) {
+            binaries.setArray(FieldName.HOST_ADDRESSES, (Object[]) hostAddressesModel.asString().split(","));
+        }
     }
 
     @Override

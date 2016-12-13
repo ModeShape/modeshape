@@ -62,7 +62,7 @@ public class MongodbBinaryStoreTest extends AbstractBinaryStoreTest {
                                                                              Network.localhostIsIPv6()));
         mongodProcess = mongodExecutable.start();
 
-        binaryStore = new MongodbBinaryStore("localhost", freeServerPort, "test-" + UUID.randomUUID());
+        binaryStore = new MongodbBinaryStore("localhost", freeServerPort, "test-" + UUID.randomUUID(), null, null, null);
         binaryStore.setMimeTypeDetector(DEFAULT_DETECTOR);
         binaryStore.start();
     }

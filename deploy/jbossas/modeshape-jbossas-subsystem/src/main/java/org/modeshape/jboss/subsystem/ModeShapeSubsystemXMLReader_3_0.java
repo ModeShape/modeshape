@@ -20,6 +20,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
 import static org.jboss.as.controller.parsing.ParseUtils.requireNoAttributes;
+
 import java.util.ArrayList;
 import java.util.List;
 import javax.xml.stream.XMLStreamConstants;
@@ -813,6 +814,9 @@ public class ModeShapeSubsystemXMLReader_3_0 implements XMLStreamConstants, XMLE
                         break;
                     case PASSWORD:
                         ModelAttributes.MONGO_PASSWORD.parseAndSetParameter(attrValue, storageType, reader);
+                        break;
+                    case HOST_ADDRESSES:
+                        ModelAttributes.MONGO_HOST_ADDRESSES.parseAndSetParameter(attrValue, storageType, reader);
                         break;
                     case MIN_VALUE_SIZE:
                         ModelAttributes.MINIMUM_BINARY_SIZE.parseAndSetParameter(attrValue, storageType, reader);

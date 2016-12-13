@@ -23,9 +23,9 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+
+import java.util.Arrays;
 import java.util.EnumSet;
-import org.modeshape.schematic.Schematic;
-import org.modeshape.schematic.document.Document;
 import org.junit.Before;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
@@ -39,6 +39,11 @@ import org.modeshape.jcr.RepositoryConfiguration.JaasSecurity;
 import org.modeshape.jcr.RepositoryConfiguration.Security;
 import org.modeshape.jcr.api.index.IndexDefinition;
 import org.modeshape.jcr.api.index.IndexDefinition.IndexKind;
+import org.modeshape.jcr.value.binary.MongodbBinaryStore;
+import org.modeshape.schematic.Schematic;
+import org.modeshape.schematic.document.Document;
+import org.modeshape.schematic.document.EditableDocument;
+import org.modeshape.schematic.document.Editor;
 
 public class RepositoryConfigurationTest {
     private boolean print = false;
@@ -144,9 +149,32 @@ public class RepositoryConfigurationTest {
     }
  
     @Test
-    @FixFor( "MODE-2575" )
-    public void shouldSuccessfullyValidateMongoBinaryStorageConfiguration() {
-        assertValid("config/mongo-binary-storage.json");
+    @FixFor( {"MODE-2575", "MODE-2635"} )
+    public void shouldSuccessfullyValidateMongoBinaryStorageConfiguration() throws Exception {
+        RepositoryConfiguration config = assertValid("config/mongo-binary-storage-full-config.json");
+        Document storageDoc = config.getDocument().getDocument(FieldName.STORAGE).getDocument(FieldName.BINARY_STORAGE);
+        assertEquals(Arrays.asList("192.1.68.1.1:90", "143.22.33.123:120"), storageDoc.get(FieldName.HOST_ADDRESSES));
+        RepositoryConfiguration.BinaryStorage storage = config.getBinaryStorage();
+        assertEquals(RepositoryConfiguration.FieldValue.BINARY_STORAGE_TYPE_MONGO, storage.getType());
+        assertTrue(storage.getBinaryStore() instanceof  MongodbBinaryStore);
+        
+        // remove host and port, check that the config is still valid
+        Editor editor = config.edit();
+        EditableDocument storageDocEditable = editor.getDocument(FieldName.STORAGE).getDocument(FieldName.BINARY_STORAGE);
+        storageDocEditable.remove(FieldName.HOST);
+        storageDocEditable.remove(FieldName.PORT);
+        RepositoryConfiguration configWithoutHostPort = new RepositoryConfiguration(editor.unwrap(), "mongo-config-1");
+        assertValid(configWithoutHostPort);
+                                                                     
+        // remove host addresses as well and check that what remains is not valid
+        storageDocEditable.remove(FieldName.HOST_ADDRESSES);
+        RepositoryConfiguration invalidConfig = new RepositoryConfiguration(editor.unwrap(), "mongo-config-2");
+        try {
+            invalidConfig.getBinaryStorage().getBinaryStore();
+            fail("Should not allow a Mongo binary storage without host, port and host addresses");
+        } catch (IllegalArgumentException e) {
+            //expected
+        }
     }
 
     @Test

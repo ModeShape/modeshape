@@ -447,6 +447,8 @@ public class RepositoryConfiguration {
         public static final String DOCUMENT_OPTIMIZATION = "documentOptimization";
         public static final String OPTIMIZATION_CHILD_COUNT_TARGET = "childCountTarget";
         public static final String OPTIMIZATION_CHILD_COUNT_TOLERANCE = "childCountTolerance";
+        
+        public static final String HOST_ADDRESSES = "hostAddresses";
 
         /**
          * The name for the field (under "sequencing" and "textExtraction") specifying the thread pool that should be used for sequencing.
@@ -1139,6 +1141,7 @@ public class RepositoryConfiguration {
             return binaryStorage.getLong(FieldName.MINIMUM_STRING_SIZE, getMinimumBinarySizeInBytes());
         }
 
+        @SuppressWarnings("unchecked")
         public BinaryStore getBinaryStore() throws Exception {
             String type = getType();
             BinaryStore store = null;
@@ -1202,7 +1205,8 @@ public class RepositoryConfiguration {
                 String database = binaryStorage.getString(FieldName.DATABASE);
                 String username = binaryStorage.getString(FieldName.USER_NAME);
                 String password = binaryStorage.getString(FieldName.USER_PASSWORD);
-                store = new MongodbBinaryStore(host, port, database, username, password, null);                
+                List<String> hostAddresses = (List<String>) binaryStorage.getArray(FieldName.HOST_ADDRESSES);
+                store = new MongodbBinaryStore(host, port, database, username, password, hostAddresses);                
             } else if (type.equalsIgnoreCase(FieldValue.BINARY_STORAGE_TYPE_S3)) {
                 String username = binaryStorage.getString(FieldName.USER_NAME);
                 String password = binaryStorage.getString(FieldName.USER_PASSWORD);
