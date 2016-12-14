@@ -534,26 +534,7 @@ public class JcrRepositoryTest {
     protected JcrSession createSession( final String workspace ) throws Exception {
         return repository.login(workspace);
     }
-
-    @Ignore( "GC behavior is non-deterministic from the application's POV - this test _will_ occasionally fail" )
-    @Test
-    public void shouldAllowManySessionLoginsAndLogouts() throws Exception {
-        Session session = null;
-        for (int i = 0; i < 10000; i++) {
-            session = repository.login();
-            session.logout();
-        }
-
-        session = repository.login();
-        session = null;
-
-        // Give the gc a chance to run
-        System.gc();
-        Thread.sleep(100);
-
-        assertThat(repository.runningState().activeSessionCount(), is(0));
-    }
-
+    
     @Test
     @FixFor( "MODE-2190" )
     public void shouldCleanupLocks() throws Exception {
@@ -581,9 +562,9 @@ public class JcrRepositoryTest {
         sessionLockedNode2.addMixin("mix:lockable");
         locker2.save();
 
-        locker2.getWorkspace().getLockManager().lock(sessionLockedNode2.getPath(), false, true, 1, "me");
+        locker2.getWorkspace().getLockManager().lock(sessionLockedNode2.getPath(), false, true, Long.MAX_VALUE, "me");
         assertEquals(Long.MAX_VALUE, locker2.getWorkspace().getLockManager().getLock("/sessionLockedNode2").getSecondsRemaining());
-        assertEquals(Long.MIN_VALUE, locker1.getWorkspace().getLockManager().getLock("/sessionLockedNode2").getSecondsRemaining());
+        assertEquals(Long.MAX_VALUE, locker1.getWorkspace().getLockManager().getLock("/sessionLockedNode2").getSecondsRemaining());
 
         assertLocking(locker2, "/openLockedNode", true);
         assertLocking(locker2, "/sessionLockedNode1", true);

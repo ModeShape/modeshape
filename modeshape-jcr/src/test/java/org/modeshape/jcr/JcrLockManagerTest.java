@@ -15,6 +15,7 @@
  */
 package org.modeshape.jcr;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -134,5 +135,61 @@ public class JcrLockManagerTest extends SingleUseAbstractTest {
         // Check that a new lock can be obtained
         lockManager.lock(node.getPath(), false, false, 10, null);
         assertTrue(node.isLocked());
+    }
+    
+    @Test
+    @FixFor( "MODE-2641" )
+    public void shouldProvideTimeoutForOpenScopedLocks() throws Exception {
+        // Create a new lockable node
+        Node node = session.getRootNode().addNode("test");
+        node.addMixin("mix:lockable");
+        session.save();
+        
+        String path = node.getPath();
+        // Lock the node with an open scoped lock
+        int timeout = 2;
+        JcrLockManager lockManager = session.getWorkspace().getLockManager();
+        Lock lock = lockManager.lock(node.getPath(), false, false, timeout, null);
+        assertTrue(node.isLocked());
+        long secondsRemaining = lock.getSecondsRemaining();
+        assertTrue("Expected a valid value for seconds remaining", secondsRemaining <= timeout && secondsRemaining > 0);
+        
+        // Look at the same lock from another session
+        session.logout();
+        session = repository.login();
+        lockManager = session.getWorkspace().getLockManager();
+        lock = lockManager.getLock(path);
+        secondsRemaining = lock.getSecondsRemaining();
+        assertTrue("Expected a valid value for seconds remaining", secondsRemaining <= timeout && secondsRemaining > 0);
+        
+        Thread.sleep(TimeUnit.SECONDS.toMillis(2));
+        assertEquals("Expected a negative value because the lock should have expired", Long.MIN_VALUE, lock.getSecondsRemaining());
+    }
+    
+    @Test
+    @FixFor( "MODE-2641" ) 
+    public void shouldNotProvideTimeoutForSessionScopedLocks() throws Exception {
+        // Create a new lockable node
+        Node node = session.getRootNode().addNode("test");
+        node.addMixin("mix:lockable");
+        session.save();
+        String path = node.getPath();
+        
+        // Lock the node with a session scoped lock
+        int timeout = 2;
+        JcrLockManager lockManager = session.getWorkspace().getLockManager();
+        Lock lock = lockManager.lock(node.getPath(), false, true, timeout, null);
+        assertTrue(node.isLocked());
+        assertEquals("Session scoped locks should not have timeout information", Long.MAX_VALUE, lock.getSecondsRemaining());
+    
+        JcrSession otherSession = repository.login();
+        try {
+            lockManager = otherSession.getWorkspace().getLockManager();
+            lock = lockManager.getLock(path);
+            assertTrue(otherSession.getNode(path).isLocked());
+            assertEquals("Session scoped locks should not have timeout information", Long.MAX_VALUE, lock.getSecondsRemaining());
+        } finally {
+            otherSession.logout();            
+        }
     }
 }

@@ -57,7 +57,6 @@ import org.modeshape.jcr.value.Path;
 import org.modeshape.jcr.value.PathFactory;
 import org.modeshape.jcr.value.Property;
 import org.modeshape.jcr.value.PropertyFactory;
-import org.modeshape.jcr.value.basic.ModeShapeDateTime;
 
 @ThreadSafe
 class RepositoryLockManager implements ChangeSetListener {
@@ -650,8 +649,29 @@ class RepositoryLockManager implements ChangeSetListener {
         }
         
         protected boolean isExpired() {
-            DateTime now = new ModeShapeDateTime(); 
-            return expiryTime.isBefore(now);
+            return expiryTime.getMilliseconds() < System.currentTimeMillis();
+        }
+        
+        protected long secondsRemaining() {
+            if (!isLive()) {
+                return Long.MIN_VALUE;
+            }
+            if (isSessionScoped()) {
+                // session scoped locks are tied to the lifetime of the session, so always report them as "never expired" or "unknown"
+                return Long.MAX_VALUE;
+            }
+            long millisRemaining = expiryTime.getMilliseconds() - System.currentTimeMillis();
+            long secondsRemaining = TimeUnit.SECONDS.convert(millisRemaining, TimeUnit.MILLISECONDS);
+            if (secondsRemaining > 0) {
+                return secondsRemaining;
+            } else if (millisRemaining > 0) {
+                // JCR expects seconds but internally we're using millis and this method has to correlate (as per TCK)
+                // with #isLive. As such, when there's less than a second to go, but still not expired, we'll return MAX_VALUE
+                // which is the equivalent of UNKNOWN as per the docs
+                return Long.MAX_VALUE;
+            }
+            // the lock has expired
+            return Long.MIN_VALUE;
         }
 
         public NodeKey getLockKey() {
@@ -747,7 +767,7 @@ class RepositoryLockManager implements ChangeSetListener {
 
                 @Override
                 public long getSecondsRemaining() {
-                    return isLockOwningSession() ? Long.MAX_VALUE : Long.MIN_VALUE;
+                   return ModeShapeLock.this.secondsRemaining();
                 }
 
                 @Override
