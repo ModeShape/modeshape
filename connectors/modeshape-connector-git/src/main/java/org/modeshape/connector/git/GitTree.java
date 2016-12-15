@@ -26,14 +26,13 @@ import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.revwalk.RevWalk;
 import org.eclipse.jgit.treewalk.TreeWalk;
 import org.eclipse.jgit.treewalk.filter.PathFilter;
-import org.modeshape.schematic.document.Document;
 import org.modeshape.jcr.JcrLexicon;
 import org.modeshape.jcr.api.value.DateTime;
 import org.modeshape.jcr.spi.federation.DocumentWriter;
 import org.modeshape.jcr.spi.federation.PageKey;
 import org.modeshape.jcr.spi.federation.PageWriter;
-import org.modeshape.jcr.value.BinaryKey;
 import org.modeshape.jcr.value.BinaryValue;
+import org.modeshape.schematic.document.Document;
 
 /**
  * A function that returns the file and directory structure within a particular commit. The structure of this area of the
@@ -223,29 +222,18 @@ public class GitTree extends GitFunction implements PageableGitFunction {
                     // Create the BinaryValue ...
                     ObjectId fileObjectId = tw.getObjectId(0);
                     ObjectLoader fileLoader = repository.open(fileObjectId);
-                    BinaryKey key = new BinaryKey(fileObjectId.getName());
-                    BinaryValue value = values.binaryFor(key, fileLoader.getSize());
-                    if (value == null) {
-                        // It wasn't found in the binary store ...
-                        if (fileLoader.isLarge()) {
-                            // Too large to hold in memory, so use the binary store (which reads the file immediately) ...
-                            value = values.binaryFrom(fileLoader.openStream());
-                        } else {
-                            // This is small enough to fit into a byte[], but it still may be pretty big ...
-                            value = new GitBinaryValue(fileObjectId, fileLoader, connector.getSourceName(), name,
-                                                       connector.getMimeTypeDetector());
-                        }
-                    }
+                    // we'll always create an external binary which will be resolved by the connector when required
+                    BinaryValue value = new GitBinaryValue(fileObjectId, fileLoader, connector.getSourceName(), name,
+                                                           connector.getMimeTypeDetector());
                     writer.addProperty(JcrLexicon.DATA, value);
                     if (connector.includeMimeType()) {
                         try {
                             String filename = spec.parameter(spec.parameterCount() - 1); // the last is 'jcr:content'
                             String mimeType = value.getMimeType(filename);
                             if (mimeType != null) writer.addProperty(JcrLexicon.MIMETYPE, mimeType);
-                        } catch (RepositoryException e) {
+                        } catch (RepositoryException | IOException e) {
                             // do nothing
-                        } catch (IOException e) {
-                            // do nothing
+                            connector.getLogger().debug("cannot determine mime-type information for objectID '{0}'", fileObjectId);
                         }
                     }
                 } else {

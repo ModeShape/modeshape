@@ -19,13 +19,19 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsSame.sameInstance;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
+
+import java.io.BufferedOutputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
+import javax.jcr.Binary;
 import javax.jcr.Item;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
@@ -34,12 +40,15 @@ import javax.jcr.PropertyIterator;
 import javax.jcr.Value;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.ListBranchCommand;
+import org.eclipse.jgit.storage.file.WindowCacheConfig;
+import org.eclipse.jgit.storage.pack.PackConfig;
 import org.eclipse.jgit.transport.RefSpec;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
+import org.modeshape.common.util.IoUtil;
 import org.modeshape.jcr.MultiUseAbstractTest;
 import org.modeshape.jcr.RepositoryConfiguration;
 import org.modeshape.jcr.api.Session;
@@ -334,7 +343,42 @@ public class GitConnectorTest extends MultiUseAbstractTest {
             childrenIterator.nextNode();
         }
     }
+    
+    @Test
+    @FixFor( "MODE-2643")
+    public void shouldReadBinaryNodeAsLargeFile() throws Exception {
+        //use some JGit API magic to reconfigure the default threshold which is around 50MB
+        //so that when we attempt to read a larger binary, it will be seen as a large file by JGit
+        WindowCacheConfig newConfig = new WindowCacheConfig();
+        newConfig.setStreamFileThreshold(2 * WindowCacheConfig.MB);
+        newConfig.install();
+        try {
+            readLargeBinary();
+        } finally {
+            newConfig.setStreamFileThreshold(PackConfig.DEFAULT_BIG_FILE_THRESHOLD);
+            newConfig.install();
+        }
+    }
 
+    @Test
+    @FixFor( "MODE-2643")
+    public void shouldReadBinaryNodeAsRegularFile() throws Exception {
+        readLargeBinary();
+    }
+    
+    private void readLargeBinary() throws Exception {
+        Node commit = session.getNode("/repos/git-modeshape-remote/tree/master/modeshape-jcr/src/test/resources/docs/postgresql-8.4.1-US.pdf");
+        assertNotNull(commit);
+        Binary data = commit.getNode("jcr:content").getProperty("jcr:data").getBinary();
+        long size = data.getSize();
+        assertTrue(size > 0);
+        //simply read the stream to make sure it's valid
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        BufferedOutputStream bos = new BufferedOutputStream(baos);
+        IoUtil.write(data.getStream(), bos);
+        assertEquals("invalid binary stream", size, baos.toByteArray().length);
+    }
+    
     protected void assertNodeHasObjectIdProperty( Node node ) throws Exception {
         assertThat(node.getProperty("git:objectId").getString(), is(notNullValue()));
     }
