@@ -18,10 +18,17 @@ package org.modeshape.jcr.index.lucene;
 
 import javax.jcr.query.Query;
 import javax.jcr.query.QueryResult;
+
+import org.infinispan.schematic.document.Document;
+import org.infinispan.schematic.document.Json;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.modeshape.common.util.FileUtil;
 import org.modeshape.jcr.JcrQueryManagerTest;
+import org.modeshape.jcr.RepositoryConfiguration;
+import org.modeshape.jcr.TestingUtil;
+
+import java.io.InputStream;
 
 /**
  * Extension of {@link JcrQueryManagerTest} which runs queries against Lucene indexes.
@@ -57,5 +64,21 @@ public class LuceneIndexProviderQueryTest extends JcrQueryManagerTest {
         query = getSession().getWorkspace().getQueryManager().createQuery(xpath, Query.XPATH);
         result = query.execute();
         validateQuery().rowCount(0).hasColumns(columnNames).validate(query, result);
+    }
+
+    @Test
+    public void shouldNotReIndexOnRestartIfNoChanges() throws Exception {
+        // stop the repository
+        TestingUtil.killRepositories(repository);
+
+        System.out.println("\n\n!!! RESTARTING !!!\n\n");
+
+        // restart the repository
+        String configFileName = LuceneIndexProviderQueryTest.class.getSimpleName() + ".json";
+        String configFilePath = "config/" + configFileName;
+        InputStream configStream = JcrQueryManagerTest.class.getClassLoader().getResourceAsStream(configFilePath);
+        Document configDoc = Json.read(configStream);
+        RepositoryConfiguration config = new RepositoryConfiguration(configDoc, configFileName);
+        startRepository(config);
     }
 }
