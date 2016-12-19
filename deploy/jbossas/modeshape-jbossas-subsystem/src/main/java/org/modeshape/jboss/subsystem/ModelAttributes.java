@@ -495,7 +495,7 @@ public class ModelAttributes {
                                                              .setAllowExpression(true)
                                                              .setAllowNull(false)
                                                              .setValidator(PROJECTION_VALIDATOR)
-                                                             .setFlags(AttributeAccess.Flag.RESTART_NONE)
+                                                             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                                                              .build())
                                                  .setAllowNull(true)
                                                  .setMinSize(1)
@@ -506,7 +506,7 @@ public class ModelAttributes {
                     .setXmlName(Attribute.CLASSNAME.getLocalName())
                     .setAllowExpression(false)
                     .setAllowNull(true)
-                    .setFlags(AttributeAccess.Flag.RESTART_NONE)
+                    .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                     .build();
 
     public static final SimpleAttributeDefinition CACHEABLE =
@@ -514,7 +514,7 @@ public class ModelAttributes {
                     .setXmlName(Attribute.CACHEABLE.getLocalName())
                     .setAllowExpression(false)
                     .setAllowNull(true)
-                    .setFlags(AttributeAccess.Flag.RESTART_NONE)
+                    .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                     .build();
 
     public static final SimpleAttributeDefinition QUERYABLE =
@@ -522,7 +522,7 @@ public class ModelAttributes {
                     .setXmlName(Attribute.QUERYABLE.getLocalName())
                     .setAllowExpression(false)
                     .setAllowNull(true)
-                    .setFlags(AttributeAccess.Flag.RESTART_NONE)
+                    .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                     .build();
 
     public static final SimpleAttributeDefinition READONLY =
@@ -530,7 +530,7 @@ public class ModelAttributes {
                     .setXmlName(Attribute.READONLY.getLocalName())
                     .setAllowExpression(false)
                     .setAllowNull(true)
-                    .setFlags(AttributeAccess.Flag.RESTART_NONE)
+                    .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                     .setDefaultValue(new ModelNode(false))
                     .build();
 
@@ -539,8 +539,7 @@ public class ModelAttributes {
                     .setXmlName(Attribute.EXPOSE_AS_WORKSPACE.getLocalName())
                     .setAllowExpression(false)
                     .setAllowNull(true)
-                    .setFlags(AttributeAccess.Flag.RESTART_NONE)
-                    .setDefaultValue(new ModelNode(false))
+                    .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                     .build();
 
     public static final ListAttributeDefinition PREDEFINED_WORKSPACE_NAMES =
@@ -594,7 +593,10 @@ public class ModelAttributes {
     public static final SimpleAttributeDefinition PROPERTY = new SimpleAttributeDefinition(ModelKeys.PROPERTY, 
                                                                                            ModelType.PROPERTY, true);
     public static final SimpleListAttributeDefinition PROPERTIES =
-            SimpleListAttributeDefinition.Builder.of(ModelKeys.PROPERTIES, PROPERTY).setAllowNull(true).build();
+            SimpleListAttributeDefinition.Builder.of(ModelKeys.PROPERTIES, PROPERTY)
+                                                 .setAllowNull(true)
+                                                 .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+                                                 .build();
 
     public static final SimpleAttributeDefinition RELATIVE_TO =
             new SimpleAttributeDefinitionBuilder(ModelKeys.RELATIVE_TO, ModelType.STRING)

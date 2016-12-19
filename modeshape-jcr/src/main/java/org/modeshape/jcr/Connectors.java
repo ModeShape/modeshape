@@ -28,6 +28,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import javax.jcr.NamespaceRegistry;
 import javax.jcr.PathNotFoundException;
@@ -38,6 +39,8 @@ import org.modeshape.common.SystemFailureException;
 import org.modeshape.common.annotation.GuardedBy;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.annotation.ThreadSafe;
+import org.modeshape.common.collection.Problems;
+import org.modeshape.common.collection.SimpleProblems;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.HashCode;
 import org.modeshape.common.util.Reflection;
@@ -59,7 +62,6 @@ import org.modeshape.jcr.cache.document.LocalDocumentStore;
 import org.modeshape.jcr.cache.document.WorkspaceCache;
 import org.modeshape.jcr.federation.ConnectorChangeSetImpl;
 import org.modeshape.jcr.spi.federation.Connector;
-import org.modeshape.jcr.spi.federation.ConnectorChangeSet;
 import org.modeshape.jcr.spi.federation.ConnectorChangeSetFactory;
 import org.modeshape.jcr.spi.federation.ExtraPropertiesStore;
 import org.modeshape.jcr.value.Name;
@@ -87,22 +89,41 @@ public final class Connectors {
     private final JcrRepository.RunningState repository;
     private final Logger logger;
 
-    private boolean initialized = false;
+    private AtomicBoolean started = new AtomicBoolean(false);
     private final AtomicReference<Snapshot> snapshot = new AtomicReference<>();
     private volatile DocumentTranslator translator;
 
     protected Connectors( JcrRepository.RunningState repository,
-                          Collection<Component> components,
-                          Set<String> externalSources,
-                          Map<String, List<RepositoryConfiguration.ProjectionConfiguration>> preconfiguredProjections ) {
+                          RepositoryConfiguration.Federation config, 
+                          Problems problems) {
         this.repository = repository;
         this.logger = Logger.getLogger(getClass());
+        List<Component> components = config.getConnectors(problems);
+        Map<String, List<RepositoryConfiguration.ProjectionConfiguration>> preconfiguredProjections = config.getProjectionsByWorkspace();
+        Set<String> externalSources = config.getExternalSources();
         this.snapshot.set(new Snapshot(components, externalSources, preconfiguredProjections));
     }
-
+    
+    @GuardedBy( "this" )
+    protected synchronized void restart(RepositoryConfiguration.Federation config) throws RepositoryException {   
+        Problems problems = new SimpleProblems();
+        List<Component> components = config.getConnectors(problems);
+        if (problems.hasErrors()) {
+            throw new RepositoryException(problems.toString());
+        }
+        Map<String, List<RepositoryConfiguration.ProjectionConfiguration>> preconfiguredProjections = config.getProjectionsByWorkspace();
+        Set<String> externalSources = config.getExternalSources();
+        // first shutdown 
+        shutdown();
+        // then update the internal state with new config
+        this.snapshot.set(new Snapshot(components, externalSources, preconfiguredProjections));
+        // and then initialize
+        initialize();
+    }
+    
     @GuardedBy( "this" )
     protected synchronized void initialize() throws RepositoryException {
-        if (initialized || !hasConnectors()) {
+        if (started() || !hasConnectors()) {
             // nothing to do ...
             return;
         }
@@ -110,6 +131,7 @@ public final class Connectors {
         // initialize the configured connectors
         initializeConnectors();
         
+        // create any external workspaces that may have been configured
         createExternalWorkspaces();        
         
         // load the projection -> node mappings from the system area, without validating them
@@ -118,9 +140,13 @@ public final class Connectors {
         createPreconfiguredProjections();
         // load the projections, but with all pre-configured projections and validating each projection
         loadStoredProjections(true);
-        initialized = true;
+        started.compareAndSet(false, true);
     }
-
+    
+    private boolean started() {
+        return started.get();
+    }
+    
     private void createExternalWorkspaces() {
         Snapshot current = this.snapshot.get();
         Collection<String> workspaces = current.externalSources();
@@ -130,7 +156,7 @@ public final class Connectors {
     }
     
     private void createPreconfiguredProjections() throws RepositoryException {
-        assert !initialized;
+        assert !started();
         Snapshot current = this.snapshot.get();
         for (String workspaceName : current.getWorkspacesWithProjections()) {
             JcrSession session = repository.loginInternalSession(workspaceName);
@@ -173,7 +199,7 @@ public final class Connectors {
     }
 
     private void loadStoredProjections( boolean validate ) {
-        assert !initialized;
+        assert !started();
         SessionCache systemSession = repository.createSystemSession(repository.context(), false);
 
         CachedNode systemNode = getSystemNode(systemSession);
@@ -255,7 +281,7 @@ public final class Connectors {
     }
 
     private void initializeConnectors() {
-        assert !initialized;
+        assert !started();
         // Get a session that we'll pass to the connectors to use for registering namespaces and node types
         Session session = null;
         try {
@@ -508,18 +534,15 @@ public final class Connectors {
     }
 
     private ConnectorChangeSetFactory createConnectorChangedSetFactory( final Connector c ) {
-        return new ConnectorChangeSetFactory() {
-            @Override
-            public ConnectorChangeSet newChangeSet() {
-                PathMappings mappings = getPathMappings(c);
-                RunningState repository = repository();
-                final ExecutionContext context = repository.context();
-                return new ConnectorChangeSetImpl(Connectors.this, mappings,
-                                                  context.getId(), context.getProcessId(),
-                                                  repository.repositoryKey(), repository.changeBus(),
-                                                  context.getValueFactories().getDateFactory(),
-                                                  repository().journalId());
-            }
+        return () -> {
+            PathMappings mappings = getPathMappings(c);
+            RunningState repository1 = repository();
+            final ExecutionContext context = repository1.context();
+            return new ConnectorChangeSetImpl(Connectors.this, mappings,
+                                              context.getId(), context.getProcessId(),
+                                              repository1.repositoryKey(), repository1.changeBus(),
+                                              context.getValueFactories().getDateFactory(),
+                                              repository().journalId());
         };
     }
 
@@ -537,13 +560,12 @@ public final class Connectors {
     }
 
     protected synchronized void shutdown() {
-        if (!initialized || !hasConnectors()) {
+        if (!started() || !hasConnectors()) {
             return;
         }
         Snapshot current = this.snapshot.get();
-        current.shutdownConnectors();
-        current.shutdownUnusedConnectors();
-        this.snapshot.set(current.withOnlyProjectionConfigurations());
+        this.snapshot.set(current.shutdown());
+        started.compareAndSet(true, false);
     }
 
     protected boolean hasReadonlyConnectors() {
@@ -743,6 +765,12 @@ public final class Connectors {
 
         private String keyFor( Connector connector ) {
             return NodeKey.keyForSourceName(connector.getSourceName());
+        }
+        
+        protected Snapshot shutdown() {
+            shutdownConnectors();
+            shutdownUnusedConnectors();
+            return withOnlyProjectionConfigurations();
         }
 
         /**

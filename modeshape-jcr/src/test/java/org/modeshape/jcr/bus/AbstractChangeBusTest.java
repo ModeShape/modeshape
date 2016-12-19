@@ -205,7 +205,7 @@ public abstract class AbstractChangeBusTest {
         }
 
         for (int i = 0; i < eventCount; i++) {
-            changeBus.notify(new AbstractChangeBusTest.TestChangeSet());
+            changeBus.notify(new AbstractChangeBusTest.TestChangeSet("ws"));
         }
         return listeners;
     }
@@ -236,13 +236,10 @@ public abstract class AbstractChangeBusTest {
 
         private final String workspaceName;
         private final long time;
-        private final String uuid = UUID.randomUUID().toString();
-
-        public TestChangeSet() {
-            this(UUID.randomUUID().toString());
-        }
+        private final String uuid;
 
         protected TestChangeSet( String workspaceName ) {
+            this.uuid = UUID.randomUUID().toString();
             this.workspaceName = workspaceName;
             this.time = System.currentTimeMillis();
         }
@@ -340,16 +337,8 @@ public abstract class AbstractChangeBusTest {
                 return false;
             }
 
-            TestChangeSet changes = (TestChangeSet)o;
-
-            if (time != changes.time) {
-                return false;
-            }
-            if (!workspaceName.equals(changes.workspaceName)) {
-                return false;
-            }
-
-            return true;
+            TestChangeSet other = (TestChangeSet)o;
+            return this.uuid.equals(other.uuid); 
         }
 
         @Override
@@ -367,7 +356,7 @@ public abstract class AbstractChangeBusTest {
         private CountDownLatch latch;
 
         protected TestListener() {
-            this(0, 350);
+            this(0);
         }
 
         protected TestListener( int expectedNumberOfEvents ) {
@@ -382,14 +371,14 @@ public abstract class AbstractChangeBusTest {
             this.expectedNumberOfEvents = expectedNumberOfEvents;
         }
 
-        public void expectChangeSet( int expectedNumberOfEvents ) {
+        public synchronized void expectChangeSet( int expectedNumberOfEvents ) {
             this.latch = new CountDownLatch(expectedNumberOfEvents);
             this.expectedNumberOfEvents = expectedNumberOfEvents;
             receivedChangeSet.clear();
         }
 
         @Override
-        public void notify( ChangeSet changeSet ) {
+        public synchronized void notify( ChangeSet changeSet ) {
             if (!(changeSet instanceof TestChangeSet)) {
                 throw new IllegalArgumentException("Invalid type of change set received");
             }
@@ -407,7 +396,7 @@ public abstract class AbstractChangeBusTest {
             }
         }
 
-        public List<TestChangeSet> getObservedChangeSet() {
+        public synchronized List<TestChangeSet> getObservedChangeSet() {
             return new ArrayList<>(receivedChangeSet);
         }
     }
