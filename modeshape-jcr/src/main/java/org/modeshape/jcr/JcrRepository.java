@@ -342,11 +342,15 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
             if (oldState != null) {
                 assert state.get() == State.RUNNING;
                 // Repository is running, so create a new running state ...
-                this.runningState.set(new RunningState(oldState, configChanges));
+                RunningState newState = new RunningState(oldState, configChanges);
+                this.runningState.set(newState);
 
                 // Handle a few special cases that the running state doesn't really handle itself ...
                 if (!configChanges.storageChanged && configChanges.predefinedWorkspacesChanged) refreshWorkspaces();
                 if (configChanges.nameChanged) repositoryNameChanged();
+                if (configChanges.connectorsChanged) {
+                    newState.connectors.restart(config.get().getFederation());
+                }
             }
             logger.debug("Applied changes to '{0}' repository configuration: {1} --> {2}", repositoryName, changes, config);
         } finally {
@@ -705,7 +709,8 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                                                                           FieldName.MINIMUM_BINARY_SIZE_IN_BYTES);
         private final Path NAME_PATH = Paths.path(FieldName.NAME);
         private final Path MONITORING_PATH = Paths.path(FieldName.MONITORING);
-
+        private final Path CONNECTORS_PATH = Paths.path(FieldName.EXTERNAL_SOURCES);
+        
         private final Path[] IGNORE_PATHS = new Path[] {STORAGE_PATH, BINARY_STORAGE_PATH};
 
         protected boolean securityChanged = false;
@@ -721,6 +726,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         protected boolean largeValueChanged = false;
         protected boolean nameChanged = false;
         protected boolean monitoringChanged = false;
+        protected boolean connectorsChanged = false;
 
         @Override
         public void setArrayValue( Path path,
@@ -776,6 +782,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
             if (!jndiChanged && path.equals(JNDI_PATH)) jndiChanged = true;
             if (!nameChanged && path.equals(NAME_PATH)) nameChanged = true;
             if (!monitoringChanged && path.equals(MONITORING_PATH)) monitoringChanged = true;
+            if (!connectorsChanged && path.startsWith(CONNECTORS_PATH)) connectorsChanged = true;
         }
     }
 
@@ -1028,12 +1035,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                     this.txMgrLookup = config.getTransactionManagerLookup();
                     this.txnMgr = this.txMgrLookup.getTransactionManager();
                     this.transactions = createTransactions(this.txnMgr, schematicDb);
-
-                    List<Component> connectorComponents = config.getFederation().getConnectors(this.problems);
-                    Map<String, List<RepositoryConfiguration.ProjectionConfiguration>> preconfiguredProjectionsByWorkspace = config.getFederation()
-                                                                                                                                   .getProjectionsByWorkspace();
-                    Set<String> extSources = config.getFederation().getExternalSources();
-                    this.connectors = new Connectors(this, connectorComponents, extSources, preconfiguredProjectionsByWorkspace);                    
+                    this.connectors = new Connectors(this, config.getFederation(), problems);                    
                    
                     RepositoryConfiguration.Clustering clustering = config.getClustering();
                     LockingService startupLockingService = null;

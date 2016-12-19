@@ -18,6 +18,7 @@ package org.modeshape.jcr;
 
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import java.net.URL;
 import java.util.List;
@@ -27,11 +28,14 @@ import javax.jcr.Session;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.modeshape.common.FixFor;
+import org.modeshape.common.util.FileUtil;
 import org.modeshape.jcr.ClientLoad.Client;
 import org.modeshape.jcr.ClientLoad.ClientResultProcessor;
 import org.modeshape.jcr.ModeShapeEngine.State;
 import org.modeshape.jcr.RepositoryConfiguration.Default;
 import org.modeshape.jcr.RepositoryConfiguration.FieldName;
+import org.modeshape.schematic.DocumentFactory;
 import org.modeshape.schematic.document.Changes;
 import org.modeshape.schematic.document.Document;
 import org.modeshape.schematic.document.EditableDocument;
@@ -343,5 +347,48 @@ public class ModeShapeEngineTest {
         assertThat(exprs2.size(), is(2));
         assertThat((String)exprs2.get(0), is("//*.ddl"));
         assertThat((String)exprs2.get(1), is("//*.xml"));
+    }
+    
+    @Test
+    @FixFor( "MODE-2650" )
+    public void shouldAllowUpdatingConnectorConfigurationWhenRunning() throws Exception {
+        FileUtil.delete("target/persistent_repository");
+        
+        URL configUrl = getClass().getClassLoader().getResource("config/repo-config-federation-persistent-projections.json");
+        engine.start();
+        config = RepositoryConfiguration.read(configUrl).with(environment);
+        JcrRepository repository = engine.deploy(config);
+        // make sure the repo is started
+        JcrSession session = repository.login();
+        assertNotNull(session.getNode("/preconfiguredProjection"));
+        session.logout();
+    
+        // Create a new document for the new sources
+        EditableDocument files = DocumentFactory.newDocument();
+        files.set(FieldName.CLASSNAME, "org.modeshape.connector.filesystem.FileSystemConnector");
+        files.set("directoryPath", "target");
+        files.set("readonly", true);
+        files.set("projections", DocumentFactory.newArray("default:/files => /"));
+
+        // add a new source
+        Editor editor = repository.getConfiguration().edit();
+        EditableDocument externalSources = editor.getDocument(FieldName.EXTERNAL_SOURCES);
+        externalSources.set("files", files.unwrap());
+
+        // change a projection for the current source
+        externalSources.getDocument("mock-source").getArray("projections").add("default:/projection4=> /doc1");
+        
+        // And apply the changes to the repository's configuration ...
+        Changes changes = editor.getChanges();
+        repository = engine.update(config.getName(), changes).get(); // don't forget to wait!
+        
+        // Check that the new information is accessible
+        session = repository.login();
+        try {
+            assertNotNull(session.getNode("/files"));
+            assertNotNull(session.getNode("/projection4"));
+        } finally {
+            session.logout();            
+        }
     }
 }
