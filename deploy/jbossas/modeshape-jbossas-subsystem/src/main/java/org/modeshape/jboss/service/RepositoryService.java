@@ -160,14 +160,17 @@ public class RepositoryService implements Service<JcrRepository>, Environment {
 
     @Override
     public Channel getChannel(String name) throws Exception {
+        LOG.debugv("getting JGroups channel named '{0}'", name);
         final ChannelFactory channelFactory = channelFactoryInjector.getOptionalValue();
         if (channelFactory != null) {
+            LOG.debugv("JGroups configured to use server subsystem stack");
             // there is a cluster-stack attribute configured, so use that
             return channelFactory.createChannel(name);
         }
         // there is no cluster stack, so use a configured XML file 
         String clusterConfig = repositoryConfiguration.getClustering().getConfiguration();
         assert clusterConfig != null;
+        LOG.debugv("reading JGroups config '{0}'", clusterConfig);
         InputStream configStream = new FileInputStream(clusterConfig);
         XmlConfigurator configurator = XmlConfigurator.getInstance(configStream);
         return new JChannel(configurator);
