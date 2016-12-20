@@ -15,7 +15,10 @@
  */
 package org.modeshape.test.integration;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
 import java.io.File;
 import java.util.UUID;
 import javax.annotation.Resource;
@@ -32,6 +35,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.modeshape.common.FixFor;
 import org.modeshape.jcr.JcrRepository;
+import org.modeshape.jcr.RepositoryConfiguration;
 
 /**
  * Arquillian test which verifies that a repository using a clustered configuration starts up.
@@ -73,12 +77,31 @@ public class ClusteredConfigurationIntegrationTest {
     @Test
     @FixFor({"MODE-1923", "MODE-1929", "MODE-2226"})
     public void clusteredRepositoryShouldHaveStartedUpUsingExternalJGroupsConfigFile() throws Exception {
+        checkRepoConfiguration(clusteredRepository1, "modeshape-wf-it1", true, false);
+        checkRepoConfiguration(clusteredRepository2, "modeshape-wf-it1", true, false);
         checkRepoStarted(clusteredRepository1, clusteredRepository2);
     }
     
     @Test
     public void clusteredRepositoryShouldHaveStartedUsingInternalJGroupsConfig() throws Exception {
+        checkRepoConfiguration(clusteredRepository3, "modeshape-wf-it2", false, true);
+        checkRepoConfiguration(clusteredRepository4, "modeshape-wf-it2", false, true);
         checkRepoStarted(clusteredRepository3, clusteredRepository4);
+    }
+    
+    private void checkRepoConfiguration(JcrRepository repository, String clusterName,
+                                        boolean usesConfiguration,
+                                        boolean usesDbLocking) {
+        RepositoryConfiguration.Clustering clustering = repository.getConfiguration().getClustering();
+        assertTrue(clustering.isEnabled());
+        assertEquals(clusterName, clustering.getClusterName());
+        String configuration = clustering.getConfiguration();
+        if (usesConfiguration) {
+            assertNotNull(configuration);
+        } else {
+            assertEquals(RepositoryConfiguration.Default.CLUSTER_CONFIG, configuration);
+        }
+        assertEquals(usesDbLocking, clustering.useDbLocking());
     }
 
     private void checkRepoStarted(JcrRepository firstRepo, JcrRepository secondRepo) throws RepositoryException {
