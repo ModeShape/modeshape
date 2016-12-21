@@ -5,12 +5,11 @@ We hope you enjoy it!
 
 ## What's new
 
-This release addresses 13 bugs and 5 enhancements, most notably:
-- add minimal partition support so that in case of network partitions a cluster of ModeShape repositories won't corrupt data
+This release addresses 11 bugs and 2 enhancements, most notably:
+- adding replica set support for the Mongo DB binary store to both the JSON and Wildfly configuration (see [MODE-2635](https://issues.jboss.org/browse/MODE-2635))
 
-- update CMIS to use OpenCMIS 1.0 and also support ACLs for the CMIS connector 
-
-- store binary files in Amazon S3
+- adding the ability to update the configuration for external sources "on the fly", meaning that the repository does not need to be restarted each time 
+an external source is added or changed (see [MODE-2650](https://issues.jboss.org/browse/MODE-2650)) 
 
 ## Migrating from ModeShape 3 or ModeShape 4 
 
