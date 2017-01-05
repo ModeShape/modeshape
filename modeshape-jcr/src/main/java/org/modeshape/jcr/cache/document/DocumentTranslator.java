@@ -1446,7 +1446,7 @@ public class DocumentTranslator implements DocumentConstants {
      * @param doc the document
      * @return true if the change was made successfully, or false otherwise
      */
-    public boolean isLocked( EditableDocument doc ) {
+    protected boolean isLocked( EditableDocument doc ) {
         return hasProperty(doc, JcrLexicon.LOCK_OWNER) || hasProperty(doc, JcrLexicon.LOCK_IS_DEEP);
     }
 
