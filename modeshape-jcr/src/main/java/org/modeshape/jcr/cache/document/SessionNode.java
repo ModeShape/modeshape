@@ -2968,6 +2968,13 @@ public class SessionNode implements MutableCachedNode {
                 if (isVersionProperty && !includeVersionProperties) {
                     continue;
                 }
+                
+                if (JcrLexicon.LOCK_OWNER.equals(propertyName) || JcrLexicon.LOCK_IS_DEEP.equals(propertyName)) {
+                    // as per JCR 17.7 locked nodes can always be copied, but should not appear as locked 
+                    // note that we're not removing the entire mixin, just these properties
+                    continue;
+                }
+                
                 if (property.isReference() || property.isSimpleReference()) {
                     // reference properties are not copied directly because that would cause incorrect back-pointers
                     // they are processed at the end of the clone/copy operation.
@@ -2977,7 +2984,7 @@ public class SessionNode implements MutableCachedNode {
                         sourceKeyToReferenceProperties.put(sourceNodeKey, referenceProperties);
                     }
                     referenceProperties.add(property);
-                } else if (property.getName().equals(JcrLexicon.UUID)) {
+                } else if (propertyName.equals(JcrLexicon.UUID)) {
                     // UUIDs need to be handled differently
                     copyUUIDProperty(property, targetNode, sourceNode);
                 } else {

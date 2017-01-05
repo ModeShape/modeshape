@@ -1093,7 +1093,7 @@ public class WritableSessionCache extends AbstractSessionCache {
                     switch (lockChange) {
                         case LOCK_FOR_SESSION:
                         case LOCK_FOR_NON_SESSION:
-                            // check is another session has already locked the document
+                            // check if another session has already locked the document
                             if (translator.isLocked(doc)) {
                                 throw new LockFailureException(key);
                             }

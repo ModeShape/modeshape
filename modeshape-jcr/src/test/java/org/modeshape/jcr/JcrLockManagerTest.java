@@ -192,4 +192,25 @@ public class JcrLockManagerTest extends SingleUseAbstractTest {
             otherSession.logout();            
         }
     }
+    
+    @Test
+    @FixFor("MODE-2654")
+    public void shouldNotCopyLocks()throws Exception {
+        Node parentNode = session.getRootNode().addNode("node");
+        Node childNode = parentNode.addNode("child");
+        childNode.addMixin("mix:lockable");
+        session.save();
+        
+        JcrWorkspace workspace = session.getWorkspace();
+        JcrLockManager lockManager = workspace.getLockManager();
+        
+        lockManager.lock("/node/child", false, false, Long.MAX_VALUE, null);
+        assertTrue(session.getNode("/node/child").isLocked());
+
+        workspace.copy("/node", "/newPath");
+        assertFalse(session.getNode("/newPath").isLocked());
+        assertFalse(session.getNode("/newPath/child").isLocked());
+        lockManager.lock("/newPath/child", false, false, Long.MAX_VALUE, null);
+        assertTrue(session.getNode("/newPath/child").isLocked());
+    }
 }
