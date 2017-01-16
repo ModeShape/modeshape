@@ -913,7 +913,7 @@ public class ModelAttributes {
             new MappedAttributeDefinitionBuilder(Attribute.HOST.getLocalName(), ModelType.STRING,
                                                  FieldName.STORAGE, FieldName.BINARY_STORAGE, FieldName.HOST)
                     .setAllowExpression(true)
-                    .setAllowNull(false)
+                    .setAllowNull(true)
                     .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                     .build();
     
@@ -921,7 +921,7 @@ public class ModelAttributes {
             new MappedAttributeDefinitionBuilder(Attribute.PORT.getLocalName(), ModelType.INT,
                                                  FieldName.STORAGE, FieldName.BINARY_STORAGE, FieldName.PORT)
                     .setAllowExpression(true)
-                    .setAllowNull(false)
+                    .setAllowNull(true)
                     .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                     .build();
     

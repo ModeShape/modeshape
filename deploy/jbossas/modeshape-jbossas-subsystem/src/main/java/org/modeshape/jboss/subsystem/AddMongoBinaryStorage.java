@@ -38,28 +38,38 @@ public class AddMongoBinaryStorage extends AbstractAddBinaryStorage {
                                                     ModelNode model,
                                                     EditableDocument binaries ) throws OperationFailedException {
         binaries.set(FieldName.TYPE, FieldValue.BINARY_STORAGE_TYPE_MONGO);
-        
-        String host = ModelAttributes.MONGO_HOST.resolveModelAttribute(context, model).asString();
-        binaries.setString(FieldName.HOST, host);
-        
-        int port = ModelAttributes.MONGO_PORT.resolveModelAttribute(context, model).asInt();
-        binaries.setNumber(FieldName.PORT, port);
-        
-        ModelNode databaseModel = ModelAttributes.MONGO_DATABASE.resolveModelAttribute(context, model);
-        if (databaseModel.isDefined()) {
-            binaries.setString(FieldName.DATABASE, databaseModel.asString());
+    
+        boolean singleHost = false;
+        ModelNode hostNode = ModelAttributes.MONGO_HOST.resolveModelAttribute(context, model);
+        if (hostNode.isDefined()) {
+            binaries.setString(FieldName.HOST, hostNode.asString());
+            singleHost = true;
         }
-        ModelNode userModel = ModelAttributes.MONGO_USERNAME.resolveModelAttribute(context, model);
-        if (userModel.isDefined()) {
-            binaries.setString(FieldName.USER_NAME, userModel.asString());
+    
+        ModelNode portNode = ModelAttributes.MONGO_PORT.resolveModelAttribute(context, model);
+        if (portNode.isDefined()) {
+            binaries.setNumber(FieldName.PORT, portNode.asInt());
+        } else if (singleHost) {
+            throw new OperationFailedException("The MongoDB port is required if the 'host' attribute is present"); 
         }
-        ModelNode passwordModel = ModelAttributes.MONGO_PASSWORD.resolveModelAttribute(context, model);
-        if (passwordModel.isDefined()) {
-            binaries.setString(FieldName.USER_PASSWORD, passwordModel.asString());
+        
+        ModelNode databaseNode = ModelAttributes.MONGO_DATABASE.resolveModelAttribute(context, model);
+        if (databaseNode.isDefined()) {
+            binaries.setString(FieldName.DATABASE, databaseNode.asString());
         }
-        ModelNode hostAddressesModel = ModelAttributes.MONGO_HOST_ADDRESSES.resolveModelAttribute(context, model);
-        if (hostAddressesModel.isDefined()) {
-            binaries.setArray(FieldName.HOST_ADDRESSES, (Object[]) hostAddressesModel.asString().split(","));
+        ModelNode userNode = ModelAttributes.MONGO_USERNAME.resolveModelAttribute(context, model);
+        if (userNode.isDefined()) {
+            binaries.setString(FieldName.USER_NAME, userNode.asString());
+        }
+        ModelNode passwordNode = ModelAttributes.MONGO_PASSWORD.resolveModelAttribute(context, model);
+        if (passwordNode.isDefined()) {
+            binaries.setString(FieldName.USER_PASSWORD, passwordNode.asString());
+        }
+        ModelNode hostAddressesNode = ModelAttributes.MONGO_HOST_ADDRESSES.resolveModelAttribute(context, model);
+        if (hostAddressesNode.isDefined()) {
+            binaries.setArray(FieldName.HOST_ADDRESSES, (Object[]) hostAddressesNode.asString().split(","));
+        } else if (!singleHost) {
+            throw new OperationFailedException("Either 'host' and 'port' OR 'host-addresses' have to be provided for the MongoDB binary store");
         }
     }
 
