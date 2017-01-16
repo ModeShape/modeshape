@@ -1,6 +1,10 @@
 <subsystem xmlns="urn:jboss:domain:modeshape:3.0">
-  <repository name="sample">
+  <repository name="sample1">
     <mongo-binary-storage mime-type-detection="content" min-string-size="10" min-value-size="4096" database="test"
-                          host="localhost" port="100" password="test" username="test" host-addresses="192.1.68.1.1:90, 143.22.33.123:120"/>  
+                          host="localhost" port="100" password="test" username="test" />  
+  </repository>
+  <repository name="sample2">
+    <mongo-binary-storage mime-type-detection="content" min-string-size="10" min-value-size="4096" database="test"
+                          password="test" username="test" host-addresses="192.1.68.1.1:90, 143.22.33.123:120"/>  
   </repository>
 </subsystem>
