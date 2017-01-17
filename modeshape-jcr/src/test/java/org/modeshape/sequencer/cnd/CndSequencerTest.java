@@ -54,6 +54,7 @@ import javax.jcr.version.OnParentVersionAction;
 import org.junit.Test;
 import org.modeshape.jcr.api.JcrConstants;
 import org.modeshape.jcr.sequencer.AbstractSequencerTest;
+import org.modeshape.schematic.internal.annotation.FixFor;
 
 /**
  * Unit test for {@link CndSequencer}
@@ -122,6 +123,23 @@ public class CndSequencerTest extends AbstractSequencerTest {
         NodeIterator nodeIterator = invalidNode.getNodes();
         assertEquals("/invalid.cnd/jcr:content", nodeIterator.nextNode().getPath());
         assertFalse(nodeIterator.hasNext());
+    }
+    
+    @Test
+    @FixFor("MODE-2658")
+    public void shouldRemovePreviousOutputWhenSequencingSameInput() throws Exception {
+        Node imagesNode = createNodeWithContentFromFile("images.cnd", "sequencer/cnd/images.cnd");
+        Node imageMetadataNode = getOutputNode("/sequenced/images.cnd");
+        assertNotNull(imageMetadataNode);
+        
+        imagesNode.remove();
+        session.save();
+    
+        createNodeWithContentFromFile("images.cnd", "sequencer/cnd/images.cnd");
+        imageMetadataNode = getOutputNode("/sequenced/images.cnd");
+        assertNotNull(imageMetadataNode);
+        Node sequencedRoot = session.getNode("/sequenced");
+        assertEquals("Previous output should've been removed",1, sequencedRoot.getNodes().getSize());
     }
 
     protected List<String> sortedListToLowerCase( List<String> valuesList ) {

@@ -25,9 +25,12 @@ cache:
 jdk:
   - oraclejdk8
   
+env:
+  - MAVEN_OPTS="-Xms1524m -Xmx=1524m"
+  
 # We use docker for the persistence integration tests
 services:
-  - docker
+  - docker  
 
 before_script:
   - sudo docker ps -a 

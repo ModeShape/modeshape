@@ -423,11 +423,11 @@ final class SequencingRunner implements Runnable {
             // See if this is indeed the output, which should have the 'mode:derived' mixin ...
             if (outputNode.isNodeType(DERIVED_NODE_TYPE_NAME) && outputNode.hasProperty(DERIVED_FROM_PROPERTY_NAME)) {
                 // See if it was an output for the same input node ...
-                String derivedFrom = outputNode.getProperty(DERIVED_FROM_PROPERTY_NAME).getPath();
+                String derivedFrom = outputNode.getProperty(DERIVED_FROM_PROPERTY_NAME).getString();
                 if (selectedPath.equals(derivedFrom)) {
                     // Delete it ...
-                    if (TRACE) {
-                        LOGGER.trace("Removing existing output node '{0}' for {1}", outputNode.getPath(), logMsg);
+                    if (DEBUG) {
+                        LOGGER.debug("Removing existing output node '{0}' for {1}", outputNode.getPath(), logMsg);
                     }
                     outputNode.remove();
                 }
