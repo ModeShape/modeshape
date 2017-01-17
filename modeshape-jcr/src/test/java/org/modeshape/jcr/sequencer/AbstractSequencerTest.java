@@ -26,13 +26,14 @@ import static org.modeshape.jcr.api.observation.Event.Sequencing.SEQUENCED_NODE_
 import static org.modeshape.jcr.api.observation.Event.Sequencing.SEQUENCED_NODE_PATH;
 import static org.modeshape.jcr.api.observation.Event.Sequencing.SEQUENCER_NAME;
 import static org.modeshape.jcr.api.observation.Event.Sequencing.USER_ID;
+
 import java.io.InputStream;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import javax.jcr.Node;
+import javax.jcr.PathNotFoundException;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.Workspace;
@@ -69,7 +70,7 @@ public abstract class AbstractSequencerTest extends SingleUseAbstractTest {
     /**
      * A [node path, node instance] map which is populated by the listener, once each sequencing event is received
      */
-    private final Map<String, Node> sequencedNodes = new HashMap<String, Node>();
+    private final Map<String, Node> sequencedNodes = new ConcurrentHashMap<>();
 
     /**
      * A [node path, latch] map which is used to block tests waiting for sequenced output, until either the node has been
@@ -207,7 +208,7 @@ public abstract class AbstractSequencerTest extends SingleUseAbstractTest {
     }
 
     /**
-     * Retrieves a new node under the given path, as a result of sequecing, or returns null if the given timeout occurs.
+     * Retrieves a new node under the given path, as a result of sequencing, or returns null if the given timeout occurs.
      * 
      * @param expectedPath
      * @param waitTimeSeconds
@@ -302,8 +303,13 @@ public abstract class AbstractSequencerTest extends SingleUseAbstractTest {
 
                     String nodePath = event.getPath();
                     logger.debug("New sequenced node at: " + nodePath);
-                    sequencedNodes.put(nodePath, session.getNode(nodePath));
-
+                    try {
+                        Node node = session.getNode(nodePath);
+                        sequencedNodes.putIfAbsent(nodePath, node);
+                    } catch (PathNotFoundException e) {
+                        logger.debug("Node at {0} removed by another thread", nodePath);
+                    }
+    
                     // signal the node is available
                     createWaitingLatchIfNecessary(nodePath, nodeSequencedLatches);
                     nodeSequencedLatches.get(nodePath).countDown();
