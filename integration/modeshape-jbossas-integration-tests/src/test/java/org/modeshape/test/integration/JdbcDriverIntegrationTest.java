@@ -15,6 +15,7 @@
  */
 package org.modeshape.test.integration;
 
+import org.jboss.arquillian.container.test.api.RunAsClient;
 import org.jboss.arquillian.junit.Arquillian;
 import org.junit.runner.RunWith;
 import org.modeshape.jdbc.JcrHttpDriverIntegrationTest;
@@ -26,6 +27,7 @@ import org.modeshape.jdbc.JcrHttpDriverIntegrationTest;
  * @author Horia Chiorean
  */
 @RunWith( Arquillian.class )
+@RunAsClient
 public class JdbcDriverIntegrationTest extends JcrHttpDriverIntegrationTest {
 
     @Override
