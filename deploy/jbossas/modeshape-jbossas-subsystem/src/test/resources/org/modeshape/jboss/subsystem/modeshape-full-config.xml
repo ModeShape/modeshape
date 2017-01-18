@@ -32,8 +32,8 @@
             <source cacheable="false"
                     classname="org.modeshape.connector.filesystem.FileSystemConnector"
                     directoryPath="." name="filesystem" readonly="true" exposeAsWorkspace="ws-fs">
-                <projection>default:/projection1 =&gt; /</projection>
-                <projection>other:/projection1 =&gt; /</projection>
+                <projection>default:/projection1 =&gt;/</projection>
+                <projection>other:/projection1 =&gt;/</projection>
             </source>
             <source cacheable="false"
                     classname="org.modeshape.connector.git.GitConnector"
@@ -44,7 +44,7 @@
                     classname="org.modeshape.connector.meta.jdbc.JdbcMetadataConnector"
                     dataSourceJndiName="java:jboss/datasources/ExampleDS"
                     name="jdbc-metadata">
-                <projection>default:/ModeShapeTestDb =&gt; /</projection>
+                <projection>default:/ModeShapeTestDb =&gt;/</projection>
             </source>
         </external-sources>
         <text-extractors>

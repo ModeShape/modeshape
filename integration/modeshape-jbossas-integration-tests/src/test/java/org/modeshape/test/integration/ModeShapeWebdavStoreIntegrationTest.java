@@ -18,6 +18,7 @@ package org.modeshape.test.integration;
 import com.googlecode.sardine.Sardine;
 import com.googlecode.sardine.SardineFactory;
 import com.googlecode.sardine.util.SardineException;
+import org.jboss.arquillian.container.test.api.RunAsClient;
 import org.jboss.arquillian.junit.Arquillian;
 import org.junit.Ignore;
 import org.junit.runner.RunWith;
@@ -29,6 +30,7 @@ import org.modeshape.web.jcr.webdav.ModeShapeWebdavStoreClientTest;
  * @author Horia Chiorean
  */
 @RunWith( Arquillian.class)
+@RunAsClient
 public class ModeShapeWebdavStoreIntegrationTest extends ModeShapeWebdavStoreClientTest {
 
     @Override
