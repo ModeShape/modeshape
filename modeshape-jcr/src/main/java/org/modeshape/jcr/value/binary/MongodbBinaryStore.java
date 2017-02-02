@@ -26,6 +26,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+import org.modeshape.common.annotation.NotThreadSafe;
 import org.modeshape.common.util.IoUtil;
 import org.modeshape.common.util.StringUtil;
 import org.modeshape.jcr.JcrI18n;
@@ -59,14 +60,20 @@ public class MongodbBinaryStore extends AbstractBinaryStore {
     private static final String FIELD_UNUSED = "unused";
     private static final String FIELD_CHUNK_SIZE = "chunk-size";
     private static final String FIELD_CHUNK_BUFFER = "chunk-buffer";
+    private static final String FIELD_CHUNK_POSITION = "chunk-order";
+    private static final String FIELD_CHUNK_VERSION = "chunk-version";
 
     // chunk types
     private static final String CHUNK_TYPE_HEADER = "header";
     private static final String CHUNK_TYPE_DATA_CHUNK = "data";
+    
+    // chunk versions
+    private static final int VERSION_1 = 1;
 
     // keys for chunks(header or data)
-    protected static final BasicDBObject HEADER = new BasicDBObject().append(FIELD_CHUNK_TYPE, CHUNK_TYPE_HEADER);
-    protected static final BasicDBObject DATA_CHUNK = new BasicDBObject().append(FIELD_CHUNK_TYPE, CHUNK_TYPE_DATA_CHUNK);
+    protected static final BasicDBObject HEADER_QUERY = new BasicDBObject().append(FIELD_CHUNK_TYPE, CHUNK_TYPE_HEADER);
+    protected static final BasicDBObject DATA_CHUNK_QUERY = new BasicDBObject().append(FIELD_CHUNK_TYPE, CHUNK_TYPE_DATA_CHUNK);
+    protected static final BasicDBObject DATA_CHUNK_SORT_INDEX = new BasicDBObject().append(FIELD_CHUNK_POSITION, 1);
 
     private FileSystemBinaryStore cache;
 
@@ -192,8 +199,10 @@ public class MongodbBinaryStore extends AbstractBinaryStore {
 
             // store content
             DBCollection content = db.getCollection(key.toString());
-            ChunkOutputStream dbStream = markAsUnused ? new ChunkOutputStream(content, System.currentTimeMillis()) : new ChunkOutputStream(
-                                                                                                                                           content);
+            content.createIndex(DATA_CHUNK_SORT_INDEX);
+            ChunkOutputStream dbStream = markAsUnused ? 
+                                         new ChunkOutputStream(content, System.currentTimeMillis()) : 
+                                         new ChunkOutputStream(content);
             try {
                 IoUtil.write(temp.getStream(), dbStream);
             } catch (Exception e) {
@@ -352,7 +361,7 @@ public class MongodbBinaryStore extends AbstractBinaryStore {
     private void setAttribute( DBCollection content,
                                String fieldName,
                                Object value ) {
-        DBObject header = content.findOne(HEADER);
+        DBObject header = content.findOne(HEADER_QUERY);
         BasicDBObject newHeader = new BasicDBObject();
 
         // clone header
@@ -364,7 +373,7 @@ public class MongodbBinaryStore extends AbstractBinaryStore {
 
         // modify specified field and update record
         newHeader.put(fieldName, value);
-        content.update(HEADER, newHeader);
+        content.update(HEADER_QUERY, newHeader);
     }
 
     /**
@@ -376,7 +385,7 @@ public class MongodbBinaryStore extends AbstractBinaryStore {
      */
     private Object getAttribute( DBCollection content,
                                  String fieldName ) {
-        return content.findOne(HEADER).get(fieldName);
+        return content.findOne(HEADER_QUERY).get(fieldName);
     }
 
     /**
@@ -395,7 +404,8 @@ public class MongodbBinaryStore extends AbstractBinaryStore {
     /**
      * Provide an OutputStream which will write to a database storage.
      */
-    private class ChunkOutputStream extends OutputStream {
+    @NotThreadSafe
+    protected class ChunkOutputStream extends OutputStream {
         // stored content
         private DBCollection content;
 
@@ -403,8 +413,10 @@ public class MongodbBinaryStore extends AbstractBinaryStore {
         private byte[] buffer = new byte[chunkSize];
         // current position in the local buffer
         private int offset;
+        // the position of a chunk with a series of chunks
+        private int position;
 
-        // object for writting chunks into storage
+        // object for writing chunks into storage
         private BasicDBObject chunk = new BasicDBObject();
 
         /**
@@ -420,6 +432,7 @@ public class MongodbBinaryStore extends AbstractBinaryStore {
             BasicDBObject header = new BasicDBObject();
             header.put(FIELD_CHUNK_TYPE, CHUNK_TYPE_HEADER);
             header.put(FIELD_UNUSED, false);
+            header.put(FIELD_CHUNK_VERSION, VERSION_1);
 
             // insert into database
             this.content.insert(header);
@@ -467,12 +480,14 @@ public class MongodbBinaryStore extends AbstractBinaryStore {
                 chunk.put(FIELD_CHUNK_TYPE, CHUNK_TYPE_DATA_CHUNK);
                 chunk.put(FIELD_CHUNK_SIZE, offset);
                 chunk.put(FIELD_CHUNK_BUFFER, buffer);
+                chunk.put(FIELD_CHUNK_POSITION, position);
 
                 // store chink
                 content.insert(chunk);
 
                 // reset (weird thing is that we can't use mutable objects here)
                 offset = 0;
+                position++;
                 chunk = new BasicDBObject();
             }
         }
@@ -481,9 +496,10 @@ public class MongodbBinaryStore extends AbstractBinaryStore {
     /**
      * Provide an InputStream which will read from a database storage.
      */
-    private class ChunkInputStream extends InputStream {
+    @NotThreadSafe
+    protected class ChunkInputStream extends InputStream {
         // list of datachunks
-        private DBCursor cursor;
+        private final DBCursor cursor;
 
         // local buffer and current position inthe buffer
         private byte[] buffer = new byte[chunkSize];
@@ -495,9 +511,29 @@ public class MongodbBinaryStore extends AbstractBinaryStore {
         private int size = 0;
 
         public ChunkInputStream( DBCollection chunks ) {
-            // execute query for selecting data chunks only
-            cursor = chunks.find(DATA_CHUNK);
+            // dynamically create the cursor based on the version
+            cursor = cursorFor(chunks);
         }
+        
+        private DBCursor cursorFor(DBCollection parent) {
+            DBObject header = parent.findOne(HEADER_QUERY);
+            // we should always have a header
+            assert header != null;
+            
+            Object version = header.get(FIELD_CHUNK_VERSION);
+            // we're always interested in data chunks
+            DBCursor result = parent.find(DATA_CHUNK_QUERY);
+            if (version == null) {
+                // no version present
+                return result; 
+            }
+            switch ((Integer) version) {
+                case VERSION_1:
+                    return result.sort(DATA_CHUNK_SORT_INDEX);
+                default:    
+                    throw new IllegalArgumentException("Unknown chunk version " + version);
+            }
+        } 
 
         @Override
         public int read() {
