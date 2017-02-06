@@ -475,7 +475,8 @@ class RepositoryLockManager implements ChangeSetListener {
         }
 
         // Now save the two sessions ...
-        lockingSession.save(systemSession, null);
+        // save the system session first so that the system change is reflected first in the ws caches
+        systemSession.save(lockingSession, null);
     }
 
     /**
