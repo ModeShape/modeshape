@@ -50,7 +50,7 @@ public class RelationalDb implements SchematicDb {
     
     private static final Logger LOGGER = Logger.getLogger(RelationalDb.class);
 
-    private final ConcurrentMap<String, Connection> connectionsByTxId;
+    private final Map<String, Connection> connectionsByTxId;
     private final DataSourceManager dsManager;
     private final RelationalDbConfig config;
     private final Statements statements;
@@ -62,18 +62,21 @@ public class RelationalDb implements SchematicDb {
         this.config = new RelationalDbConfig(configDoc);
         this.dsManager = new DataSourceManager(config);
         DatabaseType dbType = dsManager.dbType();
-        Map<String, String> statementsFile = loadStatementsResource();
-        switch (dbType.name()) {
-            case ORACLE: {
-                this.statements = new OracleStatements(config, statementsFile);
-                break;
-            }
-            default: {
-                this.statements = new DefaultStatements(config, statementsFile);
-            }
-        }
+        this.statements = createStatements(dbType);
         this.transactionalCaches = new TransactionalCaches();
     }
+    
+    private Statements createStatements(DatabaseType dbType) {
+        Map<String, String> statementsFile = loadStatementsResource();
+        switch (dbType.name()) {
+            case ORACLE:
+                return new OracleStatements(config, statementsFile);
+            case SQLSERVER:
+                return new SQLServerStatements(config, statementsFile);
+            default:
+                return new DefaultStatements(config, statementsFile);
+        }
+    } 
 
     @Override
     public String id() {
@@ -114,20 +117,29 @@ public class RelationalDb implements SchematicDb {
         LOGGER.warn(RelationalProviderI18n.warnConnectionsNeedCleanup, connectionsByTxId.size());
         // this should not normally happen because each flow should end with either a commit/rollback which should release
         // the allocated connection
-        connectionsByTxId.values().stream().forEach(this::closeConnection);
+        connectionsByTxId.forEach(this::closeConnection);
         connectionsByTxId.clear();
     }
-
-    private void closeConnection(Connection connection) {
+    
+    private void closeConnection(String txId, Connection connection) {
         try {
-            if (!connection.isClosed()) {
-                connection.close();
+            if (connection == null || connection.isClosed()) {
+                return;
             }
-        } catch (SQLException e) {
-            // ignore
+        } catch (Throwable t) {
+            LOGGER.debug(t, "Cannot determine DB connection status for transaction {0}", txId);
+            return;
+        }
+        
+        try {
+            connection.close();
+        } catch (Throwable t) {
+            LOGGER.warn(RelationalProviderI18n.warnCannotCloseConnection, config.tableName(), txId, t.getMessage());
+            // log the full stack trace via debug
+            LOGGER.debug(t, "Cannot close connection");
         }
     }
-
+    
     @Override
     public List<String> keys() {
         //first read everything from the db
@@ -314,7 +326,10 @@ public class RelationalDb implements SchematicDb {
         transactionalCaches.clearCache();
         // release any existing connection for this thread because a transaction has been committed...
         logDebug("Releasing DB connection for transaction {0}", id);
-        releaseConnectionForActiveTx();
+        connectionsByTxId.computeIfPresent(id, (txId, connection) -> {
+            closeConnection(txId, connection);
+            return null;
+        });
         // and clear the tx 
         TransactionsHolder.clearActiveTransaction();
     }
@@ -384,8 +399,14 @@ public class RelationalDb implements SchematicDb {
     }
 
     protected Connection connectionForActiveTx() {
-        return connectionsByTxId.computeIfAbsent(TransactionsHolder.requireActiveTransaction(),
-                                                 transactionId -> dsManager.newConnection(false, false));
+        String activeTxId = TransactionsHolder.requireActiveTransaction();
+        Connection connection = connectionsByTxId.get(activeTxId);
+        if (connection != null) {
+            return connection;    
+        }
+        connection = dsManager.newConnection(false, false);
+        connectionsByTxId.put(activeTxId, connection);
+        return connection;
     }
     
     protected RelationalDbConfig config() {
@@ -395,15 +416,7 @@ public class RelationalDb implements SchematicDb {
     protected DataSourceManager dsManager() {
         return dsManager;
     }
-    
-    protected void releaseConnectionForActiveTx() {
-        connectionsByTxId.computeIfPresent(TransactionsHolder.requireActiveTransaction(),
-                                              (txId, connection) -> {
-                                                  closeConnection(connection);
-                                                  return null;
-                                              });
-    }
-
+   
     protected Connection newConnection(boolean autoCommit, boolean readonly) {
         return dsManager.newConnection(autoCommit, readonly);
     }
@@ -438,7 +451,7 @@ public class RelationalDb implements SchematicDb {
                          InputStream is = RelationalDb.class.getClassLoader().getResourceAsStream(fileName);
                          if (LOGGER.isDebugEnabled()) {
                              if (is != null) {
-                                 LOGGER.debug("located DB statemtents file '{0}'", fileName);
+                                 LOGGER.debug("located DB statements file '{0}'", fileName);
                              } else {
                                  LOGGER.debug("'{0}' statements file not found", fileName);
                              }
