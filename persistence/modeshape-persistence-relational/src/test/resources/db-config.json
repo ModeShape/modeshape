@@ -2,7 +2,7 @@
     // Used for docker integration testing where the values for the properties are set as system properties
     "type": "db",
     "connectionUrl": "${db.url}",
-    "poolSize" : 100,
+    "poolSize" : 5,
     "driver": "${db.driver}",
     "username": "${db.username}",
     "password": "${db.password}",

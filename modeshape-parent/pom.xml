@@ -190,10 +190,12 @@
         <version.mysql>5.1.39</version.mysql>
         <version.com.oracle>11.2.0.1.0</version.com.oracle>
         <version.com.amazonaws>1.11.24</version.com.amazonaws>
+        <version.com.microsoft.sqlserver.mssql-jdbc>6.1.0.jre8</version.com.microsoft.sqlserver.mssql-jdbc>
 
         <version.docker.postgresql>9.5.4</version.docker.postgresql>
         <version.docker.mysql>5.7</version.docker.mysql>
         <version.docker.oracle>16.04</version.docker.oracle>
+        <version.docker.sqlserver>latest</version.docker.sqlserver> <!-- currently there are no tags for this image -->
               
         <!--Properties which must be used when installing locally a server ZIP distribution -->
         <version.org.wildfly>10.1.0.Final</version.org.wildfly>
@@ -391,6 +393,32 @@
                 </dependency>
             </dependencies>
         </profile>
+        
+        <profile>
+            <id>sqlserver</id>
+            <activation>
+                <property>
+                    <name>database</name>
+                    <value>sqlserver</value>
+                </property>
+            </activation>
+            <properties>
+                <database>sqlserver</database>
+                <database.username>sa</database.username>
+                <database.password>Password!</database.password>
+                <database.driver>com.microsoft.sqlserver.jdbc.SQLServerDriver</database.driver>
+                <database.port>1433</database.port>
+                <database.url>jdbc:sqlserver://${docker.host.address}:${database.port}</database.url>
+                <docker.filter>microsoft/mssql-server-linux:${version.docker.sqlserver}</docker.filter>
+            </properties>
+            <dependencies>
+                <dependency>
+                    <groupId>com.microsoft.sqlserver</groupId>
+                    <artifactId>mssql-jdbc</artifactId>
+                    <version>${version.com.microsoft.sqlserver.mssql-jdbc}</version>
+                </dependency>
+            </dependencies>
+        </profile>
 
         <!--These profiles must have the same ID as the ones from the root pom-->
         <profile>
@@ -415,6 +443,16 @@
           -->
         <pluginManagement>
             <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-surefire-report-plugin</artifactId>
+                    <version>${version.surefire.plugin}</version>
+                    <configuration>
+                        <showSuccess>true</showSuccess>
+                        <outputDirectory>${project.build.directory}/surefire-reports</outputDirectory>
+                        <reportsDirectory>${project.build.directory}/surefire-reports</reportsDirectory>
+                    </configuration>
+                </plugin>
                 <!--
                         Fixes how test resources of a project can be used in projects
                         dependent on it
@@ -612,6 +650,28 @@
                                     <wait>
                                         <log>/usr/sbin/startup.sh: ignoring /docker-entrypoint-initdb.d/*</log>
                                         <time>300000</time> 
+                                    </wait>
+                                </run>
+                            </image>   
+                            <image>
+                                <name>microsoft/mssql-server-linux:${version.docker.sqlserver}</name>
+                                <run>
+                                    <namingStrategy>none</namingStrategy>
+                                    <env>
+                                        <ACCEPT_EULA>Y</ACCEPT_EULA>
+                                        <SA_PASSWORD>${database.password}</SA_PASSWORD>
+                                    </env>
+                                    <ports>
+                                        <port>${database.port}:1433</port>
+                                    </ports>
+                                    <log>
+                                        <prefix>sqlserver</prefix>
+                                        <enabled>true</enabled>
+                                        <color>yellow</color>
+                                    </log>
+                                    <wait>
+                                        <log>SQL Server is now ready for client connections</log>
+                                        <time>120000</time>
                                     </wait>
                                 </run>
                             </image>
@@ -2034,14 +2094,4 @@
             </dependency>
         </dependencies>
     </dependencyManagement>
-
-    <reporting>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-report-plugin</artifactId>
-                <version>${version.surefire.plugin}</version>
-            </plugin>
-        </plugins>
-    </reporting>
 </project>

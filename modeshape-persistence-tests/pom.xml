@@ -62,8 +62,6 @@
             <artifactId>mysql-connector-java</artifactId>
             <version>${version.mysql}</version>
         </dependency>
-
-
                                         
         <!--
         These following are defined as 'provided' in the parent POM, since ModeShape
@@ -201,7 +199,7 @@
         </profile>
         <!--
             Define these as empty with the same name as the ones from the parent POM to deactivate the default profile
-            for this module which runs PostgreSQL
+            for this module
          -->
         <profile>
             <id>postgresql9</id>
@@ -210,8 +208,18 @@
             <id>oracle11g</id>
         </profile>
         <profile>
+            <id>sqlserver</id>
+        </profile>
+        <profile>
             <id>all-databases</id>
             <properties>
+                <docker.filter>
+                    postgres:${version.docker.postgresql},
+                    mysql/mysql-server:${version.docker.mysql},
+                    wnameless/oracle-xe-11g:${version.docker.oracle},
+                    microsoft/mssql-server-linux:${version.docker.sqlserver}
+                </docker.filter>
+
                 <oracle.database.username>system</oracle.database.username>
                 <oracle.database.password>oracle</oracle.database.password>
                 <oracle.database.driver>oracle.jdbc.OracleDriver</oracle.database.driver>
@@ -232,6 +240,12 @@
                 <mysql.database.driver>com.mysql.jdbc.Driver</mysql.database.driver>
                 <mysql.database.port>3306</mysql.database.port>
                 <mysql.database.url>jdbc:mysql://${docker.host.address}:${mysql.database.port}/${mysql.database.name}?autoReconnect=true&amp;useSSL=false</mysql.database.url>
+
+                <sqlserver.database.username>sa</sqlserver.database.username>
+                <sqlserver.database.password>Password!</sqlserver.database.password>
+                <sqlserver.database.driver>com.microsoft.sqlserver.jdbc.SQLServerDriver</sqlserver.database.driver>
+                <sqlserver.database.port>1433</sqlserver.database.port>
+                <sqlserver.database.url>jdbc:sqlserver://${docker.host.address}:${sqlserver.database.port}</sqlserver.database.url>
             </properties>
             <dependencies>
                 <dependency>
@@ -250,6 +264,11 @@
                     <artifactId>ojdbc6</artifactId>
                     <version>${version.com.oracle}</version>
                 </dependency>
+                <dependency>
+                    <groupId>com.microsoft.sqlserver</groupId>
+                    <artifactId>mssql-jdbc</artifactId>
+                    <version>${version.com.microsoft.sqlserver.mssql-jdbc}</version>
+                </dependency>
             </dependencies>
             <build>
                 <plugins>
@@ -263,7 +282,6 @@
                             <watchInterval>500</watchInterval>
                             <logDate>default</logDate>
                             <verbose>true</verbose>
-                            <autoPull>always</autoPull>
                             <images>
                                 <image>
                                     <name>postgres:${version.docker.postgresql}</name>
@@ -336,6 +354,28 @@
                                         </wait>
                                     </run>
                                 </image>
+                                <image>
+                                    <name>microsoft/mssql-server-linux:${version.docker.sqlserver}</name>
+                                    <run>
+                                        <namingStrategy>none</namingStrategy>
+                                        <env>
+                                            <ACCEPT_EULA>Y</ACCEPT_EULA>
+                                            <SA_PASSWORD>${sqlserver.database.password}</SA_PASSWORD>
+                                        </env>
+                                        <ports>
+                                            <port>${sqlserver.database.port}:1433</port>
+                                        </ports>
+                                        <log>
+                                            <prefix>sqlserver</prefix>
+                                            <enabled>true</enabled>
+                                            <color>yellow</color>
+                                        </log>
+                                        <wait>
+                                            <log>SQL Server is now ready for client connections</log>
+                                            <time>120000</time>
+                                        </wait>
+                                    </run>
+                                </image>
                             </images>
                         </configuration>
                     </plugin>
@@ -382,6 +422,20 @@
                                         <db.url>${oracle.database.url}</db.url>
                                         <db.username>${oracle.database.username}</db.username>
                                         <db.password>${oracle.database.password}</db.password>
+                                    </systemPropertyVariables>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>integration-test-sqlserver</id>
+                                <goals>
+                                    <goal>integration-test</goal>
+                                </goals>
+                                <configuration>
+                                    <systemPropertyVariables>
+                                        <db.driver>${sqlserver.database.driver}</db.driver>
+                                        <db.url>${sqlserver.database.url}</db.url>
+                                        <db.username>${sqlserver.database.username}</db.username>
+                                        <db.password>${sqlserver.database.password}</db.password>
                                     </systemPropertyVariables>
                                 </configuration>
                             </execution>

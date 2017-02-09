@@ -66,6 +66,8 @@ public class DefaultStatements implements Statements {
             } else {
                 logTableInfo("Table {0} already exists");
             }
+        } catch (SQLException e) {
+            processSQLException(CREATE_TABLE, e);
         }
         return null;
     }
@@ -79,8 +81,15 @@ public class DefaultStatements implements Statements {
             } else {
                 logTableInfo("Table {0} does not exist");
             }
+        } catch (SQLException e) {
+            processSQLException(DELETE_TABLE, e);
         }
         return null;
+    }
+    
+    protected void processSQLException(String statementId, SQLException e) throws SQLException {
+        // by default we just rethrow the exception as-is, but certain subclasses may want different handling
+        throw e;
     }
 
     @Override

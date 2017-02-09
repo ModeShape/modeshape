@@ -27,7 +27,7 @@ public final class RelationalProviderI18n {
     
     public static I18n jndiError;
     public static I18n unsupportedDBError;
-    public static I18n insertOrUpdateFailed;
+    public static I18n warnCannotCloseConnection;
     public static I18n threadNotAssociatedWithTransaction;
     public static I18n threadAssociatedWithAnotherTransaction;
     public static I18n warnConnectionsNeedCleanup;

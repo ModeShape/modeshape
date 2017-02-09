@@ -19,24 +19,23 @@ import java.sql.SQLException;
 import java.util.Map;
 
 /**
- * Statements specialization for Oracle DB.
+ * Statements specialization for Microsoft SQL Server.
  * 
  * @author Horia Chiorean (hchiorea@redhat.com)
- * @since 5.0
+ * @since 5.4
  */
-public class OracleStatements extends DefaultStatements {
-
-    protected OracleStatements( RelationalDbConfig config, Map<String, String> statements ) {
+public class SQLServerStatements extends DefaultStatements {
+    protected SQLServerStatements(RelationalDbConfig config, Map<String, String> statements) {
         super(config, statements);
     }
     
     @Override
     protected void processSQLException(String statementId, SQLException e) throws SQLException {
         int errorCode = e.getErrorCode();
-        if (errorCode == 955 && CREATE_TABLE.equals(statementId)) {
-            logTableInfo("Table {0} already exists");         
-        } else if (errorCode == 942 && DELETE_TABLE.equals(statementId)) {
-            logTableInfo("Table {0} does not exist");            
+        if (errorCode == 2714 && CREATE_TABLE.equals(statementId)) {
+            logTableInfo("Table {0} already exists");
+        } else if (errorCode == 3701 && DELETE_TABLE.equals(statementId)) {
+            logTableInfo("Table {0} does not exist");
         } else {
             throw e;
         }
