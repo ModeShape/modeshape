@@ -11,7 +11,7 @@
             "lockFactoryClass" : "org.apache.lucene.store.NoLockFactory",
             "directoryClass" : "org.apache.lucene.store.RAMDirectory",
             "analyzerClass" : "org.apache.lucene.analysis.ro.RomanianAnalyzer",
-            "codec" : "Lucene53"
+            "codec" : "Lucene62"
         }
     },
     "indexes" : {

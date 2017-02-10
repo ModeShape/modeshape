@@ -15,7 +15,6 @@
  */
 package org.modeshape.jcr.index.lucene.query;
 
-import org.apache.lucene.index.IndexableField;
 import org.apache.lucene.search.Query;
 import org.modeshape.common.annotation.Immutable;
 
@@ -38,7 +37,7 @@ public class FieldExistsQuery extends ConstantScoreWeightQuery {
     }
 
     @Override
-    protected boolean areValid( IndexableField... fields ) {
+    protected boolean accepts(String value) {
         // always valid, since the base class will only call this for a document which actually has the fields...
         return true;
     }

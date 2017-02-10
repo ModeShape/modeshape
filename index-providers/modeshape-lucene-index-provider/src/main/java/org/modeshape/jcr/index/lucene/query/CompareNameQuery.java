@@ -15,13 +15,17 @@
  */
 package org.modeshape.jcr.index.lucene.query;
 
+import static org.modeshape.jcr.value.ValueComparators.NAME_COMPARATOR;
+
+import java.util.Objects;
+import java.util.function.BiFunction;
+import java.util.function.BiPredicate;
+import java.util.function.Function;
 import javax.jcr.query.qom.Comparison;
 import org.apache.lucene.index.LeafReaderContext;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.Weight;
-import org.modeshape.jcr.index.lucene.query.CaseOperations.CaseOperation;
 import org.modeshape.jcr.value.Name;
-import org.modeshape.jcr.value.ValueComparators;
 import org.modeshape.jcr.value.ValueFactories;
 import org.modeshape.jcr.value.ValueFactory;
 
@@ -31,67 +35,39 @@ import org.modeshape.jcr.value.ValueFactory;
  * query to score (and return) only those documents that correspond to nodes with Names that satisfy the constraint.
  */
 public class CompareNameQuery extends CompareQuery<Name> {
-
-    protected static final Evaluator<Name> EQUAL_TO = new Evaluator<Name>() {
-        @Override
-        public boolean satisfiesConstraint( Name nodeValue,
-                                            Name constraintValue ) {
-            return ValueComparators.NAME_COMPARATOR.compare(nodeValue, constraintValue) == 0;
-        }
-
-        @Override
-        public String toString() {
-            return " = ";
-        }
-    };
-    protected static final Evaluator<Name> IS_LESS_THAN = new Evaluator<Name>() {
-        @Override
-        public boolean satisfiesConstraint( Name nodeValue,
-                                            Name constraintValue ) {
-            return ValueComparators.NAME_COMPARATOR.compare(nodeValue, constraintValue) < 0;
-        }
-
-        @Override
-        public String toString() {
-            return " < ";
-        }
-    };
-    protected static final Evaluator<Name> IS_LESS_THAN_OR_EQUAL_TO = new Evaluator<Name>() {
-        @Override
-        public boolean satisfiesConstraint( Name nodeValue,
-                                            Name constraintValue ) {
-            return ValueComparators.NAME_COMPARATOR.compare(nodeValue, constraintValue) <= 0;
-        }
-
-        @Override
-        public String toString() {
-            return " <= ";
-        }
-    };
-    protected static final Evaluator<Name> IS_GREATER_THAN = new Evaluator<Name>() {
-        @Override
-        public boolean satisfiesConstraint( Name nodeValue,
-                                            Name constraintValue ) {
-            return ValueComparators.NAME_COMPARATOR.compare(nodeValue, constraintValue) > 0;
-        }
-
-        @Override
-        public String toString() {
-            return " > ";
-        }
-    };
-    protected static final Evaluator<Name> IS_GREATER_THAN_OR_EQUAL_TO = new Evaluator<Name>() {
-        @Override
-        public boolean satisfiesConstraint( Name nodeValue,
-                                            Name constraintValue ) {
-            return ValueComparators.NAME_COMPARATOR.compare(nodeValue, constraintValue) >= 0;
-        }
-
-        @Override
-        public String toString() {
-            return " >= ";
-        }
-    };
+    
+    private final ValueFactory<Name> nameValueFactory;
+    
+    /**
+     * Construct a {@link Query} implementation that scores nodes according to the supplied comparator.
+     *
+     * @param field the name of the document field containing the local name value; may not be null
+     * @param constraintValue the constraint path; may not be null
+     * @param nameFactory the value factory used during scoring; may not be null
+     * @param evaluator the {@link BiFunction} implementation that returns whether the node path satisfies the
+     * constraint; may not be null
+     * @param caseOperation the operation that should be performed on the indexed values before the constraint value is being
+     *        evaluated; may be null which indicates that no case conversion should be done
+     */
+    protected CompareNameQuery(final String field,
+                               Name constraintValue,
+                               ValueFactory<Name> nameFactory,
+                               BiPredicate<Name, Name> evaluator,
+                               Function<String, String> caseOperation) {
+        super(field, constraintValue, evaluator, caseOperation);
+        this.nameValueFactory = nameFactory;
+    }
+    
+    @Override
+    protected Name convertValue(String casedValue) {
+        return nameValueFactory.create(casedValue);
+    }
+    
+    @Override
+    public Query clone() {
+        return new CompareNameQuery(field(), constraintValue, nameValueFactory, evaluator, caseOperation);
+    }
+    
     
     /**
      * Construct a {@link Query} implementation that scores documents such that the node represented by the document has a name
@@ -101,17 +77,17 @@ public class CompareNameQuery extends CompareQuery<Name> {
      * @param fieldName the name of the document field containing the name value; may not be null
      * @param factories the value factories that can be used during the scoring; may not be null
      * @param caseOperation the operation that should be performed on the indexed values before the constraint value is being
-     * evaluated; may not be null
+     *        evaluated; may be null which indicates that no case conversion should be done
      * @return the query; never null
      */
     public static Query createQueryForNodesWithNameEqualTo( Name constraintValue,
                                                             String fieldName,
                                                             ValueFactories factories,
-                                                            CaseOperation caseOperation ) {
-        return new CompareNameQuery(fieldName, constraintValue, factories.getNameFactory(), factories.getStringFactory(),
-                                    EQUAL_TO, caseOperation);
+                                                            Function<String, String> caseOperation) {
+        return new CompareNameQuery(fieldName, constraintValue, factories.getNameFactory(),
+                                    Objects::equals, caseOperation);
     }
-
+    
     /**
      * Construct a {@link Query} implementation that scores documents such that the node represented by the document has a name
      * that is greater than the supplied constraint name.
@@ -120,17 +96,18 @@ public class CompareNameQuery extends CompareQuery<Name> {
      * @param localNameField the name of the document field containing the local name value; may not be null
      * @param factories the value factories that can be used during the scoring; may not be null
      * @param caseOperation the operation that should be performed on the indexed values before the constraint value is being
-     * evaluated; may not be null
+     *        evaluated; may be null which indicates that no case conversion should be done
      * @return the query; never null
      */
     public static CompareNameQuery createQueryForNodesWithNameGreaterThan( Name constraintValue,
                                                                            String localNameField,
                                                                            ValueFactories factories,
-                                                                           CaseOperation caseOperation ) {
+                                                                           Function<String, String> caseOperation ) {
         return new CompareNameQuery(localNameField, constraintValue, factories.getNameFactory(),
-                                    factories.getStringFactory(), IS_GREATER_THAN, caseOperation);
+                                    (name1, name2) -> NAME_COMPARATOR.compare(name1, name2) > 0,
+                                    caseOperation);
     }
-
+    
     /**
      * Construct a {@link Query} implementation that scores documents such that the node represented by the document has a name
      * that is greater than or equal to the supplied constraint name.
@@ -139,17 +116,18 @@ public class CompareNameQuery extends CompareQuery<Name> {
      * @param localNameField the name of the document field containing the local name value; may not be null
      * @param factories the value factories that can be used during the scoring; may not be null
      * @param caseOperation the operation that should be performed on the indexed values before the constraint value is being
-     * evaluated; may not be null
+     *        evaluated; may be null which indicates that no case conversion should be done
      * @return the query; never null
      */
     public static CompareNameQuery createQueryForNodesWithNameGreaterThanOrEqualTo( Name constraintValue,
                                                                                     String localNameField,
                                                                                     ValueFactories factories,
-                                                                                    CaseOperation caseOperation ) {
+                                                                                    Function<String, String> caseOperation ) {
         return new CompareNameQuery(localNameField, constraintValue, factories.getNameFactory(),
-                                    factories.getStringFactory(), IS_GREATER_THAN_OR_EQUAL_TO, caseOperation);
+                                    (name1, name2) -> NAME_COMPARATOR.compare(name1, name2) >= 0,
+                                    caseOperation);
     }
-
+    
     /**
      * Construct a {@link Query} implementation that scores documents such that the node represented by the document has a name
      * that is less than the supplied constraint name.
@@ -158,17 +136,18 @@ public class CompareNameQuery extends CompareQuery<Name> {
      * @param localNameField the name of the document field containing the local name value; may not be null
      * @param factories the value factories that can be used during the scoring; may not be null
      * @param caseOperation the operation that should be performed on the indexed values before the constraint value is being
-     * evaluated; may not be null
+     *        evaluated; may be null which indicates that no case conversion should be done
      * @return the query; never null
      */
     public static CompareNameQuery createQueryForNodesWithNameLessThan( Name constraintValue,
                                                                         String localNameField,
                                                                         ValueFactories factories,
-                                                                        CaseOperation caseOperation ) {
+                                                                        Function<String, String> caseOperation ) {
         return new CompareNameQuery(localNameField, constraintValue, factories.getNameFactory(),
-                                    factories.getStringFactory(), IS_LESS_THAN, caseOperation);
+                                    (name1, name2) -> NAME_COMPARATOR.compare(name1, name2) < 0,
+                                    caseOperation);
     }
-
+    
     /**
      * Construct a {@link Query} implementation that scores documents such that the node represented by the document has a name
      * that is less than or equal to the supplied constraint name.
@@ -177,39 +156,15 @@ public class CompareNameQuery extends CompareQuery<Name> {
      * @param localNameField the name of the document field containing the local name value; may not be null
      * @param factories the value factories that can be used during the scoring; may not be null
      * @param caseOperation the operation that should be performed on the indexed values before the constraint value is being
-     * evaluated; may not be null
+     *        evaluated; may be null which indicates that no case conversion should be done
      * @return the query; never null
      */
-    public static CompareNameQuery createQueryForNodesWithNameLessThanOrEqualTo( Name constraintValue,
-                                                                                 String localNameField,
-                                                                                 ValueFactories factories,
-                                                                                 CaseOperation caseOperation ) {
+    public static CompareNameQuery createQueryForNodesWithNameLessThanOrEqualTo(Name constraintValue,
+                                                                                String localNameField,
+                                                                                ValueFactories factories,
+                                                                                Function<String, String> caseOperation) {
         return new CompareNameQuery(localNameField, constraintValue, factories.getNameFactory(),
-                                    factories.getStringFactory(), IS_LESS_THAN_OR_EQUAL_TO, caseOperation);
-    }
-
-
-    /**
-     * Construct a {@link Query} implementation that scores nodes according to the supplied comparator.
-     *
-     * @param field the name of the document field containing the local name value; may not be null
-     * @param constraintValue the constraint path; may not be null
-     * @param nameFactory the value factory used during scoring; may not be null
-     * @param evaluator the {@link CompareQuery.Evaluator} implementation that returns whether the node path satisfies the
-     * constraint; may not be null
-     * @param caseOperation the operation that should be performed on the indexed values before the constraint value is being
-     */
-    protected CompareNameQuery( final String field,
-                                Name constraintValue,
-                                ValueFactory<Name> nameFactory,
-                                ValueFactory<String> stringFactory,
-                                Evaluator<Name> evaluator,
-                                CaseOperation caseOperation ) {
-        super(field, constraintValue, nameFactory, stringFactory, evaluator, caseOperation);
-    }
-
-    @Override
-    public Query clone() {
-        return new CompareNameQuery(field(), constraintValue, valueTypeFactory, stringFactory, evaluator, caseOperation);
+                                    (name1, name2) -> NAME_COMPARATOR.compare(name1, name2) <= 0,
+                                    caseOperation);
     }
 }

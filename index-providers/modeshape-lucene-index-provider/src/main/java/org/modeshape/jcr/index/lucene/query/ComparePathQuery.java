@@ -15,13 +15,15 @@
  */
 package org.modeshape.jcr.index.lucene.query;
 
+import static org.modeshape.jcr.value.ValueComparators.PATH_COMPARATOR;
+
+import java.util.function.BiPredicate;
+import java.util.function.Function;
 import org.apache.lucene.index.LeafReaderContext;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.Weight;
 import org.modeshape.common.annotation.Immutable;
-import org.modeshape.jcr.index.lucene.query.CaseOperations.CaseOperation;
 import org.modeshape.jcr.value.Path;
-import org.modeshape.jcr.value.ValueComparators;
 import org.modeshape.jcr.value.ValueFactories;
 import org.modeshape.jcr.value.ValueFactory;
 
@@ -33,157 +35,112 @@ import org.modeshape.jcr.value.ValueFactory;
  */
 @Immutable
 public class ComparePathQuery extends CompareQuery<Path> {
-
-    protected static final Evaluator<Path> PATH_IS_LESS_THAN = new Evaluator<Path>() {
-
-        @Override
-        public boolean satisfiesConstraint( Path nodePath,
-                                            Path constraintPath ) {
-            return ValueComparators.PATH_COMPARATOR.compare(nodePath, constraintPath) < 0;
-        }
-
-        @Override
-        public String toString() {
-            return " < ";
-        }
-    };
-    protected static final Evaluator<Path> PATH_IS_LESS_THAN_OR_EQUAL_TO = new Evaluator<Path>() {
-        @Override
-        public boolean satisfiesConstraint( Path nodePath,
-                                            Path constraintPath ) {
-            return ValueComparators.PATH_COMPARATOR.compare(nodePath, constraintPath) <= 0;
-        }
-
-        @Override
-        public String toString() {
-            return " <= ";
-        }
-    };
-    protected static final Evaluator<Path> PATH_IS_GREATER_THAN = new Evaluator<Path>() {
-        @Override
-        public boolean satisfiesConstraint( Path nodePath,
-                                            Path constraintPath ) {
-            return ValueComparators.PATH_COMPARATOR.compare(nodePath, constraintPath) > 0;
-        }
-
-        @Override
-        public String toString() {
-            return " > ";
-        }
-    };
-    protected static final Evaluator<Path> PATH_IS_GREATER_THAN_OR_EQUAL_TO = new Evaluator<Path>() {
-        @Override
-        public boolean satisfiesConstraint( Path nodePath,
-                                            Path constraintPath ) {
-            return ValueComparators.PATH_COMPARATOR.compare(nodePath, constraintPath) >= 0;
-        }
-
-        @Override
-        public String toString() {
-            return " >= ";
-        }
-    };
-
+    
+    private final ValueFactory<Path> pathFactory;
+    
+    /**
+     * Construct a {@link Query} implementation that scores nodes according to the supplied comparator.
+     *
+     * @param fieldName the name of the document field containing the path value; may not be null
+     * @param constraintPath the constraint path; may not be null
+     * @param pathFactory the value factory that can be used during the scoring; may not be null
+     * @param evaluator the {@link BiPredicate} implementation that returns whether the node path satisfies the
+     * constraint; may not be null
+     * @param caseOperation the operation that should be performed on the indexed values before the constraint value is being 
+     * evaluated
+     */
+    protected ComparePathQuery(String fieldName,
+                               Path constraintPath,
+                               ValueFactory<Path> pathFactory,
+                               BiPredicate<Path, Path> evaluator,
+                               Function<String, String> caseOperation) {
+        super(fieldName, constraintPath, evaluator, caseOperation);
+        this.pathFactory = pathFactory;
+    }
+    
+    @Override
+    protected Path convertValue(String casedValue) {
+        return pathFactory.create(casedValue);
+    }
+    
+    @Override
+    public Query clone() {
+        return new ComparePathQuery(field(), constraintValue, pathFactory, evaluator, caseOperation);
+    }
+    
     /**
      * Construct a {@link Query} implementation that scores documents such that the node represented by the document has a path
      * that is greater than the supplied constraint path.
-     * 
+     *
      * @param constraintPath the constraint path; may not be null
      * @param fieldName the name of the document field containing the path value; may not be null
      * @param factories the value factories that can be used during the scoring; may not be null
      * @param caseOperation the operation that should be performed on the indexed values before the constraint value is being
-     *        evaluated; may not be null
+     *        evaluated; may be null which indicates that no case conversion should be done
      * @return the path query; never null
      */
     public static ComparePathQuery createQueryForNodesWithPathGreaterThan( Path constraintPath,
                                                                            String fieldName,
                                                                            ValueFactories factories,
-                                                                           CaseOperation caseOperation ) {
-        return new ComparePathQuery(fieldName, constraintPath, factories.getPathFactory(), factories.getStringFactory(),
-                                    PATH_IS_GREATER_THAN, caseOperation);
+                                                                           Function<String, String> caseOperation) {
+        return new ComparePathQuery(fieldName, constraintPath, factories.getPathFactory(),
+                                    (path1, path2) -> PATH_COMPARATOR.compare(path1, path2) > 0, caseOperation);
     }
-
+    
     /**
      * Construct a {@link Query} implementation that scores documents such that the node represented by the document has a path
      * that is greater than or equal to the supplied constraint path.
-     * 
+     *
      * @param constraintPath the constraint path; may not be null
      * @param fieldName the name of the document field containing the path value; may not be null
      * @param factories the value factories that can be used during the scoring; may not be null
      * @param caseOperation the operation that should be performed on the indexed values before the constraint value is being
-     *        evaluated; may not be null
+     *        evaluated; may be null which indicates that no case conversion should be done
      * @return the path query; never null
      */
     public static ComparePathQuery createQueryForNodesWithPathGreaterThanOrEqualTo( Path constraintPath,
                                                                                     String fieldName,
                                                                                     ValueFactories factories,
-                                                                                    CaseOperation caseOperation ) {
-        return new ComparePathQuery(fieldName, constraintPath, factories.getPathFactory(), factories.getStringFactory(),
-                                    PATH_IS_GREATER_THAN_OR_EQUAL_TO, caseOperation);
+                                                                                    Function<String, String> caseOperation ) {
+        return new ComparePathQuery(fieldName, constraintPath, factories.getPathFactory(),
+                                    (path1, path2) -> PATH_COMPARATOR.compare(path1, path2) >= 0, caseOperation);
     }
-
+    
     /**
      * Construct a {@link Query} implementation that scores documents such that the node represented by the document has a path
      * that is less than the supplied constraint path.
-     * 
+     *
      * @param constraintPath the constraint path; may not be null
      * @param fieldName the name of the document field containing the path value; may not be null
      * @param factories the value factories that can be used during the scoring; may not be null
      * @param caseOperation the operation that should be performed on the indexed values before the constraint value is being
-     *        evaluated; may not be null
+     *        evaluated; may be null which indicates that no case conversion should be done
      * @return the path query; never null
      */
     public static ComparePathQuery createQueryForNodesWithPathLessThan( Path constraintPath,
                                                                         String fieldName,
                                                                         ValueFactories factories,
-                                                                        CaseOperation caseOperation ) {
-        return new ComparePathQuery(fieldName, constraintPath, factories.getPathFactory(), factories.getStringFactory(),
-                                    PATH_IS_LESS_THAN, caseOperation);
+                                                                        Function<String, String> caseOperation ) {
+        return new ComparePathQuery(fieldName, constraintPath, factories.getPathFactory(),
+                                    (path1, path2) -> PATH_COMPARATOR.compare(path1, path2) < 0, caseOperation);
     }
-
+    
     /**
      * Construct a {@link Query} implementation that scores documents such that the node represented by the document has a path
      * that is less than or equal to the supplied constraint path.
-     * 
+     *
      * @param constraintPath the constraint path; may not be null
      * @param fieldName the name of the document field containing the path value; may not be null
      * @param factories the value factories that can be used during the scoring; may not be null
      * @param caseOperation the operation that should be performed on the indexed values before the constraint value is being
-     *        evaluated; may not be null
+     *        evaluated; may be null which indicates that no case conversion should be done
      * @return the path query; never null
      */
     public static ComparePathQuery createQueryForNodesWithPathLessThanOrEqualTo( Path constraintPath,
                                                                                  String fieldName,
                                                                                  ValueFactories factories,
-                                                                                 CaseOperation caseOperation ) {
-        return new ComparePathQuery(fieldName, constraintPath, factories.getPathFactory(), factories.getStringFactory(),
-                                    PATH_IS_LESS_THAN_OR_EQUAL_TO, caseOperation);
-    }
-
-    /**
-     * Construct a {@link Query} implementation that scores nodes according to the supplied comparator.
-     * 
-     * @param fieldName the name of the document field containing the path value; may not be null
-     * @param constraintPath the constraint path; may not be null
-     * @param pathFactory the value factory that can be used during the scoring; may not be null
-     * @param stringFactory the string factory that can be used during the scoring; may not be null
-     * @param evaluator the {@link CompareQuery.Evaluator} implementation that returns whether the node path satisfies the
-     *        constraint; may not be null
-     * @param caseOperation the operation that should be performed on the indexed values before the constraint value is being
-     *        evaluated; may not be null
-     */
-    protected ComparePathQuery( String fieldName,
-                                Path constraintPath,
-                                ValueFactory<Path> pathFactory,
-                                ValueFactory<String> stringFactory,
-                                Evaluator<Path> evaluator,
-                                CaseOperation caseOperation ) {
-        super(fieldName, constraintPath, pathFactory, stringFactory, evaluator, caseOperation);
-    }
-
-
-    @Override
-    public Query clone() {
-        return new ComparePathQuery(field(), constraintValue, valueTypeFactory, stringFactory, evaluator, caseOperation);
+                                                                                 Function<String, String> caseOperation ) {
+        return new ComparePathQuery(fieldName, constraintPath, factories.getPathFactory(),
+                                    (path1, path2) -> PATH_COMPARATOR.compare(path1, path2) <= 0, caseOperation);
     }
 }

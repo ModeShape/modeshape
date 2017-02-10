@@ -84,7 +84,7 @@
         <version.org.apache.poi>3.15</version.org.apache.poi>
         <version.com.beust.jcommander>1.5</version.com.beust.jcommander>
         <version.wsdl4j>1.6.3</version.wsdl4j>
-        <version.org.apache.lucene>6.0.0</version.org.apache.lucene>
+        <version.org.apache.lucene>6.4.1</version.org.apache.lucene>
         <!-- ***************** -->
         <!-- Repository Deployment URLs -->
         <!-- ***************** -->
