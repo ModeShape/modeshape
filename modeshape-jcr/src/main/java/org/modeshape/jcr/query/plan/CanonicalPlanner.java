@@ -21,6 +21,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import javax.jcr.query.qom.JoinCondition;
 import org.modeshape.common.i18n.I18n;
 import org.modeshape.jcr.GraphI18n;
@@ -384,6 +385,8 @@ public class CanonicalPlanner implements Planner {
                                       PlanNode plan,
                                       List<? extends Ordering> orderings ) {
         if (orderings.isEmpty()) return plan;
+        // remove all duplicates
+        orderings = orderings.stream().distinct().collect(Collectors.toList());
         PlanNode sortNode = new PlanNode(Type.SORT);
 
         context.getHints().hasSort = true;

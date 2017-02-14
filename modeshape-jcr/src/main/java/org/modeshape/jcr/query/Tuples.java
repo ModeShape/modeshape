@@ -24,12 +24,11 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.Iterator;
-
-import org.modeshape.schematic.internal.HashCode;
 import org.mapdb.Serializer;
 import org.modeshape.common.util.ObjectUtil;
 import org.modeshape.jcr.query.model.TypeSystem.TypeFactory;
 import org.modeshape.jcr.value.ValueFormatException;
+import org.modeshape.schematic.internal.HashCode;
 
 /**
  * A simple set of classes for working with tuples of data.
@@ -50,7 +49,7 @@ public class Tuples {
      */
     public static <T1, T2> Tuple2<T1, T2> tuple( T1 v1,
                                                  T2 v2 ) {
-        return new Tuple2<T1, T2>(v1, v2);
+        return new Tuple2<>(v1, v2);
     }
 
     /**
@@ -64,7 +63,7 @@ public class Tuples {
     public static <T1, T2, T3> Tuple3<T1, T2, T3> tuple( T1 v1,
                                                          T2 v2,
                                                          T3 v3 ) {
-        return new Tuple3<T1, T2, T3>(v1, v2, v3);
+        return new Tuple3<>(v1, v2, v3);
     }
 
     /**
@@ -80,7 +79,7 @@ public class Tuples {
                                                                  T2 v2,
                                                                  T3 v3,
                                                                  T4 v4 ) {
-        return new Tuple4<T1, T2, T3, T4>(v1, v2, v3, v4);
+        return new Tuple4<>(v1, v2, v3, v4);
     }
 
     /**
@@ -103,7 +102,7 @@ public class Tuples {
      */
     public static <T1, T2> TypeFactory<Tuple2<T1, T2>> typeFactory( TypeFactory<T1> type1,
                                                                     TypeFactory<T2> type2 ) {
-        return new Tuple2TypeFactory<T1, T2>(type1, type2);
+        return new Tuple2TypeFactory<>(type1, type2);
     }
 
     /**
@@ -117,7 +116,7 @@ public class Tuples {
     public static <T1, T2, T3> TypeFactory<Tuple3<T1, T2, T3>> typeFactory( TypeFactory<T1> type1,
                                                                             TypeFactory<T2> type2,
                                                                             TypeFactory<T3> type3 ) {
-        return new Tuple3TypeFactory<T1, T2, T3>(type1, type2, type3);
+        return new Tuple3TypeFactory<>(type1, type2, type3);
     }
 
     /**
@@ -133,7 +132,7 @@ public class Tuples {
                                                                                     TypeFactory<T2> type2,
                                                                                     TypeFactory<T3> type3,
                                                                                     TypeFactory<T4> type4 ) {
-        return new Tuple4TypeFactory<T1, T2, T3, T4>(type1, type2, type3, type4);
+        return new Tuple4TypeFactory<>(type1, type2, type3, type4);
     }
 
     /**
@@ -159,7 +158,7 @@ public class Tuples {
         if (tupleSize == 2) return typeFactory(type, type);
         if (tupleSize == 3) return typeFactory(type, type, type);
         if (tupleSize == 4) return typeFactory(type, type, type, type);
-        Collection<TypeFactory<?>> types = new ArrayList<TypeFactory<?>>(tupleSize);
+        Collection<TypeFactory<?>> types = new ArrayList<>(tupleSize);
         for (int i = 0; i != tupleSize; ++i) {
             types.add(type);
         }
@@ -175,7 +174,7 @@ public class Tuples {
      */
     public static <T1, T2> Serializer<Tuple2<T1, T2>> serializer( Serializer<T1> first,
                                                                   Serializer<T2> second ) {
-        return new Tuple2Serializer<T1, T2>(first, second);
+        return new Tuple2Serializer<>(first, second);
     }
 
     /**
@@ -189,7 +188,7 @@ public class Tuples {
     public static <T1, T2, T3> Serializer<Tuple3<T1, T2, T3>> serializer( Serializer<T1> first,
                                                                           Serializer<T2> second,
                                                                           Serializer<T3> third ) {
-        return new Tuple3Serializer<T1, T2, T3>(first, second, third);
+        return new Tuple3Serializer<>(first, second, third);
     }
 
     /**
@@ -205,7 +204,7 @@ public class Tuples {
                                                                                   Serializer<T2> second,
                                                                                   Serializer<T3> third,
                                                                                   Serializer<T4> fourth ) {
-        return new Tuple4Serializer<T1, T2, T3, T4>(first, second, third, fourth);
+        return new Tuple4Serializer<>(first, second, third, fourth);
     }
 
     /**
@@ -574,7 +573,7 @@ public class Tuples {
 
         @Override
         public String toString() {
-            return values.toString();
+            return Arrays.toString(values);
         }
     }
 
@@ -633,7 +632,7 @@ public class Tuples {
             this.type2 = type2;
             Class<?> clazz = Tuple2.class;
             this.type = (Class<Tuple2<T1, T2>>)clazz;
-            this.comparator = new Tuple2Comparator<T1, T2>(type1.getComparator(), type2.getComparator());
+            this.comparator = new Tuple2Comparator<>(type1.getComparator(), type2.getComparator());
             this.typeName = "Tuple2<" + type1.getTypeName() + "," + type2.getTypeName() + ">";
         }
 
@@ -641,7 +640,7 @@ public class Tuples {
         public Serializer<Tuple2<T1, T2>> getSerializer( BufferManager bufferMgr ) {
             Serializer<T1> ser1 = (Serializer<T1>)bufferMgr.nullSafeSerializerFor(type1);
             Serializer<T2> ser2 = (Serializer<T2>)bufferMgr.nullSafeSerializerFor(type2);
-            return new Tuple2Serializer<T1, T2>(ser1, ser2);
+            return new Tuple2Serializer<>(ser1, ser2);
         }
 
         @Override
@@ -711,16 +710,12 @@ public class Tuples {
             final Comparator<T1> comparator1 = type1.getComparator();
             final Comparator<T2> comparator2 = type2.getComparator();
             final Comparator<T3> comparator3 = type3.getComparator();
-            this.comparator = new Comparator<Tuple3<T1, T2, T3>>() {
-                @Override
-                public int compare( Tuple3<T1, T2, T3> arg0,
-                                    Tuple3<T1, T2, T3> arg1 ) {
-                    int diff = comparator1.compare(arg0.v1, arg1.v1);
-                    if (diff != 0) return diff;
-                    diff = comparator2.compare(arg0.v2, arg1.v2);
-                    if (diff != 0) return diff;
-                    return comparator3.compare(arg0.v3, arg1.v3);
-                }
+            this.comparator = (Comparator<Tuple3<T1, T2, T3>> & Serializable) (arg0, arg1) -> {
+                int diff = comparator1.compare(arg0.v1, arg1.v1);
+                if (diff != 0) return diff;
+                diff = comparator2.compare(arg0.v2, arg1.v2);
+                if (diff != 0) return diff;
+                return comparator3.compare(arg0.v3, arg1.v3);
             };
             this.typeName = "Tuple3<" + type1.getTypeName() + "," + type2.getTypeName() + "," + type3.getTypeName() + ">";
 
@@ -731,7 +726,7 @@ public class Tuples {
             Serializer<T1> ser1 = (Serializer<T1>)bufferMgr.nullSafeSerializerFor(type1);
             Serializer<T2> ser2 = (Serializer<T2>)bufferMgr.nullSafeSerializerFor(type2);
             Serializer<T3> ser3 = (Serializer<T3>)bufferMgr.nullSafeSerializerFor(type3);
-            return new Tuple3Serializer<T1, T2, T3>(ser1, ser2, ser3);
+            return new Tuple3Serializer<>(ser1, ser2, ser3);
         }
 
         @Override
@@ -805,18 +800,14 @@ public class Tuples {
             final Comparator<T2> comparator2 = type2.getComparator();
             final Comparator<T3> comparator3 = type3.getComparator();
             final Comparator<T4> comparator4 = type4.getComparator();
-            this.comparator = new Comparator<Tuple4<T1, T2, T3, T4>>() {
-                @Override
-                public int compare( Tuple4<T1, T2, T3, T4> arg0,
-                                    Tuple4<T1, T2, T3, T4> arg1 ) {
-                    int diff = comparator1.compare(arg0.v1, arg1.v1);
-                    if (diff != 0) return diff;
-                    diff = comparator2.compare(arg0.v2, arg1.v2);
-                    if (diff != 0) return diff;
-                    diff = comparator3.compare(arg0.v3, arg1.v3);
-                    if (diff != 0) return diff;
-                    return comparator4.compare(arg0.v4, arg1.v4);
-                }
+            this.comparator = (Comparator<Tuple4<T1, T2, T3, T4>> & Serializable) (arg0, arg1) -> {
+                int diff = comparator1.compare(arg0.v1, arg1.v1);
+                if (diff != 0) return diff;
+                diff = comparator2.compare(arg0.v2, arg1.v2);
+                if (diff != 0) return diff;
+                diff = comparator3.compare(arg0.v3, arg1.v3);
+                if (diff != 0) return diff;
+                return comparator4.compare(arg0.v4, arg1.v4);
             };
             this.typeName = "Tuple4<" + type1.getTypeName() + "," + type2.getTypeName() + "," + type3.getTypeName() + ","
                             + type4.getTypeName() + ">";
@@ -828,7 +819,7 @@ public class Tuples {
             Serializer<T2> ser2 = (Serializer<T2>)bufferMgr.nullSafeSerializerFor(type2);
             Serializer<T3> ser3 = (Serializer<T3>)bufferMgr.nullSafeSerializerFor(type3);
             Serializer<T4> ser4 = (Serializer<T4>)bufferMgr.nullSafeSerializerFor(type4);
-            return new Tuple4Serializer<T1, T2, T3, T4>(ser1, ser2, ser3, ser4);
+            return new Tuple4Serializer<>(ser1, ser2, ser3, ser4);
         }
 
         @Override
@@ -875,7 +866,7 @@ public class Tuples {
             return asString(value);
         }
     }
-
+  
     @SuppressWarnings( "unchecked" )
     protected static final class TupleNTypeFactory implements TypeFactory<TupleN>, TupleFactory<TupleN> {
 
@@ -892,17 +883,13 @@ public class Tuples {
                 this.types[i] = typeFactory;
                 comparators[i] = (Comparator<Object>)typeFactory.getComparator();
             }
-            this.comparator = new Comparator<TupleN>() {
-                @Override
-                public int compare( TupleN arg0,
-                                    TupleN arg1 ) {
-                    int diff = 0;
-                    for (int i = 0; i != types.length; ++i) {
-                        diff = comparators[i].compare(arg0.values[i], arg1.values[i]);
-                        if (diff != 0) return diff;
-                    }
-                    return 0;
+            this.comparator = (Comparator<TupleN> & Serializable) (arg0, arg1) -> {
+                int diff = 0;
+                for (int i = 0; i != types.length; ++i) {
+                    diff = comparators[i].compare(arg0.values[i], arg1.values[i]);
+                    if (diff != 0) return diff;
                 }
+                return diff;
             };
             StringBuilder sb = new StringBuilder("TupleN<");
             for (int i = 0; i != types.length; ++i) {
@@ -917,7 +904,7 @@ public class Tuples {
         public Serializer<TupleN> getSerializer( BufferManager bufferMgr ) {
             Serializer<?>[] serializers = new Serializer<?>[types.length];
             for (int i = 0; i != types.length; ++i) {
-                serializers[i] = (Serializer<?>)bufferMgr.nullSafeSerializerFor(types[i]);
+                serializers[i] = bufferMgr.nullSafeSerializerFor(types[i]);
             }
             return new TupleNSerializer(serializers);
         }
@@ -970,5 +957,4 @@ public class Tuples {
             return asString(value);
         }
     }
-
 }

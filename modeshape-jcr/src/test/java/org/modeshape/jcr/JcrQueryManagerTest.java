@@ -5048,6 +5048,30 @@ public class JcrQueryManagerTest extends MultiUseAbstractTest {
             session.save();
         }
     }
+    
+    @FixFor( "MODE-2666" )
+    @Test
+    public void shouldBeAbleToOrderByTheSameColumnRepeatedly() throws RepositoryException {
+        String sql = "SELECT [jcr:name] FROM [nt:base] ORDER BY [jcr:name], [jcr:name]";
+        Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        QueryResult result = query.execute();
+        validateQuery().rowCount(totalNodeCount).noWarnings().validate(query, result);
+
+        sql = "SELECT [jcr:name] FROM [nt:base] ORDER BY [jcr:name], [jcr:name], [jcr:name]";
+        query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        result = query.execute();
+        validateQuery().rowCount(totalNodeCount).noWarnings().validate(query, result);
+    
+        sql = "SELECT [jcr:name] FROM [nt:base] ORDER BY [jcr:name], [jcr:name], [jcr:name], [jcr:name]";
+        query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        result = query.execute();
+        validateQuery().rowCount(totalNodeCount).noWarnings().validate(query, result);    
+        
+        sql = "SELECT [jcr:name] FROM [nt:base] ORDER BY [jcr:name], [jcr:name], [jcr:name], [jcr:name], [jcr:name]";
+        query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
+        result = query.execute();
+        validateQuery().rowCount(totalNodeCount).noWarnings().validate(query, result);
+    }
 
     private void registerNodeType( String typeName ) throws RepositoryException {
         NodeTypeManager nodeTypeManager = session.getWorkspace().getNodeTypeManager();
