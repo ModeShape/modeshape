@@ -16,17 +16,20 @@
 package org.modeshape.jcr.index.lucene.query;
 
 import java.io.IOException;
-import java.util.Collections;
-import java.util.Set;
-import org.apache.lucene.document.Document;
-import org.apache.lucene.index.IndexableField;
 import org.apache.lucene.index.LeafReader;
 import org.apache.lucene.index.LeafReaderContext;
+import org.apache.lucene.index.PostingsEnum;
+import org.apache.lucene.index.Terms;
+import org.apache.lucene.index.TermsEnum;
+import org.apache.lucene.search.ConstantScoreScorer;
+import org.apache.lucene.search.ConstantScoreWeight;
+import org.apache.lucene.search.DocIdSetIterator;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
-import org.apache.lucene.search.RandomAccessWeight;
+import org.apache.lucene.search.Scorer;
 import org.apache.lucene.search.Weight;
-import org.apache.lucene.util.Bits;
+import org.apache.lucene.util.BitSetIterator;
+import org.apache.lucene.util.BytesRef;
 import org.apache.lucene.util.FixedBitSet;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.util.CheckArg;
@@ -39,7 +42,9 @@ import org.modeshape.common.util.CheckArg;
  */
 @Immutable
 public abstract class ConstantScoreWeightQuery extends Query {
-
+    
+    protected static final float SCORE = 1.0f;
+   
     private final String field;
 
     protected ConstantScoreWeightQuery(String field) {
@@ -53,31 +58,29 @@ public abstract class ConstantScoreWeightQuery extends Query {
 
     @Override
     public Weight createWeight(IndexSearcher searcher, boolean needsScores) throws IOException {
-        Set<String> fieldSet = Collections.singleton(field);
-        // return a weight which uses a constant (1.0f) scorer...
-        return new RandomAccessWeight(this) {
+        return new ConstantScoreWeight(this) {
             @Override
-            protected Bits getMatchingDocs(LeafReaderContext context) throws IOException {
+            public Scorer scorer(LeafReaderContext context) throws IOException {
                 LeafReader leafReader = context.reader();
-                Bits liveDocs = leafReader.getLiveDocs();
-                // if liveDocs is null it means there are no deleted documents...
-                int docsCount = liveDocs != null ? liveDocs.length() : leafReader.numDocs();
+                Terms terms = leafReader.terms(field);
+                if (terms == null) {
+                    return new ConstantScoreScorer(this, SCORE, DocIdSetIterator.empty()); 
+                }
+                TermsEnum termsEnum = terms.iterator();
                 FixedBitSet result = new FixedBitSet(leafReader.maxDoc());
-                for (int i = 0; i < docsCount; i++) {
-                    if (liveDocs != null && !liveDocs.get(i)) {
-                        continue;
-                    }
-                    Document document = leafReader.document(i, fieldSet);
-                    IndexableField[] fields = document.getFields(field);
-                    if (fields.length == 0) {
-                        // the document doesn't have the field...
-                        continue;
-                    }
-                    if (areValid(fields)) {
-                        result.set(i);
+                BytesRef bytesRef;
+                PostingsEnum postingsEnum = null;
+                while ((bytesRef = termsEnum.next()) != null) {
+                    String value = bytesRef.utf8ToString();
+                    if (accepts(value)) {
+                        postingsEnum = termsEnum.postings(postingsEnum);
+                        int docId;
+                        while ((docId = postingsEnum.nextDoc()) != DocIdSetIterator.NO_MORE_DOCS) {
+                            result.set(docId);    
+                        }
                     }
                 }
-                return result.cardinality() > 0 ? result : null;
+                return new ConstantScoreScorer(this, SCORE, new BitSetIterator(result, result.cardinality()));
             }
         };
     }
@@ -85,9 +88,21 @@ public abstract class ConstantScoreWeightQuery extends Query {
     /**
      * Checks if the given fields are valid for the document matched by a particular query or not.
      *
-     * @param fields a {@link IndexableField} array instance which was loaded by the scorer for the current field; never {@code null}
-     * and never empty.
-     * @return {@code true} if the array of fields is valid and document should be returned by the query or {@code false} if not.
+     * @param value a {@code String} representing a stored index value; never {@code null}
+     * @return {@code true} if the value is valid, {@code false} if not.
      */
-    protected abstract boolean areValid(IndexableField... fields);
+    protected abstract boolean accepts(String value);
+    
+    @Override
+    public boolean equals(Object obj) {
+        return sameClassAs(obj) && field.equals(((ConstantScoreWeightQuery)obj).field);
+    }
+    
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = classHash();
+        result = prime * result + field.hashCode();
+        return result;
+    }
 }

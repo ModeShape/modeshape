@@ -21,6 +21,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.regex.Pattern;
 import javax.jcr.RepositoryException;
 import javax.jcr.Value;
@@ -63,7 +64,7 @@ import org.modeshape.jcr.index.lucene.FieldUtil;
 import org.modeshape.jcr.index.lucene.LuceneConfig;
 import org.modeshape.jcr.index.lucene.LuceneIndexException;
 import org.modeshape.jcr.index.lucene.LuceneIndexProviderI18n;
-import org.modeshape.jcr.index.lucene.query.CaseOperations.CaseOperation;
+import org.modeshape.jcr.query.engine.QueryUtil;
 import org.modeshape.jcr.query.model.And;
 import org.modeshape.jcr.query.model.BindVariableName;
 import org.modeshape.jcr.query.model.Comparison;
@@ -218,7 +219,7 @@ public class LuceneQueryFactory {
     }
 
     protected Query createQuery( Comparison comparison ) {
-        return createQuery(comparison.getOperand1(), comparison.operator(), comparison.getOperand2(), CaseOperations.AS_IS);
+        return createQuery(comparison.getOperand1(), comparison.operator(), comparison.getOperand2(), null);
     }
 
     protected Query createQuery( Not not ) {
@@ -274,8 +275,8 @@ public class LuceneQueryFactory {
         // Otherwise, just create a boolean query ...
         Operator lowerOp = lowerBoundIncluded ? Operator.GREATER_THAN_OR_EQUAL_TO : Operator.GREATER_THAN;
         Operator upperOp = upperBoundIncluded ? Operator.LESS_THAN_OR_EQUAL_TO : Operator.LESS_THAN;
-        Query lowerQuery = createQuery(operand, lowerOp, lower, CaseOperations.AS_IS);
-        Query upperQuery = createQuery(operand, upperOp, upper, CaseOperations.AS_IS);
+        Query lowerQuery = createQuery(operand, lowerOp, lower, null);
+        Query upperQuery = createQuery(operand, upperOp, upper, null);
         return booleanQuery(lowerQuery, Occur.MUST, upperQuery, Occur.MUST);
     }
 
@@ -311,20 +312,19 @@ public class LuceneQueryFactory {
             case DECIMAL:
                 BigDecimal lowerDecimal = factories.getDecimalFactory().create(lowerValue);
                 BigDecimal upperDecimal = factories.getDecimalFactory().create(upperValue);
-                CaseOperation caseOp = CaseOperations.AS_IS; // decimals are stored the same way regardless
                 String lsv = FieldUtil.decimalToString(lowerDecimal);
                 String usv = FieldUtil.decimalToString(upperDecimal);
                 Query lower = null;
                 if (includesLower) {
-                    lower = CompareStringQuery.createQueryForNodesWithFieldGreaterThanOrEqualTo(lsv, field, factories, caseOp);
+                    lower = CompareStringQuery.createQueryForNodesWithFieldGreaterThanOrEqualTo(lsv, field, null);
                 } else {
-                    lower = CompareStringQuery.createQueryForNodesWithFieldGreaterThan(lsv, field, factories, caseOp);
+                    lower = CompareStringQuery.createQueryForNodesWithFieldGreaterThan(lsv, field, null);
                 }
                 Query upper = null;
                 if (includesUpper) {
-                    upper = CompareStringQuery.createQueryForNodesWithFieldLessThanOrEqualTo(usv, field, factories, caseOp);
+                    upper = CompareStringQuery.createQueryForNodesWithFieldLessThanOrEqualTo(usv, field, null);
                 } else {
-                    upper = CompareStringQuery.createQueryForNodesWithFieldLessThan(usv, field, factories, caseOp);
+                    upper = CompareStringQuery.createQueryForNodesWithFieldLessThan(usv, field, null);
                 }
                 return booleanQuery(lower, Occur.MUST, upper, Occur.MUST);
             case OBJECT:
@@ -349,8 +349,7 @@ public class LuceneQueryFactory {
         if (numRightOperands == 1) {
             StaticOperand rightOperand = setCriteria.rightOperands().iterator().next();
             if (rightOperand instanceof Literal) {
-                return createQuery(left, Operator.EQUAL_TO, setCriteria.rightOperands().iterator().next(),
-                                   CaseOperations.AS_IS);
+                return createQuery(left, Operator.EQUAL_TO, setCriteria.rightOperands().iterator().next(),null);
             }
         }
         BooleanQuery.Builder builder = new BooleanQuery.Builder();
@@ -391,7 +390,7 @@ public class LuceneQueryFactory {
                     addQueryForSetConstraint(builder, left, value);
                 }
             } else {
-                Query rightQuery = createQuery(left, Operator.EQUAL_TO, right, CaseOperations.AS_IS);
+                Query rightQuery = createQuery(left, Operator.EQUAL_TO, right, null);
                 builder.add(rightQuery, Occur.SHOULD);
             }
         }
@@ -426,14 +425,14 @@ public class LuceneQueryFactory {
 
     private void addQueryForSetConstraint( BooleanQuery.Builder setQueryBuilder, DynamicOperand left, Object resolvedValue ) {
         StaticOperand elementInRight = resolvedValue instanceof Literal ? (Literal) resolvedValue : new Literal(resolvedValue);
-        Query rightQuery = createQuery(left, Operator.EQUAL_TO, elementInRight, CaseOperations.AS_IS);
+        Query rightQuery = createQuery(left, Operator.EQUAL_TO, elementInRight, null);
         setQueryBuilder.add(rightQuery, Occur.SHOULD);
     }
 
     protected Query createQuery( DynamicOperand left,
                                  Operator operator,
                                  StaticOperand right,
-                                 CaseOperation caseOperation ) {
+                                 Function<String, String> caseOperation) {
         // Handle the static operand ...
         Object value = getSingleValueFromStaticOperand(right);
         assert value != null;
@@ -447,10 +446,10 @@ public class LuceneQueryFactory {
             return createLengthQuery((Length) left, operator, value);
         } else if (left instanceof LowerCase) {
             LowerCase lowercase = (LowerCase) left;
-            return createQuery(lowercase.getOperand(), operator, right, CaseOperations.LOWERCASE);
+            return createQuery(lowercase.getOperand(), operator, right, String::toLowerCase);
         } else if (left instanceof UpperCase) {
             UpperCase uppercase = (UpperCase) left;
-            return createQuery(uppercase.getOperand(), operator, right, CaseOperations.UPPERCASE);
+            return createQuery(uppercase.getOperand(), operator, right, String::toUpperCase);
         } else if (left instanceof NodeDepth) {
             // this only applies to mode:depth
             return longFieldQuery(depthField(), operator, value);
@@ -517,11 +516,7 @@ public class LuceneQueryFactory {
     protected Query createPropertyValueQuery( PropertyValue propertyValue,
                                               Operator operator,
                                               Object value,
-                                              CaseOperation caseOperation ) {
-        if (caseOperation == null) {
-            caseOperation = CaseOperations.AS_IS;
-        }
-
+                                              Function<String, String> caseOperation ) {
         if (operator == Operator.LIKE) {
             String stringValue = stringFactory.create(value);
             if (!stringValue.contains("%") && !stringValue.contains("_") && !stringValue.contains("\\")) {
@@ -537,7 +532,7 @@ public class LuceneQueryFactory {
             case REFERENCE:
             case WEAKREFERENCE:
             case SIMPLEREFERENCE:
-                return stringFieldQuery(propertyName, operator, value, CaseOperations.AS_IS);
+                return stringFieldQuery(propertyName, operator, value, null);
             case URI:
             case STRING:
                 return stringFieldQuery(propertyName, operator, value, caseOperation);
@@ -562,33 +557,33 @@ public class LuceneQueryFactory {
         }
     }
 
-    protected Query stringFieldQuery( String field, Operator operator, Object value, CaseOperation caseOperation ) {
+    protected Query stringFieldQuery( String field, Operator operator, Object value, Function<String, String> caseOperation ) {
         String stringValue = stringFactory.create(value);
         switch (operator) {
             case EQUAL_TO:
-                return CompareStringQuery.createQueryForNodesWithFieldEqualTo(stringValue, field, factories, caseOperation);
+                return CompareStringQuery.createQueryForNodesWithFieldEqualTo(stringValue, field, caseOperation);
             case NOT_EQUAL_TO:
-                Query query = CompareStringQuery.createQueryForNodesWithFieldEqualTo(stringValue, field, factories,
+                Query query = CompareStringQuery.createQueryForNodesWithFieldEqualTo(stringValue, field,
                                                                                      caseOperation);
                 return not(query);
             case GREATER_THAN:
-                return CompareStringQuery.createQueryForNodesWithFieldGreaterThan(stringValue, field, factories, caseOperation);
+                return CompareStringQuery.createQueryForNodesWithFieldGreaterThan(stringValue, field, caseOperation);
             case GREATER_THAN_OR_EQUAL_TO:
-                return CompareStringQuery.createQueryForNodesWithFieldGreaterThanOrEqualTo(stringValue, field, factories,
+                return CompareStringQuery.createQueryForNodesWithFieldGreaterThanOrEqualTo(stringValue, field,
                                                                                            caseOperation);
             case LESS_THAN:
-                return CompareStringQuery.createQueryForNodesWithFieldLessThan(stringValue, field, factories, caseOperation);
+                return CompareStringQuery.createQueryForNodesWithFieldLessThan(stringValue, field, caseOperation);
             case LESS_THAN_OR_EQUAL_TO:
-                return CompareStringQuery.createQueryForNodesWithFieldLessThanOrEqualTo(stringValue, field, factories,
+                return CompareStringQuery.createQueryForNodesWithFieldLessThanOrEqualTo(stringValue, field,
                                                                                         caseOperation);
             case LIKE:
-                return CompareStringQuery.createQueryForNodesWithFieldLike(stringValue, field, factories, caseOperation);
+                return CompareStringQuery.createQueryForNodesWithFieldLike(stringValue, field, caseOperation);
             default:
                 throw new IllegalArgumentException("Unknown operator:" + operator);
         }
     }
 
-    protected Query decimalFieldQuery( String field, Operator operator, Object value, CaseOperation caseOperation ) {
+    protected Query decimalFieldQuery( String field, Operator operator, Object value, Function<String, String> caseOperation ) {
         String decimalString = null;
         if (operator != Operator.LIKE) {
             // Decimal values are stored in a special lexicographically sortable form, so we have to
@@ -795,19 +790,19 @@ public class LuceneQueryFactory {
     protected Query createReferenceValueQuery( ReferenceValue referenceValue, Operator operator, Object value ) {
         String field = referenceValue.getPropertyName();
         if (field != null) {
-            return stringFieldQuery(field, operator, value, CaseOperations.AS_IS);
+            return stringFieldQuery(field, operator, value, null);
         }
 
         // we are being asked to query for all the references fields that apply to this index, so we need to collect them first
         List<String> referenceFields = collectReferenceFieldNames(referenceValue);
         assert !referenceFields.isEmpty(); // this can't be empty because this index was called in the first place....
         if (referenceFields.size() == 1) {
-            return stringFieldQuery(referenceFields.get(0), operator, value, CaseOperations.AS_IS);
+            return stringFieldQuery(referenceFields.get(0), operator, value, null);
         } else {
             BooleanQuery.Builder builder = new BooleanQuery.Builder();
             builder.setDisableCoord(true);
             for (String fieldName : referenceFields) {
-                Query fieldQuery = stringFieldQuery(fieldName, operator, value, CaseOperations.AS_IS);
+                Query fieldQuery = stringFieldQuery(fieldName, operator, value, null);
                 builder.add(fieldQuery, Occur.SHOULD);
             }
             return builder.build();
@@ -875,21 +870,18 @@ public class LuceneQueryFactory {
         }
     }
 
-    protected Query pathFieldQuery( String field, Operator operator, Object value, CaseOperation caseOperation ) {
+    protected Query pathFieldQuery( String field, Operator operator, Object value, Function<String, String> caseOperation ) {
         Path path = null;
         if (operator != Operator.LIKE) {
             path = !(value instanceof Path) ? pathFactory.create(value) : (Path) value;
         }
-        if (caseOperation == null) {
-            caseOperation = CaseOperations.AS_IS;
-        }
         switch (operator) {
             case EQUAL_TO:
-                return CompareStringQuery.createQueryForNodesWithFieldEqualTo(stringFactory.create(path), field, factories,
+                return CompareStringQuery.createQueryForNodesWithFieldEqualTo(stringFactory.create(path), field,
                                                                               caseOperation);
             case NOT_EQUAL_TO:
                 return not(CompareStringQuery.createQueryForNodesWithFieldEqualTo(stringFactory.create(path), field,
-                                                                                  factories, caseOperation));
+                                                                                  caseOperation));
             case LIKE:
                 String likeExpression = stringFactory.create(value);
                 // the paths are stored in the index via stringFactory.create, which doesn't have the "1" index for SNS...
@@ -905,10 +897,10 @@ public class LuceneQueryFactory {
                     regex = regex.replace("*", ".*");
                     regex = regex.replace("%", ".*").replace("_", ".");
                     // Now create a regex query ...
-                    int flags = caseOperation == CaseOperations.AS_IS ? 0 : Pattern.CASE_INSENSITIVE;
+                    int flags = caseOperation == null ? 0 : Pattern.CASE_INSENSITIVE;
                     return new RegexpQuery(new Term(field, regex), flags);
                 } else {
-                    return CompareStringQuery.createQueryForNodesWithFieldLike(likeExpression, field, factories, caseOperation);
+                    return CompareStringQuery.createQueryForNodesWithFieldLike(likeExpression, field, caseOperation);
                 }
             case GREATER_THAN:
                 return ComparePathQuery.createQueryForNodesWithPathGreaterThan(path, field, factories, caseOperation);
@@ -924,13 +916,10 @@ public class LuceneQueryFactory {
         }
     }
 
-    protected Query nameFieldQuery( String field, Operator operator, Object value, CaseOperation caseOperation ) {
+    protected Query nameFieldQuery( String field, Operator operator, Object value, Function<String, String> caseOperation ) {
         Name name = null;
         if (operator != Operator.LIKE) {
             name = !(value instanceof Name) ? factories.getNameFactory().create(value) : (Name) value;
-        }
-        if (caseOperation == null) {
-            caseOperation = CaseOperations.AS_IS;
         }
         switch (operator) {
             case EQUAL_TO:
@@ -949,7 +938,7 @@ public class LuceneQueryFactory {
             case LIKE:
                 // we can only process the value as a string...
                 String likeExpression = stringFactory.create(value);
-                return CompareStringQuery.createQueryForNodesWithFieldLike(likeExpression, field, factories, caseOperation);
+                return CompareStringQuery.createQueryForNodesWithFieldLike(likeExpression, field, caseOperation);
             default:
                 throw new IllegalArgumentException("Unknown operator:" + operator);
         }
@@ -1058,7 +1047,7 @@ public class LuceneQueryFactory {
 
         private Query createSimpleTermQuery( String fieldName, FullTextSearch.SimpleTerm simple ) {
             try {
-                if (simple.containsWildcards()) {
+                if (QueryUtil.hasWildcardCharacters(simple.getValue())) {
                     return createWildcardQuery(fieldName, simple);
                 }
                 PhraseQuery.Builder builder = new PhraseQuery.Builder();
@@ -1137,8 +1126,8 @@ public class LuceneQueryFactory {
             QueryParser parser = new QueryParser(fieldName, analyzer) {
                 @Override
                 protected Query getWildcardQuery( String field, String termStr ) {
-                    return CompareStringQuery.createQueryForNodesWithFieldLike(termStr.toLowerCase(), fieldName, factories,
-                                                                               CaseOperations.AS_IS);
+                    return CompareStringQuery.createQueryForNodesWithFieldLike(termStr.toLowerCase(), fieldName,
+                                                                               null);
                 }
             };
 

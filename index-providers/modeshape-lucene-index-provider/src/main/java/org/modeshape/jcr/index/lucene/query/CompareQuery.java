@@ -15,12 +15,11 @@
  */
 package org.modeshape.jcr.index.lucene.query;
 
+import java.util.function.BiPredicate;
+import java.util.function.Function;
 import javax.jcr.query.qom.Comparison;
-import org.apache.lucene.index.IndexableField;
 import org.apache.lucene.search.Query;
 import org.modeshape.common.annotation.Immutable;
-import org.modeshape.jcr.index.lucene.query.CaseOperations.CaseOperation;
-import org.modeshape.jcr.value.ValueFactory;
 
 /**
  * A Lucene {@link Query} implementation that is used to apply a {@link Comparison} constraint against the indexed nodes. 
@@ -34,66 +33,66 @@ import org.modeshape.jcr.value.ValueFactory;
 @Immutable
 public abstract class CompareQuery<ValueType> extends ConstantScoreWeightQuery {
 
-    protected static interface Evaluator<ValueType> {
-        boolean satisfiesConstraint( ValueType nodeValue,
-                                     ValueType constraintValue );
-    }
-
     /**
      * The operand that is being negated by this query.
      */
     protected final ValueType constraintValue;
-    protected final Evaluator<ValueType> evaluator;
-    protected final ValueFactory<ValueType> valueTypeFactory;
-    protected final ValueFactory<String> stringFactory;
-    protected final CaseOperation caseOperation;
+    protected final BiPredicate<ValueType, ValueType> evaluator;
+    protected final Function<String, String> caseOperation;
     
     /**
      * Construct a {@link Query} implementation that scores nodes according to the supplied comparator.
-     * 
+     *
      * @param fieldName the name of the document field containing the value; may not be null
      * @param constraintValue the constraint value; may not be null
-     * @param valueTypeFactory the value factory that can be used during the scoring; may not be null
-     * @param stringFactory the string factory that can be used during the scoring; may not be null
-     * @param evaluator the {@link Evaluator} implementation that returns whether the node value satisfies the constraint; may not
-     *        be null
+     * @param evaluator the {@link BiPredicate} implementation that returns whether the node value satisfies the constraint; may not
+     * be null
      * @param caseOperation the operation that should be performed on the indexed values before the constraint value is being
-     *        evaluated; may not be null
      */
-    protected CompareQuery( final String fieldName,
-                            ValueType constraintValue,
-                            ValueFactory<ValueType> valueTypeFactory,
-                            ValueFactory<String> stringFactory,
-                            Evaluator<ValueType> evaluator,
-                            CaseOperation caseOperation) {
+    protected CompareQuery(final String fieldName,
+                           ValueType constraintValue,
+                           BiPredicate<ValueType, ValueType> evaluator,
+                           Function<String, String> caseOperation) {
         super(fieldName);
         this.constraintValue = constraintValue;
-        this.valueTypeFactory = valueTypeFactory;
-        this.stringFactory = stringFactory;
         this.caseOperation = caseOperation;
         this.evaluator = evaluator;
         assert this.constraintValue != null;
         assert this.evaluator != null;
-        assert this.caseOperation != null;
-        
     }
 
     @Override
-    protected boolean areValid( IndexableField... fields ) {
-        for (IndexableField field : fields) {
-            String valueAsString = field.stringValue();
-            ValueType value = valueAsString != null ? valueTypeFactory.create(caseOperation.execute(valueAsString)) : null;
-            if (evaluator.satisfiesConstraint(value, constraintValue)) {
-                // if *any* value matches, we'll accept it
-                return true;
-            }
+    protected boolean accepts(String value) {
+        if (value == null) {
+            return false;
         }
-        return false;
+        String casedValue = caseOperation != null ? caseOperation.apply(value) : value;
+        ValueType convertedValue = convertValue(casedValue);
+        return evaluator.test(convertedValue, constraintValue);
     }
-  
+    
+    protected abstract ValueType convertValue(String casedValue);
+    
     @Override
     public String toString( String field ) {
-        return "(" + field() + evaluator.toString()
-               + (stringFactory != null ? stringFactory.create(constraintValue) : constraintValue.toString()) + ")";
+        return "compare['" + field + "' against '" + constraintValue + "']";
+    }
+    
+    @Override
+    public boolean equals(Object obj) {
+        if (!sameClassAs(obj)) {
+            return false;
+        }
+        CompareQuery<?> otherQuery = (CompareQuery<?>) obj;
+        return sameClassAs(obj) && field().equals(otherQuery.field()) && constraintValue.equals(otherQuery.constraintValue);
+    }
+    
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = classHash();
+        result = prime * result + field().hashCode();
+        result = prime * result + constraintValue.hashCode();
+        return result;
     }
 }

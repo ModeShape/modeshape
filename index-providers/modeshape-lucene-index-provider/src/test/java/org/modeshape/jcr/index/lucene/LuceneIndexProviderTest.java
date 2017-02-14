@@ -17,13 +17,16 @@ package org.modeshape.jcr.index.lucene;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+
 import java.io.File;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.atomic.AtomicLong;
 import javax.jcr.Node;
 import javax.jcr.PropertyType;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
 import org.modeshape.common.util.FileUtil;
@@ -157,6 +160,43 @@ public class LuceneIndexProviderTest extends LocalIndexProviderTest {
     @Test
     public void shouldNotReindexOnStartup() throws Exception {
         super.shouldNotReindexOnStartup();
+    }
+    
+    @Test
+    @Ignore("perf test")
+    public void testPerformanceOnStringFields() throws Exception {
+        registerNodeType("nt:testType");
+        registerValueIndex("stringIndex", "nt:testType", null, "*", "stringProp",
+                           PropertyType.STRING);
+    
+    
+        Node rootNode = session.getRootNode();
+        Node containerNode = rootNode.addNode("container", "nt:unstructured");
+    
+        int numNodes = 1000;
+        long start = System.currentTimeMillis();
+        for (int i = 0; i < numNodes; i++) {
+            Node node = containerNode.addNode("node-" + i, "nt:testType");
+            node.setProperty("id", i);
+            node.setProperty("stringProp", "str" + i);
+        }
+        session.save();
+        System.out.printf("Inserted %d in %d ms.\n", numNodes, System.currentTimeMillis() - start);
+    
+        Random random = new Random();
+    
+        start = System.currentTimeMillis();
+        int numSearches = 1000;
+        for (int i = 0; i < numSearches; i++) {
+            int findId = random.nextInt(numNodes);
+            String findStr = "str" + findId;
+            String queryStr = "select test.[id] from [nt:testType] as test where test.stringProp = '" + findStr + "'";
+            Query query = jcrSql2Query(session, queryStr);
+            validateQuery().useIndex("stringIndex").hasNodesAtPaths("/container/node-" + findId).validate(query, query.execute());
+        }
+        System.out.printf("Searched %d nodes %d times in %d ms.\n", numNodes, numSearches, System.currentTimeMillis() - start);
+        containerNode.remove();
+        session.save();
     }
 
     @Override

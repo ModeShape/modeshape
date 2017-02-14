@@ -171,7 +171,7 @@
         <!-- nightmare end -->        
         <version.org.apache.tika>1.14</version.org.apache.tika>
         <version.com.drewnoakes.metadata-extractor>2.6.2</version.com.drewnoakes.metadata-extractor>
-        <version.org.apache.lucene>6.0.0</version.org.apache.lucene>
+        <version.org.apache.lucene>6.4.1</version.org.apache.lucene>
         <version.io.humble>0.2.1</version.io.humble>
         <version.org.apache.chemistry.opencmis>1.0.0</version.org.apache.chemistry.opencmis>
         <version.org.apache.chemistry.opencmis.server.jcr>0.11.0</version.org.apache.chemistry.opencmis.server.jcr>
