@@ -199,12 +199,16 @@
     <profiles>
         <profile>
             <id>assembly</id>
+            <properties>
+                <tempjars.directory>${project.build.directory}/tempjars</tempjars.directory>
+                <ant.parse.directory>${project.build.directory}/ant_parse</ant.parse.directory>
+            </properties>
             <build>
                 <plugins>
                     <plugin>
                         <artifactId>maven-assembly-plugin</artifactId>
                         <executions>
-                            <!--This installs a jar which will be unpacked and processed by ANT in the modeshape-client module -->
+                            <!--Create a folder with all the JARs required to build the final FAT JAR  -->
                             <execution>
                                 <id>default</id>
                                 <phase>package</phase>
@@ -212,12 +216,16 @@
                                     <goal>single</goal>
                                 </goals>
                                 <configuration>
-                                    <attach>true</attach>
+                                    <attach>false</attach>
+                                    <appendAssemblyId>false</appendAssemblyId>
+                                    <outputDirectory>${project.build.directory}</outputDirectory>
+                                    <finalName>tempjars</finalName>
                                     <descriptors>
-                                        <descriptor>src/assembly/kit.xml</descriptor>
+                                        <descriptor>src/assembly/dependency-jars.xml</descriptor>
                                     </descriptors>
                                 </configuration>
                             </execution>
+
                             <!--Creates an assembly which will be included in the binary distribution -->
                             <execution>
                                 <id>module-with-dependencies</id>
@@ -238,6 +246,99 @@
                                     </archive>
                                     <finalName>${binary.dist.name}</finalName>
                                 </configuration>
+                            </execution>
+                            
+                            <!--After ANT has processed the JARs (see below) build the final assembly-->
+                            <execution>
+                                <id>build-driver</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>single</goal>
+                                </goals>
+                                <configuration>
+                                    <attach>true</attach>
+                                    <appendAssemblyId>true</appendAssemblyId>
+                                    <descriptors>
+                                        <descriptor>src/assembly/driver.xml</descriptor>
+                                    </descriptors>
+                                </configuration>
+                            </execution>
+                       
+                        </executions>
+                    </plugin>
+                    <!-- Run the ANT plugin to parse and prepare the contents of the FAT jar -->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-antrun-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>repackage-client-jar</id>
+                                <phase>package</phase>
+                                <configuration>
+                                    <target>
+                                        <unzip src="${tempjars.directory}/jcr-${version.javax.jcr}.jar"
+                                               dest="${ant.parse.directory}"/>
+                                        <unzip src="${tempjars.directory}/modeshape-common-${project.version}.jar"
+                                               dest="${ant.parse.directory}"/>
+                                        <unzip src="${tempjars.directory}/modeshape-jcr-api-${project.version}.jar"
+                                               dest="${ant.parse.directory}"/>
+
+                                        <unzip src="${tempjars.directory}/commons-codec-1.9.jar"
+                                               dest="${ant.parse.directory}"/>
+                                        <move file="${ant.parse.directory}/META-INF/LICENSE.txt"
+                                              tofile="${ant.parse.directory}/META-INF/LICENSE_commons-codec.txt"/>
+
+                                        <unzip src="${tempjars.directory}/commons-logging-1.2.jar"
+                                               dest="${ant.parse.directory}"/>
+                                        <move file="${ant.parse.directory}/META-INF/LICENSE.txt"
+                                              tofile="${ant.parse.directory}/META-INF/LICENSE_commons-logging.txt"/>
+                                        <move file="${ant.parse.directory}/META-INF/NOTICE.txt"
+                                              tofile="${ant.parse.directory}/META-INF/NOTICE_commons-logging.txt"/>
+
+                                        <unzip src="${tempjars.directory}/httpclient-${version.org.apache.httpcomponents}.jar"
+                                               dest="${ant.parse.directory}"/>
+                                        <move file="${ant.parse.directory}/META-INF/LICENSE"
+                                              tofile="${ant.parse.directory}/META-INF/LICENSE_httpclient.txt"/>
+                                        <move file="${ant.parse.directory}/META-INF/NOTICE"
+                                              tofile="${ant.parse.directory}/META-INF/NOTICE_httpclient.txt"/>
+
+                                        <unzip src="${tempjars.directory}/httpcore-${version.org.apache.httpcomponents}.jar"
+                                               dest="${ant.parse.directory}"/>
+                                        <move file="${ant.parse.directory}/META-INF/LICENSE"
+                                              tofile="${ant.parse.directory}/META-INF/LICENSE_httpcore.txt"/>
+                                        <move file="${ant.parse.directory}/META-INF/NOTICE"
+                                              tofile="${ant.parse.directory}/META-INF/NOTICE_httpcore.txt"/>
+
+                                        <unzip src="${tempjars.directory}/jettison-${version.org.codehaus.jettison}.jar"
+                                               dest="${ant.parse.directory}"/>
+                                        <move file="${ant.parse.directory}/META-INF/LICENSE"
+                                              tofile="${ant.parse.directory}/META-INF/LICENSE_jettison.txt"/>
+
+                                        <unzip src="${tempjars.directory}/modeshape-jdbc-${project.version}.jar"
+                                               dest="${ant.parse.directory}"/>
+                                        <move file="${ant.parse.directory}/META-INF/services/java.sql.Driver"
+                                              tofile="${project.build.directory}/tempdrivers/jdbc_drivers"/>
+
+                                        <unzip src="${tempjars.directory}/modeshape-jdbc-local-${project.version}.jar"
+                                               dest="${ant.parse.directory}"/>
+                                        <move file="${ant.parse.directory}/META-INF/services/java.sql.Driver"
+                                              tofile="${project.build.directory}/tempdrivers/jdbc_local_drivers"/>
+                                        
+                                        <concat destfile="${ant.parse.directory}/META-INF/services/java.sql.Driver"
+                                                fixlastline="yes">
+                                            <fileset file="${project.build.directory}/tempdrivers/jdbc_drivers"/>
+                                            <fileset file="${project.build.directory}/tempdrivers/jdbc_local_drivers"/>
+                                        </concat>
+
+                                        <delete dir="${tempjars.directory}"/>
+                                        <delete dir="${project.build.directory}/tempdrivers"/>
+                                        <delete dir="${ant.parse.directory}/META-INF/maven"/>
+                                        <delete dir="${ant.parse.directory}/META-INF/Manifest.mf"/>
+                                    </target>
+                                </configuration>
+                                <goals>
+                                    <goal>run</goal>
+                                </goals>
                             </execution>
                         </executions>
                     </plugin>

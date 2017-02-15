@@ -129,7 +129,7 @@
             <directory>../index-providers/modeshape-lucene-index-provider/target/${binary.dist.name}</directory>
             <outputDirectory>./modules/modeshape-lucene-index-provider</outputDirectory>
         </fileSet>   
-	<fileSet>
+	    <fileSet>
             <directory>../index-providers/modeshape-elasticsearch-index-provider/target/${binary.dist.name}</directory>
             <outputDirectory>./modules/modeshape-elasticsearch-index-provider</outputDirectory>
         </fileSet>
@@ -162,15 +162,6 @@
             <outputDirectory>./modules/modeshape-webdav</outputDirectory>
         </fileSet>
         
-        <!--Client-->
-        <fileSet>
-            <directory>../modeshape-client/target</directory>
-            <outputDirectory>./client</outputDirectory>
-            <includes>
-                <include>modeshape-client*.jar</include>
-            </includes>
-        </fileSet>
-
         <!-- JCA adapter-->
         <fileSet>
             <directory>../modeshape-jca-rar/target</directory>

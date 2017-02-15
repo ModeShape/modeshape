@@ -10,7 +10,7 @@
 
     <url>http://www.modeshape.org</url>
     <packaging>pom</packaging>
-    <description>Bill of Material (BOM) for applications using ModeShape's REST client or remote JDBC driver.</description>
+    <description>Bill of Material (BOM) for applications using ModeShape's remote JDBC driver.</description>
     <inceptionYear>2008</inceptionYear>
 
     <organization>
