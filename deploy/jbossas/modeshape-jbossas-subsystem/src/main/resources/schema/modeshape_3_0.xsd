@@ -1101,6 +1101,11 @@
                 <xs:documentation>The bucket name</xs:documentation>
             </xs:annotation>
         </xs:attribute>
+        <xs:attribute name="endpoint-url" type="xs:string" use="optional">
+            <xs:annotation>
+                <xs:documentation>The bucket name</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
     </xs:attributeGroup>
     <!-- Global simple types -->
     <xs:simpleType name="garbage-collection-initial-time-type">

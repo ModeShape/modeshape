@@ -41,6 +41,8 @@ public class AddS3BinaryStorage extends AbstractAddBinaryStorage {
         binaries.setString(FieldName.USER_PASSWORD, password);
         String bucketName = ModelAttributes.S3_BUCKET_NAME.resolveModelAttribute(context, model).asString();
         binaries.setString(FieldName.BUCKET_NAME, bucketName);
+        String endPoint = ModelAttributes.S3_ENDPOINT_URL.resolveModelAttribute(context, model).asString();
+        binaries.setString(FieldName.ENDPOINT_URL, endPoint);
     }
 
     @Override

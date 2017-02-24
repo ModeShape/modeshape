@@ -439,6 +439,7 @@ public class RepositoryConfiguration {
         public static final String HOST = "host";
         public static final String PORT = "port";
         public static final String BUCKET_NAME = "bucketName";
+        public static final String ENDPOINT_URL = "endPoint";
 
         public static final String GARBAGE_COLLECTION = "garbageCollection";
         public static final String INITIAL_TIME = "initialTime";
@@ -1211,8 +1212,17 @@ public class RepositoryConfiguration {
                 String username = binaryStorage.getString(FieldName.USER_NAME);
                 String password = binaryStorage.getString(FieldName.USER_PASSWORD);
                 String bucketName = binaryStorage.getString(FieldName.BUCKET_NAME);
-                store = new S3BinaryStore(username, password, bucketName);
+
+                //Use S3 provided endpoints
+                if (FieldName.ENDPOINT_URL != null) {
+                    String endPoint = binaryStorage.getString(FieldName.ENDPOINT_URL);
+                    store = new S3BinaryStore(username, password, bucketName, endPoint);
+                }
+                else { //Use default AWS endpoint
+                    store = new S3BinaryStore(username, password, bucketName);
+                }
             }
+
             if (store == null) store = TransientBinaryStore.get();
             store.setMinimumBinarySizeInBytes(getMinimumBinarySizeInBytes());
             return store;
