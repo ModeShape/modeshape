@@ -79,8 +79,26 @@ public class S3BinaryStore extends AbstractBinaryStore {
      * @throws BinaryStoreException if S3 connection cannot be made to verify bucket
      */
     public S3BinaryStore(String accessKey, String secretKey, String bucketName) throws BinaryStoreException {
+        this(accessKey, secretKey, bucketName, null);
+    }
+
+    /**
+     * Creates a binary store with a connection to Amazon S3
+     *
+     * @param accessKey AWS access key credential
+     * @param secretKey AWS secret key credential
+     * @param bucketName Name of the S3 bucket in which binary content will be stored
+     * @param endPoint The S3 endpoint URL where the bucket will be accessed
+     * @throws BinaryStoreException if S3 connection cannot be made to verify bucket
+     */
+    public S3BinaryStore(String accessKey, String secretKey, String bucketName, String endPoint) throws BinaryStoreException {
         this.bucketName = bucketName;
         this.s3Client = new AmazonS3Client(new BasicAWSCredentials(accessKey, secretKey));
+
+        // Support for compatible S3 storage systems
+        if(endPoint != null)
+            this.s3Client.setEndpoint(endPoint);
+
         this.fileSystemCache = TransientBinaryStore.get();
         this.fileSystemCache.setMinimumBinarySizeInBytes(1L);
 
