@@ -18,7 +18,6 @@ package org.modeshape.jcr.cache.document;
 import java.util.Collections;
 import java.util.Set;
 import org.modeshape.common.annotation.ThreadSafe;
-import org.modeshape.common.logging.Logger;
 import org.modeshape.jcr.ExecutionContext;
 import org.modeshape.jcr.cache.CachedNode;
 import org.modeshape.jcr.cache.NodeKey;
@@ -30,18 +29,11 @@ import org.modeshape.jcr.cache.SessionCache;
 @ThreadSafe
 public class ReadOnlySessionCache extends AbstractSessionCache {
 
-    private static final Logger LOGGER = Logger.getLogger(ReadOnlySessionCache.class);
-
     public ReadOnlySessionCache(ExecutionContext context,
                                 WorkspaceCache workspaceCache) {
         super(context, workspaceCache);
     }
-
-    @Override
-    protected Logger logger() {
-        return LOGGER;
-    }
-
+    
     @Override
     public boolean hasChanges() {
         return false;

@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -697,6 +698,77 @@ public class TransactionsTest extends SingleUseAbstractTest {
         assertTrue(node.isLocked());
     }
     
+    @Test
+    @FixFor( "MODE-2668" )
+    public void shouldRaiseExceptionAndRollbackIfTransactionFails1() throws Exception {
+        session.getRootNode().addNode("parent");
+        session.save();         
+        Transaction tx = startTransaction();
+        tx.rollback();
+        AbstractJcrNode parent = session.getNode("/parent");
+        parent.addNode("child");
+        try {
+            session.save();
+            fail("Expected save operation to fail");
+        } catch (RepositoryException e) {
+            assertTrue(e.getCause() instanceof IllegalStateException);
+            session.refresh(false);
+        }
+        ExecutorService executorService = Executors.newSingleThreadExecutor();
+        try {
+            CompletableFuture.runAsync(() -> {
+                try {
+                    Transaction tx1 = startTransaction();
+                    session.getNode("/parent").addNode("child");
+                    session.save();
+                    tx1.commit();
+                    assertEquals(1, parent.getNodes().getSize());
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                } 
+            }, executorService).get();
+        } finally {
+            executorService.shutdownNow();      
+        }
+    }
+    
+    @Test
+    @FixFor( "MODE-2668" )
+    public void shouldRaiseExceptionAndRollbackIfTransactionFails2() throws Exception {
+        Node parent = session.getRootNode().addNode("parent");
+        session.save();
+        Transaction tx = startTransaction();
+        // add one child
+        parent.addNode("child1");
+        session.save();
+        // explicitly rollback
+        tx.rollback();
+        try {
+            parent.addNode("child2");            
+            session.save();
+            fail("Expected save operation to fail");
+        } catch (RepositoryException e) {
+            assertTrue(e.getCause() instanceof IllegalStateException);
+            session.refresh(false);
+        }
+        ExecutorService executorService = Executors.newSingleThreadExecutor();
+        try {
+            CompletableFuture.runAsync(() -> {
+                try {
+                    Transaction tx1 = startTransaction();
+                    parent.addNode("child1");
+                    parent.addNode("child2");
+                    session.save();
+                    tx1.commit();
+                    assertEquals(2, parent.getNodes().getSize());
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            }, executorService).get();
+        } finally {
+            executorService.shutdownNow();        
+        }
+    }
     
     private void insertAndQueryNodes(int i) {
         Session session = null;

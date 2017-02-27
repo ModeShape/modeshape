@@ -60,9 +60,9 @@ public class LocalTransaction implements Transaction {
             if (!isActive()) {
                throw new SystemException("Illegal transaction status:" + status); 
             }
-            synchronizations.stream().forEach(Synchronization::beforeCompletion);
-            status.compareAndSet(Status.STATUS_ACTIVE, Status.STATUS_COMMITTED);
-            synchronizations.stream().forEach((sync)->sync.afterCompletion(status.get()));
+            synchronizations.forEach(Synchronization::beforeCompletion);
+            status.set(Status.STATUS_COMMITTED);
+            synchronizations.forEach((sync)->sync.afterCompletion(Status.STATUS_COMMITTED));
         } finally {
             LocalTransactionManager.clear();
         }
@@ -92,9 +92,9 @@ public class LocalTransaction implements Transaction {
             if (!isActive() && !markedForRollback()) {
                 throw new SystemException("Illegal transaction status:" + status);
             }
-            synchronizations.stream().forEach(Synchronization::beforeCompletion);
+            synchronizations.forEach(Synchronization::beforeCompletion);
             status.set(Status.STATUS_ROLLEDBACK);
-            synchronizations.stream().forEach((sync)->sync.afterCompletion(status.get()));
+            synchronizations.forEach((sync)->sync.afterCompletion(Status.STATUS_ROLLEDBACK));
         } finally {
             LocalTransactionManager.clear();
         }

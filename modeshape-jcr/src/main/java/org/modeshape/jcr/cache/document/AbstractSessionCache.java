@@ -59,16 +59,20 @@ public abstract class AbstractSessionCache implements SessionCache, DocumentCach
             return userId;
         }
     }
-
+    
+    protected final Logger logger;
+    
     private final WorkspaceCache sharedWorkspaceCache;
     private final AtomicReference<WorkspaceCache> workspaceCache = new AtomicReference<>();
     private final NameFactory nameFactory;
     private final PathFactory pathFactory;
     private final Path rootPath;
+    
     private ExecutionContext context;
 
     protected AbstractSessionCache(ExecutionContext context,
                                    WorkspaceCache sharedWorkspaceCache) {
+        this.logger = Logger.getLogger(getClass());
         this.context = context;
         this.sharedWorkspaceCache = sharedWorkspaceCache;
         this.workspaceCache.set(sharedWorkspaceCache);
@@ -77,9 +81,7 @@ public abstract class AbstractSessionCache implements SessionCache, DocumentCach
         this.pathFactory = factories.getPathFactory();
         this.rootPath = this.pathFactory.createRootPath();
     }
-
-    protected abstract Logger logger();
-
+    
     @Override
     public final SessionCache unwrap() {
         return this;

@@ -151,10 +151,9 @@ public class Transactions {
 
         // Get the transaction currently associated with this thread (if there is one) ...
         javax.transaction.Transaction txn = txnMgr.getTransaction();
-        if (txn != null && txn.getStatus() != Status.STATUS_ACTIVE) {
-            logger.warn(JcrI18n.warnRogueTransaction,txn);
-            txnMgr.suspend(); 
-            txn = null;
+        if (txn != null && Status.STATUS_ACTIVE != txn.getStatus()) {
+            // there is a user transaction which is not valid, so abort everything
+            throw new IllegalStateException(JcrI18n.errorInvalidUserTransaction.text(txn));
         }
         
         if (txn == null) {
