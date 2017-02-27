@@ -451,7 +451,7 @@ public final class JcrI18n {
     public static I18n localIndexProviderDoesNotSupportTextIndexes;
     public static I18n localIndexProviderDoesNotSupportMultiColumnIndexes;
 
-    public static I18n warnRogueTransaction;
+    public static I18n errorInvalidUserTransaction;
     public static I18n warnAttemptingToUnlockAnotherLock;
     private JcrI18n() {
     }

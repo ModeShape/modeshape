@@ -109,7 +109,6 @@ public class WritableSessionCache extends AbstractSessionCache {
      */
     private static final Logger SAVE_LOGGER = Logger.getLogger("org.modeshape.jcr.txn");
 
-    protected static final Logger LOGGER = Logger.getLogger(WritableSessionCache.class);
     private static final NodeKey REMOVED_KEY = new NodeKey("REMOVED_NODE_SHOULD_NEVER_BE_PERSISTED");
     private static final SessionNode REMOVED = new SessionNode(REMOVED_KEY, false);
     private static final int MAX_REPEAT_FOR_LOCK_ACQUISITION_TIMEOUT = 4;
@@ -177,12 +176,7 @@ public class WritableSessionCache extends AbstractSessionCache {
         }
         return null;
     }
-
-    @Override
-    protected Logger logger() {
-        return LOGGER;
-    }
-
+    
     @Override
     public CachedNode getNode( NodeKey key ) {
         CachedNode sessionNode = null;
@@ -434,7 +428,7 @@ public class WritableSessionCache extends AbstractSessionCache {
                 setWorkspaceCache(sharedWorkspaceCache());
             }
         } catch (SystemException e) {
-            logger().error(e, JcrI18n.errorDeterminingCurrentTransactionAssumingNone, workspaceName(), e.getMessage());
+            logger.error(e, JcrI18n.errorDeterminingCurrentTransactionAssumingNone, workspaceName(), e.getMessage());
             throw e;
         }
     }
@@ -549,7 +543,7 @@ public class WritableSessionCache extends AbstractSessionCache {
                         txn.uponCommit(binaryUsageUpdateFunction(events.usedBinaries(), events.unusedBinaries()));
                     }
 
-                    LOGGER.debug("Altered {0} node(s)", numNodes);
+                    logger.debug("Altered {0} node(s)", numNodes);
 
                 } catch (TimeoutException e) {
                     txn.rollback();
@@ -559,7 +553,7 @@ public class WritableSessionCache extends AbstractSessionCache {
                     Thread.sleep(PAUSE_TIME_BEFORE_REPEAT_FOR_LOCK_ACQUISITION_TIMEOUT);
                     continue;
                 } catch (Exception err) {
-                    LOGGER.debug(err, "Error while attempting to save");
+                    logger.debug(err, "Error while attempting to save");
                     // Some error occurred (likely within our code) ...
                     rollback(txn, err);
                 }
@@ -711,18 +705,18 @@ public class WritableSessionCache extends AbstractSessionCache {
                     Thread.sleep(PAUSE_TIME_BEFORE_REPEAT_FOR_LOCK_ACQUISITION_TIMEOUT);
                     continue;
                 } catch (Exception e) {
-                    LOGGER.debug(e, "Error while attempting to save");
+                    logger.debug(e, "Error while attempting to save");
                     // Some error occurred (likely within our code) ...
                     rollback(txn, e);
                 }
 
-                LOGGER.debug("Altered {0} node(s)", numNodes);
+                logger.debug("Altered {0} node(s)", numNodes);
 
                 // Commit the transaction ...
                 txn.commit();
 
-                if (LOGGER.isDebugEnabled()) {
-                    LOGGER.debug("Altered {0} keys: {1}", numNodes, this.changedNodes.keySet());
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Altered {0} keys: {1}", numNodes, this.changedNodes.keySet());
                 }
 
                 this.clearState();
@@ -791,11 +785,11 @@ public class WritableSessionCache extends AbstractSessionCache {
             // Before we start the transaction, apply the pre-save operations to the new and changed nodes below the path ...
             final List<NodeKey> savedNodesInOrder = runBeforeLocking(preSaveOperation, toBeSaved);
             final int numNodes = savedNodesInOrder.size() + that.changedNodesInOrder.size();
-
+    
             int repeat = txns.isCurrentlyInTransaction() ? 1 : MAX_REPEAT_FOR_LOCK_ACQUISITION_TIMEOUT;
             while (--repeat >= 0) {
-                    // Start a ModeShape transaction (which may be a part of a larger JTA transaction) ...
-                    txn = txns.begin();
+                // Start a ModeShape transaction (which may be a part of a larger JTA transaction) ...
+                txn = txns.begin();
                 assert txn != null;
 
                 try {
@@ -834,12 +828,12 @@ public class WritableSessionCache extends AbstractSessionCache {
                     Thread.sleep(PAUSE_TIME_BEFORE_REPEAT_FOR_LOCK_ACQUISITION_TIMEOUT);
                     continue;
                 } catch (Exception e) {
-                    LOGGER.debug(e, "Error while attempting to save");
+                    logger.debug(e, "Error while attempting to save");
                     // Some error occurred (likely within our code) ...
                     rollback(txn, e);
                 }
 
-                LOGGER.debug("Altered {0} node(s)", numNodes);
+                logger.debug("Altered {0} node(s)", numNodes);
 
                 // Commit the transaction ...
                 txn.commit();
@@ -879,7 +873,7 @@ public class WritableSessionCache extends AbstractSessionCache {
         try {
             txn.rollback();
         } catch (Exception e) {
-            LOGGER.debug(e, "Error while rolling back transaction " + txn);
+            logger.debug(e, "Error while rolling back transaction " + txn);
         } finally {
             throw cause;
         }
@@ -1500,9 +1494,9 @@ public class WritableSessionCache extends AbstractSessionCache {
         }
         DocumentStore documentStore = workspaceCache.documentStore();
 
-        if (LOGGER.isDebugEnabled()) {
+        if (logger.isDebugEnabled()) {
             if (!this.changedNodes.isEmpty()) {
-                LOGGER.debug("Attempting to the lock nodes: {0}", changedNodes.keySet());
+                logger.debug("Attempting to the lock nodes: {0}", changedNodes.keySet());
             }
         }
         // Try to acquire from the DocumentStore locks for all the nodes that we're going to change ...
@@ -1516,8 +1510,8 @@ public class WritableSessionCache extends AbstractSessionCache {
         String txId = modeshapeTx.id();
         Set<String> lockedKeysForTx = LOCKED_KEYS_BY_TX_ID.computeIfAbsent(txId, id -> new LinkedHashSet<>());
         if (lockedKeysForTx.containsAll(changedNodesKeys)) {
-            if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug("The keys {0} have been locked previously as part of the transaction {1}; skipping them...",
+            if (logger.isDebugEnabled()) {
+                logger.debug("The keys {0} have been locked previously as part of the transaction {1}; skipping them...",
                              changedNodesKeys, txId);    
             }             
         } else {
@@ -1529,12 +1523,12 @@ public class WritableSessionCache extends AbstractSessionCache {
             while (!locksAcquired && retryCountOnLockTimeout > 0) {
                 locksAcquired = documentStore.lockDocuments(newKeysToLock);
                 if (locksAcquired) {
-                    if (LOGGER.isDebugEnabled()) {
-                        LOGGER.debug("Locked the nodes: {0}", newKeysToLock);
+                    if (logger.isDebugEnabled()) {
+                        logger.debug("Locked the nodes: {0}", newKeysToLock);
                     }
                 } else {
-                    if (LOGGER.isDebugEnabled()) {
-                        LOGGER.debug("Timeout while attempting to lock keys {0}. Retrying....", newKeysToLock);
+                    if (logger.isDebugEnabled()) {
+                        logger.debug("Timeout while attempting to lock keys {0}. Retrying....", newKeysToLock);
                     }
                     --retryCountOnLockTimeout;
                 }
@@ -1572,30 +1566,30 @@ public class WritableSessionCache extends AbstractSessionCache {
         final BinaryStore binaryStore = getContext().getBinaryStore();
         return () -> {
             if (!usedBinaries.isEmpty()) {
-                if (LOGGER.isDebugEnabled()) {
-                    LOGGER.debug("Marking binary values as used: {0}", usedBinaries);
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Marking binary values as used: {0}", usedBinaries);
                 }
                 try {
                     binaryStore.markAsUsed(usedBinaries);
-                    if (LOGGER.isDebugEnabled()) {
-                        LOGGER.debug("Finished marking binary values as used: {0}", usedBinaries);
+                    if (logger.isDebugEnabled()) {
+                        logger.debug("Finished marking binary values as used: {0}", usedBinaries);
                     }
                 } catch (BinaryStoreException e) {
-                    LOGGER.error(e, JcrI18n.errorMarkingBinaryValuesUsed, e.getMessage());
+                    logger.error(e, JcrI18n.errorMarkingBinaryValuesUsed, e.getMessage());
                 }
             }
 
             if (!unusedBinaries.isEmpty()) {
-                if (LOGGER.isDebugEnabled()) {
-                    LOGGER.debug("Marking binary values as unused: {0}", unusedBinaries);
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Marking binary values as unused: {0}", unusedBinaries);
                 }
                 try {
                     binaryStore.markAsUnused(unusedBinaries);
-                    if (LOGGER.isDebugEnabled()) {
-                        LOGGER.debug("Finished marking binary values as unused: {0}", unusedBinaries);
+                    if (logger.isDebugEnabled()) {
+                        logger.debug("Finished marking binary values as unused: {0}", unusedBinaries);
                     }
                 } catch (BinaryStoreException e) {
-                    LOGGER.error(e, JcrI18n.errorMarkingBinaryValuesUnused, e.getMessage());
+                    logger.error(e, JcrI18n.errorMarkingBinaryValuesUnused, e.getMessage());
                 }
             }
         };
@@ -1732,7 +1726,7 @@ public class WritableSessionCache extends AbstractSessionCache {
                 this.changedNodes.putAll(removed);
             } catch (RuntimeException e2) {
                 I18n msg = JcrI18n.failedWhileRollingBackDestroyToRuntimeError;
-                LOGGER.error(e2, msg, e2.getMessage(), e.getMessage());
+                logger.error(e2, msg, e2.getMessage(), e.getMessage());
             } finally {
                 // Re-throw original exception ...
                 throw e;
