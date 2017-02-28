@@ -981,6 +981,14 @@ public class ModelAttributes {
             .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
             .build();
 
+    public static final MappedSimpleAttributeDefinition S3_ENDPOINT_URL =
+        new MappedAttributeDefinitionBuilder(Attribute.ENDPOINT_URL.getLocalName(), ModelType.STRING,
+                                             FieldName.STORAGE, FieldName.BINARY_STORAGE, FieldName.ENDPOINT_URL)
+                .setAllowExpression(true)
+                .setAllowNull(true)
+                .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
+                .build();
+
     public static final AttributeDefinition[] SUBSYSTEM_ATTRIBUTES = {};
 
     public static final AttributeDefinition[] WEBAPP_ATTRIBUTES = {EXPLODED};
@@ -1010,7 +1018,7 @@ public class ModelAttributes {
         MIME_TYPE_DETECTION, CASSANDRA_HOST };
 
     public static final AttributeDefinition[] S3_BINARY_STORAGE_ATTRIBUTES = {MINIMUM_BINARY_SIZE, MINIMUM_STRING_SIZE,
-        MIME_TYPE_DETECTION, S3_USERNAME, S3_PASSWORD, S3_BUCKET_NAME};
+        MIME_TYPE_DETECTION, S3_USERNAME, S3_PASSWORD, S3_BUCKET_NAME, S3_ENDPOINT_URL};
 
     public static final AttributeDefinition[] MONGO_BINARY_STORAGE_ATTRIBUTES = { MINIMUM_BINARY_SIZE, MINIMUM_STRING_SIZE,
                                                                                   MIME_TYPE_DETECTION, MONGO_HOST, MONGO_PORT, MONGO_DATABASE, MONGO_USERNAME, MONGO_PASSWORD, MONGO_HOST_ADDRESSES };

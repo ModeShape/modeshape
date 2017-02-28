@@ -488,6 +488,11 @@
                                     "description" : "The S3 bucket name in which binary values will be stored.",
                                     "required" : true
                                 },
+                                "endPoint" : {
+                                    "type" : "string",
+                                    "description" : "The S3 bucket name in which binary values will be stored.",
+                                    "required" : false
+                                },
                                 "minimumBinarySizeInBytes" : {
                                     "type" : "integer",
                                     "default" : 4096,

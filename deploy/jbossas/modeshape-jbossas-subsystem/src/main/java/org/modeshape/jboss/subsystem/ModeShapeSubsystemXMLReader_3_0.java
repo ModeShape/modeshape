@@ -858,9 +858,12 @@ public class ModeShapeSubsystemXMLReader_3_0 implements XMLStreamConstants, XMLE
                         break;
                     case USERNAME:
                         ModelAttributes.S3_USERNAME.parseAndSetParameter(attrValue, storageType, reader);
-                        break;
+                    break;
                     case PASSWORD:
                         ModelAttributes.S3_PASSWORD.parseAndSetParameter(attrValue, storageType, reader);
+                    break;
+                    case ENDPOINT_URL:
+                        ModelAttributes.S3_ENDPOINT_URL.parseAndSetParameter(attrValue, storageType, reader);
                         break;
                     case MIN_VALUE_SIZE:
                         ModelAttributes.MINIMUM_BINARY_SIZE.parseAndSetParameter(attrValue, storageType, reader);

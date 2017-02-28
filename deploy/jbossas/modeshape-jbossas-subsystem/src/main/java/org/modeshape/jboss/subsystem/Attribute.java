@@ -110,6 +110,7 @@ public enum Attribute {
     DATABASE("database"),
     REINDEXING_MODE("mode"),
     BUCKET_NAME("bucket-name"),
+    ENDPOINT_URL("endpoint-url"),
     HOST_ADDRESSES("host-addresses");
 
     private final String name;
