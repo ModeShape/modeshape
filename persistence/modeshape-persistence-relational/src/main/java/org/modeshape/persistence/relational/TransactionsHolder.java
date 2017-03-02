@@ -48,13 +48,12 @@ public final class TransactionsHolder {
                 Thread.currentThread().getName()));
     }
     
-    protected static String validateTransaction(String actualTxId) {
-        String expectedTxId = requireActiveTransaction();
-        if (!expectedTxId.equals(actualTxId)) {
+    protected static void validateAgainstActiveTransaction(String otherTxId) {
+        String expectedTxId = ACTIVE_TX_ID.get();
+        if (!otherTxId.equals(ACTIVE_TX_ID.get())) {
             throw new RelationalProviderException(RelationalProviderI18n.threadAssociatedWithAnotherTransaction, 
-                                                  Thread.currentThread().getName(), expectedTxId, actualTxId);
+                                                  Thread.currentThread().getName(), expectedTxId, otherTxId);
         }
-        return expectedTxId;
     }
     
     protected static void setActiveTxId(String txId) {

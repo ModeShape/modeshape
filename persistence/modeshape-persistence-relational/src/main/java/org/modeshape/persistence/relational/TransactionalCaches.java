@@ -50,7 +50,7 @@ public final class TransactionalCaches {
     }    
 
     protected Document search(String key) {
-        TransactionalCache cache = cacheForTransaction();
+        TransactionalCache cache = cacheForActiveTransaction();
         Document doc = cache.getFromWriteCache(key);
         if (doc != null) {
             return doc;
@@ -59,26 +59,26 @@ public final class TransactionalCaches {
     }
     
     protected boolean hasBeenRead(String key) {
-        return cacheForTransaction().readCache().containsKey(key);
+        return cacheForActiveTransaction().readCache().containsKey(key);
     }
 
     protected Document getForWriting(String key) {
-        return cacheForTransaction().getFromWriteCache(key);                     
+        return cacheForActiveTransaction().getFromWriteCache(key);                     
     }
     
     protected void putForReading(String key, Document doc) {
         if (!TransactionsHolder.hasActiveTransaction()) {
             return;
         }
-        cacheForTransaction().putForReading(key, doc);    
+        cacheForActiveTransaction().putForReading(key, doc);    
     }
 
     protected Document putForWriting(String key, Document doc) {
-        return cacheForTransaction().putForWriting(key, doc);
+        return cacheForActiveTransaction().putForWriting(key, doc);
     }
     
     protected Set<String> documentKeys() {
-        TransactionalCache transactionalCache = cacheForTransaction();
+        TransactionalCache transactionalCache = cacheForActiveTransaction();
         return transactionalCache.writeCache().entrySet()
                              .stream()
                              .filter(entry -> !transactionalCache.isRemoved(entry.getKey()))
@@ -87,48 +87,46 @@ public final class TransactionalCaches {
     }
     
     protected ConcurrentMap<String, Document> writeCache() {
-        return cacheForTransaction().writeCache();
+        return cacheForActiveTransaction().writeCache();
     }
     
     protected  boolean isRemoved(String key) {
-        return cacheForTransaction().isRemoved(key);
+        return cacheForActiveTransaction().isRemoved(key);
     }
 
     protected void remove(String key) {
-        cacheForTransaction().remove(key);
+        cacheForActiveTransaction().remove(key);
     }
     
     protected boolean isNew(String key) {
-        return cacheForTransaction().isNew(key);
+        return cacheForActiveTransaction().isNew(key);
     }
     
     protected void putNew(String key) {
         if (!TransactionsHolder.hasActiveTransaction()) {
             return;
         }
-        cacheForTransaction().putNew(key);
+        cacheForActiveTransaction().putNew(key);
     }
 
     protected void putNew(Collection<String> keys) {
         if (!TransactionsHolder.hasActiveTransaction()) {
             return;
         }
-        cacheForTransaction().putNew(keys);
+        cacheForActiveTransaction().putNew(keys);
     }
     
-    protected void clearCache() {
-        cachesByTxId.computeIfPresent(TransactionsHolder.requireActiveTransaction(), (id, readWriteCache) -> {
-            readWriteCache.clear();
-            return null;
-        });
+    protected void clearCache(String txId) {  
+        cachesByTxId.remove(txId);
     }
     
     protected void stop() {
         cachesByTxId.clear();
     }
 
-    private TransactionalCache cacheForTransaction() {
-        return cachesByTxId.computeIfAbsent(TransactionsHolder.requireActiveTransaction(), TransactionalCache::new);
+    private TransactionalCache cacheForActiveTransaction() {
+        String activeTxId = TransactionsHolder.requireActiveTransaction();
+        return cachesByTxId.computeIfAbsent(activeTxId, TransactionalCache::new);
     }
 
     private static class TransactionalCache {
