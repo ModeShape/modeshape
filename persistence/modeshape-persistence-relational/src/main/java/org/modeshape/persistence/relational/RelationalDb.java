@@ -50,7 +50,7 @@ public class RelationalDb implements SchematicDb {
     
     private static final Logger LOGGER = Logger.getLogger(RelationalDb.class);
 
-    private final Map<String, Connection> connectionsByTxId;
+    private final ConcurrentMap<String, Connection> connectionsByTxId;
     private final DataSourceManager dsManager;
     private final RelationalDbConfig config;
     private final Statements statements;
@@ -117,8 +117,11 @@ public class RelationalDb implements SchematicDb {
         LOGGER.warn(RelationalProviderI18n.warnConnectionsNeedCleanup, connectionsByTxId.size());
         // this should not normally happen because each flow should end with either a commit/rollback which should release
         // the allocated connection
-        connectionsByTxId.forEach(this::closeConnection);
-        connectionsByTxId.clear();
+        for (Iterator<Map.Entry<String, Connection>> iterator = connectionsByTxId.entrySet().iterator(); iterator.hasNext();) {
+            Map.Entry<String, Connection> entry = iterator.next();
+            closeConnection(entry.getKey(), entry.getValue());
+            iterator.remove();
+        }
     }
     
     private void closeConnection(String txId, Connection connection) {
@@ -312,8 +315,12 @@ public class RelationalDb implements SchematicDb {
     @Override
     public void txCommitted(String id) {
         logDebug("Received committed notification for transaction '{0}'", id);
-        // make sure the id that was there when the tx started matches this id...
-        TransactionsHolder.validateTransaction(id);
+        if (!TransactionsHolder.hasActiveTransaction()) {
+            logDebug("Received commit notification for tx '{0}' from a different thread than the one on which the transaction was first detected");
+        } else {
+            // make sure the id that was there when the tx started matches this id...
+            TransactionsHolder.validateAgainstActiveTransaction(id);
+        }
         try {
             runWithConnection(this::persistContent, false);
         } finally {
@@ -322,16 +329,19 @@ public class RelationalDb implements SchematicDb {
     }
 
     private void cleanupTransaction(String id) {
-        // clear the tx cache
-        transactionalCaches.clearCache();
-        // release any existing connection for this thread because a transaction has been committed...
-        logDebug("Releasing DB connection for transaction {0}", id);
-        connectionsByTxId.computeIfPresent(id, (txId, connection) -> {
-            closeConnection(txId, connection);
-            return null;
-        });
-        // and clear the tx 
-        TransactionsHolder.clearActiveTransaction();
+        try {
+            // release any existing connection for this thread because a transaction has been committed...
+            connectionsByTxId.computeIfPresent(id, (txId, connection) -> {
+                closeConnection(txId, connection);
+                logDebug("Released DB connection for transaction '{0}'", id);
+                return null;
+            });
+        } finally {
+            // clear the tx cache
+            transactionalCaches.clearCache(id);
+            // and clear the tx 
+            TransactionsHolder.clearActiveTransaction();
+        }
     }
 
     private Void persistContent(Connection tlConnection) throws SQLException {
@@ -367,8 +377,12 @@ public class RelationalDb implements SchematicDb {
     @Override
     public void txRolledback(String id) {
         logDebug("Received rollback notification for transaction '{0}'", id);
-        // make sure the id that was there when the tx started matches this id...
-        TransactionsHolder.validateTransaction(id);
+        if (!TransactionsHolder.hasActiveTransaction()) {
+            logDebug("Received rollback notification for tx '{0}' from a different thread than the one on which the transaction was first detected");
+        } else {
+            // make sure the id that was there when the tx started matches this id...
+            TransactionsHolder.validateAgainstActiveTransaction(id);
+        }
         try {
             runWithConnection(this::rollback, false);
         } finally {

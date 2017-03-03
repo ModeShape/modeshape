@@ -228,6 +228,10 @@ public class Transactions {
                 // no active transaction
                 return null;
             }
+            if (Status.STATUS_ACTIVE != txn.getStatus()) {
+                // there is a user transaction which is not valid, so abort everything
+                throw new IllegalStateException(JcrI18n.errorInvalidUserTransaction.text(txn));
+            }
             return transactionTable.get(txn);
         } catch (SystemException e) {
             logger.debug(e, "Cannot determine if there is an active transaction or not");
@@ -649,6 +653,14 @@ public class Transactions {
                     transactionTable.remove(this.transaction);
                 }
             }
+        }
+    
+        @Override
+        public String toString() {
+            final StringBuilder sb = new StringBuilder(getClass().getSimpleName()).append("[local ").append("txId='")
+                                                                                  .append(id).append("', original tx='")
+                                                                                  .append(transaction).append("']");
+            return sb.toString();
         }
     }
 
