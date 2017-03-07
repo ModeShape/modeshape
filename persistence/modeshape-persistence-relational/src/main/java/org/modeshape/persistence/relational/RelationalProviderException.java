@@ -32,4 +32,8 @@ public class RelationalProviderException extends RuntimeException {
     protected RelationalProviderException(I18n msgResource, Object... params) {
         super(msgResource.text(params));
     }
+    
+    protected RelationalProviderException(String message) {
+        super(message);
+    }
 }

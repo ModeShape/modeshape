@@ -160,13 +160,18 @@ public class Transactions {
             // There is no transaction or a leftover one which isn't active, so start a local one ...
             txnMgr.begin();
             // create our wrapper ...
-            localTx = new NestableThreadLocalTransaction(txnMgr).begin();
+            localTx = new NestableThreadLocalTransaction(txnMgr);
+            localTx.begin();
+            // notify the listener
+            localTx.started();
             return logTransactionInformation(localTx);
         }
 
         // There's an existing tx, meaning user transactions are being used
         SynchronizedTransaction synchronizedTransaction = transactionTable.get(txn);
         if (synchronizedTransaction != null) {
+            // notify the listener
+            synchronizedTransaction.started();
             // we've already started our own transaction so just return it as is
             return logTransactionInformation(synchronizedTransaction);
         } else {
@@ -174,6 +179,8 @@ public class Transactions {
             transactionTable.put(txn, synchronizedTransaction);
             // and register a synchronization
             txn.registerSynchronization(synchronizedTransaction);
+            // and notify the listener
+            synchronizedTransaction.started();
             return logTransactionInformation(synchronizedTransaction);
         }
     }
@@ -418,8 +425,9 @@ public class Transactions {
             this.id = UUID.randomUUID().toString();
         }
 
-        protected void started() {
+        protected BaseTransaction started() {
             Transactions.this.listener.txStarted(id);
+            return this;
         }
 
         @Override
@@ -471,7 +479,6 @@ public class Transactions {
 
         protected SimpleTransaction( TransactionManager txnMgr ) {
             super(txnMgr);
-            started();
         }
 
         @Override
@@ -610,7 +617,6 @@ public class Transactions {
         protected SynchronizedTransaction( TransactionManager txnMgr, javax.transaction.Transaction transaction ) {
             super(txnMgr);
             this.transaction = transaction;
-            started();
         }
 
         @Override

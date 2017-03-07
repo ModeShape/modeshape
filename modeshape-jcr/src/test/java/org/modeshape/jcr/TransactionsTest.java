@@ -20,6 +20,8 @@ import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -56,10 +58,10 @@ import javax.transaction.HeuristicRollbackException;
 import javax.transaction.InvalidTransactionException;
 import javax.transaction.NotSupportedException;
 import javax.transaction.RollbackException;
+import javax.transaction.Status;
 import javax.transaction.SystemException;
 import javax.transaction.Transaction;
 import javax.transaction.TransactionManager;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
 import org.modeshape.common.util.FileUtil;
@@ -488,7 +490,6 @@ public class TransactionsTest extends SingleUseAbstractTest {
 
     @Test
     @FixFor( "MODE-2495" )
-    @Ignore( "ModeShape 5 requires thread confinement, otherwise locking will not work correctly" )
     public void shouldSupportMultipleThreadsChangingTheSameUserTransaction() throws Exception {
         startRepositoryWithConfigurationFrom("config/repo-config-inmemory-txn.json");
 
@@ -526,19 +527,16 @@ public class TransactionsTest extends SingleUseAbstractTest {
         s.logout();
 
         // STEP 5: resume, checkin, commit
-        Thread t5 = new Thread() {
-            @Override
-            public void run() {
-                try {
-                    resumeTransaction(longTx);
-                    VersionManager vm = session.getWorkspace().getVersionManager();
-                    vm.checkin("/parent");
-                    commitTransaction();
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
-                }
+        Thread t5 = new Thread(() -> {
+            try {
+                resumeTransaction(longTx);
+                VersionManager vm1 = session.getWorkspace().getVersionManager();
+                vm1.checkin("/parent");
+                commitTransaction();
+            } catch (Exception e) {
+                throw new RuntimeException(e);
             }
-        };
+        });
         t5.start();
         t5.join();
 
@@ -728,6 +726,7 @@ public class TransactionsTest extends SingleUseAbstractTest {
                 } 
             }, executorService).get();
         } finally {
+            transactionManager().suspend();
             executorService.shutdownNow();      
         }
     }
@@ -766,7 +765,81 @@ public class TransactionsTest extends SingleUseAbstractTest {
                 }
             }, executorService).get();
         } finally {
+            transactionManager().suspend();
             executorService.shutdownNow();        
+        }
+    }
+    
+    @Test
+    @FixFor("MODE-2670")
+    public void shouldRollbackAndCommitTransactionsFromDifferentThreadsForFileProvider() throws Exception {
+        // Start the repository using the JBoss Transactions transaction manager ...
+        startRepositoryWithConfigurationFrom("config/repo-config-inmemory-txn.json");
+        testCommitAndRollbackOffSeparateThreads();
+    }  
+    
+    @Test
+    @FixFor("MODE-2670")
+    public void shouldRollbackAndCommitTransactionsFromDifferentThreadsForDBProvider() throws Exception {
+        FileUtil.delete("target/txn");
+        // Start the repository using the JBoss Transactions transaction manager ...
+        startRepositoryWithConfigurationFrom("config/repo-config-db-txn.json");
+        testCommitAndRollbackOffSeparateThreads();
+    }
+    
+    private void testCommitAndRollbackOffSeparateThreads() throws Exception {
+        session.getRootNode().addNode("parent");
+        session.save();
+        
+        ExecutorService executorService = Executors.newFixedThreadPool(2);
+        try {
+            transactionManager().begin();
+            Transaction tx = transactionManager().getTransaction();
+            assertNotNull(tx);
+            session.getNode("/parent").addNode("child");
+            session.save();
+            executorService.submit(() -> {
+                tx.rollback();
+                return null;
+            }).get(2, TimeUnit.SECONDS);
+         
+            //nothing should be there
+            assertNoNode("/parent/child");
+            // and the tx off thread 'main' should be aborted
+            Transaction afterRollback = transactionManager().getTransaction();
+            assertNotNull(afterRollback);
+            assertEquals(Status.STATUS_ROLLEDBACK, afterRollback.getStatus());
+            // remove it from the current thread
+            transactionManager().suspend();
+        
+            //now make the same change and commit from a separate thread
+            executorService.submit(() -> {
+                transactionManager().begin();
+                final Transaction tx1 = transactionManager().getTransaction();
+                assertNotNull(tx1);
+                assertEquals(Status.STATUS_ACTIVE, tx1.getStatus());
+                session.getNode("/parent").addNode("child");
+                session.save();
+                executorService.submit(() -> {
+                    tx1.commit();
+                    return null;
+                }).get(2, TimeUnit.SECONDS);
+                // we've committed off a different thread, but the changes should be persisted
+                try {
+                    assertNode("/parent/child");
+                    return null;
+                } finally {
+                    //remove it from the current thread
+                    transactionManager().suspend();                    
+                }
+            }).get(2, TimeUnit.SECONDS);
+            assertNode("/parent/child");
+            assertNull(transactionManager().getTransaction());
+        } catch (java.util.concurrent.TimeoutException te) {
+            fail("Timeout detected; this means threads are not able to complete due to a lock starvation");
+        }
+        finally {
+            executorService.shutdownNow();     
         }
     }
     

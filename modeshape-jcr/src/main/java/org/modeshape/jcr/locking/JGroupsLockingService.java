@@ -28,8 +28,10 @@ import org.modeshape.common.annotation.ThreadSafe;
  *
  * @author Horia Chiorean (hchiorea@redhat.com)
  * @since 5.0
+ * @deprecated this is not reliable when running in a cluster and will be removed in the next major version.
  */
 @ThreadSafe
+@Deprecated
 public class JGroupsLockingService extends AbstractLockingService<Lock> {
 
     /**
@@ -61,12 +63,7 @@ public class JGroupsLockingService extends AbstractLockingService<Lock> {
     protected Lock createLock(String name) {
         return lockService.getLock(name);
     }
-
-    @Override
-    protected void validateLock(Lock lock) {
-        //nothing to validate here
-    }
-
+    
     @Override
     protected boolean releaseLock(Lock lock) {
         // the only way to tell if JG has a lock is to try locking it from the current thread (which should be a no-op if the lock 

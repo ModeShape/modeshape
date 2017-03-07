@@ -305,24 +305,24 @@ public class RelationalDb implements SchematicDb {
     @Override
     public void txStarted(String id) {
         logDebug("New transaction '{0}' started by ModeShape...", id);
+        String activeTx = TransactionsHolder.activeTransaction(); 
+        if (activeTx != null && !activeTx.equals(id)) {
+            LOGGER.warn(RelationalProviderI18n.threadAssociatedWithAnotherTransaction, activeTx, id);
+        }
         // mark the current thread as linked to a tx...
         TransactionsHolder.setActiveTxId(id);
         // and allocate a new connection for this transaction preemptively to isolate it from other connections
         connectionForActiveTx();
-        logDebug("New DB connection allocated for tx '{0}'", id);
     }
 
     @Override
     public void txCommitted(String id) {
         logDebug("Received committed notification for transaction '{0}'", id);
-        if (!TransactionsHolder.hasActiveTransaction()) {
-            logDebug("Received commit notification for tx '{0}' from a different thread than the one on which the transaction was first detected");
-        } else {
-            // make sure the id that was there when the tx started matches this id...
-            TransactionsHolder.validateAgainstActiveTransaction(id);
-        }
         try {
-            runWithConnection(this::persistContent, false);
+            Connection connection = connectionsByTxId.get(id);
+            persistContent(connection, id);
+        } catch (SQLException e) {
+            throw new RelationalProviderException(e);
         } finally {
             cleanupTransaction(id);
         }
@@ -344,11 +344,17 @@ public class RelationalDb implements SchematicDb {
         }
     }
 
-    private Void persistContent(Connection tlConnection) throws SQLException {
-        ConcurrentMap<String, Document> writeCache = transactionalCaches.writeCache();
-        logDebug("Committing the active connection for transaction {0} with the changes: {1}",
-                 TransactionsHolder.requireActiveTransaction(),
-                 writeCache);
+    private void persistContent(Connection tlConnection, String txId) throws SQLException {
+        TransactionalCaches.TransactionalCache cache = transactionalCaches.cacheForTransaction(txId); 
+        if (cache == null) {
+            // simply commit the connection
+            tlConnection.commit();
+            return;
+        }
+        Map<String, Document> writeCache = cache.writeCache();
+        Map<String, Document> readCache = cache.readCache();
+        
+        logDebug("Committing the active connection for transaction {0} with the changes: {1}", txId, writeCache);
         Statements.BatchUpdate batchUpdate = statements.batchUpdate(tlConnection);
         Map<String, Document> toInsert = new HashMap<>();
         Map<String, Document> toUpdate = new HashMap<>();
@@ -356,7 +362,7 @@ public class RelationalDb implements SchematicDb {
         writeCache.forEach(( key, document ) -> {
             if (TransactionalCaches.REMOVED == document) {
                 toRemove.add(key);
-            } else if (transactionalCaches.hasBeenRead(key)) {
+            } else if (readCache.containsKey(key)) {
                 toUpdate.put(key, document);
             } else {
                 toInsert.put(key, document);
@@ -371,18 +377,11 @@ public class RelationalDb implements SchematicDb {
             throw new RelationalProviderException(e);
         }
         tlConnection.commit();
-        return null;
     }
 
     @Override
     public void txRolledback(String id) {
         logDebug("Received rollback notification for transaction '{0}'", id);
-        if (!TransactionsHolder.hasActiveTransaction()) {
-            logDebug("Received rollback notification for tx '{0}' from a different thread than the one on which the transaction was first detected");
-        } else {
-            // make sure the id that was there when the tx started matches this id...
-            TransactionsHolder.validateAgainstActiveTransaction(id);
-        }
         try {
             runWithConnection(this::rollback, false);
         } finally {
@@ -420,6 +419,7 @@ public class RelationalDb implements SchematicDb {
         }
         connection = dsManager.newConnection(false, false);
         connectionsByTxId.put(activeTxId, connection);
+        logDebug("New DB connection allocated for tx '{0}'", activeTxId);
         return connection;
     }
     

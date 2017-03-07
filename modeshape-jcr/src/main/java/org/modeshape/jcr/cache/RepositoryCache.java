@@ -263,9 +263,9 @@ public class RepositoryCache {
         this.systemWorkspaceName = RepositoryConfiguration.SYSTEM_WORKSPACE_NAME;
         String systemWorkspaceKey = NodeKey.keyForWorkspaceName(systemWorkspaceName);
         this.systemMetadataKey = new NodeKey(this.sourceKey, systemWorkspaceKey, SYSTEM_METADATA_IDENTIFIER);
-
+        
         // Initialize the workspaces ..
-        refreshRepositoryMetadata(false);
+        Set<String> newWorkspaces = refreshRepositoryMetadata(false);
 
         this.changeBus = changeBus;
         this.changeBus.registerInThread(new ChangesToWorkspacesListener());
@@ -309,6 +309,14 @@ public class RepositoryCache {
 
         // set the local source key in the document store
         this.documentStore.setLocalSourceKey(this.sourceKey);
+        
+        // and create any predefined workspaces (includes default)
+        if (initializingRepository && !newWorkspaces.isEmpty()) {
+            localStore().runInTransaction(() -> {
+                newWorkspaces.forEach(this::createWorkspace);
+                return null;
+            }, 0, REPOSITORY_INFO_KEY);
+        }
     }
 
     protected boolean waitUntil( Callable<Boolean> condition,
@@ -424,22 +432,30 @@ public class RepositoryCache {
         return this.context;
     }
 
-    public RepositoryCache completeInitialization() {
+    public void completeInitialization(Upgrades.Context upgradeContext) {
+        if (initializingRepository || upgradingRepository) {
+            localStore().runInTransaction(() -> {
+                if (initializingRepository) {
+                    writeInitializedAt();
+                }
+                if (upgradingRepository) {
+                    doUpgrade(upgradeContext);
+                }
+                return null;
+            }, 0 , REPOSITORY_INFO_KEY) ;
+        }
+    }
+    
+    private void writeInitializedAt() {
         try {
-            if (initializingRepository) {
-                LOGGER.debug("Marking repository '{0}' as fully initialized", name);
-                localStore().runInTransaction(() -> {
-                    LocalDocumentStore store = documentStore().localStore();
-                    EditableDocument repositoryInfo = store.edit(REPOSITORY_INFO_KEY, true);
-                    if (repositoryInfo.get(REPOSITORY_INITIALIZED_AT_FIELD_NAME) == null) {
-                        DateTime now = context().getValueFactories().getDateFactory().create();
-                        repositoryInfo.setDate(REPOSITORY_INITIALIZED_AT_FIELD_NAME, now.toDate());
-                    }
-                    return null;
-                }, 0, REPOSITORY_INFO_KEY);
-                LOGGER.debug("Repository '{0}' is fully initialized", name);
+            LOGGER.debug("Marking repository '{0}' as fully initialized", name);
+            LocalDocumentStore store = documentStore().localStore();
+            EditableDocument repositoryInfo = store.edit(REPOSITORY_INFO_KEY, true);
+            if (repositoryInfo.get(REPOSITORY_INITIALIZED_AT_FIELD_NAME) == null) {
+                DateTime now = context().getValueFactories().getDateFactory().create();
+                repositoryInfo.setDate(REPOSITORY_INITIALIZED_AT_FIELD_NAME, now.toDate());
             }
-            return this;
+            LOGGER.debug("Repository '{0}' is fully initialized", name);
         } finally {
             // if we have a global cluster-wide lock, make sure its released
             if (isHoldingClusterLock) {
@@ -449,32 +465,26 @@ public class RepositoryCache {
             }
         }
     }
-
-    public RepositoryCache completeUpgrade( final Upgrades.Context resources ) {
-        if (upgradingRepository) {
-            try {
-                localStore().runInTransaction(() -> {
-                    LOGGER.debug("Upgrading repository '{0}'", name);
-                    lastUpgradeId = upgrades.applyUpgradesSince(lastUpgradeId, resources);
-                    LOGGER.debug("Recording upgrade completion in repository '{0}'", name);
-
-                    LocalDocumentStore store = documentStore().localStore();
-                    EditableDocument editor = store.edit(REPOSITORY_INFO_KEY, true);
-                    DateTime now = context().getValueFactories().getDateFactory().create();
-                    editor.setDate(REPOSITORY_UPGRADED_AT_FIELD_NAME, now.toDate());
-                    editor.setNumber(REPOSITORY_UPGRADE_ID_FIELD_NAME, lastUpgradeId);
-                    editor.remove(REPOSITORY_UPGRADER_FIELD_NAME);
-                    return null;
-                }, 1, REPOSITORY_INFO_KEY);
-                LOGGER.debug("Repository '{0}' is fully upgraded", name);
-            } catch (Throwable err) {
-                // We do NOT want an error during upgrade to prevent the repository from coming online.
-                // Therefore, we need to catch any exceptions here an log them, but continue ...
-                logger.error(err, JcrI18n.failureDuringUpgradeOperation, getName(), err);
-                resources.getProblems().addError(err, JcrI18n.failureDuringUpgradeOperation, getName(), err);
-            }
+    
+    private void doUpgrade(final Upgrades.Context resources) {
+        try {
+            LOGGER.debug("Upgrading repository '{0}'", name);
+            lastUpgradeId = upgrades.applyUpgradesSince(lastUpgradeId, resources);
+            LOGGER.debug("Recording upgrade completion in repository '{0}'", name);
+        
+            LocalDocumentStore store = documentStore().localStore();
+            EditableDocument editor = store.edit(REPOSITORY_INFO_KEY, true);
+            DateTime now = context().getValueFactories().getDateFactory().create();
+            editor.setDate(REPOSITORY_UPGRADED_AT_FIELD_NAME, now.toDate());
+            editor.setNumber(REPOSITORY_UPGRADE_ID_FIELD_NAME, lastUpgradeId);
+            editor.remove(REPOSITORY_UPGRADER_FIELD_NAME);
+            LOGGER.debug("Repository '{0}' is fully upgraded", name);
+        } catch (Throwable err) {
+            // We do NOT want an error during upgrade to prevent the repository from coming online.
+            // Therefore, we need to catch any exceptions here an log them, but continue ...
+            logger.error(err, JcrI18n.failureDuringUpgradeOperation, getName(), err);
+            resources.getProblems().addError(err, JcrI18n.failureDuringUpgradeOperation, getName(), err);
         }
-        return this;
     }
     
     public void startShutdown() {
@@ -510,10 +520,11 @@ public class RepositoryCache {
         return minimumStringLengthForBinaryStorage.get();
     }
 
-    protected void refreshRepositoryMetadata( boolean update ) {
+    protected Set<String> refreshRepositoryMetadata( boolean update ) {
         final String systemMetadataKeyStr = this.systemMetadataKey.toString();
         final boolean accessControlEnabled = this.accessControlEnabled.get();
         SchematicEntry entry = documentStore.get(systemMetadataKeyStr);
+        final Set<String> newWorkspaces = new HashSet<>(this.workspaceNames);
 
         if (!update && entry != null) {
             // We just need to read the metadata from the document, and we don't need a transaction for it ...
@@ -528,7 +539,6 @@ public class RepositoryCache {
             Property prop = translator.getProperty(doc, name("workspaces"));
             final Set<String> persistedWorkspaceNames = new HashSet<String>();
             ValueFactory<String> strings = context.getValueFactories().getStringFactory();
-            boolean workspaceNotYetPersisted = false;
             for (Object value : prop) {
                 String workspaceName = strings.create(value);
                 persistedWorkspaceNames.add(workspaceName);
@@ -536,16 +546,15 @@ public class RepositoryCache {
 
             // detect if there are any new workspaces in the configuration which need persisting
             for (String configuredWorkspaceName : workspaceNames) {
-                if (!persistedWorkspaceNames.contains(configuredWorkspaceName)) {
-                    workspaceNotYetPersisted = true;
-                    break;
+                if (persistedWorkspaceNames.contains(configuredWorkspaceName)) {
+                    newWorkspaces.remove(configuredWorkspaceName);
                 }
             }
             this.workspaceNames.addAll(persistedWorkspaceNames);
-            if (!workspaceNotYetPersisted) {
+            if (newWorkspaces.isEmpty()) {
                 // only exit if there isn't a new workspace present. Otherwise, the config added a new workspace so we need
                 // to make sure the meta-information is updated.
-                return;
+                return newWorkspaces;
             }
         }
 
@@ -570,47 +579,11 @@ public class RepositoryCache {
 
                 return null;
             }, 2, REPOSITORY_INFO_KEY);
+            return newWorkspaces;
         } catch (RuntimeException re) {
             LOGGER.error(JcrI18n.errorUpdatingRepositoryMetadata, name, re.getMessage());
             throw re;
         }
-    }
-
-    /**
-     * Executes the given operation only once, when the repository is created for the first time, using child node under
-     * jcr:system as a global "lock". In a cluster, this should only be run by the node which performs the initialization.
-     *
-     * @param initOperation a {@code non-null} {@link Callable} instance
-     * @throws Exception if anything unexpected occurs, clients are expected to handle this
-     */
-    public void runOneTimeSystemInitializationOperation( Callable<Void> initOperation ) throws Exception {
-        if (!isInitializingRepository()) {
-            // we should only perform this operation if this is the node (in a cluster) that's initializing the repository
-            return;
-        }
-
-        SessionCache systemSession = createSession(context, systemWorkspaceName, false);
-        MutableCachedNode systemNode = getSystemNode(systemSession);
-
-        // look for the node which acts as a "global monitor"
-        ChildReference repositoryReference = systemNode.getChildReferences(systemSession).getChild(ModeShapeLexicon.REPOSITORY);
-        if (repositoryReference != null) {
-            // the presence of the repository node indicates that the operation has been run on this repository
-            return;
-        }
-
-        initOperation.call();
-        Property primaryType = context.getPropertyFactory().create(JcrLexicon.PRIMARY_TYPE, ModeShapeLexicon.REPOSITORY);
-        systemNode.createChild(systemSession, systemNode.getKey().withId("mode:repository"), ModeShapeLexicon.REPOSITORY,
-                               primaryType);
-        systemSession.save();
-    }
-
-    private MutableCachedNode getSystemNode( SessionCache systemSession ) {
-        NodeKey systemRootKey = systemSession.getRootKey();
-        CachedNode systemRoot = systemSession.getNode(systemRootKey);
-        ChildReference systemRef = systemRoot.getChildReferences(systemSession).getChild(JcrLexicon.SYSTEM);
-        return systemSession.mutable(systemRef.getKey());
     }
     
     protected class ChangesToWorkspacesListener implements ChangeSetListener {
@@ -711,7 +684,7 @@ public class RepositoryCache {
         String workspaceKey = NodeKey.keyForWorkspaceName(name);
         NodeKey rootKey = new NodeKey(sourceKey, workspaceKey, rootNodeId);
 
-        return localStore().runInLocalTransaction(() -> {
+        return localStore().runInTransaction(() -> {
             ConcurrentMap<NodeKey, CachedNode> nodeCache = cacheForWorkspace().asMap();
             ExecutionContext context = context();
             logger.debug("Attempting to initialize a new ws cache for workspace '{0}' in repository '{1}' with root key '{2}'", name, 
@@ -757,7 +730,7 @@ public class RepositoryCache {
               }
             } 
             return result;
-        }, 0, REPOSITORY_INFO_KEY);
+        }, 2, REPOSITORY_INFO_KEY);
     }
     
     protected Cache<NodeKey, CachedNode> cacheForWorkspace() {

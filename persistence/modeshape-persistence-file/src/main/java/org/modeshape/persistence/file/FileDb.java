@@ -215,6 +215,12 @@ public class FileDb implements SchematicDb {
     @Override
     public void txStarted( String id ) {
         LOGGER.debug("New tx '{0}' started...", id);
+        String currentTx = ACTIVE_TX_ID.get();
+        if (currentTx != null && !id.equals(currentTx)) {
+            throw new FileProviderException(
+                    "ModeShape transaction '" + currentTx + "' already associated to current thread; cannot associate new transaction " +
+                    "'" + id  + "'");
+        }
         ACTIVE_TX_ID.set(id);
         this.transactionalContentById.putIfAbsent(id, this.txStore.begin().openMap(REPOSITORY_CONTENT));
     }
@@ -255,7 +261,14 @@ public class FileDb implements SchematicDb {
         }
         TransactionStore.TransactionMap<String, Document> result = this.transactionalContentById.get(currentTxId);
         if (result == null) {
-            throw new FileProviderException("No MV store transaction was found for tx id '" + currentTxId +"'");
+            if (failIfMissing) {
+                throw new FileProviderException("No MV store transaction was found for tx id '" + currentTxId +"'");
+            } else {
+                LOGGER.debug(
+                        "Found active ModeShape transaction '{0}' without a corresponding MV store transaction; most likely this has been committed off a separate thread",
+                        currentTxId);
+                ACTIVE_TX_ID.remove();
+            }
         }
         return result;
     }

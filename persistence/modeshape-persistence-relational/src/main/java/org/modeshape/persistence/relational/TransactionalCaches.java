@@ -57,11 +57,7 @@ public final class TransactionalCaches {
         }
         return cache.getFromReadCache(key); 
     }
-    
-    protected boolean hasBeenRead(String key) {
-        return cacheForActiveTransaction().readCache().containsKey(key);
-    }
-
+ 
     protected Document getForWriting(String key) {
         return cacheForActiveTransaction().getFromWriteCache(key);                     
     }
@@ -84,10 +80,6 @@ public final class TransactionalCaches {
                              .filter(entry -> !transactionalCache.isRemoved(entry.getKey()))
                              .map(Map.Entry::getKey)
                              .collect(Collectors.toSet());
-    }
-    
-    protected ConcurrentMap<String, Document> writeCache() {
-        return cacheForActiveTransaction().writeCache();
     }
     
     protected  boolean isRemoved(String key) {
@@ -123,13 +115,17 @@ public final class TransactionalCaches {
     protected void stop() {
         cachesByTxId.clear();
     }
-
+    
     private TransactionalCache cacheForActiveTransaction() {
         String activeTxId = TransactionsHolder.requireActiveTransaction();
         return cachesByTxId.computeIfAbsent(activeTxId, TransactionalCache::new);
     }
+    
+    protected TransactionalCache cacheForTransaction(String txId) {
+        return cachesByTxId.get(txId);
+    }
 
-    private static class TransactionalCache {
+    protected static class TransactionalCache {
         private final ConcurrentMap<String, Document> read = new ConcurrentHashMap<>();
         private final ConcurrentMap<String, Document> write = new ConcurrentHashMap<>();
         private final Set<String> newIds = Collections.newSetFromMap(new ConcurrentHashMap<>());

@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Set;
 import javax.jcr.Node;
 import javax.jcr.RepositoryException;
 import javax.jcr.Value;
@@ -60,6 +61,23 @@ public final class InitialContentImporter {
                             JcrRepository.RunningState repository ) {
         this.initialContentConfig = initialContentConfig;
         this.repository = repository;
+    }
+    
+    protected void initialize() {
+        RepositoryCache repositoryCache = repository.repositoryCache();
+        if (!repositoryCache.isInitializingRepository()) {
+            return;
+        }
+        Set<String> workspaceNames = repositoryCache.getWorkspaceNames();
+        if (workspaceNames.isEmpty()) {
+            return;   
+        }
+        repository.localDocumentStore().runInTransaction(() -> {
+            for (String workspace : workspaceNames) {
+                importInitialContent(workspace);       
+            }
+            return null;
+        }, 0, RepositoryCache.REPOSITORY_INFO_KEY);
     }
 
     protected void importInitialContent( String workspaceName ) throws RepositoryException {

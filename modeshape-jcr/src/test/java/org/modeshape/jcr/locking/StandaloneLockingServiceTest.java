@@ -19,13 +19,13 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -83,7 +83,7 @@ public class StandaloneLockingServiceTest {
     public void shouldFailIfLocksAlreadyHeld() throws Exception {
         assertLock(service, true, "lock1", "lock2");
         CompletableFuture.runAsync(() -> assertLock(service, false, "lock2", "lock1"), executors)
-                         .thenRunAsync(() -> assertFalse(service.unlock("lock1", "lock2")), executors)                 
+                         .thenRunAsync(() -> assertLock(service, false, "lock1", "lock2"), executors)                 
                          .get();
         assertTrue(service.unlock("lock1", "lock2"));
     }
@@ -117,12 +117,20 @@ public class StandaloneLockingServiceTest {
         int threadCount = 100;
         int uniqueLocksPerThread = 3;
         List<String> results = new ArrayList<>();
-        ForkJoinPool forkJoinPool = new ForkJoinPool(threadCount);
-        forkJoinPool.submit(() -> IntStream.range(0, threadCount)
-                                           .parallel()
-                                           .forEach(i -> lockAndUnlock(service, commonLock, uniqueLocksPerThread, results)))
-                    .get();
-        assertEquals("exclusive access was not ensured", threadCount * uniqueLocksPerThread, results.size());
+        ExecutorService executorService = Executors.newFixedThreadPool(threadCount);
+        IntStream.range(0, threadCount)
+                 .forEach(i -> executorService.submit(() -> {
+                     lockAndUnlock(service, commonLock, uniqueLocksPerThread, results);
+                     return null;
+                 }));
+        executorService.shutdown();
+        if (!executorService.awaitTermination(10, TimeUnit.SECONDS)) {
+            fail("Could obtain locks in an orderly amount of time..");
+            executorService.shutdownNow();
+        } else {
+            assertEquals("exclusive access was not ensured", threadCount * uniqueLocksPerThread,
+                         results.size());
+        }
     }
 
     private void lockAndUnlock(LockingService service, String commonLock, int uniqueLocksCount, List<String> accumulator) {
