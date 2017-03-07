@@ -70,11 +70,6 @@ public class ModeShapeLexicon {
     public static final Name LOCALNAME = new BasicName(Namespace.URI, "localName");
 
     /**
-     * The name of the node which is used for running 1-time operations
-     */
-    public static final Name REPOSITORY = new BasicName(Namespace.URI, "repository");
-
-    /**
      * Federation related items
      */
     public static final Name FEDERATION = new BasicName(Namespace.URI, "federation");

@@ -1,0 +1,20 @@
+{
+    "name" : "DB File Repository",
+    "workspaces" : {
+        "default" : "default",
+        "predefined" : ["otherWorkspace"],
+        "allowCreation" : true
+    },
+    "storage" : {
+        "persistence" : {
+            "type" : "db",
+            "connectionUrl": "jdbc:h2:file:./target/txn/db"
+        }
+    },
+    "security" : {
+        "anonymous" : {
+            "roles" : ["readonly","readwrite","admin"],
+            "useOnFailedLogin" : false
+        }
+    }
+}

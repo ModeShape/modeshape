@@ -20,6 +20,9 @@ import java.net.URL;
 import java.util.Arrays;
 import java.util.Properties;
 import javax.jcr.Repository;
+import javax.transaction.Status;
+import javax.transaction.SystemException;
+import javax.transaction.Transaction;
 import javax.transaction.TransactionManager;
 import org.junit.Assert;
 import org.modeshape.common.SystemFailureException;
@@ -83,9 +86,16 @@ public class TestingUtil {
     public static void killTransaction( TransactionManager txManager ) {
         if (txManager != null) {
             try {
-                txManager.rollback();
-            } catch (Exception e) {
-                // ignore
+                Transaction transaction = txManager.getTransaction();
+                if (transaction != null) {
+                    if (Status.STATUS_ACTIVE == transaction.getStatus()) {
+                        txManager.rollback();
+                    } else {
+                        txManager.suspend();
+                    }
+                }
+            } catch (SystemException e) {
+                //ignore
             }
         }
     }

@@ -15,9 +15,11 @@
  */
 package org.modeshape.jcr.locking;
 
-import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.AbstractQueuedSynchronizer;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.Lock;
 import org.modeshape.common.annotation.ThreadSafe;
-import org.modeshape.jcr.JcrI18n;
 
 /**
  * {@link LockingService} implementation that is used by ModeShape when running in non-clustered (local) mode.
@@ -26,7 +28,7 @@ import org.modeshape.jcr.JcrI18n;
  * @since 5.0
  */
 @ThreadSafe
-public class StandaloneLockingService extends AbstractLockingService<ReentrantLock> {
+public class StandaloneLockingService extends AbstractLockingService<StandaloneLockingService.NodeLock> {
 
     public StandaloneLockingService() {
         this(0);
@@ -37,32 +39,80 @@ public class StandaloneLockingService extends AbstractLockingService<ReentrantLo
     }
 
     @Override
-    protected ReentrantLock createLock(String name) {
-        return new ReentrantLock();
+    protected NodeLock createLock(String name) {
+        return new NodeLock();
     }
-
+    
     @Override
-    protected void validateLock(ReentrantLock lock) {
-        if (!lock.isHeldByCurrentThread()) {
-            if (lock.isLocked()) {
-                logger.warn(JcrI18n.warnAttemptingToUnlockAnotherLock, Thread.currentThread().getName(), lock);
-            } else {
-                logger.debug("attempting to unlock an already unlocked lock....");
+    protected boolean releaseLock( NodeLock lock ) {
+        // always allow unlocking, regardless of the thread
+        lock.unlock();
+        return true;
+    }
+    
+    /**
+     * A simple lock implementation which explicitly violates the default lock contract of only the owning thread being able
+     * to unlock. This is required because transaction commit/rollback ops can occur off different threads and therefore
+     * locks which were acquired on one thread should be unlocked in another.
+     */
+    protected static class NodeLock extends AbstractQueuedSynchronizer implements Lock {
+    
+        public NodeLock() {
+        }
+    
+        @Override
+        public void lock() {
+            acquire(1);        
+        }
+    
+        @Override
+        public void lockInterruptibly() throws InterruptedException {
+            acquireInterruptibly(1);        
+        }
+    
+        @Override
+        protected boolean tryAcquire(int arg) {
+            if (isHeldExclusively()) {
+                return true;
             }
-        }     
-    }
-
-    @Override
-    protected boolean releaseLock( ReentrantLock lock ) {
-        if (!lock.isHeldByCurrentThread()) {
-            logger.debug("Cannot release {0} because it is not held by the current thread...", lock);
+            if (compareAndSetState(0, arg)) {
+                setExclusiveOwnerThread(Thread.currentThread());
+                return true;
+            }
             return false;
         }
-        // Try to unlock the lock ...
-        // since these are reentrant, remove all the acquisitions by the calling thread
-        while (lock.getHoldCount() > 0) {
-            lock.unlock();
+    
+        @Override
+        protected boolean isHeldExclusively() {
+            return getState() > 0  && Thread.currentThread() == getExclusiveOwnerThread();
         }
-        return true;
+    
+        @Override
+        public boolean tryLock() {
+            return tryAcquire(1);            
+        }
+    
+        @Override
+        public boolean tryLock(long time, TimeUnit unit) throws InterruptedException {
+            return tryAcquireNanos(1, unit.toNanos(time));
+        }
+    
+        @Override
+        public void unlock() {
+            release(0);        
+        }
+    
+        @Override
+        protected boolean tryRelease(int arg) {
+            // simply allow the release to happen from *any* thread (see the comment for this class)
+            setExclusiveOwnerThread(null);
+            setState(0);
+            return true;
+        }
+    
+        @Override
+        public Condition newCondition() {
+            return new ConditionObject();
+        }
     }
 }

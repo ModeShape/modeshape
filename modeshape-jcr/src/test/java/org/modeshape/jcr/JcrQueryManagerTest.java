@@ -120,7 +120,7 @@ import org.modeshape.jcr.value.Path.Segment;
 public class JcrQueryManagerTest extends MultiUseAbstractTest {
 
     private static final String[] INDEXED_SYSTEM_NODES_PATHS = new String[] {"/jcr:system/jcr:nodeTypes",
-        "/jcr:system/mode:namespaces", "/jcr:system/mode:repository"};
+        "/jcr:system/mode:namespaces"};
 
     /** The total number of nodes excluding '/jcr:system' */
     protected static final int TOTAL_NON_SYSTEM_NODE_COUNT = 25;

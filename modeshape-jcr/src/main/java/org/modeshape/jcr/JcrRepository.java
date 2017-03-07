@@ -1249,17 +1249,10 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
 
                 // Load the index definitions AFTER the node types were imported ...
                 this.queryManager().getIndexManager().importIndexDefinitions();
-
-                if (repositoryCache().isInitializingRepository()) {
-                    // import initial content for each of the workspaces; this has to be done after the running state has started
-                    this.cache.runOneTimeSystemInitializationOperation(() -> {
-                        for (String workspaceName : repositoryCache().getWorkspaceNames()) {
-                            initialContentImporter().importInitialContent(workspaceName);
-                        }
-                        return null;
-                    });
-                }
-
+    
+                // import initial content for each of the workspaces; this has to be done after the running state has started
+                this.initialContentImporter.initialize();
+                
                 // connectors must be initialized after initial content because that can have an influence on projections
                 this.connectors.initialize();
 
@@ -1268,16 +1261,13 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                 this.repositoryQueryManager.initialize();
 
                 // Now record in the content that we're finished initializing the repository.
-                // This will commit the startup transaction.
-                repositoryCache().completeInitialization();
-
-                // Now complete the upgrade of the repository, if required. This will be done transactionally.
-                repositoryCache().completeUpgrade(new Upgrades.Context() {
+                // and run any upgrade operation optionally
+                repositoryCache().completeInitialization(new Upgrades.Context() {
                     @Override
                     public RunningState getRepository() {
                         return RunningState.this;
                     }
-
+    
                     @Override
                     public Problems getProblems() {
                         return RunningState.this.problems();
@@ -1387,11 +1377,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         final String journalId() {
             return journal != null ? journal.journalId() : null;
         }
-
-        final ClusteringService clusteringService() {
-            return clusteringService;
-        }
-
+        
         final QueryParsers queryParsers() {
             return queryParsers;
         }
@@ -1411,11 +1397,10 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
         protected final MimeTypeDetector mimeTypeDetector() {
             return mimeTypeDetector;
         }
-
-        protected final TextExtractors textExtractors() {
-            return extractors;
+            
+        protected final LocalDocumentStore localDocumentStore() {
+            return documentStore.localStore();
         }
-
         protected final Environment environment() {
             return config.environment();
         }

@@ -71,7 +71,7 @@ public abstract class AbstractLockingService<T extends Lock> implements LockingS
             T lock = null;
             try {
                 lock = locksByName.computeIfAbsent(name, this::createLock);
-                success = doLock(lock, name, time, unit);
+                success = doLock(lock, time, unit);
             } catch (Exception e) {
                 logger.debug(e, "unexpected exception while attempting to lock '{0}'", name);
             }
@@ -90,7 +90,7 @@ public abstract class AbstractLockingService<T extends Lock> implements LockingS
                     logger.debug("Unable to acquire lock on {0}. Reverting back the already obtained locks: {1}", name,
                                  successfullyLocked);
                     // and unlock all the rest of the locks...
-                    unlock(successfullyLocked.toArray(new String[successfullyLocked.size()]));
+                    unlock(successfullyLocked.toArray(new String[0]));
                 }
                 return false;
             }
@@ -115,7 +115,6 @@ public abstract class AbstractLockingService<T extends Lock> implements LockingS
         
         AtomicBoolean unlocked = new AtomicBoolean(false);
         locksByName.computeIfPresent(name, (key, lock) -> {
-            validateLock(lock);
             AtomicInteger waiters = locksByWaiters.computeIfPresent(name, (lockName, atomicInteger) -> {
                 if (releaseLock(lock)) {
                     logger.debug("{0} unlocked (ref {1})...", name, lock);
@@ -167,15 +166,11 @@ public abstract class AbstractLockingService<T extends Lock> implements LockingS
         });
     }
 
-    protected boolean doLock(T lock, String name, long time, TimeUnit timeUnit) throws InterruptedException {
+    protected boolean doLock(T lock, long time, TimeUnit timeUnit) throws InterruptedException {
         return time > 0 ? lock.tryLock(time, timeUnit) : lock.tryLock();
     }
 
-    protected long getLockTimeoutMillis() {
-        return lockTimeoutMillis;
-    }
-
     protected abstract T createLock(String name);
-    protected abstract void validateLock(T lock);
+    
     protected abstract boolean releaseLock(T lock);
 }
