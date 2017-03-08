@@ -186,13 +186,24 @@ public class DatabaseBinaryStore extends AbstractBinaryStore {
             cache.markAsUnused(temp.getKey());
         }
     }
-
+    
+    /**
+     * @inheritDoc
+     * 
+     * In addition to the generic contract from {@link BinaryStore}, this implementation will use a database connection to read
+     * the contents of a binary stream from the database. If such a stream cannot be found or an unexpected exception occurs,
+     * the connection is always closed.
+     * <p/>
+     * However, if the content is found in the database, the {@link Connection} <b>is not closed</b> until the {@code InputStream}
+     * is closed because otherwise actual streaming from the database could not be possible.
+     */
     @Override
     public InputStream getInputStream( BinaryKey key ) throws BinaryStoreException {
         Connection connection = newConnection();
         try {
             InputStream inputStream = database.readContent(key, connection);
             if (inputStream == null) {
+                // if we didn't find anything, the connection should've been closed already
                 throw new BinaryStoreException(JcrI18n.unableToFindBinaryValue.text(key, database.getTableName()));
             }
             // the connection & statement will be left open until the stream is closed !
