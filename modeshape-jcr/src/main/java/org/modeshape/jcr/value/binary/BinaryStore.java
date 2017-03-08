@@ -98,6 +98,9 @@ public interface BinaryStore {
     /**
      * Get an {@link InputStream} to the binary content with the supplied key. The input stream will be returned as long as
      * the binary value has not been removed, so expired binary values should be included here as well.
+     * <p/>
+     * <b>Caution:</b> always consume the {@link InputStream} using a {@code try-with-resources} idiom to ensure it's properly closed. 
+     * Not closing the stream can result in different and unpredictable behaviour, based on the type of binary store used.
      * 
      * @param key the key to the binary content; never null
      * @return the input stream through which the content can be read, {@code never null}

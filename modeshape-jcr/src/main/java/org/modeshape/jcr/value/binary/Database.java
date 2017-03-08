@@ -263,14 +263,17 @@ public class Database {
             return false;
         } 
     }
-
+    
     /**
      * Attempts to return the content stream for a given binary value.
-     * 
+     * If a content stream can be read from the database, this method will not close the given connection. However, if either
+     * the stream cannot be found or there is an unexpected exception, this method <b>will close</b> the {@code connection}
+     * parameter.
+     *
      * @param key a {@link org.modeshape.jcr.value.BinaryKey} the key of the binary value, may not be null
      * @param connection a {@link java.sql.Connection} instance, may not be null
      * @return either a stream that wraps the input stream of the binary value and closes the connection and the statement when it
-     *         terminates or {@code null}, meaning that the binary was not found.
+     * terminates or {@code null}, meaning that the binary was not found.
      * @throws SQLException if anything unexpected fails
      */
     protected InputStream readContent( BinaryKey key,
@@ -279,10 +282,18 @@ public class Database {
             // first search the contents which are in use
             InputStream is = readStreamFromStatement(USED_CONTENT_STMT_KEY, key, connection);
             if (is != null) {
+                // return the stream without closing the connection
                 return is;
             }
             // then search the contents which are in the trash
-            return readStreamFromStatement(UNUSED_CONTENT_STMT_KEY, key, connection);
+            is = readStreamFromStatement(UNUSED_CONTENT_STMT_KEY, key, connection);
+            if (is != null) {
+                // return the stream without closing the connection
+                return is;
+            }
+            // we couldn't find anything, so close the connection
+            tryToClose(connection);
+            return null;
         } catch (Throwable t) {
             tryToClose(connection);
             throw t;
