@@ -15,6 +15,7 @@
  */
 package org.modeshape.jcr.cache;
 
+import java.util.Date;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -60,7 +61,6 @@ import org.modeshape.jcr.cache.document.TransactionalWorkspaceCaches;
 import org.modeshape.jcr.cache.document.WorkspaceCache;
 import org.modeshape.jcr.cache.document.WritableSessionCache;
 import org.modeshape.jcr.federation.FederatedDocumentStore;
-import org.modeshape.jcr.locking.LockingService;
 import org.modeshape.jcr.spi.federation.Connector;
 import org.modeshape.jcr.value.Name;
 import org.modeshape.jcr.value.Property;
@@ -80,7 +80,6 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 public class RepositoryCache {
 
     public static final String REPOSITORY_INFO_KEY = "repository:info";
-    public static final String INITIALIZATION_LOCK = "modeshape-init-lock";
 
     private static final Logger LOGGER = Logger.getLogger(RepositoryCache.class);
 
@@ -121,23 +120,19 @@ public class RepositoryCache {
     private volatile boolean initializingRepository = false;
     private volatile boolean upgradingRepository = false;
     private int lastUpgradeId;
-    private final LockingService startupLockingService;
-    private volatile boolean isHoldingClusterLock = false;
     private final int workspaceCacheSize;
 
-    public RepositoryCache( ExecutionContext context,
-                            DocumentStore documentStore,
-                            LockingService startupLockingService,
-                            RepositoryConfiguration configuration,
-                            ContentInitializer initializer,
-                            RepositoryEnvironment repositoryEnvironment,
-                            ChangeBus changeBus,
-                            Upgrades upgradeFunctions ) {
+    public RepositoryCache(ExecutionContext context,
+                           DocumentStore documentStore,
+                           RepositoryConfiguration configuration,
+                           ContentInitializer initializer,
+                           RepositoryEnvironment repositoryEnvironment,
+                           ChangeBus changeBus,
+                           Upgrades upgradeFunctions) {
         assert initializer != null;
         this.context = context;
         this.configuration = configuration;
         this.documentStore = documentStore;
-        this.startupLockingService = startupLockingService;
         this.minimumStringLengthForBinaryStorage.set(configuration.getBinaryStorage().getMinimumStringSize());
         this.translator = new DocumentTranslator(this.context, this.documentStore, this.minimumStringLengthForBinaryStorage.get());
         this.repositoryEnvironment = repositoryEnvironment;
@@ -152,26 +147,13 @@ public class RepositoryCache {
         this.workspaceCacheSize = configuration.getWorkspaceCacheSize();
         CheckArg.isPositive(workspaceCacheSize, "workspaceCacheSize");
         
-        // if we're running in a cluster, try to acquire a global cluster lock to perform initialization or to force multiple 
-        // nodes to wait for the one performing the initialization
-        if (startupLockingService != null) {
-            int minutesToWait = 10;
-            LOGGER.debug("Waiting at most for {0} minutes while verifying the status of the '{1}' repository", minutesToWait,
-                         name);
-            waitUntil(() -> startupLockingService.tryLock(0, TimeUnit.MILLISECONDS, INITIALIZATION_LOCK), minutesToWait, TimeUnit.MINUTES,
-                      JcrI18n.repositoryWasNeverInitializedAfterMinutes);
-            LOGGER.debug("Repository '{0}' acquired clustered-wide lock for performing initialization or verifying status", name);
-            // at this point we should have a global cluster-wide lock
-            isHoldingClusterLock = true;
-        }
-
         SchematicEntry repositoryInfo = this.documentStore.localStore().get(REPOSITORY_INFO_KEY);
         boolean upgradeRequired = false;
         String databaseId = documentStore.localStore().databaseId();
         if (repositoryInfo == null) {
             // Create a UUID that we'll use as the string specifying who is doing the initialization ...
             String initializerId = UUID.randomUUID().toString();
-
+    
             // Must be a new repository (or one created before 3.0.0.Final) ...
             this.repoKey = NodeKey.keyForSourceName(this.name);
             this.sourceKey = NodeKey.keyForSourceName(databaseId);
@@ -182,24 +164,56 @@ public class RepositoryCache {
             doc.setString(REPOSITORY_KEY_FIELD_NAME, this.repoKey);
             doc.setString(REPOSITORY_SOURCE_NAME_FIELD_NAME, databaseId);
             doc.setString(REPOSITORY_SOURCE_KEY_FIELD_NAME, this.sourceKey);
-            doc.setDate(REPOSITORY_CREATED_AT_FIELD_NAME, now.toDate());
+            Date creationDate = now.toDate();
+            doc.setDate(REPOSITORY_CREATED_AT_FIELD_NAME, creationDate);
             doc.setString(REPOSITORY_INITIALIZER_FIELD_NAME, initializerId);
             doc.setString(REPOSITORY_CREATED_WITH_MODESHAPE_VERSION_FIELD_NAME, ModeShape.getVersion());
             doc.setNumber(REPOSITORY_UPGRADE_ID_FIELD_NAME, upgrades.getLatestAvailableUpgradeId());
-
-            SchematicEntry entryWrittenBySomeOtherProcess = localStore().runInTransaction(
-                    () -> this.documentStore.storeIfAbsent(REPOSITORY_INFO_KEY, doc), 0);
-            // store the repository info
-            if (entryWrittenBySomeOtherProcess != null) {
-                // if clustered, we should be holding a cluster-wide lock, so if some other process managed to write under this
-                // key smth is seriously wrong. If not clustered, only 1 thread will always perform repository initialization.
-                // in either case, this should not happen
-                throw new SystemFailureException(JcrI18n.repositoryWasInitializedByOtherProcess.text(name));
+    
+            // loop until we know for sure someone is initializing a repository
+            boolean initializerDecided = false;
+            while (!initializerDecided) {
+                LOGGER.debug("Initializer '{0}' is determining who should be initializing repository '{1}'", initializerId,
+                             name);
+                // run a transaction which writes the repository info to the DB. Note that it's possible in a cluster for someone
+                // else to have successfully written something else first
+                localStore().runInTransaction(
+                        () -> this.documentStore.storeIfAbsent(REPOSITORY_INFO_KEY, doc), 0);
+                // re-read the entry which was persisted (may be ours but may also belong to another process)
+                // note that we're not relying on the outcome of the previous method intentionally to avoid any potential DB transaction
+                // isolation issues, which could give us back our own entry even though someone else may've persisted something else
+                SchematicEntry initializerInfo = this.documentStore.get(REPOSITORY_INFO_KEY);
+                if (initializerInfo != null) {
+                    Document content = initializerInfo.content();
+                    initializingRepository = initializerId.equals(content.getString(REPOSITORY_INITIALIZER_FIELD_NAME)) &&
+                                             creationDate.equals(content.getDate(REPOSITORY_CREATED_AT_FIELD_NAME));
+                    if (initializingRepository || content.containsField(REPOSITORY_INITIALIZED_AT_FIELD_NAME)) {
+                        // we're the ones initializing or someone else has already finished
+                        initializerDecided = true;
+                    } else {
+                        // someone else is doing the initialization so wait until that completes or is rolled back
+                        AtomicBoolean isRolledBack = new AtomicBoolean(false);
+                        waitUntil(() -> {
+                            LOGGER.debug("Repository '{0}' is being initialized by another process; waiting until that finished or is rolled back");
+                            SchematicEntry persistedInitializerInfo = this.documentStore.get(REPOSITORY_INFO_KEY);
+                            if (persistedInitializerInfo == null) {
+                                isRolledBack.set(true);
+                            }
+                            return isRolledBack.get() || 
+                                   persistedInitializerInfo.content().containsField(REPOSITORY_INITIALIZED_AT_FIELD_NAME);
+                        }, 10, TimeUnit.MINUTES, JcrI18n.repositoryWasNeverInitializedAfterMinutes);
+                        // it may have been rolled back, in which case we'll try ourselves again
+                        initializerDecided = !isRolledBack.get();
+                    }
+                }
             }
-            repositoryInfo = this.documentStore.get(REPOSITORY_INFO_KEY);
-            // We're doing the initialization ...
-            initializingRepository = true;
-            LOGGER.debug("Initializing the '{0}' repository", name);
+            if (!initializingRepository) {
+                // some other process (local or in a cluster) has gotten ahead of us...
+                LOGGER.debug("Repository '{0}' has been initialized by another initializer: '{1}'", name, initializerId);
+            } else {
+                // We're doing the initialization ...
+                LOGGER.debug("Initializer '{0}' is initializing repository '{1}'", initializerId, name);
+            }
         } else {
             // Get the repository key and source key from the repository info document ...
             Document info = repositoryInfo.content();
@@ -356,27 +370,18 @@ public class RepositoryCache {
      * error occurs.
      */
     public final void rollbackRepositoryInfo() {
-        try {
-            SchematicEntry repositoryInfoEntry = this.documentStore.localStore().get(REPOSITORY_INFO_KEY);
-            if (repositoryInfoEntry != null && isInitializingRepository()) {
-                localStore().runInTransaction(() -> {
-                    Document repoInfoDoc = repositoryInfoEntry.content();
-                    // we should only remove the repository info if it wasn't initialized successfully previously
-                    // in a cluster, it may happen that another node finished initialization while this node crashed (in which case we
-                    // should not remove the entry)
-                    if (!repoInfoDoc.containsField(REPOSITORY_INITIALIZED_AT_FIELD_NAME)) {
-                        this.documentStore.localStore().remove(REPOSITORY_INFO_KEY);
-                    }
-                    return null;
-                }, 0, REPOSITORY_INFO_KEY); 
-            }
-        } finally {
-            // if we have a global cluster-wide lock, make sure its released
-            if (isHoldingClusterLock) {
-                startupLockingService.unlock(INITIALIZATION_LOCK);
-                isHoldingClusterLock = false;
-                LOGGER.debug("Repository '{0}' released clustered-wide lock after failing to start up ", name);
-            }
+        SchematicEntry repositoryInfoEntry = this.documentStore.localStore().get(REPOSITORY_INFO_KEY);
+        if (repositoryInfoEntry != null && initializingRepository) {
+            localStore().runInTransaction(() -> {
+                Document repoInfoDoc = repositoryInfoEntry.content();
+                // we should only remove the repository info if it wasn't initialized successfully previously
+                // in a cluster, it may happen that another node finished initialization while this node crashed (in which case we
+                // should not remove the entry)
+                if (!repoInfoDoc.containsField(REPOSITORY_INITIALIZED_AT_FIELD_NAME)) {
+                    this.documentStore.localStore().remove(REPOSITORY_INFO_KEY);
+                }
+                return null;
+            }, 0, REPOSITORY_INFO_KEY);
         }
     }
     
@@ -447,23 +452,14 @@ public class RepositoryCache {
     }
     
     private void writeInitializedAt() {
-        try {
-            LOGGER.debug("Marking repository '{0}' as fully initialized", name);
-            LocalDocumentStore store = documentStore().localStore();
-            EditableDocument repositoryInfo = store.edit(REPOSITORY_INFO_KEY, true);
-            if (repositoryInfo.get(REPOSITORY_INITIALIZED_AT_FIELD_NAME) == null) {
-                DateTime now = context().getValueFactories().getDateFactory().create();
-                repositoryInfo.setDate(REPOSITORY_INITIALIZED_AT_FIELD_NAME, now.toDate());
-            }
-            LOGGER.debug("Repository '{0}' is fully initialized", name);
-        } finally {
-            // if we have a global cluster-wide lock, make sure its released
-            if (isHoldingClusterLock) {
-                startupLockingService.unlock(INITIALIZATION_LOCK);
-                isHoldingClusterLock = false;
-                LOGGER.debug("Repository '{0}' released clustered-wide lock after successful startup", name);
-            }
+        LOGGER.debug("Marking repository '{0}' as fully initialized", name);
+        LocalDocumentStore store = documentStore().localStore();
+        EditableDocument repositoryInfo = store.edit(REPOSITORY_INFO_KEY, true);
+        if (repositoryInfo.get(REPOSITORY_INITIALIZED_AT_FIELD_NAME) == null) {
+            DateTime now = context().getValueFactories().getDateFactory().create();
+            repositoryInfo.setDate(REPOSITORY_INITIALIZED_AT_FIELD_NAME, now.toDate());
         }
+        LOGGER.debug("Repository '{0}' is fully initialized", name);
     }
     
     private void doUpgrade(final Upgrades.Context resources) {

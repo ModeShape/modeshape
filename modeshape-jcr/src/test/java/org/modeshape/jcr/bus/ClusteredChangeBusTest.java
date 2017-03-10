@@ -16,8 +16,6 @@
 
 package org.modeshape.jcr.bus;
 
-import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.assertThat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -29,6 +27,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.modeshape.jcr.ClusteringHelper;
 import org.modeshape.jcr.cache.change.ChangeSet;
+import org.modeshape.jcr.cache.change.ChangeSetListener;
 import org.modeshape.jcr.clustering.ClusteringService;
 
 /**
@@ -71,240 +70,85 @@ public class ClusteredChangeBusTest extends AbstractChangeBusTest {
             executorService.shutdownNow();
         }
     }
-
+    
     @Test
-    public void shouldSendChangeSetThroughCluster() throws Exception {
+    public void oneBusShouldNotifyRegisteredListeners() throws Exception {
         // Create three observers ...
-        TestListener listener1 = new TestListener();
-        TestListener listener2 = new TestListener();
-        TestListener listener3 = new TestListener();
-
-        // Create three buses using a real JGroups cluster ...
-        ClusteredChangeBus bus1 = startNewBus(0);
-        bus1.register(listener1);
-        // ------------------------------------
+        TestListener listener1 = new TestListener(1);
+        
+        startBusWithRegisteredListener(listener1);
+       
         // Send a change from the first bus ...
-        // ------------------------------------
-
-        // Set the observers to expect one event ...
-        listener1.expectChangeSet(1);
-        listener2.expectChangeSet(0); // shutdown
-        listener3.expectChangeSet(0); // shutdown
-
-        // Send changeSet to one of the buses ...
         ChangeSet changeSet = new TestChangeSet("ws1");
-        bus1.notify(changeSet);
-
-        // Wait for the observers to be notified ...
-        listener1.assertExpectedEventsCount();
-        listener2.assertExpectedEventsCount();
-        listener3.assertExpectedEventsCount();
-
-        // Now verify that all of the observers received the notification ...
-        assertThat(listener1.getObservedChangeSet().size(), is(1));
-        assertThat(listener2.getObservedChangeSet().size(), is(0));
-        assertThat(listener3.getObservedChangeSet().size(), is(0));
-        assertThat(listener1.getObservedChangeSet().get(0), is(changeSet));
-
-        // ------------------------------------
-        // Create a second bus ...
-        // ------------------------------------
-        ClusteredChangeBus bus2 = startNewBus(1);
-        bus2.register(listener2);
-
-        // ------------------------------------
-        // Send a change from the first bus ...
-        // ------------------------------------
-
-        // Set the observers to expect one event ...
-        listener1.expectChangeSet(1);
-        listener2.expectChangeSet(1);
-        listener3.expectChangeSet(0); // shutdown
-
-        // Send changeSet to one of the buses ...
-        changeSet = new TestChangeSet("ws1");
-        bus1.notify(changeSet);
-
-        // Wait for the observers to be notified ...
-        listener1.assertExpectedEventsCount();
-        listener2.assertExpectedEventsCount();
-        listener3.assertExpectedEventsCount();
-
-        // Now verify that all of the observers received the notification ...
-        assertThat(listener1.getObservedChangeSet().size(), is(1));
-        assertThat(listener2.getObservedChangeSet().size(), is(1));
-        assertThat(listener3.getObservedChangeSet().size(), is(0));
-        assertThat(listener1.getObservedChangeSet().get(0), is(changeSet));
-        assertThat(listener2.getObservedChangeSet().get(0), is(changeSet));
-
-        // ------------------------------------
-        // Send a change from the second bus ...
-        // ------------------------------------
-
-        // Set the observers to expect one event ...
-        listener1.expectChangeSet(1);
-        listener2.expectChangeSet(1);
-        listener3.expectChangeSet(0); // shutdown
-
-        // Send changeSet to one of the buses ...
-        changeSet = new TestChangeSet("ws2");
-        bus2.notify(changeSet);
-
-        // Wait for the observers to be notified ...
-        listener1.assertExpectedEventsCount();
-        listener2.assertExpectedEventsCount();
-        listener3.assertExpectedEventsCount();
-
-        // Now verify that all of the observers received the notification ...
-        assertThat(listener1.getObservedChangeSet().size(), is(1));
-        assertThat(listener2.getObservedChangeSet().size(), is(1));
-        assertThat(listener3.getObservedChangeSet().size(), is(0));
-        assertThat(listener1.getObservedChangeSet().get(0), is(changeSet));
-        assertThat(listener2.getObservedChangeSet().get(0), is(changeSet));
-
-        // ------------------------------------
-        // Create a third bus ...
-        // ------------------------------------
-        ClusteredChangeBus bus3 = startNewBus(2);
-        bus3.register(listener3);
-        // ------------------------------------
-        // Send a change from the first bus ...
-        // ------------------------------------
-
-        // Set the observers to expect one event ...
-        listener1.expectChangeSet(1);
-        listener2.expectChangeSet(1);
-        listener3.expectChangeSet(1);
-
-        // Send changeSet to one of the buses ...
-        changeSet = new TestChangeSet("ws1");
-        bus1.notify(changeSet);
-
-        // Wait for the observers to be notified ...
-        listener1.assertExpectedEventsCount();
-        listener2.assertExpectedEventsCount();
-        listener3.assertExpectedEventsCount();
-
-        // Now verify that all of the observers received the notification ...
-        assertThat(listener1.getObservedChangeSet().size(), is(1));
-        assertThat(listener2.getObservedChangeSet().size(), is(1));
-        assertThat(listener3.getObservedChangeSet().size(), is(1));
-        assertThat(listener1.getObservedChangeSet().get(0), is(changeSet));
-        assertThat(listener2.getObservedChangeSet().get(0), is(changeSet));
-        assertThat(listener3.getObservedChangeSet().get(0), is(changeSet));
-
-        // -------------------------------------
-        // Send a change from the second bus ...
-        // -------------------------------------
-
-        // Set the observers to expect one event ...
-        listener1.expectChangeSet(1);
-        listener2.expectChangeSet(1);
-        listener3.expectChangeSet(1);
-
-        // Send changeSet to one of the buses ...
-        ChangeSet changeSet2 = new TestChangeSet("ws2");
-        bus2.notify(changeSet2);
-
-        // Wait for the observers to be notified ...
-        listener1.assertExpectedEventsCount();
-        listener2.assertExpectedEventsCount();
-        listener3.assertExpectedEventsCount();
-
-        // Now verify that all of the observers received the notification ...
-        assertThat(listener1.getObservedChangeSet().size(), is(1));
-        assertThat(listener2.getObservedChangeSet().size(), is(1));
-        assertThat(listener3.getObservedChangeSet().size(), is(1));
-        assertThat(listener1.getObservedChangeSet().get(0), is(changeSet2));
-        assertThat(listener2.getObservedChangeSet().get(0), is(changeSet2));
-        assertThat(listener3.getObservedChangeSet().get(0), is(changeSet2));
-
-        // ------------------------------------
-        // Send a change from the third bus ...
-        // ------------------------------------
-
-        // Set the observers to expect one event ...
-        listener1.expectChangeSet(1);
-        listener2.expectChangeSet(1);
-        listener3.expectChangeSet(1);
-
-        // Send changeSet to one of the buses ...
-        ChangeSet changeSet3 = new TestChangeSet("ws3");
-        bus3.notify(changeSet3);
-
-        // Wait for the observers to be notified ...
-        listener1.assertExpectedEventsCount();
-        listener2.assertExpectedEventsCount();
-        listener3.assertExpectedEventsCount();
-
-        // Now verify that all of the observers received the notification ...
-        assertThat(listener1.getObservedChangeSet().size(), is(1));
-        assertThat(listener2.getObservedChangeSet().size(), is(1));
-        assertThat(listener3.getObservedChangeSet().size(), is(1));
-        assertThat(listener1.getObservedChangeSet().get(0), is(changeSet3));
-        assertThat(listener2.getObservedChangeSet().get(0), is(changeSet3));
-        assertThat(listener3.getObservedChangeSet().get(0), is(changeSet3));
-
-        // ---------------------------------------
-        // Stop the buses! I want to get off! ...
-        // ---------------------------------------
-        bus3.shutdown();
-        // ------------------------------------
-        // Send a change from the second bus ...
-        // ------------------------------------
-
-        // Set the observers to expect one event ...
-        listener1.expectChangeSet(1);
-        listener2.expectChangeSet(1);
-        listener3.expectChangeSet(0); // shutdown
-
-        // Send changeSet to one of the buses ...
-        changeSet = new TestChangeSet("ws2");
-        bus2.notify(changeSet);
-
-        // Wait for the observers to be notified ...
-        listener1.assertExpectedEventsCount();
-        listener2.assertExpectedEventsCount();
-        listener3.assertExpectedEventsCount();
-
-        // Now verify that all of the observers received the notification ...
-        assertThat(listener1.getObservedChangeSet().size(), is(1));
-        assertThat(listener2.getObservedChangeSet().size(), is(1));
-        assertThat(listener3.getObservedChangeSet().size(), is(0));
-        assertThat(listener1.getObservedChangeSet().get(0), is(changeSet));
-        assertThat(listener2.getObservedChangeSet().get(0), is(changeSet));
-
-        bus2.shutdown();
-        // ------------------------------------
-        // Send a change from the first bus ...
-        // ------------------------------------
-
-        // Set the observers to expect one event ...
-        listener1.expectChangeSet(1);
-        listener2.expectChangeSet(0); // shutdown
-        listener3.expectChangeSet(0); // shutdown
-
-        // Send changeSet to one of the buses ...
-        changeSet = new TestChangeSet("ws1");
-        bus1.notify(changeSet);
-
-        // Wait for the observers to be notified ...
-        listener1.assertExpectedEventsCount();
-        listener2.assertExpectedEventsCount();
-        listener3.assertExpectedEventsCount();
-
-        // Now verify that all of the observers received the notification ...
-        assertThat(listener1.getObservedChangeSet().size(), is(1));
-        assertThat(listener2.getObservedChangeSet().size(), is(0));
-        assertThat(listener3.getObservedChangeSet().size(), is(0));
-        assertThat(listener1.getObservedChangeSet().get(0), is(changeSet));
+        ChangeBus bus1 = buses.get(1);
+        bus1.notify(changeSet);          
+      
+        listener1.assertExpectedEvents(changeSet);
     }
-
+    
+    @Test
+    public void twoBusesShouldNotifyEachOther() throws Exception {
+        // Create three observers ...
+        TestListener listener1 = new TestListener(2);
+        TestListener listener2 = new TestListener(2);
+   
+        startBusWithRegisteredListener(listener1, listener2);
+    
+        // Send changeSet to one of the buses ...
+        ChangeSet changeSet1 = new TestChangeSet("bus1");
+        buses.get(1).notify(changeSet1);
+    
+        ChangeSet changeSet2 = new TestChangeSet("bus2");
+        buses.get(2).notify(changeSet2);    
+        
+        // Wait for the observers to be notified ...
+        listener1.assertExpectedEvents(changeSet1, changeSet2);
+        listener2.assertExpectedEvents(changeSet1, changeSet2);
+    } 
+    
+    @Test
+    public void shouldNotSendChangesIfBusIsShutdown() throws Exception {
+        // Create three observers ...
+        TestListener listener1 = new TestListener(1);
+        TestListener listener2 = new TestListener(1);
+        TestListener listener3 = new TestListener(1);
+    
+        startBusWithRegisteredListener(listener1, listener2, listener3);    
+      
+        // Send changeSet to one of the buses ...
+        ChangeSet changeSet = new TestChangeSet("bus3");
+        buses.get(3).notify(changeSet);
+        
+        listener1.assertExpectedEvents(changeSet);
+        listener2.assertExpectedEvents(changeSet);
+        listener3.assertExpectedEvents(changeSet);
+    
+        // shut down buses
+        buses.get(3).shutdown();
+        buses.get(2).shutdown();
+        
+        listener3.clear();
+        listener2.clear();
+        
+        changeSet = new TestChangeSet("bus1");
+        buses.get(1).notify(changeSet);
+    
+        listener2.assertNoEvents();
+        listener3.assertNoEvents();
+    }
+    
     private ClusteredChangeBus startNewBus(int clusteringServiceIdx) throws Exception {
         ChangeBus internalBus = new RepositoryChangeBus("repo", executorService);
         ClusteredChangeBus bus = new ClusteredChangeBus(internalBus, clusteringServices.get(clusteringServiceIdx));
         bus.start();
         buses.add(bus);
         return bus;
+    }
+    
+    private void startBusWithRegisteredListener(ChangeSetListener... listeners) throws Exception {
+        for (int i = 0; i < listeners.length; i++) {
+            ClusteredChangeBus bus = startNewBus(i);
+            bus.register(listeners[i]);
+        }
     }
 }

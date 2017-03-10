@@ -2321,7 +2321,7 @@ public class RepositoryConfiguration {
         }
         
         protected String getLocking() {
-            return clusteringDoc.getString(FieldName.CLUSTER_LOCKING, FieldValue.LOCKING_JGROUPS);
+            return clusteringDoc.getString(FieldName.CLUSTER_LOCKING, FieldValue.LOCKING_DB);
         }
         
         public boolean useDbLocking() {

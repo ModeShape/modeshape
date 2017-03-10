@@ -16,6 +16,7 @@
 package org.modeshape.schematic.internal.document;
 
 import java.util.Collections;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -221,7 +222,13 @@ public class BasicDocument extends LinkedHashMap<String, Object> implements Muta
         Object value = get(name);
         return (value instanceof Number) ? (Number)value : defaultValue;
     }
-
+    
+    @Override
+    public Date getDate(String name) {
+        Object value = get(name);
+        return (value instanceof Date) ? (Date)value : null;
+    }
+    
     @Override
     public String getString( String name ) {
         return getString(name, null);

@@ -251,7 +251,12 @@ public class ArrayEditor implements EditableArray {
     public Binary getBinary( String name ) {
         return array.getBinary(name);
     }
-
+    
+    @Override
+    public Date getDate(String name) {
+        return array.getDate(name);
+    }
+    
     @Override
     public Symbol getSymbol( String name ) {
         return array.getSymbol(name);

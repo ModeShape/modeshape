@@ -211,7 +211,12 @@ public class DocumentEditor implements EditableDocument {
                              Number defaultValue ) {
         return document.getNumber(name, defaultValue);
     }
-
+    
+    @Override
+    public Date getDate(String name) {
+        return document.getDate(name);
+    }
+    
     @Override
     public String getString( String name ) {
         return document.getString(name);

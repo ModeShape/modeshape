@@ -16,6 +16,7 @@
 package org.modeshape.schematic.document;
 
 import java.io.Serializable;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -247,6 +248,13 @@ public interface Document extends Serializable {
      * @return The {@link Binary} field value, if found, or null if there is no such pair or if the value is not a {@link Binary}
      */
     Binary getBinary( String name );
+    /**
+     * Get the {@link Date} value in this document for the given field name.
+     * 
+     * @param name The name of the pair
+     * @return The {@link Date} field value, if found, or null if there is no such pair or if the value is not a {@link Date}
+     */
+    Date getDate( String name );
 
     /**
      * Get the {@link Symbol} value in this document for the given field name.

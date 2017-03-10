@@ -1038,7 +1038,6 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                     this.connectors = new Connectors(this, config.getFederation(), problems);                    
                    
                     RepositoryConfiguration.Clustering clustering = config.getClustering();
-                    LockingService startupLockingService = null;
                     long lockTimeoutMillis = config.getLockTimeoutMillis();
                     if (clustering.isEnabled()) {
                         final String clusterName = clustering.getClusterName();
@@ -1048,9 +1047,9 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                         } else {
                             this.clusteringService = ClusteringService.startStandalone(clusterName, clustering.getConfiguration());        
                         }
-                        startupLockingService = new JGroupsLockingService(this.clusteringService.getChannel(), lockTimeoutMillis);
-                        this.lockingService = clustering.useDbLocking() ? 
-                                              new DbLockingService(lockTimeoutMillis, this.schematicDb) : startupLockingService;
+                        this.lockingService = clustering.useDbLocking() ?
+                                              new DbLockingService(lockTimeoutMillis, this.schematicDb) :
+                                              new JGroupsLockingService(this.clusteringService.getChannel(), lockTimeoutMillis);
                     } else {
                         this.clusteringService = null;
                         this.lockingService =  new StandaloneLockingService(lockTimeoutMillis);
@@ -1101,13 +1100,14 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                     }
 
                     // Set up the document store and environment
-                    final RepositoryEnvironment repositoryEnvironment = new JcrRepositoryEnvironment(transactions, lockingService,
+                    final RepositoryEnvironment repositoryEnvironment = new JcrRepositoryEnvironment(transactions,
+                                                                                                     this.lockingService,
                                                                                                      journalId());
                     LocalDocumentStore localStore = new LocalDocumentStore(schematicDb, repositoryEnvironment);
                     this.documentStore = connectors.hasConnectors() ? new FederatedDocumentStore(connectors, localStore) : localStore;
 
                     // Set up the repository cache ...
-                    this.cache = new RepositoryCache(context, documentStore, startupLockingService, config, systemContentInitializer,
+                    this.cache = new RepositoryCache(context, documentStore, config, systemContentInitializer,
                                                      repositoryEnvironment, changeBus, Upgrades.STANDARD_UPGRADES);
 
                     // Set up the node type manager ...
