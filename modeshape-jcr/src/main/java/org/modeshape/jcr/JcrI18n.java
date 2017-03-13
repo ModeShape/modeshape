@@ -37,7 +37,6 @@ public final class JcrI18n {
     public static I18n repositoryCannotBeStartedWithoutTransactionalSupport;
     public static I18n unableToInitializeSystemWorkspace;
     public static I18n repositoryWasNeverInitializedAfterMinutes;
-    public static I18n repositoryWasInitializedByOtherProcess;
     public static I18n repositoryWasNeverUpgradedAfterMinutes;
     public static I18n failureDuringUpgradeOperation;
     public static I18n errorShuttingDownIndexProvider;

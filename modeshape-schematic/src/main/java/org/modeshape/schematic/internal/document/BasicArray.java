@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -449,7 +450,13 @@ public class BasicArray implements MutableArray {
         Object value = get(name);
         return (value instanceof Binary) ? (Binary)value : null;
     }
-
+    
+    @Override
+    public Date getDate(String name) {
+        Object value = get(name);
+        return (value instanceof Date) ? (Date) value : null;
+    }
+    
     @Override
     public Symbol getSymbol( String name ) {
         Object value = get(name);

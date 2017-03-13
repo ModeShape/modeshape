@@ -20,16 +20,20 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -218,11 +222,7 @@ public abstract class AbstractChangeBusTest {
 
         for (TestChangeSet changeSet : receivedChanges) {
             String wsName = changeSet.getWorkspaceName();
-            List<Long> receivedTimes = changeSetsPerWs.get(wsName);
-            if (receivedTimes == null) {
-                receivedTimes = new ArrayList<>();
-                changeSetsPerWs.put(wsName, receivedTimes);
-            }
+            List<Long> receivedTimes = changeSetsPerWs.computeIfAbsent(wsName, k -> new ArrayList<>());
             for (Long receivedTime : receivedTimes) {
                 assertTrue(receivedTime <= changeSet.time());
             }
@@ -327,33 +327,41 @@ public abstract class AbstractChangeBusTest {
         public String getUUID() {
             return uuid;
         }
-
+    
         @Override
-        public boolean equals( Object o ) {
+        public boolean equals(Object o) {
             if (this == o) {
                 return true;
             }
-            if (!(o instanceof TestChangeSet)) {
+            if (o == null || getClass() != o.getClass()) {
                 return false;
             }
-
-            TestChangeSet other = (TestChangeSet)o;
-            return this.uuid.equals(other.uuid); 
+            TestChangeSet changes = (TestChangeSet) o;
+            return Objects.equals(workspaceName, changes.workspaceName) &&
+                   Objects.equals(uuid, changes.uuid);
         }
-
+    
         @Override
         public int hashCode() {
-            int result = workspaceName.hashCode();
-            result = 31 * result + (int)(time ^ (time >>> 32));
-            return result;
+            return Objects.hash(workspaceName, uuid);
+        }
+    
+        @Override
+        public String toString() {
+            final StringBuilder sb = new StringBuilder("changes[");
+            sb.append("workspaceName='").append(workspaceName).append('\'');
+            sb.append(", time=").append(time);
+            sb.append(", uuid='").append(uuid).append('\'');
+            sb.append(']');
+            return sb.toString();
         }
     }
 
     protected static class TestListener implements ChangeSetListener {
-        private final List<TestChangeSet> receivedChangeSet;
+        private final ConcurrentLinkedDeque<TestChangeSet> receivedChangeSet;
         private final long timeoutMillis;
-        private int expectedNumberOfEvents;
-        private CountDownLatch latch;
+        private final int expectedNumberOfEvents;
+        private final CountDownLatch latch;
 
         protected TestListener() {
             this(0);
@@ -366,27 +374,21 @@ public abstract class AbstractChangeBusTest {
         protected TestListener( int expectedNumberOfEvents,
                                 long timeoutMillis ) {
             this.latch = new CountDownLatch(expectedNumberOfEvents);
-            this.receivedChangeSet = new ArrayList<>();
+            this.receivedChangeSet = new ConcurrentLinkedDeque<>();
             this.timeoutMillis = timeoutMillis;
             this.expectedNumberOfEvents = expectedNumberOfEvents;
         }
 
-        public synchronized void expectChangeSet( int expectedNumberOfEvents ) {
-            this.latch = new CountDownLatch(expectedNumberOfEvents);
-            this.expectedNumberOfEvents = expectedNumberOfEvents;
-            receivedChangeSet.clear();
-        }
-
         @Override
-        public synchronized void notify( ChangeSet changeSet ) {
+        public void notify( ChangeSet changeSet ) {
             if (!(changeSet instanceof TestChangeSet)) {
                 throw new IllegalArgumentException("Invalid type of change set received");
             }
             receivedChangeSet.add((TestChangeSet)changeSet);
             latch.countDown();
         }
-
-        public void assertExpectedEventsCount() {
+    
+        protected void assertExpectedEventsCount() {
             try {
                 assertTrue("Not enough events received", latch.await(timeoutMillis, TimeUnit.MILLISECONDS));
                 assertEquals("Incorrect number of events received", expectedNumberOfEvents, receivedChangeSet.size());
@@ -395,9 +397,36 @@ public abstract class AbstractChangeBusTest {
                 fail("Interrupted while waiting to verify event count");
             }
         }
+    
+        protected void assertExpectedEvents(ChangeSet...changes) {
+            if (expectedNumberOfEvents != changes.length) {
+                fail("The expected number of events must match what you expect. Fix the test");
+            }
+            if (changes.length == 0) {
+                try {
+                    Thread.sleep(timeoutMillis);
+                } catch (InterruptedException e) {
+                    Thread.interrupted();
+                }
+                assertTrue(assertNoEvents());
+                return;
+            }
+            assertExpectedEventsCount();
+            List<TestChangeSet> actualChanges = getObservedChangeSet();
+            assertEquals("Incorrect number of changes received", changes.length, actualChanges.size());
+            receivedChangeSet.forEach(change -> assertTrue(actualChanges.contains(change)));
+        }
 
-        public synchronized List<TestChangeSet> getObservedChangeSet() {
-            return new ArrayList<>(receivedChangeSet);
+        protected List<TestChangeSet> getObservedChangeSet() {
+            return receivedChangeSet.stream().collect(Collectors.toList());
+        }
+       
+        protected boolean assertNoEvents() {
+            return receivedChangeSet.isEmpty();
+        }
+        
+        protected void clear() {
+            receivedChangeSet.clear();
         }
     }
 }

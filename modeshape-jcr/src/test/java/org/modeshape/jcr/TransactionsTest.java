@@ -62,6 +62,7 @@ import javax.transaction.Status;
 import javax.transaction.SystemException;
 import javax.transaction.Transaction;
 import javax.transaction.TransactionManager;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.modeshape.common.FixFor;
 import org.modeshape.common.util.FileUtil;
@@ -490,6 +491,7 @@ public class TransactionsTest extends SingleUseAbstractTest {
 
     @Test
     @FixFor( "MODE-2495" )
+    @Ignore( "ModeShape 5 requires thread confinement" )
     public void shouldSupportMultipleThreadsChangingTheSameUserTransaction() throws Exception {
         startRepositoryWithConfigurationFrom("config/repo-config-inmemory-txn.json");
 

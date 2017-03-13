@@ -77,8 +77,8 @@ public class ClusteredConfigurationIntegrationTest {
     @Test
     @FixFor({"MODE-1923", "MODE-1929", "MODE-2226"})
     public void clusteredRepositoryShouldHaveStartedUpUsingExternalJGroupsConfigFile() throws Exception {
-        checkRepoConfiguration(clusteredRepository1, "modeshape-wf-it1", true, false);
-        checkRepoConfiguration(clusteredRepository2, "modeshape-wf-it1", true, false);
+        checkRepoConfiguration(clusteredRepository1, "modeshape-wf-it1", true, true);
+        checkRepoConfiguration(clusteredRepository2, "modeshape-wf-it1", true, true);
         checkRepoStarted(clusteredRepository1, clusteredRepository2);
     }
     
