@@ -307,7 +307,8 @@ public class RelationalDb implements SchematicDb {
         logDebug("New transaction '{0}' started by ModeShape...", id);
         String activeTx = TransactionsHolder.activeTransaction(); 
         if (activeTx != null && !activeTx.equals(id)) {
-            LOGGER.warn(RelationalProviderI18n.threadAssociatedWithAnotherTransaction, activeTx, id);
+            LOGGER.warn(RelationalProviderI18n.threadAssociatedWithAnotherTransaction,
+                    Thread.currentThread().getName(), activeTx, id);
         }
         // mark the current thread as linked to a tx...
         TransactionsHolder.setActiveTxId(id);
