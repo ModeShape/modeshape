@@ -28,6 +28,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -3527,7 +3528,24 @@ abstract class AbstractJcrNode extends AbstractJcrItem implements Node {
             return e.getMessage();
         }
     }
-
+    
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof AbstractJcrNode)) {
+            return false;
+        }
+        AbstractJcrNode that = (AbstractJcrNode) o;
+        return Objects.equals(key, that.key);
+    }
+    
+    @Override
+    public int hashCode() {
+        return Objects.hash(key);
+    }
+    
     /**
      * Determines whether this node, or any nodes below it, contain changes that depend on nodes that are outside of this node's
      * hierarchy.

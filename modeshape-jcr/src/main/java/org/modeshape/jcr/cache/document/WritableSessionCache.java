@@ -1514,33 +1514,34 @@ public class WritableSessionCache extends AbstractSessionCache {
                 logger.debug("The keys {0} have been locked previously as part of the transaction {1}; skipping them...",
                              changedNodesKeys, txId);    
             }             
-        } else {
-            // there are new nodes that we need to lock...
-            Set<String> newKeysToLock = new TreeSet<>(changedNodesKeys);
-            newKeysToLock.removeAll(lockedKeysForTx);
-            int retryCountOnLockTimeout = 3;
-            boolean locksAcquired = false;
-            while (!locksAcquired && retryCountOnLockTimeout > 0) {
-                locksAcquired = documentStore.lockDocuments(newKeysToLock);
-                if (locksAcquired) {
-                    if (logger.isDebugEnabled()) {
-                        logger.debug("Locked the nodes: {0}", newKeysToLock);
-                    }
-                } else {
-                    if (logger.isDebugEnabled()) {
-                        logger.debug("Timeout while attempting to lock keys {0}. Retrying....", newKeysToLock);
-                    }
-                    --retryCountOnLockTimeout;
-                }
-            }
-            if (!locksAcquired) {
-                throw new TimeoutException(
-                        "Timeout while attempting to lock the keys " + changedNodesKeys + " after " + retryCountOnLockTimeout +
-                        " retry attempts.");
-            }
-            lockedKeysForTx.addAll(newKeysToLock);
+            return;
         }
-
+    
+        // there are new nodes that we need to lock...
+        Set<String> newKeysToLock = new TreeSet<>(changedNodesKeys);
+        newKeysToLock.removeAll(lockedKeysForTx);
+        int retryCountOnLockTimeout = 3;
+        boolean locksAcquired = false;
+        while (!locksAcquired && retryCountOnLockTimeout > 0) {
+            locksAcquired = documentStore.lockDocuments(newKeysToLock);
+            if (locksAcquired) {
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Locked the nodes: {0}", newKeysToLock);
+                }
+            } else {
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Timeout while attempting to lock keys {0}. Retrying....", newKeysToLock);
+                }
+                --retryCountOnLockTimeout;
+            }
+        }
+        if (!locksAcquired) {
+            throw new TimeoutException(
+                    "Timeout while attempting to lock the keys " + changedNodesKeys + " after " + retryCountOnLockTimeout +
+                    " retry attempts.");
+        }
+        lockedKeysForTx.addAll(newKeysToLock);
+    
         // now that we've locked the keys, load all of the from the document store
         // note that some of the keys may be new but it's important to pass the entire set down to the document store
         workspaceCache.loadFromDocumentStore(changedNodesKeys);
