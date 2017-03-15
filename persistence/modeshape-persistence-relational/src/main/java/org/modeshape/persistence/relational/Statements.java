@@ -17,6 +17,7 @@ package org.modeshape.persistence.relational;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -96,13 +97,13 @@ public interface Statements {
      * </p>
      *
      * @param connection a {@link Connection} instance; may not be null
-     * @param ids a {@link List} of ids; may not be null
+     * @param ids a {@link Collection} of ids; may not be null
      * @param parser a {@link Function} which is used to transform or process each of documents corresponding to the given IDS; 
      * may not be null
      * @return a {@link List} of {@code Object} instances for each of the ids which were found in the DB; never {@code null}
      * @throws SQLException if the operation fails.
      */
-    <R> List<R> load( Connection connection, List<String> ids, Function<Document, R> parser) throws SQLException;
+    <R> List<R> load(Connection connection, Collection<String> ids, Function<Document, R> parser) throws SQLException;
 
     /**
      * Starts a batch update operation with the given connection.

@@ -335,6 +335,7 @@ public class ShareableNodesTest extends SingleUseAbstractTest {
         assertSharedSetIs(sharedNode, originalPath, sharedPath);
 
         // Remove the node from Joe ..
+        minibus = session.getNode("/NewSecondArea/Joe/Type 2");
         minibus.remove();
         session.save();
     }

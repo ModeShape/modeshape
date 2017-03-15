@@ -355,7 +355,7 @@ class LegacySidecarExtraPropertyStore implements ExtraPropertiesStore {
             }
         }
         if (values.isEmpty()) return null;
-        return propertyFactory.create(name, type, values);
+        return propertyFactory.create(name, type, values.size() > 1 ? values : values.get(0));
     }
 
     @Override

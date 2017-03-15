@@ -50,7 +50,7 @@ import org.modeshape.jcr.value.Path;
  */
 final class JcrSharedNodeCache {
 
-    private final ConcurrentMap<NodeKey, SharedSet> sharedSets = new ConcurrentHashMap<NodeKey, SharedSet>();
+    private final ConcurrentMap<NodeKey, SharedSet> sharedSets = new ConcurrentHashMap<>();
 
     protected final JcrSession session;
 
@@ -70,13 +70,11 @@ final class JcrSharedNodeCache {
      */
     public SharedSet getSharedSet( AbstractJcrNode shareableNode ) {
         NodeKey shareableNodeKey = shareableNode.key();
-        SharedSet sharedSet = sharedSets.get(shareableNodeKey);
-        if (sharedSet == null) {
-            SharedSet newSharedSet = new SharedSet(shareableNode);
-            sharedSet = sharedSets.putIfAbsent(shareableNodeKey, newSharedSet);
-            if (sharedSet == null) sharedSet = newSharedSet;
-        }
-        return sharedSet;
+        return sharedSets.computeIfAbsent(shareableNodeKey, key -> new SharedSet(shareableNode));
+    }
+    
+    protected void clear() {
+        sharedSets.clear();
     }
 
     /**

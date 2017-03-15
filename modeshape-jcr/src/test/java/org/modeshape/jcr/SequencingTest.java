@@ -17,11 +17,11 @@ package org.modeshape.jcr;
 
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
-import static org.hamcrest.core.IsSame.sameInstance;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
+
 import java.io.InputStream;
 import javax.jcr.Node;
 import org.junit.Test;
@@ -127,7 +127,7 @@ public class SequencingTest extends AbstractSequencerTest {
         // Now verify that the test sequencer created a node ...
         Node derivedNode = getOutputNode("/foo/" + TestSequencersHolder.DERIVED_NODE_NAME);
         assertNotNull(derivedNode);
-        assertThat(derivedNode.getParent(), is(sameInstance(foo)));
+        assertThat(derivedNode.getParent(), is(foo));
     }
 
     @Test

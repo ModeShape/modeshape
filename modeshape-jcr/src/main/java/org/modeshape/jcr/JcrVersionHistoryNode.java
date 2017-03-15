@@ -187,7 +187,7 @@ final class JcrVersionHistoryNode extends JcrSystemNode implements VersionHistor
         throws ReferentialIntegrityException, AccessDeniedException, UnsupportedRepositoryOperationException, VersionException,
         RepositoryException {
 
-        assert versionToBeRemoved.getParent() == this;
+        assert versionToBeRemoved.getParent().equals(this);
 
         if (versionToBeRemoved.getName().equalsIgnoreCase(JcrLexicon.ROOT_VERSION.getString())) {
             //the root version should not be removed

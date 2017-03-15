@@ -24,6 +24,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -124,7 +125,7 @@ public class DefaultStatements implements Statements {
     }
     
     @Override
-    public <R> List<R> load( Connection connection, List<String> ids, Function<Document, R> parser ) throws SQLException {
+    public <R> List<R> load(Connection connection, Collection<String> ids, Function<Document, R> parser) throws SQLException {
         if (logger.isDebugEnabled()) {
             logger.debug("Loading ids {0} from {1}", ids.toString(), tableName());
         }
