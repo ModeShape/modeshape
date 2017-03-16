@@ -3,9 +3,11 @@
     "type": "db",
     "connectionUrl": "${db.url}",
     "poolSize" : 5,
+    "minIdlepoolSize" : 5,
     "driver": "${db.driver}",
     "username": "${db.username}",
     "password": "${db.password}",
     "createOnStart": true,
     "dropOnExit": true
 }
+

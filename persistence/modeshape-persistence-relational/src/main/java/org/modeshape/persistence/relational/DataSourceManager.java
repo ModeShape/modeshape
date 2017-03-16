@@ -80,6 +80,7 @@ public final class DataSourceManager {
         ds.setUsername(userName);
         ds.setPassword(password);
         ds.setMaximumPoolSize(config.poolSize());
+        ds.setMinimumIdle(config.minIdlePoolSize());
         ds.setIdleTimeout(TimeUnit.MINUTES.toMillis(1));
         dataSource = ds;
 

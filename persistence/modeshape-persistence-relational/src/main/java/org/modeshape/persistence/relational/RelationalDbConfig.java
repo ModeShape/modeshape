@@ -42,6 +42,7 @@ public final class RelationalDbConfig {
     public static final String PASSWORD = "password";
     public static final String DATASOURCE_JNDI_NAME = "dataSourceJndiName";
     public static final String POOL_SIZE = "poolSize";
+    public static final String MIN_IDLE_POOL_SIZE = "minIdlePoolSize";
 
     protected static final String DEFAULT_CONNECTION_URL = "jdbc:h2:mem:modeshape;DB_CLOSE_DELAY=0;MVCC=TRUE";
     protected static final String DEFAULT_DRIVER = "org.h2.Driver";
@@ -50,6 +51,7 @@ public final class RelationalDbConfig {
     protected static final String DEFAULT_TABLE_NAME = "MODESHAPE_REPOSITORY";
     protected static final int DEFAULT_FETCH_SIZE = 1000;
     protected static final int DEFAULT_POOL_SIZE = 5;
+    protected static final int DEFAULT_MIN_IDLE_POOL_SIZE = 5;
   
     private final boolean createOnStart;
     private final boolean dropOnExit;
@@ -62,6 +64,7 @@ public final class RelationalDbConfig {
     private final String password;
     private final String datasourceJNDIName; 
     private final int poolSize;
+    private final int minIdlePoolSize;
 
     protected RelationalDbConfig(Document document) {
         this.connectionUrl = document.getString(CONNECTION_URL, DEFAULT_CONNECTION_URL);
@@ -75,6 +78,7 @@ public final class RelationalDbConfig {
         this.fetchSize = propertyAsInt(document, FETCH_SIZE, DEFAULT_FETCH_SIZE);
         this.compress = propertyAsBoolean(document, COMPRESS, false);
         this.poolSize = propertyAsInt(document, POOL_SIZE, DEFAULT_POOL_SIZE);
+        this.minIdlePoolSize = propertyAsInt(document, MIN_IDLE_POOL_SIZE, DEFAULT_MIN_IDLE_POOL_SIZE);
     }
 
     protected String connectionUrl() {
@@ -120,7 +124,11 @@ public final class RelationalDbConfig {
     protected int poolSize() { 
         return poolSize; 
     }
-    
+
+    protected int minIdlePoolSize() {
+        return minIdlePoolSize;
+    }
+
     private int propertyAsInt(Document document, String propertyName, int defaultValue) {
         Object value = document.get(propertyName);
         if (value == null) {
