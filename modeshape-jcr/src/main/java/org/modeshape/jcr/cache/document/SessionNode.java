@@ -1001,7 +1001,7 @@ public class SessionNode implements MutableCachedNode {
 
             if (isFrozenNode && !isWeak) {
                 // JCR 3.13.4.6 ignore all strong outgoing references from a frozen node
-                return;
+                continue;
             }
 
             SessionNode referredNode = null;

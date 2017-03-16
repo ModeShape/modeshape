@@ -1074,6 +1074,18 @@ final class JcrVersionManager implements org.modeshape.jcr.api.version.VersionMa
         }
 
         if (versionHistory != null) {
+            Set<NodeKey> strongReferences = versionHistory.node().getReferrers(systemSession, CachedNode.ReferenceType.STRONG);
+            // remove all incoming strong references from nt:versionedChild nodes, otherwise the version history cannot be removed
+            strongReferences.stream()
+                            .map(systemSession::getNode)
+                            .filter(referrer -> JcrNtLexicon.VERSIONED_CHILD.equals(referrer.getPrimaryType(systemSession)))
+                            .forEach(versionedChild -> {
+                                NodeKey versionedChildParentKey = versionedChild.getParentKey(systemSession);
+                                NodeKey versionedChildKey = versionedChild.getKey();
+                                MutableCachedNode mutableFrozenNode = systemSession.mutable(versionedChildParentKey);
+                                mutableFrozenNode.removeChild(systemSession, versionedChildKey);
+                                systemSession.destroy(versionedChildKey);
+                            });
             MutableCachedNode historyParent = systemSession.mutable(versionHistory.parentKey());
             historyParent.removeChild(systemSession, versionHistory.key());
             systemSession.destroy(versionHistory.key());
