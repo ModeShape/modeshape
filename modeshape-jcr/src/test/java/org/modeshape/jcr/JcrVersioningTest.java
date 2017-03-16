@@ -25,6 +25,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+
 import java.io.ByteArrayInputStream;
 import java.net.URL;
 import java.util.ArrayList;
@@ -1238,7 +1239,36 @@ public class JcrVersioningTest extends SingleUseAbstractTest {
             assertNotNull(versionHistory);
         }
     }
-
+    
+    @Test
+    @FixFor("MODE-2676")
+    public void shouldRemoveVersionableNodeWithMultiversionParent() throws Exception {
+        Node root = session.getRootNode();
+        
+        Node parentNode = root.addNode("parent");
+        parentNode.addMixin("mix:versionable");
+        session.save();
+        
+        Node testNode = parentNode.addNode("testNew");
+        testNode.addMixin("mix:versionable");
+        session.save();
+    
+        // multi-version the parent and child
+        rename(session, testNode, "testUpdate1", parentNode );
+        rename(session, testNode, "testUpdate2", parentNode );
+        
+        String testNodePath = testNode.getPath();
+        VersionHistory history = versionManager.getVersionHistory(testNodePath);
+        
+        // remove all versions in the version history
+        removeAllVersions(history);
+        versionManager.checkout(parentNode.getPath());
+        // clean up everything
+        ((org.modeshape.jcr.api.version.VersionManager) versionManager).remove(testNode.getPath());
+        versionManager.checkin(parentNode.getPath());
+        session.save();
+    }
+   
     private List<String> allChildrenPaths( Node root ) throws Exception {
         List<String> paths = new ArrayList<String>();
         NodeIterator nodeIterator = root.getNodes();
@@ -1276,5 +1306,25 @@ public class JcrVersioningTest extends SingleUseAbstractTest {
         } catch (UnsupportedRepositoryOperationException e) {
             return false;
         }
+    }
+    
+    private void removeAllVersions(VersionHistory history) throws RepositoryException {
+        // delete all versions of node (to delete references to // files)
+        VersionIterator it = history.getAllVersions();
+        while (it.hasNext()) {
+            Version version = it.nextVersion();
+            history.removeVersion(version.getName());
+        }
+    }
+    
+    
+    private void rename(Session session,Node testNode, String newName, Node parentNode) throws Exception {
+        versionManager.checkout(parentNode.getPath());
+        versionManager.checkout(testNode.getPath());
+        
+        testNode.setProperty(Property.JCR_NAME, newName);
+        session.save();
+        versionManager.checkin(testNode.getPath());
+        versionManager.checkin(parentNode.getPath());
     }
 }
