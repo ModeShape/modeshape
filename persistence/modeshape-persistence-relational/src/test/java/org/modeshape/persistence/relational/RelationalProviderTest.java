@@ -19,11 +19,14 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+
 import org.junit.Test;
 import org.modeshape.common.database.DatabaseType;
 import org.modeshape.schematic.Schematic;
 import org.modeshape.schematic.document.ParsingException;
+import org.modeshape.schematic.internal.annotation.FixFor;
 import org.modeshape.schematic.internal.document.BasicDocument;
+import com.zaxxer.hikari.HikariDataSource;
 
 /**
  * Test for {@link RelationalProvider}
@@ -68,6 +71,24 @@ public class RelationalProviderTest {
 
         DataSourceManager dsManager = db.dsManager();
         assertNotNull(dsManager);
-        assertEquals(DatabaseType.Name.H2, dsManager.dbType().name());    
+        assertEquals(DatabaseType.Name.H2, dsManager.dbType().name());
+        HikariDataSource dataSource = (HikariDataSource) dsManager.dataSource();
+        assertEquals((int) Integer.valueOf(RelationalDbConfig.DEFAULT_MIN_IDLE), dataSource.getMinimumIdle());
+        assertEquals((int) Integer.valueOf(RelationalDbConfig.DEFAULT_MAX_POOL_SIZE), dataSource.getMaximumPoolSize());
+        assertEquals((long) Integer.valueOf(RelationalDbConfig.DEFAULT_IDLE_TIMEOUT), dataSource.getIdleTimeout());
+    }
+    
+    @Test
+    @FixFor("MODE-2674")
+    public void shouldAllowCustomHikariPassthroughProperties() throws ParsingException {
+        RelationalDb db = Schematic.getDb(RelationalProviderTest.class.getClassLoader().getResourceAsStream("db-config-custom-props.json"));
+        assertNotNull(db);
+        DataSourceManager dsManager = db.dsManager();
+        HikariDataSource dataSource = (HikariDataSource) dsManager.dataSource();
+        assertEquals(4, dataSource.getMinimumIdle());        
+        assertEquals(4000, dataSource.getLeakDetectionThreshold());        
+        assertEquals(5, dataSource.getMaximumPoolSize());        
+        assertFalse(dataSource.isReadOnly());        
+        assertEquals("testPool", dataSource.getPoolName());        
     }
 }

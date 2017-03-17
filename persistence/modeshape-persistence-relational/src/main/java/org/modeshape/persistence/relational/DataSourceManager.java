@@ -19,13 +19,13 @@ import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
 import java.util.EnumSet;
-import java.util.concurrent.TimeUnit;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import javax.sql.DataSource;
 import org.modeshape.common.database.DatabaseType;
 import org.modeshape.common.database.DatabaseUtil;
 import org.modeshape.common.logging.Logger;
+import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 
 /**
@@ -48,12 +48,7 @@ public final class DataSourceManager {
     private final DatabaseType dbType;
 
     protected DataSourceManager(RelationalDbConfig config) {
-        String jndiName = config.datasourceJNDIName();
-        if (jndiName != null) {
-            dataSource = getFromJndi(jndiName);
-        } else {
-            dataSource = createManagedDS(config);
-        }
+        dataSource = config.isDatasourceManaged() ? getFromJndi(config.datasourceJNDIName()) : createManagedDS(config); 
         
         try (Connection connection = newConnection(false, true)) {
             DatabaseMetaData metaData = connection.getMetaData();
@@ -67,23 +62,13 @@ public final class DataSourceManager {
     }
 
     private DataSource createManagedDS(RelationalDbConfig config) {
-        DataSource dataSource = null;
-        String connectionUrl = config.connectionUrl();
-        String driver = config.driver();
-        String userName = config.username();
-        String password = config.password();
-        LOGGER.debug("Attempting to connect to '{0}' with '{1}' for username '{2}' and password '{3}'", connectionUrl,
-                     driver, userName, password);
-        HikariDataSource ds = new HikariDataSource();
-        ds.setJdbcUrl(connectionUrl);
-        ds.setDriverClassName(driver);
-        ds.setUsername(userName);
-        ds.setPassword(password);
-        ds.setMaximumPoolSize(config.poolSize());
-        ds.setIdleTimeout(TimeUnit.MINUTES.toMillis(1));
-        dataSource = ds;
-
-        return dataSource;
+        HikariConfig hikariCfg = new HikariConfig(config.datasourceConfig());
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("Attempting to connect to '{0}' with '{1}' for username '{2}' and password '{3}'",
+                         hikariCfg.getJdbcUrl(),
+                         hikariCfg.getDriverClassName(), hikariCfg.getUsername(), "*****");
+        }
+        return new HikariDataSource(hikariCfg);
     }
 
     private DataSource getFromJndi(String jndiName) {
@@ -110,6 +95,10 @@ public final class DataSourceManager {
 
     protected DatabaseType dbType() {
         return dbType;
+    }
+    
+    protected DataSource dataSource() {
+        return dataSource;
     }
     
     protected Connection newConnection(boolean autocommit, boolean readonly) {

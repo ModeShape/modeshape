@@ -31,10 +31,10 @@
         <module name="org.modeshape.jcr.api" export="true"/>
         <module name="org.modeshape.common" export="true"/>
         <module name="org.modeshape.schematic" export="true"/>
+        <!--Make sure this dependency is exported so that other modules have access to the Hikari CP-->
         <module name="org.modeshape.persistence.relational" export="true" services="export"/>
         <module name="org.modeshape.persistence.file" export="true" services="export"/>
         <!-- for the DB binary store -->
-        <module name="com.zaxxer.hikari" slot="${version.com.zaxxer.HikariCP}"/> 
         <module name="org.jgroups" slot="${jgroups.module.slot}"/>
 
         <module name="org.apache.tika" slot="${version.org.apache.tika}" services="import"/>

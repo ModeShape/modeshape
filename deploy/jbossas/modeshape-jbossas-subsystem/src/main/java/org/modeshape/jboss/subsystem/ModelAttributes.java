@@ -1037,7 +1037,8 @@ public class ModelAttributes {
     public static final AttributeDefinition[] SEQUENCER_ATTRIBUTES = {PATH_EXPRESSIONS, SEQUENCER_CLASSNAME, MODULE, PROPERTIES};
     public static final AttributeDefinition[] PERSISTENCE_DB_ATTRIBUTES = { TABLE_NAME, CREATE_ON_START, DROP_ON_EXIT,
                                                                             FETCH_SIZE, CONNECTION_URL, DRIVER, USERNAME, PASSWORD,
-                                                                            PERSISTENCE_DS_JNDI_NAME, DB_COMPRESS, POOL_SIZE }; 
+                                                                            PERSISTENCE_DS_JNDI_NAME, DB_COMPRESS, POOL_SIZE, 
+                                                                            PROPERTIES}; 
     public static final AttributeDefinition[] PERSISTENCE_FS_ATTRIBUTES = { FS_PATH, FS_COMPRESS};
     public static final AttributeDefinition[] SOURCE_ATTRIBUTES = { PROJECTIONS, CONNECTOR_CLASSNAME, READONLY, CACHEABLE,
                                                                     QUERYABLE, MODULE, PROPERTIES, EXPOSE_AS_WORKSPACE};

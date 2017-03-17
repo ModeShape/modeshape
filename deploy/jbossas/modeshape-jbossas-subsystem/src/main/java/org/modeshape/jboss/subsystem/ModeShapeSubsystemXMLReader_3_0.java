@@ -372,7 +372,9 @@ public class ModeShapeSubsystemXMLReader_3_0 implements XMLStreamConstants, XMLE
                         ModelAttributes.POOL_SIZE.parseAndSetParameter(attrValue, persistence, reader);
                         break;
                     default:
-                        throw ParseUtils.unexpectedAttribute(reader, i);
+                        // extra attributes are allowed
+                        persistence.get(ModelKeys.PROPERTIES).add(attrName, attrValue);
+                        break;
                 }
             }
         }

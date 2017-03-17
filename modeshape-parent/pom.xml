@@ -127,7 +127,7 @@
         <version.org.jboss.jbossts.jta>5.3.3.Final</version.org.jboss.jbossts.jta>
         <version.com.atomikos>3.8.0</version.com.atomikos>
         <version.org.picketbox>4.9.6.Final</version.org.picketbox>
-        <version.com.zaxxer.HikariCP>2.4.3</version.com.zaxxer.HikariCP>
+        <version.com.zaxxer.HikariCP>2.6.1</version.com.zaxxer.HikariCP>
         
         <version.org.jboss.spec.javax.transaction.jboss-transaction-api_1.2_spec>1.0.1.Final</version.org.jboss.spec.javax.transaction.jboss-transaction-api_1.2_spec>
         <version.com.github.ben-manes.caffeine>2.3.3</version.com.github.ben-manes.caffeine>
@@ -216,7 +216,7 @@
         <version.bundle.plugin>3.0.0</version.bundle.plugin>
         <version.gwt.maven.plugin>2.5.1</version.gwt.maven.plugin>
         <version.org.wildfly.plugings.wildfly-maven-plugin>1.1.0.Final</version.org.wildfly.plugings.wildfly-maven-plugin>
-        <version.fabric8.docker.plugin>0.18.1</version.fabric8.docker.plugin>
+        <version.fabric8.docker.plugin>0.19.0</version.fabric8.docker.plugin>
         <version.org.elasticsearch>2.1.0</version.org.elasticsearch>
         <version.jna>4.1.0</version.jna>
         <!--The name of the modeshape-client artifact used by tools-->

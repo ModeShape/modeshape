@@ -87,8 +87,7 @@ public class ModeshapePersistenceIT {
                                                                     "data/move-initial-data.xml", 
                                                                     "data/simple.json", 
                                                                     "data/singleNode.json" };
-    
-    private final static int REPEAT_COUNT = 1;
+   
     private final TestRepository testRepository = new TestRepository();
 
     private File backupArea;
