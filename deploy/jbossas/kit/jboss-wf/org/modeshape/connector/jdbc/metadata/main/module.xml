@@ -22,7 +22,6 @@
 
     <dependencies>
         <module name="org.modeshape"/>
-        <module name="com.zaxxer.hikari" slot="${version.com.zaxxer.HikariCP}"/>
     </dependencies>
 
 </module>

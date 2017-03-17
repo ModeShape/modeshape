@@ -4,6 +4,12 @@
                        driver="org.h2.Driver" drop-on-exit="false" fetch-size="1000" password="s" pool-size="11" table-name="MODESHAPE_REPOSITORY"
                        username="sa"/>
     </repository>
+    <repository name="extendedDB">
+       <db-persistence url="jdbc:h2:mem:modeshape;DB_CLOSE_DELAY=0;" compress="false" create-on-start="false" data-source-jndi-name="name"
+                       driver="org.h2.Driver" drop-on-exit="false" fetch-size="1000" password="s" pool-size="11" table-name="MODESHAPE_REPOSITORY"
+                       username="sa" minimumIdle="4" leakDetectionThreshold="4000" maximumPoolSize="5" readOnly="false"
+                       poolName="testPool"/>
+    </repository>
     <repository name="sampleFile">
         <file-persistence compress="false" path="${jboss.server.data.dir}/modeshape"/>
     </repository>

@@ -132,6 +132,13 @@ public class ModeShapeSubsystemXMLWriter implements XMLStreamConstants, XMLEleme
             ModelAttributes.FETCH_SIZE.marshallAsAttribute(persistence, false, writer);
             ModelAttributes.POOL_SIZE.marshallAsAttribute(persistence, false, writer);
             ModelAttributes.PERSISTENCE_DS_JNDI_NAME.marshallAsAttribute(persistence, false, writer);
+            // Write out any extra properties ...
+            if (has(persistence, ModelKeys.PROPERTIES)) {
+                ModelNode properties = persistence.get(ModelKeys.PROPERTIES);
+                for (Property property : properties.asPropertyList()) {
+                    writer.writeAttribute(property.getName(), property.getValue().asString());
+                }
+            }
             writer.writeEndElement();
         }
         

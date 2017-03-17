@@ -1,0 +1,19 @@
+{
+    // Used to test custom Hikari pass-through properties
+    "type" : "db",
+    "connectionUrl" : "jdbc:h2:mem:modeshape",
+    "driver" : "org.h2.Driver",
+    "username" : "sa",
+    "password" : "",
+    "tableName" : "REPO",
+    "createOnStart" : false,
+    "dropOnExit" : true,
+    "compress" : false,
+    "poolSize" : 5,
+    "fetchSize" : 100,
+    "minimumIdle" : 4,
+    "leakDetectionThreshold" : 4000,
+    "maximumPoolSize" : 5,
+    "readOnly" : false,
+    "poolName" : "testPool"
+}

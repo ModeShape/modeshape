@@ -607,6 +607,7 @@
                 <xs:documentation>The maximum size of the DB connection pool</xs:documentation>
             </xs:annotation>
         </xs:attribute>
+        <xs:anyAttribute namespace="##any" processContents="lax"/>
     </xs:complexType>
 
     <xs:complexType name="file-persistence">

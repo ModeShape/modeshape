@@ -81,7 +81,7 @@ public class RelationalDb implements SchematicDb {
 
     @Override
     public String id() {
-        return config.datasourceJNDIName() != null ? config.datasourceJNDIName() : config.connectionUrl();
+        return config.name();
     }
 
     @Override

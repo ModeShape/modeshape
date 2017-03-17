@@ -17,19 +17,23 @@ package org.modeshape.persistence.relational;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Properties;
+import java.util.concurrent.TimeUnit;
+import org.modeshape.common.util.StringUtil;
+import org.modeshape.schematic.Schematic;
 import org.modeshape.schematic.document.Document;
+import org.modeshape.schematic.document.EditableDocument;
 
 /**
- * Class which holds the configuration options for {@link RelationalDb}
- * 
+ * Class which holds the configuration options for {@link RelationalDb}. 
+ *
  * @author Horia Chiorean (hchiorea@redhat.com)
  * @since 5.0
  */
 public final class RelationalDbConfig {
 
     public static final String ALIAS1 = "db";
-    public static final String ALIAS2 = "database";
-    public static List<String> ALIASES = Arrays.asList(ALIAS1, ALIAS2);
+    public static List<String> ALIASES = Arrays.asList(ALIAS1, "database");
 
     public static final String DROP_ON_EXIT = "dropOnExit";
     public static final String CREATE_ON_START = "createOnStart";
@@ -42,57 +46,70 @@ public final class RelationalDbConfig {
     public static final String PASSWORD = "password";
     public static final String DATASOURCE_JNDI_NAME = "dataSourceJndiName";
     public static final String POOL_SIZE = "poolSize";
-
+    
+    protected static final List<String> ALL_FIELDS = Arrays.asList(Schematic.TYPE_FIELD, DROP_ON_EXIT, CREATE_ON_START, TABLE_NAME,
+                                                                   FETCH_SIZE, COMPRESS, CONNECTION_URL, DRIVER, USERNAME,
+                                                                   PASSWORD, DATASOURCE_JNDI_NAME, POOL_SIZE);
+    
     protected static final String DEFAULT_CONNECTION_URL = "jdbc:h2:mem:modeshape;DB_CLOSE_DELAY=0;MVCC=TRUE";
     protected static final String DEFAULT_DRIVER = "org.h2.Driver";
     protected static final String DEFAULT_USERNAME = "sa";
     protected static final String DEFAULT_PASSWORD = "";
     protected static final String DEFAULT_TABLE_NAME = "MODESHAPE_REPOSITORY";
+    protected static final String DEFAULT_MAX_POOL_SIZE = "5";
+    protected static final String DEFAULT_MIN_IDLE = "1";
+    protected static final String DEFAULT_IDLE_TIMEOUT = String.valueOf(TimeUnit.MINUTES.toMillis(1));
     protected static final int DEFAULT_FETCH_SIZE = 1000;
-    protected static final int DEFAULT_POOL_SIZE = 5;
-  
+    
+    private final Document config;
     private final boolean createOnStart;
     private final boolean dropOnExit;
     private final String tableName;
     private final int fetchSize;
     private final boolean compress;
     private final String connectionUrl;
-    private final String driver;
-    private final String username;
-    private final String password;
     private final String datasourceJNDIName; 
-    private final int poolSize;
-
+    
     protected RelationalDbConfig(Document document) {
-        this.connectionUrl = document.getString(CONNECTION_URL, DEFAULT_CONNECTION_URL);
-        this.driver = document.getString(DRIVER, DEFAULT_DRIVER);
-        this.username = document.getString(USERNAME, DEFAULT_USERNAME);
-        this.password = document.getString(PASSWORD, DEFAULT_PASSWORD);
-        this.datasourceJNDIName = document.getString(DATASOURCE_JNDI_NAME, null);
-        this.createOnStart = propertyAsBoolean(document, CREATE_ON_START, true);
-        this.dropOnExit = propertyAsBoolean(document, DROP_ON_EXIT, false);
-        this.tableName = document.getString(TABLE_NAME, DEFAULT_TABLE_NAME);
-        this.fetchSize = propertyAsInt(document, FETCH_SIZE, DEFAULT_FETCH_SIZE);
-        this.compress = propertyAsBoolean(document, COMPRESS, false);
-        this.poolSize = propertyAsInt(document, POOL_SIZE, DEFAULT_POOL_SIZE);
+        this.config = document;
+        this.datasourceJNDIName = config.getString(DATASOURCE_JNDI_NAME, null);
+        this.createOnStart = propertyAsBoolean(config, CREATE_ON_START, true);
+        this.dropOnExit = propertyAsBoolean(config, DROP_ON_EXIT, false);
+        this.tableName = config.getString(TABLE_NAME, DEFAULT_TABLE_NAME);
+        this.fetchSize = propertyAsInt(config, FETCH_SIZE, DEFAULT_FETCH_SIZE);
+        this.compress = propertyAsBoolean(config, COMPRESS, false);
+        this.connectionUrl = config.getString(CONNECTION_URL, DEFAULT_CONNECTION_URL);
     }
 
-    protected String connectionUrl() {
-        return connectionUrl;
+    protected boolean isDatasourceManaged() {
+        return !StringUtil.isBlank(datasourceJNDIName);
     }
+    
+    protected Properties datasourceConfig() {
+        Properties datasourceCfg = new Properties();
+        EditableDocument localCopy = config.edit(true);
 
-    protected String driver() {
-        return driver;
+        // remove the generic configuration fields
+        ALL_FIELDS.forEach(localCopy::remove);
+    
+        // convert each of the properties to their Hikari names 
+        datasourceCfg.setProperty("jdbcUrl", connectionUrl);
+        datasourceCfg.setProperty("driverClassName", config.getString(DRIVER, DEFAULT_DRIVER));
+        datasourceCfg.setProperty("username", config.getString(USERNAME, DEFAULT_USERNAME));
+        datasourceCfg.setProperty("password", config.getString(PASSWORD, DEFAULT_PASSWORD));
+        datasourceCfg.setProperty("maximumPoolSize", propertyAsString(config, POOL_SIZE, DEFAULT_MAX_POOL_SIZE));
+        datasourceCfg.setProperty("minimumIdle", DEFAULT_MIN_IDLE);
+        datasourceCfg.setProperty("idleTimeout", DEFAULT_IDLE_TIMEOUT);
+    
+        // pass all the other fields as they are (this will also overwrite any of the previous values if they are explicitly configured)
+        localCopy.fields().forEach(field -> datasourceCfg.setProperty(field.getName(), field.getValue().toString()));   
+        return datasourceCfg;
     }
-
-    protected String password() {
-        return password;
+    
+    protected String name() {
+        return datasourceJNDIName != null ? datasourceJNDIName : connectionUrl;   
     }
-
-    protected String username() {
-        return username;
-    }
-
+    
     protected String datasourceJNDIName() {
         return datasourceJNDIName;
     }
@@ -117,8 +134,9 @@ public final class RelationalDbConfig {
         return compress;
     }
     
-    protected int poolSize() { 
-        return poolSize; 
+    private String propertyAsString(Document document, String fieldName, String defaultValue) {
+        Object value = document.get(fieldName);
+        return value == null ? defaultValue : value.toString();
     }
     
     private int propertyAsInt(Document document, String propertyName, int defaultValue) {
@@ -141,21 +159,5 @@ public final class RelationalDbConfig {
         } else {
             return Boolean.valueOf(value.toString());
         }
-    }
-    
-    @Override
-    public String toString() {
-        return "RelationalDbConfig[" +
-               "createOnStart=" + createOnStart +
-               ", dropOnExit=" + dropOnExit +
-               ", tableName='" + tableName + '\'' +
-               ", fetchSize=" + fetchSize +
-               ", compress=" + compress +
-               ", connectionUrl='" + connectionUrl + '\'' +
-               ", driver='" + driver + '\'' +
-               ", username='" + username + '\'' +
-               ", password='" + password + '\'' +
-               ", datasourceJNDIName='" + datasourceJNDIName + '\'' +
-               ']';
     }
 }

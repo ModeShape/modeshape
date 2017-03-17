@@ -32,6 +32,7 @@ import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
+import org.jboss.dmr.Property;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceTarget;
@@ -115,6 +116,11 @@ public class AddDatabasePersistence extends AbstractAddStepHandler {
         ModelNode poolSize = POOL_SIZE.resolveModelAttribute(context, operation);
         if (poolSize.isDefined()) {
             persistenceConfig.setNumber(POOL_SIZE.getFieldName(), poolSize.asInt());
+        }
+        if (operation.hasDefined(ModelKeys.PROPERTIES)) {
+            for (Property property : operation.get(ModelKeys.PROPERTIES).asPropertyList()) {
+                persistenceConfig.set(property.getName(), property.getValue().asString());
+            }
         }
 
         PersistenceService persistenceService = new PersistenceService(repositoryName, persistenceConfig);
