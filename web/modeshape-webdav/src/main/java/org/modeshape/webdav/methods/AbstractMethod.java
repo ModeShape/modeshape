@@ -18,14 +18,15 @@ package org.modeshape.webdav.methods;
 
 import java.io.IOException;
 import java.io.Writer;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Locale;
-import java.util.TimeZone;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -45,11 +46,12 @@ import org.modeshape.webdav.locking.IResourceLocks;
 import org.modeshape.webdav.locking.LockedObject;
 
 public abstract class AbstractMethod implements IMethodExecutor {
-
-    private static final ThreadLocal<DateFormat> thLastmodifiedDateFormat = new ThreadLocal<DateFormat>();
-    private static final ThreadLocal<DateFormat> thCreationDateFormat = new ThreadLocal<DateFormat>();
-    private static final ThreadLocal<DateFormat> thLocalDateFormat = new ThreadLocal<DateFormat>();
-
+    
+    
+    private static final Pattern MULTI_LOCK_PATTERN = Pattern.compile("(.*<.*locktoken\\:.+\\>.*).*(<.*locktoken\\:.+\\>.*)");
+    private static final Pattern SINGLE_LOCK_PATTERN = Pattern.compile("(.*<.*locktoken\\:.+\\>.*)");
+    private static final Pattern LOCK_TOKEN_PATTERN = Pattern.compile("(.*<??.*locktoken:)([a-zA-z0-9\\-]+)(>??.*)");
+    
     /**
      * Array containing the safe characters set.
      */
@@ -63,14 +65,14 @@ public abstract class AbstractMethod implements IMethodExecutor {
     /**
      * Simple date format for the creation date ISO 8601 representation (partial).
      */
-    protected static final String CREATION_DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:ss'Z'";
+    protected static final DateTimeFormatter CREATION_DATE_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US)
+                                                                              .withZone(ZoneId.of("GMT")); 
 
     /**
      * Simple date format for the last modified date. (RFC 822 updated by RFC 1123)
      */
-    protected static final String LAST_MODIFIED_DATE_FORMAT = "EEE, dd MMM yyyy HH:mm:ss z";
-
-    protected static final String LOCAL_DATE_FORMAT = "dd/MM/yy' 'HH:mm:ss";
+    protected static final DateTimeFormatter LAST_MODIFIED_DATE_FORMAT = DateTimeFormatter.ofPattern("EEE, dd MMM yyyy HH:mm:ss z",
+                                                                                                     Locale.US).withZone(ZoneId.of("GMT")); 
 
     static {
         /**
@@ -116,32 +118,11 @@ public abstract class AbstractMethod implements IMethodExecutor {
     }
 
     public static String lastModifiedDateFormat( final Date date ) {
-        DateFormat df = thLastmodifiedDateFormat.get();
-        if (df == null) {
-            df = new SimpleDateFormat(LAST_MODIFIED_DATE_FORMAT, Locale.US);
-            df.setTimeZone(TimeZone.getTimeZone("GMT"));
-            thLastmodifiedDateFormat.set(df);
-        }
-        return df.format(date);
+        return LAST_MODIFIED_DATE_FORMAT.format(date.toInstant());
     }
 
     public static String creationDateFormat( final Date date ) {
-        DateFormat df = thCreationDateFormat.get();
-        if (df == null) {
-            df = new SimpleDateFormat(CREATION_DATE_FORMAT);
-            df.setTimeZone(TimeZone.getTimeZone("GMT"));
-            thCreationDateFormat.set(df);
-        }
-        return df.format(date);
-    }
-
-    public static String getLocalDateFormat( final Date date,
-                                             final Locale loc ) {
-        DateFormat df = thLocalDateFormat.get();
-        if (df == null) {
-            df = new SimpleDateFormat(LOCAL_DATE_FORMAT, loc);
-        }
-        return df.format(date);
+        return CREATION_DATE_FORMAT.format(date.toInstant());
     }
 
     /**
@@ -270,46 +251,40 @@ public abstract class AbstractMethod implements IMethodExecutor {
     }
 
     protected String[] getLockIdFromIfHeader( HttpServletRequest req ) {
-        String[] ids = new String[2];
         String id = req.getHeader("If");
-
-        if (id != null && !id.equals("")) {
-            if (id.indexOf(">)") == id.lastIndexOf(">)")) {
-                id = id.substring(id.indexOf("(<"), id.indexOf(">)"));
-
-                if (id.contains("locktoken:")) {
-                    id = id.substring(id.indexOf(':') + 1);
-                }
-                ids[0] = id;
-            } else {
-                String firstId = id.substring(id.indexOf("(<"), id.indexOf(">)"));
-                if (firstId.contains("locktoken:")) {
-                    firstId = firstId.substring(firstId.indexOf(':') + 1);
-                }
-                ids[0] = firstId;
-                // opaque lock token
-                String secondId = id.substring(id.lastIndexOf("(<"), id.lastIndexOf(">)"));
-                if (secondId.contains("locktoken:")) {
-                    secondId = secondId.substring(secondId.indexOf(':') + 1);
-                }
-                ids[1] = secondId;
-            }
-
-        } else {
-            ids = null;
+        if (id == null) {
+            return null;
         }
-        return ids;
+        id = id.trim();
+        if (id.length() == 0) {
+            return null;
+        }
+        return lockTokensFrom(id.trim());
+    }
+    
+    protected String[] lockTokensFrom(String id) {
+        Matcher matcher = MULTI_LOCK_PATTERN.matcher(id);
+        if (matcher.matches()) {
+            return new String[] {lockIDFromToken(matcher.group(1)), lockIDFromToken(matcher.group(2))};
+        }
+        matcher = SINGLE_LOCK_PATTERN.matcher(id);
+        if (matcher.matches()) {
+            return new String[] {lockIDFromToken(matcher.group(1))};
+        }
+        return null;
+    }
+    
+    protected String lockIDFromToken(String token) {
+        Matcher matcher = LOCK_TOKEN_PATTERN.matcher(token);
+        return matcher.matches() ? matcher.group(2) : token;
     }
 
     protected String getLockIdFromLockTokenHeader( HttpServletRequest req ) {
         String id = req.getHeader("Lock-Token");
-
-        if (id != null) {
-            id = id.substring(id.indexOf(":") + 1, id.indexOf(">"));
-
+        if (id == null || id.trim().length() == 0) {
+            return id;
         }
-
-        return id;
+        return lockIDFromToken(id);
     }
 
     /**
