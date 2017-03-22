@@ -109,7 +109,7 @@ public abstract class BufferingSequence extends DelegatingSequence {
      * @param extractor the extractor for the sortable value; may not be null
      * @param rowsWithNullKey the buffer into which should be placed all rows for which the extracted key value is null; may be
      *        null if these are not to be kept
-     * @return the size of the first batch, or 0 if there are no rows found
+     * @return the size of the first non-empty batch, or 0 if there are no rows found
      */
     protected int loadAll( NodeSequence sequence,
                            ExtractFromRow extractor,
@@ -137,7 +137,7 @@ public abstract class BufferingSequence extends DelegatingSequence {
                     ++batchSize;    
                 }
             }
-            firstBatchCounted = true;
+            firstBatchCounted = batchSize != 0;
             batch = sequence.nextBatch();
         }
        
