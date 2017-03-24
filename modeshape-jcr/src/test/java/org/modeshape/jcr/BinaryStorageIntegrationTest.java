@@ -51,6 +51,8 @@ import org.modeshape.jcr.api.Binary;
 import org.modeshape.jcr.value.BinaryKey;
 import org.modeshape.jcr.value.BinaryValue;
 import org.modeshape.jcr.value.binary.BinaryStore;
+import org.modeshape.jcr.value.binary.BinaryStoreException;
+import com.amazonaws.AmazonClientException;
 import com.datastax.driver.core.exceptions.NoHostAvailableException;
 
 /**
@@ -342,8 +344,16 @@ public class BinaryStorageIntegrationTest extends SingleUseAbstractTest {
 
     @Test
     public void shouldStartWithS3BinaryStore() throws Exception {
-        // even though we don't connect to s3 in this test, the binary store is initialized ;)
-        startRepositoryWithConfigurationFrom("config/s3-binary-storage.json");
+        try {
+            // even though we don't connect to s3 in this test, the binary store is initialized ;)
+            startRepositoryWithConfigurationFrom("config/s3-binary-storage.json");
+        } catch (BinaryStoreException e) {
+            if (e.getCause() instanceof AmazonClientException && e.getCause().getCause() instanceof IOException) {
+                System.err.println("Ignoring Amazon S3 integration test because there's a network issue...");                
+            } else {
+                throw e;
+            }
+        }
     }
 
     private String randomString(long size) {

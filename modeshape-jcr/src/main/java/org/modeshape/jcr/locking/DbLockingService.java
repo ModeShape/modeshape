@@ -15,7 +15,7 @@
  */
 package org.modeshape.jcr.locking;
 
-import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.schematic.Lockable;
@@ -27,8 +27,6 @@ import org.modeshape.schematic.Lockable;
  * @since 5.2
  */
 public class DbLockingService implements LockingService {
-    
-    private static final Random RANDOM = new Random();
     
     private final Lockable db;
     private final long lockTimeoutMillis;
@@ -47,13 +45,13 @@ public class DbLockingService implements LockingService {
 
     @Override
     public boolean tryLock(long time, TimeUnit unit, String... names) throws InterruptedException {
-        long start = System.nanoTime();
-        boolean result = false;
+        long start = System.currentTimeMillis();
+        boolean result;
         long timeInMills = TimeUnit.MILLISECONDS.convert(time, unit);
         while (!(result = db.lockForWriting(names)) && 
-               TimeUnit.MILLISECONDS.convert((System.nanoTime() - start), TimeUnit.NANOSECONDS) < timeInMills) {
+               System.currentTimeMillis() - start <= timeInMills) {
             //wait a bit (between 50 and 300 ms)
-            long sleepDurationMillis = 50 + RANDOM.nextInt(251);
+            long sleepDurationMillis = 50 + ThreadLocalRandom.current().nextInt(251);
             Thread.sleep(sleepDurationMillis);
         }
         return result;        
