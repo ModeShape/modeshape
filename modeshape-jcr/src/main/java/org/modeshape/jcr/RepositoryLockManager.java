@@ -41,6 +41,7 @@ import org.modeshape.jcr.api.value.DateTime;
 import org.modeshape.jcr.cache.CachedNode;
 import org.modeshape.jcr.cache.ChildReference;
 import org.modeshape.jcr.cache.ChildReferences;
+import org.modeshape.jcr.cache.DocumentAlreadyExistsException;
 import org.modeshape.jcr.cache.LockFailureException;
 import org.modeshape.jcr.cache.MutableCachedNode;
 import org.modeshape.jcr.cache.NodeCache;
@@ -380,8 +381,10 @@ class RepositoryLockManager implements ChangeSetListener {
             // Now save both sessions. This will fail with a LockFailureException if the locking failed ...
             // save the system session first so that the system change is reflected first in the ws caches
             systemSession.save(lockingSession, null);
-        } catch (LockFailureException e) {
+        } catch (LockFailureException | DocumentAlreadyExistsException e) {
             // Someone must have snuck in and locked the node, and we just didn't receive notification of it yet ...
+            // note that the latter exception is a rare case which can occur only in a cluster under precise timing, when 2 
+            // or more writers attempt to create the same lock the first time
             String location = nodeKey.toString();
             try {
                 location = session.node(nodeKey, null).getPath();
