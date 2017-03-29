@@ -158,11 +158,12 @@ public class DatabaseBinaryStore extends AbstractBinaryStore {
     public BinaryValue storeValue( InputStream stream, final boolean markAsUnused ) throws BinaryStoreException {
         // store into temporary file system store and get SHA-1
         final BinaryValue temp = cache.storeValue(stream, markAsUnused);
+        // prepare new binary key based on SHA-1
+        final BinaryKey key = new BinaryKey(temp.getKey().toString());
         try {
             return dbCall(connection -> {
-                // prepare new binary key based on SHA-1
-                BinaryKey key = new BinaryKey(temp.getKey().toString());
-            
+                connection.setAutoCommit(false);
+              
                 if (database.contentExists(key, ALIVE, connection)) {
                     return new StoredBinaryValue(DatabaseBinaryStore.this, key, temp.getSize());
                 }
@@ -173,14 +174,29 @@ public class DatabaseBinaryStore extends AbstractBinaryStore {
                         database.restoreContent(connection, Collections.singletonList(key));
                     }
                 } else {
-                    // store the content
-                    database.insertContent(key, temp.getStream(), temp.getSize(), connection);
-                    if (markAsUnused) {
-                        database.markUnused(Collections.singletonList(key), connection);
+                    try (InputStream is = temp.getStream()) {
+                        // store the content
+                        database.insertContent(key, is, temp.getSize(), connection);
+                        if (markAsUnused) {
+                            database.markUnused(Collections.singletonList(key), connection);
+                        }
                     }
                 }
                 return new StoredBinaryValue(DatabaseBinaryStore.this, key, temp.getSize());
             });
+        } catch (BinaryStoreException e) {
+            if (e.getCause() instanceof SQLException) {
+                // under certain conditions - e.g. in a cluster - someone else may have already inserted the binary
+                // so try reading again
+                 return dbCall(connection -> {
+                    if (database.contentExists(key, !markAsUnused, connection)) {
+                        return new StoredBinaryValue(DatabaseBinaryStore.this, key, temp.getSize());        
+                    }
+                    // nothing there, so rethrow the original exception
+                    throw e;
+                });
+            }
+            throw e;
         } finally {
             // remove content from temp store
             cache.markAsUnused(temp.getKey());
@@ -216,6 +232,7 @@ public class DatabaseBinaryStore extends AbstractBinaryStore {
     @Override
     public void markAsUsed(final Iterable<BinaryKey> keys ) throws BinaryStoreException {
         dbCall(connection -> {
+            connection.setAutoCommit(false);
             database.restoreContent(connection, keys);
             return null;
         }) ;
@@ -223,7 +240,8 @@ public class DatabaseBinaryStore extends AbstractBinaryStore {
 
     @Override
     public void markAsUnused( final Iterable<BinaryKey> keys ) throws BinaryStoreException {
-        dbCall(connection -> { 
+        dbCall(connection -> {
+            connection.setAutoCommit(false);
             database.markUnused(keys, connection);
             return null;
         });
@@ -242,6 +260,7 @@ public class DatabaseBinaryStore extends AbstractBinaryStore {
     @Override
     protected String getStoredMimeType( final BinaryValue source ) throws BinaryStoreException {
         return dbCall(connection -> {
+            connection.setAutoCommit(false);
             BinaryKey key = source.getKey();
             if (!database.contentExists(key, true, connection) && !database.contentExists(key, false, connection)) {
                 throw new BinaryStoreException(JcrI18n.unableToFindBinaryValue.text(key, database.getTableName()));
@@ -261,7 +280,8 @@ public class DatabaseBinaryStore extends AbstractBinaryStore {
 
     @Override
     public String getExtractedText( final BinaryValue source ) throws BinaryStoreException {
-        return dbCall(connection -> {
+        return dbCall(connection -> {  
+            connection.setAutoCommit(false);
             BinaryKey key = source.getKey();
             if (!database.contentExists(key, true, connection) && !database.contentExists(key, false, connection)) {
                 throw new BinaryStoreException(JcrI18n.unableToFindBinaryValue.text(key, database.getTableName()));
@@ -328,7 +348,21 @@ public class DatabaseBinaryStore extends AbstractBinaryStore {
 
     private <T> T dbCall( DBCallable<T> callable ) throws BinaryStoreException {
         try (Connection connection = newConnection()) {
-            return callable.execute(connection);    
+            boolean autoCommit = true;
+            try {
+                connection.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
+                T result = callable.execute(connection);
+                autoCommit = connection.getAutoCommit();
+                if (!autoCommit) {
+                    connection.commit();
+                }
+                return result;
+            } catch (Throwable t) {
+                if (!autoCommit) {
+                    connection.rollback();
+                }
+                throw t;
+            }
         } catch (BinaryStoreException bse) {
             throw bse;
         } catch (Exception e) {
