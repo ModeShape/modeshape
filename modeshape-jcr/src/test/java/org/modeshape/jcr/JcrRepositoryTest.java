@@ -35,6 +35,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.CyclicBarrier;
@@ -1480,6 +1481,25 @@ public class JcrRepositoryTest {
         repository.determineInitialDelay("22:00");
         repository.determineInitialDelay("23:00");
     }
+    
+    @Test
+    @FixFor("MODE-2679")
+    public void shouldStartRepositoryUpForTurkishLocale() throws Exception {
+        Locale current = Locale.getDefault();
+        try {
+            Locale.setDefault(Locale.forLanguageTag("tr"));
+            shutdownDefaultRepository();
+            repository = TestingUtil.startRepositoryWithConfig("config/repo-config-query-placeholder.json");
+            session = repository.login();
+            session.getRootNode().addNode("Ii");
+            session.save();
+            assertNotNull(session.getNode("/Ii"));
+            assertTrue(repository.shutdown().get());  
+        } finally { 
+            Locale.setDefault(current);
+        }
+    }
+    
 
     protected void nodeExists( Session session,
                                String parentPath,

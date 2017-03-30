@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.Locale;
 import java.util.NoSuchElementException;
 import org.modeshape.common.CommonI18n;
 import org.modeshape.common.annotation.Immutable;
@@ -1710,7 +1711,7 @@ public class TokenStream {
 
         @Override
         public boolean matches( String expected ) {
-            return matchString().substring(startIndex(), endIndex()).toUpperCase().equals(expected);
+            return matchString().substring(startIndex(), endIndex()).toUpperCase(Locale.ROOT).equals(expected);
         }
 
         @Override

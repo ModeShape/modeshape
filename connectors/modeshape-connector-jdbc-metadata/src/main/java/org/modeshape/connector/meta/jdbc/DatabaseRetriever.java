@@ -17,6 +17,7 @@ package org.modeshape.connector.meta.jdbc;
 
 import java.sql.Connection;
 import java.util.List;
+import java.util.Locale;
 import java.util.regex.Pattern;
 import org.modeshape.schematic.document.Document;
 import org.modeshape.jcr.JcrNtLexicon;
@@ -71,6 +72,6 @@ public final class DatabaseRetriever extends AbstractMetadataRetriever {
 
     @Override
     protected boolean canHandle( String id ) {
-        return id.toLowerCase().equalsIgnoreCase(ID);
+        return id.toLowerCase(Locale.ROOT).equalsIgnoreCase(ID);
     }
 }
