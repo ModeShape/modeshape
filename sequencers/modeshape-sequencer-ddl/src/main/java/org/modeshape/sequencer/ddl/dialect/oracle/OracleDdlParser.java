@@ -145,6 +145,7 @@ import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.TYPE_T
 import static org.modeshape.sequencer.ddl.dialect.oracle.OracleDdlLexicon.UNIQUE_INDEX;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import org.modeshape.common.text.ParsingException;
 import org.modeshape.common.text.Position;
 import org.modeshape.common.text.TokenStream;
@@ -1511,7 +1512,7 @@ public class OracleDdlParser extends StandardDdlParser
                                 if (!columnNodes.isEmpty()) {
                                     // find column
                                     for (final AstNode colNode : columnNodes) {
-                                        if (colNode.getName().toUpperCase().equals(possibleColumn.toUpperCase())) {
+                                        if (colNode.getName().equalsIgnoreCase(possibleColumn)) {
                                             final AstNode colRef = nodeFactory().node(possibleColumn,
                                                                                       indexNode,
                                                                                       TYPE_COLUMN_REFERENCE);
@@ -1547,7 +1548,7 @@ public class OracleDdlParser extends StandardDdlParser
                         } else {
                             // bitmap-join
                             for (final AstNode dimensionTableNode : tableNodes) {
-                                if (possibleColumn.toUpperCase().startsWith(dimensionTableNode.getName().toUpperCase() + PERIOD)) {
+                                if (possibleColumn.toUpperCase(Locale.ROOT).startsWith(dimensionTableNode.getName().toUpperCase(Locale.ROOT) + PERIOD)) {
                                     final AstNode colRef = nodeFactory().node(possibleColumn, indexNode, TYPE_COLUMN_REFERENCE);
 
                                     if (asc || desc) {
@@ -1680,7 +1681,7 @@ public class OracleDdlParser extends StandardDdlParser
             while (tokens.hasNext() && !isTerminator(tokens)) {
                 String token = tokens.consume();
 
-                if ("UNUSABLE".equals(token.toUpperCase())) {
+                if ("UNUSABLE".equalsIgnoreCase(token)) {
                     unusable = true;
                     break; // must be last token found before terminator
                 }

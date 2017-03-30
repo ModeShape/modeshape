@@ -28,6 +28,7 @@ import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 import org.modeshape.common.util.IoUtil;
 
@@ -86,13 +87,13 @@ public class VideoMetadata {
 
         KeyValueBag metadata = container.getMetaData();
         for (String key : metadata.getKeys()) {
-            if (key.toLowerCase().equals("title")) {
+            if (key.toLowerCase(Locale.ROOT).equals("title")) {
                 title = metadata.getValue(key);
             }
-            if (key.toLowerCase().equals("comment")) {
+            if (key.toLowerCase(Locale.ROOT).equals("comment")) {
                 comment = metadata.getValue(key);
             }
-            if (key.toLowerCase().equals("encoder")) {
+            if (key.toLowerCase(Locale.ROOT).equals("encoder")) {
                 encoder = metadata.getValue(key);
             }
         }

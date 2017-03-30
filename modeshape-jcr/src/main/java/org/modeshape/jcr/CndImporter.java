@@ -26,6 +26,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -565,7 +566,7 @@ public class CndImporter {
         propDefn.setAutoCreated(autoCreated);
         propDefn.setMandatory(mandatory);
         propDefn.setProtected(isProtected);
-        propDefn.setOnParentVersion(OnParentVersionAction.valueFromName(onParentVersion.toUpperCase()));
+        propDefn.setOnParentVersion(OnParentVersionAction.valueFromName(onParentVersion.toUpperCase(Locale.ROOT)));
         propDefn.setMultiple(multiple);
         propDefn.setFullTextSearchable(isFullTextSearchable);
         propDefn.setQueryOrderable(isQueryOrderable);
@@ -722,7 +723,7 @@ public class CndImporter {
         childDefn.setAutoCreated(autoCreated);
         childDefn.setMandatory(mandatory);
         childDefn.setProtected(isProtected);
-        childDefn.setOnParentVersion(OnParentVersionAction.valueFromName(onParentVersion.toUpperCase()));
+        childDefn.setOnParentVersion(OnParentVersionAction.valueFromName(onParentVersion.toUpperCase(Locale.ROOT)));
         childDefn.setSameNameSiblings(sns);
     }
 

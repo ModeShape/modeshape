@@ -28,6 +28,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.WeakHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -46,6 +47,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.regex.Matcher;
 import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 import javax.jcr.AccessDeniedException;
 import javax.jcr.Credentials;
 import javax.jcr.LoginException;
@@ -63,6 +65,7 @@ import javax.transaction.Transaction;
 import javax.transaction.TransactionManager;
 import org.jgroups.Channel;
 import org.modeshape.common.annotation.Immutable;
+import org.modeshape.common.collection.Problem;
 import org.modeshape.common.collection.Problems;
 import org.modeshape.common.collection.SimpleProblems;
 import org.modeshape.common.i18n.I18n;
@@ -274,7 +277,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
      * <ul>
      * <li>configuration warnings - any warnings raised by the structure of the repository configuration file</li>
      * <li>startup warnings/error - any warnings/errors raised by various repository components which didn't prevent them from
-     * starting up, but could mean they are only partly intialized.</li>
+     * starting up, but could mean they are only partly initialized.</li>
      * </ul>
      * </p>
      *
@@ -1129,6 +1132,21 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                             // Read in the built-in node types ...
                             CndImporter importer = new CndImporter(context);
                             importer.importBuiltIns(this.problems);
+                            if (this.problems.hasErrors()) {
+                                Optional<Throwable> cause = StreamSupport.stream(this.problems.spliterator(), false)
+                                                                         .filter(problem -> problem.getThrowable() != null)
+                                                                         .map(Problem::getThrowable)
+                                                                         .findFirst();   
+                                if (cause.isPresent()) {
+                                    // if there is a cause for the failure throw that
+                                    throw cause.get();
+                                }
+                                // if not create a message with all the issues....
+                                String errorMessage = StreamSupport.stream(this.problems.spliterator(), false)
+                                                                   .map(Problem::getMessageString)
+                                                                   .collect(Collectors.joining(System.lineSeparator()));
+                                throw new IllegalStateException(errorMessage);
+                            }
                             this.nodeTypes.registerNodeTypes(importer.getNodeTypeDefinitions(), false, true, true);
                         } catch (RepositoryException re) {
                             throw new IllegalStateException("Could not load node type definition files", re);
