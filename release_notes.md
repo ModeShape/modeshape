@@ -5,11 +5,14 @@ We hope you enjoy it!
 
 ## What's new
 
-This release addresses 11 bugs and 2 enhancements, most notably:
-- adding replica set support for the Mongo DB binary store to both the JSON and Wildfly configuration (see [MODE-2635](https://issues.jboss.org/browse/MODE-2635))
+This release addresses 19 bugs and 4 enhancements, most notably:
+- adding support for pass-through configuration properties for the Hikari connection pool (see [MODE-2674](https://issues.jboss.org/browse/MODE-2674)) 
 
-- adding the ability to update the configuration for external sources "on the fly", meaning that the repository does not need to be restarted each time 
-an external source is added or changed (see [MODE-2650](https://issues.jboss.org/browse/MODE-2650)) 
+- fixing a number of transaction and clustering related issues 
+
+- upgrading the Wildfly support to the Wildfly 10.1.0.Final 
+
+- adding generic Amazon S3 support for binary storage
 
 ## Migrating from ModeShape 3 or ModeShape 4 
 
