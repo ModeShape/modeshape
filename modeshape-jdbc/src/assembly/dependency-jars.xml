@@ -3,10 +3,10 @@
           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
           xsi:schemaLocation="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.0 http://maven.apache.org/xsd/assembly-1.1.0.xsd">
 
-    <id>jar-with-dependencies</id>
+    <id>dependency-jars</id>
 
     <formats>
-        <format>jar</format>
+        <format>dir</format>
     </formats>
     <includeBaseDirectory>false</includeBaseDirectory>
 
@@ -17,26 +17,19 @@
             <unpack>false</unpack>
             <scope>runtime</scope>
             <includes>
+                <include>org.modeshape:modeshape-jdbc</include>
+
+                <include>org.modeshape:modeshape-jdbc-local</include>
                 <include>org.modeshape:modeshape-jcr-api</include>
                 <include>javax.jcr:jcr</include>
 
-                <!-- Needed for the driver's HTTP communication -->
+                <!-- Needed for the driver's HTTP communication (includes transitive deps) -->
                 <include>org.apache.httpcomponents:httpclient</include>
                 <include>org.apache.httpcomponents:httpcore</include>
                 <include>org.modeshape:modeshape-common</include>
                 <include>org.codehaus.jettison:jettison</include>
                 <include>commons-codec:commons-codec</include>
                 <include>commons-logging:commons-logging</include>
-
-                <include>org.modeshape:modeshape-jdbc-local</include>
-            </includes>
-        </dependencySet>
-
-        <dependencySet>
-            <unpack>true</unpack>
-            <useTransitiveDependencies>false</useTransitiveDependencies>
-            <includes>
-                <include>org.modeshape:modeshape-jdbc</include>
             </includes>
         </dependencySet>
     </dependencySets>

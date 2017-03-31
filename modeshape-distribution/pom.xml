@@ -267,7 +267,6 @@
                                 <dependencySourceExclude>org.modeshape:modeshape-integration-tests:*</dependencySourceExclude>
                                 <dependencySourceExclude>org.modeshape:modeshape-jbossas-integration-tests:*</dependencySourceExclude>
                                 <dependencySourceExclude>org.modeshape:*:test:*</dependencySourceExclude>
-                                <dependencySourceExclude>org.modeshape:modeshape-client:*</dependencySourceExclude>
                             </dependencySourceExcludes>
 
                             <links>

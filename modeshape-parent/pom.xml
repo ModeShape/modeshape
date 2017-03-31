@@ -219,8 +219,6 @@
         <version.fabric8.docker.plugin>0.19.0</version.fabric8.docker.plugin>
         <version.org.elasticsearch>2.1.0</version.org.elasticsearch>
         <version.jna>4.1.0</version.jna>
-        <!--The name of the modeshape-client artifact used by tools-->
-        <client.artifactId>modeshape-client</client.artifactId>
 
         <!--Skip long running tests by default-->
         <skipLongRunningTests>true</skipLongRunningTests>
