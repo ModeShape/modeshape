@@ -72,14 +72,7 @@ final class LocalDuplicateIndex<T> extends LocalMapIndex<UniqueKey<T>, T> {
                                                                                                                  comparator),
               MapDB.uniqueKeySerializer(valueSerializer, comparator));
         Long nextCounter = (Long)options.get(NEXT_COUNTER);
-        this.counter = new AtomicLong(nextCounter != null ? nextCounter.longValue() : 0L);
-    }
-
-    @Override
-    public void shutdown( boolean destroyed ) {
-        // Store the value of the next counter in the options map ...
-        options.put(NEXT_COUNTER, counter.get());
-        super.shutdown(destroyed);
+        this.counter = new AtomicLong(nextCounter != null ? nextCounter : -1L);
     }
 
     @Override
@@ -87,7 +80,10 @@ final class LocalDuplicateIndex<T> extends LocalMapIndex<UniqueKey<T>, T> {
                      String propertyName, 
                      T value ) {
         logger.trace("Adding node '{0}' to '{1}' index with value '{2}'", nodeKey, name, value);
-        keysByValue.put(new UniqueKey<T>(value, counter.getAndIncrement()), nodeKey);
+        // Store the value of the next counter in the options map first so in the case of a failure we'll pick up at least from there
+        long nextId = (long) options.compute(NEXT_COUNTER, (key, val) -> counter.incrementAndGet());
+        // then store the data in the index
+        keysByValue.compute(new UniqueKey<T>(value, nextId), (key, val) -> nodeKey);
     }
 
     @Override
