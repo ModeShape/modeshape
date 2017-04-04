@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentNavigableMap;
 import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.concurrent.atomic.AtomicLong;
 import javax.jcr.query.qom.Constraint;
 import org.mapdb.BTreeKeySerializer;
 import org.mapdb.DB;
@@ -56,6 +57,7 @@ final class LocalEnumeratedIndex extends LocalIndex<String> {
     private final Converter<String> converter;
     private final Set<String> possibleValues;
     private final boolean isNew;
+    private final AtomicLong totalCount;
 
     LocalEnumeratedIndex( String name,
                           String workspaceName,
@@ -65,6 +67,7 @@ final class LocalEnumeratedIndex extends LocalIndex<String> {
                           Set<String> possibleValues ) {
         super(name, workspaceName, db);
 
+        this.totalCount = new AtomicLong(0);
         this.converter = converter;
         this.possibleValues = possibleValues != null ? new HashSet<String>(possibleValues) : new HashSet<String>();
         this.nodeKeySetsByValue = new ConcurrentSkipListMap<>();
@@ -78,6 +81,7 @@ final class LocalEnumeratedIndex extends LocalIndex<String> {
                     String valueString = collectionName.substring(prefix.length());
                     Set<String> keysForValue = createOrGetKeySet(valueString);
                     nodeKeySetsByValue.put(valueString, keysForValue);
+                    totalCount.addAndGet(keysForValue.size());
                 }
             }
         }
@@ -86,6 +90,7 @@ final class LocalEnumeratedIndex extends LocalIndex<String> {
             if (!nodeKeySetsByValue.containsKey(possibleValue)) {
                 Set<String> keysForValue = createOrGetKeySet(possibleValue);
                 nodeKeySetsByValue.put(possibleValue, keysForValue);
+                totalCount.addAndGet(keysForValue.size());
             }
         }
         this.isNew = !foundContent;
@@ -102,7 +107,7 @@ final class LocalEnumeratedIndex extends LocalIndex<String> {
             }
         }
         // Try to create the set ...
-        Set<String> keySet = db.getHashSet(collectionName); // make sure this is ATOMIC !
+        Set<String> keySet = db.createHashSet(collectionName).counterEnable().makeOrGet(); // make sure this is ATOMIC !   
         Set<String> previous = nodeKeySetsByValue.putIfAbsent(value, keySet);
         if (previous != null) keySet = previous;
         return keySet;
@@ -132,11 +137,7 @@ final class LocalEnumeratedIndex extends LocalIndex<String> {
 
     @Override
     public long estimateTotalCount() {
-        long count = 0L;
-        for (Map.Entry<String, Set<String>> entry : nodeKeySetsByValue.entrySet()) {
-            count += entry.getValue().size();
-        }
-        return count;
+        return totalCount.get();
     }
 
     @Override
@@ -158,17 +159,18 @@ final class LocalEnumeratedIndex extends LocalIndex<String> {
                      String propertyName, 
                      String value ) {
         // Find the set ...
-        Set<String> keySet = nodeKeySetsByValue.get(value);
-        if (keySet == null) {
-            keySet = createOrGetKeySet(value);
+        Set<String> keySet = nodeKeySetsByValue.computeIfAbsent(value, this::createOrGetKeySet);
+        if (keySet.add(nodeKey)) {
+            totalCount.incrementAndGet();
         }
-        keySet.add(nodeKey);
     }
 
     @Override
     public void remove( String nodeKey ) {
         for (Set<String> nodeKeySet : nodeKeySetsByValue.values()) {
-            nodeKeySet.remove(nodeKey);
+            if (nodeKeySet.remove(nodeKey)) {
+                totalCount.decrementAndGet();    
+            }
         }
     }
 
@@ -178,7 +180,9 @@ final class LocalEnumeratedIndex extends LocalIndex<String> {
                         String value ) {
         Set<String> nodeKeySet = nodeKeySetsByValue.get(value);
         if (nodeKeySet != null) {
-            nodeKeySet.remove(nodeKey);
+            if (nodeKeySet.remove(nodeKey)) {
+                totalCount.decrementAndGet();
+            }
         }
     }
 
@@ -192,6 +196,7 @@ final class LocalEnumeratedIndex extends LocalIndex<String> {
             }
         }
         nodeKeySetsByValue.clear();
+        totalCount.set(0);
     }
 
     @Override
@@ -205,6 +210,7 @@ final class LocalEnumeratedIndex extends LocalIndex<String> {
                 }
             }
             nodeKeySetsByValue.clear();
+            totalCount.set(0);
         }
     }
 

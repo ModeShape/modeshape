@@ -163,6 +163,47 @@ public class LuceneIndexProviderTest extends LocalIndexProviderTest {
     }
     
     @Test
+    @FixFor("MODE-2683")
+    @Ignore
+    public void shouldUseIndexWithUpperAndLowerOperands() throws Exception {
+        registerValueIndex("descriptionIndex", "mix:title", "Index for the 'jcr:title' property on mix:title", "*", "jcr:title",
+                           PropertyType.STRING);
+        
+        // Add a node that uses this type ...
+        Node root = session().getRootNode();
+        Node book1 = root.addNode("myFirstBook");
+        book1.addMixin("mix:title");
+        book1.setProperty("jcr:title", "The Title");
+        
+        Node book2 = root.addNode("mySecondBook");
+        book2.addMixin("mix:title");
+        book2.setProperty("jcr:title", "A Different Title");
+        
+        Node book3 = root.addNode("myThirdBook");
+        book3.addMixin("mix:title");
+        book3.setProperty("jcr:title", "UPPERCASE TITLE");
+        
+        session.save();
+        
+        // Compute a query plan that will NOT use this index, since the selector doesn't match the index's node type.
+        // If we would use this index, the index doesn't know about non-mix:title nodes like the 'other' node ...
+        Query query = jcrSql2Query("SELECT * FROM [mix:title] WHERE UPPER([jcr:title]) LIKE '%TITLE%'");
+        validateQuery().rowCount(3L).useIndex("descriptionIndex").validate(query, query.execute());
+        
+        query = jcrSql2Query("SELECT * FROM [mix:title] WHERE LOWER([jcr:title]) LIKE '%title%'");
+        validateQuery().rowCount(3L).useIndex("descriptionIndex").validate(query, query.execute());    
+        
+        query = jcrSql2Query("SELECT * FROM [mix:title] WHERE [jcr:title] LIKE '%title%'");
+        validateQuery().rowCount(0L).useIndex("descriptionIndex").validate(query, query.execute());
+
+        query = jcrSql2Query("SELECT * FROM [mix:title] WHERE [jcr:title] LIKE '%Title%'");
+        validateQuery().rowCount(2L).useIndex("descriptionIndex").validate(query, query.execute());
+
+        query = jcrSql2Query("SELECT * FROM [mix:title] WHERE [jcr:title] LIKE '%TITLE%'");
+        validateQuery().rowCount(1L).useIndex("descriptionIndex").validate(query, query.execute());
+    }
+    
+    @Test
     @Ignore("perf test")
     public void testPerformanceOnStringFields() throws Exception {
         registerNodeType("nt:testType");
