@@ -18,8 +18,10 @@ package org.modeshape.jcr;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import javax.jcr.Node;
@@ -178,6 +180,35 @@ public abstract class AbstractIndexProviderTest extends SingleUseAbstractTest {
         assertEquals("lastContent", lastNode.getProperty("content").getString());
         assertNotNull("lastAuthor", lastNode.getProperty("author").getString());
     }
+    
+    @Test
+    @FixFor( "MODE-2682" )
+    public void shouldUseEnumeratedIndexes() throws Exception {
+        registerNodeTypes("cnd/images.cnd");
+        registerEnumeratedIndex("imageFormat", "image:metadata", null, "*", "image:formatName", PropertyType.STRING);
+
+        List<String> formats = Arrays.asList("JPEG", "GIF", "PNG", "BMP", "PCX", "IFF", "RAS", "PBM", "PGM", "PPM", "PSD");
+        int nodeCountPerFormat = 2;
+        formats.forEach(format -> {
+                     try {
+                         for (int i = 0; i < nodeCountPerFormat; i++) {
+                             Node image = session.getRootNode().addNode("image_" + i, "image:metadata");
+                             image.setProperty("image:formatName", format);
+                         }
+                     } catch (RepositoryException e) {
+                         throw new RuntimeException(e);
+                     }
+                 });
+        session.save();
+        formats.forEach(format -> {
+            try {
+                Query query = jcrSql2Query("select image.[jcr:path] from [image:metadata] as image where image.[image:formatName] = '" + format + "'");
+                validateQuery().rowCount(nodeCountPerFormat).useIndex("imageFormat").validate(query, query.execute());
+            } catch (RepositoryException e) {
+                throw new RuntimeException(e);
+            }
+        });
+    }
 
     @Override
     protected void startRepository() throws Exception {
@@ -213,6 +244,16 @@ public abstract class AbstractIndexProviderTest extends SingleUseAbstractTest {
                                        String propertyName,
                                        int propertyType ) throws RepositoryException {
         registerIndex(indexName, IndexKind.VALUE, providerName(), indexedNodeType, desc, workspaceNamePattern, propertyName,
+                      propertyType);
+    }
+    
+    protected void registerEnumeratedIndex(String indexName,
+                                           String indexedNodeType,
+                                           String desc,
+                                           String workspaceNamePattern,
+                                           String propertyName,
+                                           int propertyType) throws RepositoryException {
+        registerIndex(indexName, IndexKind.ENUMERATED_VALUE, providerName(), indexedNodeType, desc, workspaceNamePattern, propertyName,
                       propertyType);
     }
 
