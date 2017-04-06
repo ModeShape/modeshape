@@ -25,7 +25,6 @@ import javax.jcr.query.qom.Comparison;
 import org.apache.lucene.index.LeafReaderContext;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.search.Query;
-import org.apache.lucene.search.RegexpQuery;
 import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.TermRangeQuery;
 import org.apache.lucene.search.Weight;
@@ -194,7 +193,7 @@ public class CompareStringQuery extends CompareQuery<String> {
             return createQueryForNodesWithFieldEqualTo(likeExpression, fieldName, caseOperation);
         }
         if (caseOperation == null) {
-            // We can just do a normal Wildcard or RegEx query ...
+            // We can just do a normal Wildcard query ...
             
             // '%' matches 0 or more characters
             // '_' matches any single character
@@ -210,16 +209,10 @@ public class CompareStringQuery extends CompareQuery<String> {
                 return new WildcardQuery(new Term(fieldName, expression));
             }
         }
-        // Create a regex query (which will be done using the correct case) ...
+        // Create a regex query...
         String regex = QueryUtil.toRegularExpression(likeExpression);
-        
-        int flags = Pattern.UNICODE_CASE;
-        if (caseOperation != null) {
-            // if we're searching either for the UPPERCASE or LOWERCASE of something, use Case Insensitive matching
-            // even though it could produce false positive
-            flags = flags | Pattern.CASE_INSENSITIVE;
-        }
-        return new RegexpQuery(new Term(fieldName, regex), flags);
+        Pattern pattern = Pattern.compile(regex, Pattern.UNICODE_CASE);
+        return new RegexQuery(fieldName, pattern, caseOperation);
     }
     
     /**
