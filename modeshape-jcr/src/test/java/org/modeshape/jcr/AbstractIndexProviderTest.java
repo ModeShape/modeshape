@@ -186,7 +186,6 @@ public abstract class AbstractIndexProviderTest extends SingleUseAbstractTest {
     public void shouldUseEnumeratedIndexes() throws Exception {
         registerNodeTypes("cnd/images.cnd");
         registerEnumeratedIndex("imageFormat", "image:metadata", null, "*", "image:formatName", PropertyType.STRING);
-
         List<String> formats = Arrays.asList("JPEG", "GIF", "PNG", "BMP", "PCX", "IFF", "RAS", "PBM", "PGM", "PPM", "PSD");
         int nodeCountPerFormat = 2;
         formats.forEach(format -> {
@@ -200,6 +199,8 @@ public abstract class AbstractIndexProviderTest extends SingleUseAbstractTest {
                      }
                  });
         session.save();
+        waitForIndexes();
+    
         formats.forEach(format -> {
             try {
                 Query query = jcrSql2Query("select image.[jcr:path] from [image:metadata] as image where image.[image:formatName] = '" + format + "'");
