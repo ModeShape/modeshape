@@ -49,7 +49,6 @@ import org.apache.lucene.search.MatchAllDocsQuery;
 import org.apache.lucene.search.MatchNoDocsQuery;
 import org.apache.lucene.search.PhraseQuery;
 import org.apache.lucene.search.Query;
-import org.apache.lucene.search.RegexpQuery;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.jcr.JcrI18n;
@@ -889,16 +888,15 @@ public class LuceneQueryFactory {
                 if (likeExpression.contains("[%]")) {
                     // We can't use '[%]' because we only want to match digits,
                     // so handle this using a regex ...
-                    // !!! LUCENE Regexp is not the same as Java's. See the javadoc RegExp
                     String regex = likeExpression;
                     regex = regex.replace("[%]", "(\\[[0-9]+\\])?");
-                    regex = regex.replaceAll("\\[\\d+\\]", "\\[[0-9]+\\]");
+                    regex = regex.replaceAll("\\[(\\d+)\\]", "\\\\[$1\\\\]");
                     //regex = regex.replace("]", "\\]");
                     regex = regex.replace("*", ".*");
                     regex = regex.replace("%", ".*").replace("_", ".");
                     // Now create a regex query ...
-                    int flags = caseOperation == null ? 0 : Pattern.CASE_INSENSITIVE;
-                    return new RegexpQuery(new Term(field, regex), flags);
+                    Pattern pattern = Pattern.compile(regex, Pattern.CASE_INSENSITIVE);
+                    return new RegexQuery(field, pattern, caseOperation);
                 } else {
                     return CompareStringQuery.createQueryForNodesWithFieldLike(likeExpression, field, caseOperation);
                 }

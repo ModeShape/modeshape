@@ -164,7 +164,6 @@ public class LuceneIndexProviderTest extends LocalIndexProviderTest {
     
     @Test
     @FixFor("MODE-2683")
-    @Ignore
     public void shouldUseIndexWithUpperAndLowerOperands() throws Exception {
         registerValueIndex("descriptionIndex", "mix:title", "Index for the 'jcr:title' property on mix:title", "*", "jcr:title",
                            PropertyType.STRING);
