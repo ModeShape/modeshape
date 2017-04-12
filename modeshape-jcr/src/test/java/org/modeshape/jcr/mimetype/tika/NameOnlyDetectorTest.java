@@ -13,10 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.modeshape.jcr.mimetype;
+package org.modeshape.jcr.mimetype.tika;
 
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
+
 import java.io.InputStream;
 import java.util.HashSet;
 import java.util.Set;
@@ -25,15 +26,16 @@ import org.junit.Test;
 import org.modeshape.common.util.StringUtil;
 import org.modeshape.jcr.InMemoryTestBinary;
 import org.modeshape.jcr.LocalEnvironment;
+import org.modeshape.jcr.mimetype.MimeTypeDetector;
 
 /**
- * Unit test for {@link NameOnlyDetector}.
+ * Unit test for {@link TikaNameOnlyDetector}.
  *
  * @author Horia Chiorean
  */
 public class NameOnlyDetectorTest {
     
-    private static final MimeTypeDetector DETECTOR = new NameOnlyDetector(new LocalEnvironment());
+    private static final MimeTypeDetector DETECTOR = new TikaNameOnlyDetector(new LocalEnvironment());
 
     protected void testMimeType( String name,
                                  String... mimeTypes ) throws Exception {

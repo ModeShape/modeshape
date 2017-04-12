@@ -21,6 +21,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -43,11 +44,10 @@ import org.junit.rules.TestRule;
 import org.modeshape.common.FixFor;
 import org.modeshape.common.junit.SkipTestRule;
 import org.modeshape.common.util.IoUtil;
-import org.modeshape.jcr.LocalEnvironment;
 import org.modeshape.jcr.TextExtractors;
 import org.modeshape.jcr.api.text.TextExtractor;
+import org.modeshape.jcr.mimetype.DefaultMimeTypeDetector;
 import org.modeshape.jcr.mimetype.MimeTypeDetector;
-import org.modeshape.jcr.mimetype.NameOnlyDetector;
 import org.modeshape.jcr.value.BinaryKey;
 import org.modeshape.jcr.value.BinaryValue;
 
@@ -74,7 +74,7 @@ public abstract class AbstractBinaryStoreTest {
     public static final BinaryKey EMPTY_BINARY_KEY;
     public static final String TEXT_DATA;
 
-    protected static final MimeTypeDetector DEFAULT_DETECTOR = new NameOnlyDetector(new LocalEnvironment());
+    protected static final MimeTypeDetector DEFAULT_DETECTOR = new DefaultMimeTypeDetector();
     
     private static final Random RANDOM = new Random();
 

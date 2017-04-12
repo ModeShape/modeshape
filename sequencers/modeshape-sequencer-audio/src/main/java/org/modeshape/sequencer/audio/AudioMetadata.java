@@ -139,7 +139,7 @@ public class AudioMetadata {
         if (mimeType.startsWith("audio/mpeg")) {
             format = FORMAT_MP3;
             audioFile = new MP3FileReader().read(fileCopy);
-        } else if (mimeType.startsWith("audio/vorbis") || mimeType.startsWith("audio/x-vorbis")) {
+        } else if (mimeType.startsWith("audio/vorbis") || mimeType.startsWith("audio/x-vorbis") || mimeType.startsWith("audio/ogg")) {
             format = FORMAT_VORBIS;
             audioFile = new OggFileReader().read(fileCopy);
         } else if (mimeType.startsWith("audio/flac") || mimeType.startsWith("audio/x-flac")) {

@@ -14,27 +14,29 @@
  * limitations under the License.
  */
 
-package org.modeshape.jcr.mimetype;
+package org.modeshape.jcr.mimetype.tika;
 
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
+
 import java.io.IOException;
 import java.io.InputStream;
 import org.apache.tika.mime.MediaType;
 import org.junit.Test;
 import org.modeshape.jcr.InMemoryTestBinary;
 import org.modeshape.jcr.LocalEnvironment;
+import org.modeshape.jcr.mimetype.MimeTypeDetector;
 
 /**
- * Unit test for {@link ContentDetector}
+ * Unit test for {@link TikaContentDetector}
  * 
  * @author Horia Chiorean
  */
 public class ContentDetectorTest {
 
-    private static final MimeTypeDetector DETECTOR = new ContentDetector(new LocalEnvironment());
+    private static final MimeTypeDetector DETECTOR = new TikaContentDetector(new LocalEnvironment());
 
     private static final String TXT_FILE = "mimetype/modeshape.txt";
     private static final String PDF_FILE = "mimetype/modeshape_gs.pdf";

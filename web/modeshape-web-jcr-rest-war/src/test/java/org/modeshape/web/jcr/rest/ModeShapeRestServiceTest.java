@@ -337,7 +337,7 @@ public class ModeShapeRestServiceTest extends AbstractRestTest {
     public void shouldRetrieveBinaryPropertyValue() throws Exception {
         doPost("put/node_with_binary_property.json", itemsUrl(TEST_NODE)).isCreated();
         Response response = doGet(binaryUrl(TEST_NODE, "testProperty")).isOk()
-                                                                       .hasMimeType(MediaType.TEXT_PLAIN)
+                                                                       .hasMimeType(MediaType.APPLICATION_JSON)
                                                                        .hasContentDisposition(RestBinaryHandler.DEFAULT_CONTENT_DISPOSITION_PREFIX
                                                                                               + TEST_NODE);
         assertEquals("testValue", response.contentAsString());
