@@ -25,6 +25,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -884,5 +885,31 @@ public class JcrNodeTest extends MultiUseAbstractTest {
         session.save();
         assertNode("/snsFolder/cds:sibling[1]");
         assertNode("/snsFolder/cds:sibling[2]");
+    }
+    
+    
+    @Test
+    @FixFor( "MODE-2685" )
+    public void shouldReorderSNSWithWithTransientChanges() throws Exception {
+        JcrRootNode root = session.getRootNode();
+        Node test = root.addNode("snsReorderTest");
+        test.addNode("B"); //B[1]
+        test.addNode("B"); //B[2]
+        test.addNode("C"); //C
+        test.addNode("B"); //B[3]
+        session.save();
+    
+        try {
+            Node b2 = session.getNode("/snsReorderTest/B[2]");
+            b2.setProperty("test", "b2");
+            session.getNode("/snsReorderTest").orderBefore("B[3]", "C");
+            session.save();
+        
+            b2 = session.getNode("/snsReorderTest/B[2]");
+            assertEquals("b2", b2.getProperty("test").getString());
+        } finally {
+            test.remove();
+            session.save();
+        }
     }
 }
