@@ -1471,9 +1471,9 @@ public class WritableSessionCache extends AbstractSessionCache {
                 }
                 if (childReference.getName().equals(reorderedChildRef.getName())) {
                     // childReference is a SNS so we must record it's old and new path
-                    CachedNode sns = getNode(childKey);
+                    CachedNode persistedSNS = workspaceCache().getNode(childKey);
                     Path snsNewPath = pathFactory().create(parentPath, childReference.getSegment());
-                    Path snsOldPath = workspacePaths.getPath(sns);
+                    Path snsOldPath = workspacePaths.getPath(persistedSNS);
                     if (!snsOldPath.equals(snsNewPath)) {
                         snsPathChangesByNodeKey.put(childKey,
                                                     Collections.singletonMap(snsOldPath, snsNewPath));
