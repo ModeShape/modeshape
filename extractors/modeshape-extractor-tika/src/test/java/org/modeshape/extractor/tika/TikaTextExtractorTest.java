@@ -41,7 +41,7 @@ import org.modeshape.common.util.FileUtil;
 import org.modeshape.common.util.IoUtil;
 import org.modeshape.jcr.InMemoryTestBinary;
 import org.modeshape.jcr.LocalEnvironment;
-import org.modeshape.jcr.mimetype.ContentDetector;
+import org.modeshape.jcr.mimetype.tika.TikaContentDetector;
 import org.modeshape.jcr.mimetype.MimeTypeDetector;
 import org.modeshape.jcr.text.TextExtractorContext;
 import org.modeshape.jcr.text.TextExtractorOutput;
@@ -51,7 +51,7 @@ import org.modeshape.jcr.text.TextExtractorOutput;
  */
 public class TikaTextExtractorTest {
 
-    private static final MimeTypeDetector DETECTOR = new ContentDetector(new LocalEnvironment());
+    private static final MimeTypeDetector DETECTOR = new TikaContentDetector(new LocalEnvironment());
     private static final int DEFAULT_TIKA_WRITE_LIMIT = 100000;
     private static final String CHARS = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
     private static final Random RANDOM = new Random();

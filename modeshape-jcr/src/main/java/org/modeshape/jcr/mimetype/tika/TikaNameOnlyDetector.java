@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.modeshape.jcr.mimetype;
+package org.modeshape.jcr.mimetype.tika;
 
 import java.io.InputStream;
 import org.apache.tika.detect.Detector;
@@ -25,6 +25,7 @@ import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.jcr.Environment;
 import org.modeshape.jcr.JcrI18n;
+import org.modeshape.jcr.mimetype.MimeTypeDetector;
 
 /**
  * {@link MimeTypeDetector} implementation which uses Apache Tika to determine the mimetype of a given binary, based only
@@ -34,7 +35,7 @@ import org.modeshape.jcr.JcrI18n;
  */
 @Immutable
 @ThreadSafe
-public final class NameOnlyDetector extends TikaMimeTypeDetector {
+public final class TikaNameOnlyDetector extends TikaMimeTypeDetector {
     
     private Detector detector;
 
@@ -43,7 +44,7 @@ public final class NameOnlyDetector extends TikaMimeTypeDetector {
      *
      * @param environment the {@link Environment} to use for class loading; may not be {@code null}
      */
-    public NameOnlyDetector( Environment environment ) {
+    public TikaNameOnlyDetector(Environment environment) {
         super(environment);
     }
     

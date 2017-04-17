@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.modeshape.jcr.mimetype;
+package org.modeshape.jcr.mimetype.tika;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -26,6 +26,7 @@ import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.SelfClosingInputStream;
 import org.modeshape.common.util.StringUtil;
 import org.modeshape.jcr.Environment;
+import org.modeshape.jcr.mimetype.MimeTypeDetector;
 
 /**
  * A base class for the {@link MimeTypeDetector}s that use the Tika library.

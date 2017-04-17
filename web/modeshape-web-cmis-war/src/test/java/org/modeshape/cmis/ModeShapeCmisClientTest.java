@@ -15,6 +15,8 @@
  */
 package org.modeshape.cmis;
 
+import static org.junit.Assert.assertEquals;
+
 import java.io.ByteArrayInputStream;
 import java.util.HashMap;
 import java.util.List;
@@ -30,10 +32,9 @@ import org.apache.chemistry.opencmis.commons.SessionParameter;
 import org.apache.chemistry.opencmis.commons.data.ContentStream;
 import org.apache.chemistry.opencmis.commons.enums.BindingType;
 import org.apache.chemistry.opencmis.commons.enums.VersioningState;
-import org.apache.tika.io.IOUtils;
 import org.junit.Before;
 import org.junit.Test;
-import static org.junit.Assert.assertEquals;
+import org.modeshape.common.util.IoUtil;
 
 /**
  * Unit test for CMIS bridge
@@ -155,7 +156,7 @@ public class ModeShapeCmisClientTest {
         for (Document doc : versions) {
             String verId = doc.getId();
             Document versDoc = (Document)session.getObject(verId);
-            String s = IOUtils.toString(versDoc.getContentStream().getStream());
+            String s = IoUtil.read(versDoc.getContentStream().getStream());
             
             assertEquals(contents[i], s);
             i++;

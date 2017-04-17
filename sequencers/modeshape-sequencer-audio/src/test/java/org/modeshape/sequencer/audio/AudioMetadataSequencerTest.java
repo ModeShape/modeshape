@@ -97,11 +97,11 @@ public class AudioMetadataSequencerTest extends AbstractSequencerTest {
 
         // THEN
         Node sequencedNodeDifferentLocation = getOutputNode(rootNode, "sequenced/audio/" + filename);
-        assertMetaDataProperties(sequencedNodeDifferentLocation, "ogg", "audio/vorbis", 112L, 44100L, "2", 2.0,
+        assertMetaDataProperties(sequencedNodeDifferentLocation, "ogg", "audio/ogg", 112L, 44100L, "2", 2.0,
                 "Album", "Artist", "Comment", "Title", "2015", "1", "Speech", "image/jpeg");
 
         Node sequencedNodeSameLocation = getOutputNode(audioNode, METADATA_NODE);
-        assertMetaDataProperties(sequencedNodeSameLocation, "ogg", "audio/vorbis", 112L, 44100L, "2", 2.0,
+        assertMetaDataProperties(sequencedNodeSameLocation, "ogg", "audio/ogg", 112L, 44100L, "2", 2.0,
                 "Album", "Artist", "Comment", "Title", "2015", "1", "Speech", "image/jpeg");
     }
 

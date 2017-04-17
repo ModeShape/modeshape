@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.modeshape.jcr.mimetype;
+package org.modeshape.jcr.mimetype.tika;
 
 import java.io.InputStream;
 import org.apache.tika.detect.DefaultDetector;
@@ -27,17 +27,18 @@ import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.annotation.ThreadSafe;
 import org.modeshape.jcr.Environment;
 import org.modeshape.jcr.JcrI18n;
+import org.modeshape.jcr.mimetype.MimeTypeDetector;
 
 /**
  * {@link MimeTypeDetector} implementation which uses Apache Tika to determine the mimetype of a given binary, based on the 
  * content (binary) header. This involves reading at least the first X bytes from each binary and is more expensive than 
- * {@link NameOnlyDetector}
+ * {@link TikaNameOnlyDetector}
  *
  * @author Horia Chiorean (hchiorea@redhat.com)
  **/
 @Immutable
 @ThreadSafe
-public final class ContentDetector extends TikaMimeTypeDetector {
+public final class TikaContentDetector extends TikaMimeTypeDetector {
     
     private DefaultDetector detector;
     
@@ -46,7 +47,7 @@ public final class ContentDetector extends TikaMimeTypeDetector {
      * 
      * @param environment the {@link Environment} to use for class loading; may not be {@code null}
      */
-    public ContentDetector( Environment environment ) {
+    public TikaContentDetector(Environment environment) {
         super(environment);
     }
     

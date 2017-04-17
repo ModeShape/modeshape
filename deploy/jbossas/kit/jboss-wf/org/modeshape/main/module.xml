@@ -37,7 +37,7 @@
         <!-- for the DB binary store -->
         <module name="org.jgroups" slot="${jgroups.module.slot}"/>
 
-        <module name="org.apache.tika" slot="${version.org.apache.tika}" services="import"/>
+        <module name="org.apache.tika" slot="${version.org.apache.tika}" services="import" optional="true"/>
 
         <!-- For naming ... -->
         <module name="javax.api" export="true"/>
