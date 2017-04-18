@@ -5,14 +5,10 @@ We hope you enjoy it!
 
 ## What's new
 
-This release addresses 19 bugs and 4 enhancements, most notably:
-- adding support for pass-through configuration properties for the Hikari connection pool (see [MODE-2674](https://issues.jboss.org/browse/MODE-2674)) 
+This is a micro-release which addresses 3 bugs and 2 enhancements, most notably:
+- fixing the performance of enumerated indexes
 
-- fixing a number of transaction and clustering related issues 
-
-- upgrading the Wildfly support to the Wildfly 10.1.0.Final 
-
-- adding generic Amazon S3 support for binary storage
+- making Apache Tika an optional dependency of modeshape-core
 
 ## Migrating from ModeShape 3 or ModeShape 4 
 

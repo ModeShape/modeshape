@@ -476,4 +476,4 @@ def release():
   prettyprint("\n\n\nDone!  Now all you need to do is the remaining post-release tasks as outlined in https://docspace.corp.redhat.com/docs/DOC-28594", Levels.INFO)
 
 if __name__ == "__main__":
-  patch_poms("..", "5.5-SNAPSHOT")
+  release()
