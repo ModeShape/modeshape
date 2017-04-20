@@ -42,13 +42,14 @@ public final class DataSourceManager {
                                                                                DatabaseType.Name.MYSQL,
                                                                                DatabaseType.Name.POSTGRES,
                                                                                DatabaseType.Name.ORACLE,
-                                                                               DatabaseType.Name.SQLSERVER);
+                                                                               DatabaseType.Name.SQLSERVER,
+                                                                               DatabaseType.Name.DB2);
 
     private final DataSource dataSource;
     private final DatabaseType dbType;
 
     protected DataSourceManager(RelationalDbConfig config) {
-        dataSource = config.isDatasourceManaged() ? getFromJndi(config.datasourceJNDIName()) : createManagedDS(config); 
+        dataSource = config.isDatasourceManaged() ? getFromJndi(config.datasourceJNDIName()) : createManagedDS(config);
         
         try (Connection connection = newConnection(false, true)) {
             DatabaseMetaData metaData = connection.getMetaData();
@@ -100,7 +101,7 @@ public final class DataSourceManager {
     protected DataSource dataSource() {
         return dataSource;
     }
-    
+
     protected Connection newConnection(boolean autocommit, boolean readonly) {
         try {
             Connection connection = dataSource.getConnection();
