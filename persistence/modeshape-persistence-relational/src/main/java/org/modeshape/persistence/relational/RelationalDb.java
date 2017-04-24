@@ -66,7 +66,7 @@ public class RelationalDb implements SchematicDb {
         this.statements = createStatements(dbType);
         this.transactionalCaches = new TransactionalCaches();
     }
-    
+
     private Statements createStatements(DatabaseType dbType) {
         Map<String, String> statementsFile = loadStatementsResource();
         switch (dbType.name()) {
@@ -74,10 +74,13 @@ public class RelationalDb implements SchematicDb {
                 return new OracleStatements(config, statementsFile);
             case SQLSERVER:
                 return new SQLServerStatements(config, statementsFile);
+            case DB2: {
+                return new DB2Statements(config, statementsFile);
+            }
             default:
                 return new DefaultStatements(config, statementsFile);
         }
-    } 
+    }
 
     @Override
     public String id() {
@@ -124,7 +127,7 @@ public class RelationalDb implements SchematicDb {
             iterator.remove();
         }
     }
-    
+
     private void closeConnection(String txId, Connection connection) {
         try {
             if (connection == null || connection.isClosed()) {
@@ -134,7 +137,7 @@ public class RelationalDb implements SchematicDb {
             LOGGER.debug(t, "Cannot determine DB connection status for transaction {0}", txId);
             return;
         }
-        
+
         try {
             connection.close();
         } catch (Throwable t) {
@@ -143,7 +146,7 @@ public class RelationalDb implements SchematicDb {
             LOGGER.debug(t, "Cannot close connection");
         }
     }
-    
+
     @Override
     public List<String> keys() {
         //first read everything from the db
@@ -306,7 +309,7 @@ public class RelationalDb implements SchematicDb {
     @Override
     public void txStarted(String id) {
         logDebug("New transaction '{0}' started by ModeShape...", id);
-        String activeTx = TransactionsHolder.activeTransaction(); 
+        String activeTx = TransactionsHolder.activeTransaction();
         if (activeTx != null && !activeTx.equals(id)) {
             LOGGER.warn(RelationalProviderI18n.threadAssociatedWithAnotherTransaction,
                     Thread.currentThread().getName(), activeTx, id);
@@ -341,13 +344,13 @@ public class RelationalDb implements SchematicDb {
         } finally {
             // clear the tx cache
             transactionalCaches.clearCache(id);
-            // and clear the tx 
+            // and clear the tx
             TransactionsHolder.clearActiveTransaction();
         }
     }
 
     private void persistContent(Connection tlConnection, String txId) throws SQLException {
-        TransactionalCaches.TransactionalCache cache = transactionalCaches.cacheForTransaction(txId); 
+        TransactionalCaches.TransactionalCache cache = transactionalCaches.cacheForTransaction(txId);
         if (cache == null) {
             // simply commit the connection
             tlConnection.commit();
@@ -355,7 +358,7 @@ public class RelationalDb implements SchematicDb {
         }
         Map<String, Document> writeCache = cache.writeCache();
         Map<String, Document> readCache = cache.readCache();
-        
+
         logDebug("Committing the active connection for transaction {0} with the changes: {1}", txId, writeCache);
         Statements.BatchUpdate batchUpdate = statements.batchUpdate(tlConnection);
         Map<String, Document> toInsert = new HashMap<>();
@@ -417,7 +420,7 @@ public class RelationalDb implements SchematicDb {
         String activeTxId = TransactionsHolder.requireActiveTransaction();
         Connection connection = connectionsByTxId.get(activeTxId);
         if (connection != null) {
-            return connection;    
+            return connection;
         }
         connection = dsManager.newConnection(false, false);
         connectionsByTxId.put(activeTxId, connection);
@@ -432,7 +435,7 @@ public class RelationalDb implements SchematicDb {
     protected DataSourceManager dsManager() {
         return dsManager;
     }
-   
+
     protected Connection newConnection(boolean autoCommit, boolean readonly) {
         return dsManager.newConnection(autoCommit, readonly);
     }
