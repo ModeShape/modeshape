@@ -490,7 +490,7 @@
                                 },
                                 "endPoint" : {
                                     "type" : "string",
-                                    "description" : "The S3 bucket name in which binary values will be stored.",
+                                    "description" : "The endpoint URL used to communicate with S3.",
                                     "required" : false
                                 },
                                 "minimumBinarySizeInBytes" : {
