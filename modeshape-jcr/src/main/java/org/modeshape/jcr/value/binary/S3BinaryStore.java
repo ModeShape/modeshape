@@ -210,6 +210,7 @@ public class S3BinaryStore extends AbstractBinaryStore {
             // If file is NOT already in S3 storage, store it
             if(!s3Client.doesObjectExist(bucketName, key.toString())) {
                 ObjectMetadata metadata = new ObjectMetadata();
+                metadata.setContentLength(cachedFile.getSize());
                 // Set Mimetype
                 metadata.setContentType(fileSystemCache.getMimeType(cachedFile, key.toString()));
                 // Set Unused value
