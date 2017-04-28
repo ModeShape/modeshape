@@ -15,7 +15,6 @@
  */
 package org.modeshape.jcr.mimetype.tika;
 
-import java.io.InputStream;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
@@ -23,9 +22,12 @@ import org.apache.tika.mime.MimeTypes;
 import org.modeshape.common.SystemFailureException;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.annotation.ThreadSafe;
+import org.modeshape.common.util.IoUtil;
 import org.modeshape.jcr.Environment;
 import org.modeshape.jcr.JcrI18n;
 import org.modeshape.jcr.mimetype.MimeTypeDetector;
+
+import java.io.InputStream;
 
 /**
  * {@link MimeTypeDetector} implementation which uses Apache Tika to determine the mimetype of a given binary, based only
@@ -61,7 +63,7 @@ public final class TikaNameOnlyDetector extends TikaMimeTypeDetector {
     @Override
     protected String detect( InputStream inputStream, Metadata metadata ) {
         try {
-            // we never care about the stream here
+            // we never care about the stream here, but close it anyway
             MediaType detectedMimeType = detector.detect(null, metadata);
             if (logger.isTraceEnabled()) {
                 logger.trace("MIME type for '" + metadata.get(Metadata.RESOURCE_NAME_KEY) + "' ==> " + detectedMimeType);
@@ -70,6 +72,8 @@ public final class TikaNameOnlyDetector extends TikaMimeTypeDetector {
         } catch (Exception e) {
             logger.debug(e, "Unable to extract mime-type");
             return null;
+        } finally {
+            IoUtil.closeQuietly(inputStream);
         }
     }
 }
