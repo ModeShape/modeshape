@@ -68,6 +68,11 @@ public class S3BinaryStore extends AbstractBinaryStore {
     protected static final String EXTRACTED_TEXT_KEY = "extracted-text";
 
     /*
+     * Key for storing boolean which describes if a MIME type has been explicitly set
+     */
+    protected static final String USER_MIME_TYPE_KEY = "user-mime-type";
+
+    /*
      * Key for storing boolean which describes if object is unused
      */
     protected static final String UNUSED_KEY = "unused";
@@ -140,7 +145,11 @@ public class S3BinaryStore extends AbstractBinaryStore {
         try {
             String key = binaryValue.getKey().toString();
             ObjectMetadata metadata = s3Client.getObjectMetadata(bucketName, key);
-            return metadata.getContentType();
+            if (String.valueOf(true).equals(metadata.getUserMetadata().get(USER_MIME_TYPE_KEY))) {
+                return metadata.getContentType();
+            } else {
+                return null;
+            }
         } catch (AmazonClientException e) {
             throw new BinaryStoreException(e);
         }
@@ -152,6 +161,7 @@ public class S3BinaryStore extends AbstractBinaryStore {
             String key = binaryValue.getKey().toString();
             ObjectMetadata metadata = s3Client.getObjectMetadata(bucketName, key);
             metadata.setContentType(mimeType);
+            metadata.addUserMetadata(USER_MIME_TYPE_KEY, String.valueOf(true));
 
             // Update the object in place
             CopyObjectRequest copyRequest = new CopyObjectRequest(bucketName, key, bucketName, key);
