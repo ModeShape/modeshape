@@ -87,6 +87,7 @@ public class S3BinaryStoreTest extends EasyMockSupport {
     public void testGetStoredMimeType() throws BinaryStoreException {
         ObjectMetadata objMeta = new ObjectMetadata();
         objMeta.setContentType(TEST_MIME);
+        objMeta.addUserMetadata(S3BinaryStore.USER_MIME_TYPE_KEY, String.valueOf(true));
         expect(s3Client.getObjectMetadata(BUCKET, TEST_KEY)).andReturn(objMeta);
 
         replayAll();
