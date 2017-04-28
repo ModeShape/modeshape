@@ -35,15 +35,24 @@ public class AddS3BinaryStorage extends AbstractAddBinaryStorage {
                                                     ModelNode model,
                                                     EditableDocument binaries ) throws OperationFailedException {
         binaries.set(FieldName.TYPE, FieldValue.BINARY_STORAGE_TYPE_S3);
-        String username = ModelAttributes.S3_USERNAME.resolveModelAttribute(context, model).asString();
-        binaries.setString(FieldName.USER_NAME, username);
-        String password = ModelAttributes.S3_PASSWORD.resolveModelAttribute(context, model).asString();
-        binaries.setString(FieldName.USER_PASSWORD, password);
-        String bucketName = ModelAttributes.S3_BUCKET_NAME.resolveModelAttribute(context, model).asString();
-        binaries.setString(FieldName.BUCKET_NAME, bucketName);
-        ModelNode node = ModelAttributes.S3_ENDPOINT_URL.resolveModelAttribute(context, model);
-        String endPoint = node.isDefined() ? node.asString() : null;  //check if the node exist before getting the value
-        binaries.setString(FieldName.ENDPOINT_URL, endPoint);
+
+        ModelNode usernameNode = ModelAttributes.S3_USERNAME.resolveModelAttribute(context, model);
+        if (usernameNode.isDefined()) {
+            binaries.setString(FieldName.USER_NAME, usernameNode.asString());
+        }
+
+        ModelNode passwordNode = ModelAttributes.S3_PASSWORD.resolveModelAttribute(context, model);
+        if (passwordNode.isDefined()) {
+            binaries.setString(FieldName.USER_PASSWORD, passwordNode.asString());
+        }
+
+        ModelNode bucketNameNode = ModelAttributes.S3_BUCKET_NAME.resolveModelAttribute(context, model);
+        binaries.setString(FieldName.BUCKET_NAME, bucketNameNode.asString());
+
+        ModelNode endPointNode = ModelAttributes.S3_ENDPOINT_URL.resolveModelAttribute(context, model);
+        if (endPointNode.isDefined()) {
+            binaries.setString(FieldName.ENDPOINT_URL, endPointNode.asString());
+        }
     }
 
     @Override

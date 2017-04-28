@@ -476,12 +476,12 @@
                                 "username" : {
                                     "type" : "string",
                                     "description" : "The access key ID for the connection to Amazon S3.",
-                                    "required" : true
+                                    "required" : false
                                 },
                                 "password" : {
                                     "type" : "string",
                                     "description" : "The secret key for the connection to Amazon S3.",
-                                    "required" : true
+                                    "required" : false
                                 },
                                 "bucketName" : {
                                     "type" : "string",

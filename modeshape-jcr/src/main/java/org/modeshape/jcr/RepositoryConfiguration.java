@@ -1211,14 +1211,7 @@ public class RepositoryConfiguration {
                 String password = binaryStorage.getString(FieldName.USER_PASSWORD);
                 String bucketName = binaryStorage.getString(FieldName.BUCKET_NAME);
                 String endPoint = binaryStorage.getString(FieldName.ENDPOINT_URL);
-
-                //Use S3 provided endpoints
-                if (endPoint != null) {
-                    store = new S3BinaryStore(username, password, bucketName, endPoint);
-                }
-                else { //Use default AWS endpoint
-                    store = new S3BinaryStore(username, password, bucketName);
-                }
+                store = new S3BinaryStore(username, password, bucketName, endPoint);
             }
 
             if (store == null) store = TransientBinaryStore.get();

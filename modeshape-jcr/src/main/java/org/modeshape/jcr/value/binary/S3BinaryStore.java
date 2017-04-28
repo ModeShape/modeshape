@@ -15,18 +15,11 @@
  */
 package org.modeshape.jcr.value.binary;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Collections;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.concurrent.TimeUnit;
-
-import javax.jcr.RepositoryException;
-
 import com.amazonaws.AmazonClientException;
+import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
+import com.amazonaws.auth.profile.ProfileCredentialsProvider;
+import com.amazonaws.internal.StaticCredentialsProvider;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.iterable.S3Objects;
 import com.amazonaws.services.s3.model.CopyObjectRequest;
@@ -37,6 +30,15 @@ import org.modeshape.common.logging.Logger;
 import org.modeshape.jcr.JcrI18n;
 import org.modeshape.jcr.value.BinaryKey;
 import org.modeshape.jcr.value.BinaryValue;
+
+import javax.jcr.RepositoryException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Collections;
+import java.util.Date;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Binary storage option which manages the storage of files to Amazon S3
@@ -93,7 +95,14 @@ public class S3BinaryStore extends AbstractBinaryStore {
      */
     public S3BinaryStore(String accessKey, String secretKey, String bucketName, String endPoint) throws BinaryStoreException {
         this.bucketName = bucketName;
-        this.s3Client = new AmazonS3Client(new BasicAWSCredentials(accessKey, secretKey));
+
+        AWSCredentialsProvider credentialsProvider;
+        if (accessKey == null && secretKey == null) {
+            credentialsProvider = new ProfileCredentialsProvider();
+        } else {
+            credentialsProvider = new StaticCredentialsProvider(new BasicAWSCredentials(accessKey, secretKey));
+        }
+        this.s3Client = new AmazonS3Client(credentialsProvider);
 
         // Support for compatible S3 storage systems
         if(endPoint != null)

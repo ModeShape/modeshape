@@ -3,4 +3,8 @@
     <s3-binary-storage mime-type-detection="content" min-string-size="10" min-value-size="4096"
                        username="test" password="test" bucket-name="test" />
   </repository>
+  <repository name="sample-using-profile">
+    <s3-binary-storage mime-type-detection="content" min-string-size="10" min-value-size="4096"
+                       bucket-name="test" />
+  </repository>
 </subsystem>

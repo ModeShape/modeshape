@@ -961,7 +961,7 @@ public class ModelAttributes {
             new MappedAttributeDefinitionBuilder(Attribute.USERNAME.getLocalName(), ModelType.STRING,
                                                  FieldName.STORAGE, FieldName.BINARY_STORAGE, FieldName.USER_NAME)
                 .setAllowExpression(true)
-                .setAllowNull(false)
+                .setAllowNull(true)
                 .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                 .build();
 
@@ -969,7 +969,7 @@ public class ModelAttributes {
             new MappedAttributeDefinitionBuilder(Attribute.PASSWORD.getLocalName(), ModelType.STRING,
                                                  FieldName.STORAGE, FieldName.BINARY_STORAGE, FieldName.USER_PASSWORD)
                 .setAllowExpression(true)
-                .setAllowNull(false)
+                .setAllowNull(true)
                 .setFlags(AttributeAccess.Flag.RESTART_RESOURCE_SERVICES)
                 .build();
 
