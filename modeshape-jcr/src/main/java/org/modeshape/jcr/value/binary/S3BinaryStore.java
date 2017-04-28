@@ -100,7 +100,7 @@ public class S3BinaryStore extends AbstractBinaryStore {
             this.s3Client.setEndpoint(endPoint);
 
         this.fileSystemCache = TransientBinaryStore.get();
-        this.fileSystemCache.setMinimumBinarySizeInBytes(1L);
+        this.fileSystemCache.setMinimumBinarySizeInBytes(0L);
 
         // Ensure bucket exists
         try {
