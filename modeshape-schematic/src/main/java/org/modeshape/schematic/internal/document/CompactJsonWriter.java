@@ -170,8 +170,7 @@ public class CompactJsonWriter implements JsonWriter {
         for (char c = iter.first(); c != CharacterIterator.DONE; c = iter.next()) {
             switch (c) {
                 case '"':
-                case '\'':
-                    // Escape the single- or double-quote characters ..
+                    // Escape double-quote characters ..
                     writer.append('\\').append(c);
                     break;
                 case '/':
