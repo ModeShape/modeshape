@@ -23,11 +23,14 @@ import com.amazonaws.internal.StaticCredentialsProvider;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.iterable.S3Objects;
 import com.amazonaws.services.s3.model.CopyObjectRequest;
+import com.amazonaws.services.s3.model.GetObjectTaggingRequest;
+import com.amazonaws.services.s3.model.GetObjectTaggingResult;
 import com.amazonaws.services.s3.model.ObjectMetadata;
+import com.amazonaws.services.s3.model.ObjectTagging;
 import com.amazonaws.services.s3.model.S3Object;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
-import org.modeshape.common.logging.Logger;
-import org.modeshape.jcr.JcrI18n;
+import com.amazonaws.services.s3.model.SetObjectTaggingRequest;
+import com.amazonaws.services.s3.model.Tag;
 import org.modeshape.jcr.value.BinaryKey;
 import org.modeshape.jcr.value.BinaryValue;
 
@@ -35,10 +38,11 @@ import javax.jcr.RepositoryException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collections;
-import java.util.Date;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 /**
  * Binary storage option which manages the storage of files to Amazon S3
@@ -73,9 +77,9 @@ public class S3BinaryStore extends AbstractBinaryStore {
     protected static final String USER_MIME_TYPE_KEY = "user-mime-type";
 
     /*
-     * Key for storing boolean which describes if object is unused
+     * Tag key for storing boolean which describes if object is unused
      */
-    protected static final String UNUSED_KEY = "unused";
+    protected static final String UNUSED_TAG_KEY = "modeshape.unused";
 
     /**
      * Creates a binary store with a connection to Amazon S3
@@ -227,25 +231,22 @@ public class S3BinaryStore extends AbstractBinaryStore {
             BinaryKey key = new BinaryKey(cachedFile.getKey().toString());
 
             // If file is NOT already in S3 storage, store it
-            if(!s3Client.doesObjectExist(bucketName, key.toString())) {
+            if (!s3Client.doesObjectExist(bucketName, key.toString())) {
                 ObjectMetadata metadata = new ObjectMetadata();
                 metadata.setContentLength(cachedFile.getSize());
                 // Set Mimetype
                 metadata.setContentType(fileSystemCache.getMimeType(cachedFile, key.toString()));
-                // Set Unused value
-                Map<String, String> userMetadata = metadata.getUserMetadata();
-                userMetadata.put(UNUSED_KEY, String.valueOf(markAsUnused));
-                metadata.setUserMetadata(userMetadata);
                 // Store content in S3
                 s3Client.putObject(bucketName, key.toString(), fileSystemCache.getInputStream(key), metadata);
-            } else {
-                // Set the unused value, if necessary
-                if(markAsUnused) {
-                    markAsUnused(Collections.singleton(key));
-                } else {
-                    markAsUsed(Collections.singleton(key));
-                }
             }
+
+            // Set the unused value, if necessary
+            if (markAsUnused) {
+                markAsUnused(Collections.singleton(key));
+            } else {
+                markAsUsed(Collections.singleton(key));
+            }
+
             return new StoredBinaryValue(this, key, cachedFile.getSize());
         } catch (AmazonClientException|RepositoryException |IOException e) {
             throw new BinaryStoreException(e);
@@ -268,43 +269,59 @@ public class S3BinaryStore extends AbstractBinaryStore {
 
     @Override
     public void markAsUsed(Iterable<BinaryKey> keys) throws BinaryStoreException {
-        for(BinaryKey key : keys) {
-            setS3ObjectUserProperty(key, UNUSED_KEY, String.valueOf(false));
+        for (BinaryKey key : keys) {
+            setS3ObjectTag(key.toString(), UNUSED_TAG_KEY, String.valueOf(false));
         }
     }
 
     @Override
     public void markAsUnused(Iterable<BinaryKey> keys) throws BinaryStoreException {
-        for(BinaryKey key : keys) {
-            setS3ObjectUserProperty(key, UNUSED_KEY, String.valueOf(true));
+        for (BinaryKey key : keys) {
+            setS3ObjectTag(key.toString(), UNUSED_TAG_KEY, String.valueOf(true));
         }
+    }
+
+    /**
+     * Sets a tag on a S3 object, potentially overwriting the existing value.
+     */
+    private void setS3ObjectTag(String objectKey, String tagKey, String tagValue) throws BinaryStoreException {
+        try {
+            GetObjectTaggingRequest getTaggingRequest = new GetObjectTaggingRequest(bucketName, objectKey);
+            GetObjectTaggingResult getTaggingResult = s3Client.getObjectTagging(getTaggingRequest);
+
+            List<Tag> initialTagSet = getTaggingResult.getTagSet();
+            List<Tag> mergedTagSet = mergeS3TagSet(initialTagSet, new Tag(tagKey, tagValue));
+
+            if (initialTagSet.size() == mergedTagSet.size() && initialTagSet.containsAll(mergedTagSet)) {
+                return;
+            }
+
+            SetObjectTaggingRequest setObjectTaggingRequest = new SetObjectTaggingRequest(bucketName, objectKey,
+                    new ObjectTagging(mergedTagSet));
+
+            s3Client.setObjectTagging(setObjectTaggingRequest);
+        } catch (AmazonClientException e) {
+            throw new BinaryStoreException(e);
+        }
+    }
+
+    /**
+     * Merges a new tag into an existing list of tags.
+     * It will be either appended to the list or overwrite the value of an existing tag with the same key.
+     */
+    private List<Tag> mergeS3TagSet(List<Tag> initialTags, Tag changeTag) {
+        Map<String, String> mergedTags =  initialTags.stream().collect(Collectors.toMap(Tag::getKey, Tag::getValue));
+        mergedTags.put(changeTag.getKey(), changeTag.getValue());
+        return mergedTags.entrySet().stream().map(
+                entry -> new Tag(entry.getKey(), entry.getValue())).collect(Collectors.toList());
     }
 
     @Override
     public void removeValuesUnusedLongerThan(long minimumAge, TimeUnit timeUnit) throws BinaryStoreException {
-        Date deadline = new Date(System.currentTimeMillis() - timeUnit.toMillis(minimumAge));
-
-        // There is no capacity in S3 to query on object properties. This must be done
-        // by straight iteration, so may take a very long time for large data sets.
-        try {
-            for(BinaryKey key : getAllBinaryKeys()) {
-                ObjectMetadata metadata = s3Client.getObjectMetadata(bucketName, key.toString());
-                String unused = metadata.getUserMetadata().get(UNUSED_KEY);
-                if (null != unused && unused.equals(String.valueOf(true))) {
-                    Date lastMod = metadata.getLastModified();
-                    if (lastMod.before(deadline)) {
-                        try {
-                            s3Client.deleteObject(bucketName, key.toString());
-                        } catch (AmazonClientException e) {
-                            Logger log = Logger.getLogger(getClass());
-                            log.warn(e, JcrI18n.unableToDeleteTemporaryFile, e.getMessage());
-                        }
-                    }
-                } // Assumes that if no value is set, content is used
-            }
-        } catch (AmazonClientException e) {
-            throw new BinaryStoreException(e);
-        }
+        // XXX
+        // What should this method do?
+        // Check if a matching lifecycle management rule is registered for the bucket?
+        // Or simply a no-op?
     }
 
     @Override
