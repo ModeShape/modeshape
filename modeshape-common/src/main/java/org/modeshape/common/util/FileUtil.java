@@ -136,21 +136,14 @@ public class FileUtil {
                 numberOfFilesCopied += copy(new File(src1), new File(dest1), exclusionFilter);
             }
         } else {
-            InputStream fin = new FileInputStream(sourceFileOrDirectory);
-            fin = new BufferedInputStream(fin);
-            try {
-                OutputStream fout = new FileOutputStream(destinationFileOrDirectory);
-                fout = new BufferedOutputStream(fout);
-                try {
-                    int c;
-                    while ((c = fin.read()) >= 0) {
-                        fout.write(c);
-                    }
-                } finally {
-                    fout.close();
+            try (FileInputStream fis = new FileInputStream(sourceFileOrDirectory);
+                 BufferedInputStream bis = new BufferedInputStream(fis);
+                 FileOutputStream fos = new FileOutputStream(destinationFileOrDirectory);
+                 BufferedOutputStream bos = new BufferedOutputStream(fos)) {
+                int c;
+                while ((c = bis.read()) >= 0) {
+                    bos.write(c);
                 }
-            } finally {
-                fin.close();
             }
             numberOfFilesCopied++;
         }
@@ -224,29 +217,29 @@ public class FileUtil {
         folder.mkdir();
 
         //get the zip file content
-        ZipInputStream zis = new ZipInputStream(zipFile);
-        //get the zipped file list entry
-        ZipEntry ze = zis.getNextEntry();
-        File parent = new File(dest);
-        while (ze != null) {
-            String fileName = ze.getName();
-            if (ze.isDirectory()) {
-                File newFolder = new File(parent, fileName);
-                newFolder.mkdir();
-            } else {
-                File newFile = new File(parent, fileName);
-                try (FileOutputStream fos = new FileOutputStream(newFile)) {
-                    int len;
-                    while ((len = zis.read(buffer)) > 0) {
-                        fos.write(buffer, 0, len);
+        try (ZipInputStream zis = new ZipInputStream(zipFile)) {
+            //get the zipped file list entry
+            ZipEntry ze = zis.getNextEntry();
+            File parent = new File(dest);
+            while (ze != null) {
+                String fileName = ze.getName();
+                if (ze.isDirectory()) {
+                    File newFolder = new File(parent, fileName);
+                    newFolder.mkdir();
+                } else {
+                    File newFile = new File(parent, fileName);
+                    try (FileOutputStream fos = new FileOutputStream(newFile)) {
+                        int len;
+                        while ((len = zis.read(buffer)) > 0) {
+                            fos.write(buffer, 0, len);
+                        }
                     }
                 }
+                ze = zis.getNextEntry();
             }
-            ze = zis.getNextEntry();
-        }
 
-        zis.closeEntry();
-        zis.close();
+            zis.closeEntry();
+        }
     }
     
     /**
@@ -257,13 +250,10 @@ public class FileUtil {
      * @throws IOException 
      */
     public static void zipDir(String dirName, String nameZipFile) throws IOException {
-        ZipOutputStream zip = null;
-        FileOutputStream fW = null;
-        fW = new FileOutputStream(nameZipFile);
-        zip = new ZipOutputStream(fW);
-        addFolderToZip("", dirName, zip);
-        zip.close();
-        fW.close();
+        try (FileOutputStream fW = new FileOutputStream(nameZipFile);
+             ZipOutputStream zip = new ZipOutputStream(fW)) {
+            addFolderToZip("", dirName, zip);
+        }
     }
 
     /**
