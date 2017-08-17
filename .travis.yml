@@ -26,7 +26,7 @@ jdk:
   - oraclejdk8
   
 env:
-  - MAVEN_OPTS="-Xms1524m -Xmx=1524m"
+  - MAVEN_OPTS="-Xms1524M -Xmx1524M"
   
 # We use docker for the persistence integration tests
 services:
