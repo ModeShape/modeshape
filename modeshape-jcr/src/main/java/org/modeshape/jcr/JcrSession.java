@@ -139,6 +139,7 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
     private final AtomicReference<JcrSharedNodeCache> shareableNodeCache = new AtomicReference<>();
     private final AtomicLong aclChangesCount = new AtomicLong(0);
     private volatile JcrValueFactory valueFactory;
+    private volatile JcrValueFactoryWithHint valueFactoryWithHint;
     private volatile boolean isLive = true;
     private final long nanosCreated;
     private volatile BufferManager bufferMgr;
@@ -359,6 +360,13 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
             valueFactory = new JcrValueFactory(this.context);
         }
         return valueFactory;
+    }
+
+    final JcrValueFactory valueFactoryWithHint( String binaryStoreHint ) {
+        if (valueFactoryWithHint == null) {
+            valueFactoryWithHint = new JcrValueFactoryWithHint(this.context, binaryStoreHint);
+        }
+        return valueFactoryWithHint;
     }
 
     final SessionCache cache() {
@@ -1306,6 +1314,15 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
         return valueFactory();
     }
 
+    @Override
+    public ValueFactory getValueFactory( String binaryStoreHint ) throws RepositoryException {
+        checkLive();
+        if (binaryStoreHint == null) {
+            return valueFactory();
+        }
+        return valueFactoryWithHint(binaryStoreHint);
+    }
+
     private static interface PathSupplier {
         /**
          * Get the absolute path
@@ -1652,6 +1669,13 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
     public ContentHandler getImportContentHandler( String parentAbsPath,
                                                    int uuidBehavior )
         throws PathNotFoundException, ConstraintViolationException, VersionException, LockException, RepositoryException {
+        return getImportContentHandler( parentAbsPath, uuidBehavior, null );
+    }
+
+    @Override
+    public ContentHandler getImportContentHandler( String parentAbsPath, int uuidBehavior,
+                                                    String binaryStoreHint )
+            throws PathNotFoundException, ConstraintViolationException, VersionException, LockException, RepositoryException {
         checkLive();
 
         // Find the parent path ...
@@ -1663,7 +1687,13 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
         boolean retainLifecycleInfo = getRepository().getDescriptorValue(Repository.OPTION_LIFECYCLE_SUPPORTED).getBoolean();
         boolean retainRetentionInfo = getRepository().getDescriptorValue(Repository.OPTION_RETENTION_SUPPORTED).getBoolean();
 
-        return new JcrContentHandler(this, parent, uuidBehavior, false, retainRetentionInfo, retainLifecycleInfo);
+        return new JcrContentHandler(this,
+                                     parent,
+                                     uuidBehavior,
+                                     false,
+                                     retainRetentionInfo,
+                                     retainLifecycleInfo,
+                                     binaryStoreHint);
     }
 
     protected void initBaseVersionKeys() {
@@ -1681,6 +1711,16 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
                            int uuidBehavior )
         throws IOException, PathNotFoundException, ItemExistsException, ConstraintViolationException, VersionException,
         InvalidSerializedDataException, LockException, RepositoryException {
+        importXML( parentAbsPath, in, uuidBehavior, null );
+    }
+
+    @Override
+    public void importXML( String parentAbsPath,
+                           InputStream in,
+                           int uuidBehavior,
+                           String binaryStoreHint )
+            throws IOException, PathNotFoundException, ItemExistsException, ConstraintViolationException, VersionException,
+            InvalidSerializedDataException, LockException, RepositoryException {
         CheckArg.isNotNull(parentAbsPath, "parentAbsPath");
         CheckArg.isNotNull(in, "in");
         checkLive();
@@ -1688,7 +1728,7 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
         boolean error = false;
         try {
             XMLReader parser = XMLReaderFactory.createXMLReader();
-            parser.setContentHandler(getImportContentHandler(parentAbsPath, uuidBehavior));
+            parser.setContentHandler(getImportContentHandler(parentAbsPath, uuidBehavior, binaryStoreHint));
             parser.parse(new InputSource(in));
         } catch (EnclosingSAXException ese) {
             Exception cause = ese.getException();
@@ -2137,7 +2177,7 @@ public class JcrSession implements org.modeshape.jcr.api.Session {
                     node.setPropertyIfUnchanged(cache, propertyFactory.create(JcrLexicon.CREATED, context.getTime()));
                     node.setPropertyIfUnchanged(cache, propertyFactory.create(JcrLexicon.CREATED_BY, context.getUserId()));
                 }
-            } 
+            }
 
             // ----------------
             // mix:lastModified
