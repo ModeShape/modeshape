@@ -232,6 +232,7 @@ public class S3BinaryStore extends AbstractBinaryStore {
                 metadata.setContentLength(cachedFile.getSize());
                 // Set Mimetype
                 metadata.setContentType(fileSystemCache.getMimeType(cachedFile, key.toString()));
+                metadata.setContentLength(cachedFile.getSize());
                 // Set Unused value
                 Map<String, String> userMetadata = metadata.getUserMetadata();
                 userMetadata.put(UNUSED_KEY, String.valueOf(markAsUnused));
