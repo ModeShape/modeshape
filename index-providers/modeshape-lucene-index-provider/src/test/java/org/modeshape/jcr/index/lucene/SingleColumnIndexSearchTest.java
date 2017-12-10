@@ -726,4 +726,30 @@ public class SingleColumnIndexSearchTest extends AbstractLuceneIndexSearchTest {
         validateCardinality(constraint, 1);
         validateFilterResults(constraint, 1, false, nodeKeys.get(0));
     }
+
+    @Test
+    @FixFor( "MODE-2720" )
+    public void shouldSearchForLikeConstraintContainingBackslash() throws Exception {
+        List<String> nodeKeys = indexNodes(STRING_PROP, "A\\B");
+
+        Constraint constraint = propertyValue(STRING_PROP, LIKE, "A\\\\B");
+        validateCardinality(constraint, 1);
+        validateFilterResults(constraint, 1, false, nodeKeys.get(0));
+
+        constraint = propertyValue(STRING_PROP, LIKE, "A\\\\B%");
+        validateCardinality(constraint, 1);
+        validateFilterResults(constraint, 1, false, nodeKeys.get(0));
+
+        constraint = propertyValue(STRING_PROP, LIKE, "A\\\\%");
+        validateCardinality(constraint, 1);
+        validateFilterResults(constraint, 1, false, nodeKeys.get(0));
+
+        constraint = propertyValue(STRING_PROP, LIKE, "%\\\\B");
+        validateCardinality(constraint, 1);
+        validateFilterResults(constraint, 1, false, nodeKeys.get(0));
+
+        constraint = propertyValue(STRING_PROP, LIKE, "%\\\\%");
+        validateCardinality(constraint, 1);
+        validateFilterResults(constraint, 1, false, nodeKeys.get(0));
+    }
 }
