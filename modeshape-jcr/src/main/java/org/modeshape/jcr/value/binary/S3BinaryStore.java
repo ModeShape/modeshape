@@ -221,7 +221,8 @@ public class S3BinaryStore extends AbstractBinaryStore {
     @Override
     public BinaryValue storeValue(InputStream stream, boolean markAsUnused) throws BinaryStoreException {
         // Cache file on the file system in order to have SHA-1 hash calculated
-        BinaryValue cachedFile = fileSystemCache.storeValue(stream, markAsUnused);
+        // File is marked as used (unused=false)
+        BinaryValue cachedFile = fileSystemCache.storeValue(stream, false);
         try {
             // Retrieve SHA-1 hash
             BinaryKey key = new BinaryKey(cachedFile.getKey().toString());
