@@ -1192,6 +1192,7 @@ public class JcrRepository implements org.modeshape.jcr.api.Repository {
                                                      new FullTextSearchParser(), new JcrSqlQueryParser(), new JcrQomQueryParser());
                 RepositoryConfiguration.Reindexing reindexingCfg = config.getReindexing();
                 this.repositoryQueryManager = new RepositoryQueryManager(this, indexingExecutor, config, reindexingCfg);
+                this.repositoryQueryManager.initialize();
                 if (reindexingCfg.isAsync()) {
                     this.changeBus.register(this.repositoryQueryManager);
                 } else {
