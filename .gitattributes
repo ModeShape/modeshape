@@ -1,0 +1,3 @@
+modeshape-jcr/src/test/resources/data/*	binary
+sequencers/modeshape-sequencer-ddl/src/test/resources/ddl/** binary
+

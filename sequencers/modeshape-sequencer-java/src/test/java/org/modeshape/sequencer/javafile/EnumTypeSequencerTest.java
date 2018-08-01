@@ -85,8 +85,8 @@ public final class EnumTypeSequencerTest extends AbstractSequencerTest {
                 assertThat(comment.getProperty(ClassFileSequencerLexicon.COMMENT_TYPE).getString(),
                            is(ClassFileSequencerLexicon.CommentType.BLOCK.toString()));
                 assertThat(comment.hasProperty(ClassFileSequencerLexicon.COMMENT), is(true));
-                assertThat(comment.getProperty(ClassFileSequencerLexicon.COMMENT).getString().startsWith("/*\n * ModeShape"),
-                           is(true));
+                assertThat(comment.getProperty(ClassFileSequencerLexicon.COMMENT).getString().startsWith(
+                         String.format("/*%n * ModeShape")), is(true));
             }
 
             {
