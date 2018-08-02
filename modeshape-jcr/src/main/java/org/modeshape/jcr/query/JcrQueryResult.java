@@ -42,6 +42,7 @@ import org.modeshape.jcr.query.NodeSequence.Restartable;
 import org.modeshape.jcr.query.QueryResults.Columns;
 import org.modeshape.jcr.query.engine.process.RestartableSequence;
 import org.modeshape.jcr.query.engine.process.SecureSequence;
+import org.modeshape.jcr.value.Name;
 
 /**
  * The results of a query. This is not thread-safe because it relies upon JcrSession, which is not thread-safe. Also, although the
@@ -498,27 +499,29 @@ public class JcrQueryResult implements org.modeshape.jcr.api.query.QueryResult {
             String propertyName = iterator.getPropertyNameForColumnName(columnName);
             if (propertyName == null) return null;
 
-            if (PseudoColumns.contains(propertyName, true)) {
-                if (PseudoColumns.isPath(propertyName)) {
+            Name qName = iterator.context.getExecutionContext().getValueFactories().getNameFactory().create(propertyName);
+
+            if (PseudoColumns.contains(qName, true)) {
+                if (PseudoColumns.isPath(qName)) {
                     return iterator.jcrPath(cachedNode);
                 }
-                if (PseudoColumns.isName(propertyName)) {
+                if (PseudoColumns.isName(qName)) {
                     return iterator.jcrName(cachedNode);
                 }
-                if (PseudoColumns.isLocalName(propertyName)) {
+                if (PseudoColumns.isLocalName(qName)) {
                     return iterator.jcrLocalName(cachedNode);
                 }
-                if (PseudoColumns.isDepth(propertyName)) {
+                if (PseudoColumns.isDepth(qName)) {
                     return iterator.jcrDepth(cachedNode);
                 }
-                if (PseudoColumns.isId(propertyName)) {
+                if (PseudoColumns.isId(qName)) {
                     return iterator.jcrId(cachedNode);
                 }
-                if (PseudoColumns.isScore(propertyName)) {
+                if (PseudoColumns.isScore(qName)) {
                     float score = batchAtRow.getScore(nodeIndex);
                     return iterator.jcrDouble(score);
                 }
-                if (PseudoColumns.isUuid(propertyName)) {
+                if (PseudoColumns.isUuid(qName)) {
                     return iterator.jcrUuid(cachedNode);
                 }
             }
