@@ -56,7 +56,7 @@ public class DistinctSequence extends DelegatingSequence {
         super(delegate);
         this.keyExtractor = RowExtractors.extractUniqueKey(delegate.width(), types);
         TypeFactory<?> keyType = types.getNodeKeyFactory();
-        Serializer<?> keySerializer = bufferMgr.serializerFor(keyType);
+        Serializer<?> keySerializer = bufferMgr.nullSafeSerializerFor(keyType);
         Serializer<?> serializer = Tuples.serializer(keySerializer, delegate.width());
         final DistinctBuffer<Object> rowsSeen = (DistinctBuffer<Object>)bufferMgr.createDistinctBuffer(serializer).keepSize(true)
                                                                                  .useHeap(useHeap).make();
