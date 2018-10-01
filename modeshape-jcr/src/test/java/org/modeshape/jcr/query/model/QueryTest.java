@@ -22,6 +22,7 @@ import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.mock;
 import java.util.Collections;
 import java.util.List;
+import javax.jcr.RepositoryException;
 import org.junit.Test;
 
 /**
@@ -195,5 +196,27 @@ public class QueryTest extends AbstractQueryObjectTest {
         source = new AllNodes();
         query = new Query(source, constraint, orderings, columns, limits, distinct);
         assertThat(Visitors.readable(query), is("SELECT * FROM [__ALLNODES__]"));
+    }
+
+    @Test
+    public void shouldConstructReadableStringWithLiteralFullTextSearch() {
+        source = new NamedSelector(selector("nt:unstructured"));
+        columns = Collections.singletonList(new Column(selector("selector1")));
+        constraint = new FullTextSearch(selector("selector1"), "someProperty", "this OR that");
+        orderings = Collections.emptyList();
+        query = new Query(source, constraint, orderings, columns, limits, distinct);
+        assertThat(Visitors.readable(query),
+                   is("SELECT selector1.* FROM [nt:unstructured] WHERE CONTAINS(selector1.someProperty,'this OR that')"));
+    }
+
+    @Test
+    public void shouldConstructReadableStringWithVariableFullTextSearch() throws RepositoryException {
+        source = new NamedSelector(selector("nt:unstructured"));
+        columns = Collections.singletonList(new Column(selector("selector1")));
+        constraint = new FullTextSearch(selector("selector1"), "someProperty", new BindVariableName("matchVar"), null);
+        orderings = Collections.emptyList();
+        query = new Query(source, constraint, orderings, columns, limits, distinct);
+        assertThat(Visitors.readable(query),
+                   is("SELECT selector1.* FROM [nt:unstructured] WHERE CONTAINS(selector1.someProperty,$matchVar)"));
     }
 }

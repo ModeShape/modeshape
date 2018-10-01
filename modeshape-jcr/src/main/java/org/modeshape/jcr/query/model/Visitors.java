@@ -1103,7 +1103,9 @@ public class Visitors {
             if (fullText.getPropertyName() != null) {
                 append('.').appendPropertyName(fullText.getPropertyName());
             }
-            sb.append(",'").append(fullText.fullTextSearchExpression()).append("')");
+            sb.append(',');
+            fullText.getFullTextSearchExpression().accept(this);
+            sb.append(')');
         }
 
         @Override
