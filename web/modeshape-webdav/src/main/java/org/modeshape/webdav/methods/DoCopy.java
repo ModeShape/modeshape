@@ -322,7 +322,7 @@ public class DoCopy extends AbstractMethod {
      * @return destinationPath
      * @throws IOException if an error occurs while sending response
      */
-    private String parseDestinationHeader( HttpServletRequest req,
+    protected String parseDestinationHeader( HttpServletRequest req,
                                            HttpServletResponse resp ) throws IOException {
         String destinationPath = req.getHeader("Destination");
 
