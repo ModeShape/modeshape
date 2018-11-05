@@ -26,6 +26,7 @@ import org.modeshape.jcr.index.elasticsearch.client.EsClient;
 import org.modeshape.jcr.index.elasticsearch.client.EsRequest;
 import org.modeshape.jcr.spi.index.IndexConstraints;
 import org.modeshape.jcr.spi.index.provider.ProvidedIndex;
+import org.modeshape.jcr.value.basic.ModeShapeDateTime;
 
 /**
  * Index stored in Elasticsearch.
@@ -209,8 +210,10 @@ public class EsIndex implements ProvidedIndex {
         Object columnValue = column.columnValue(value);
         String stringValue = column.stringValue(value);
         doc.put(column.getName(), columnValue);
-        doc.put(column.getLowerCaseFieldName(), stringValue.toLowerCase());
-        doc.put(column.getUpperCaseFieldName(), stringValue.toUpperCase());
+        if (!(value instanceof ModeShapeDateTime || value instanceof Long || value instanceof Boolean)) {
+            doc.put(column.getLowerCaseFieldName(), stringValue.toLowerCase());
+            doc.put(column.getUpperCaseFieldName(), stringValue.toUpperCase());
+        }
         doc.put(column.getLengthFieldName(), stringValue.length());
     }
 
