@@ -46,6 +46,13 @@ public interface Session extends javax.jcr.Session {
     @Override
     public ValueFactory getValueFactory() throws RepositoryException;
 
+    /**
+     * Returns a ValueFactory which will by default use the specified hint for storing binaries.
+     *
+     * @param binaryStoreHint the default binary store hint to use
+     * @return instance of {@link org.modeshape.jcr.JcrValueFactoryWithHint} implementation
+     * @throws RepositoryException if there is a problem creating the ValueFactory
+     */
     public ValueFactory getValueFactory( String binaryStoreHint ) throws RepositoryException;
 
     /**

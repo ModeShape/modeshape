@@ -20,6 +20,10 @@ import java.io.InputStream;
 import org.modeshape.jcr.value.BinaryValue;
 
 /**
+ * This {@link org.modeshape.jcr.api.ValueFactory} implementation will use the hint supplied in the constructor for
+ * creating binaries if no other hint is specified. The hint will *NOT* be used for calls to
+ * {@link #createBinary(InputStream, String)}, only for calls to {@link #createBinary(InputStream)}.
+ *
  * @author Wessel Nieboer
  */
 public class JcrValueFactoryWithHint extends JcrValueFactory {
