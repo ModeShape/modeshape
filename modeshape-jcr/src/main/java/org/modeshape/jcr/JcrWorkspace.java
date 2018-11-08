@@ -718,7 +718,7 @@ class JcrWorkspace implements org.modeshape.jcr.api.Workspace {
         Repository repo = getSession().getRepository();
         boolean retainLifecycleInfo = repo.getDescriptorValue(Repository.OPTION_LIFECYCLE_SUPPORTED).getBoolean();
         boolean retainRetentionInfo = repo.getDescriptorValue(Repository.OPTION_RETENTION_SUPPORTED).getBoolean();
-        return new JcrContentHandler(session, parent, uuidBehavior, saveWhenFinished, retainRetentionInfo, retainLifecycleInfo);
+        return new JcrContentHandler(session, parent, uuidBehavior, saveWhenFinished, retainRetentionInfo, retainLifecycleInfo, null);
     }
 
     @Override

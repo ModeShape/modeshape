@@ -127,7 +127,8 @@ class JcrContentHandler extends DefaultHandler {
                        int uuidBehavior,
                        boolean saveWhenCompleted,
                        boolean retentionInfoRetained,
-                       boolean lifecycleInfoRetained ) throws PathNotFoundException, RepositoryException {
+                       boolean lifecycleInfoRetained,
+                       String binaryStoreHint ) throws PathNotFoundException, RepositoryException {
         assert session != null;
         assert uuidBehavior == ImportUUIDBehavior.IMPORT_UUID_CREATE_NEW
                || uuidBehavior == ImportUUIDBehavior.IMPORT_UUID_COLLISION_REMOVE_EXISTING
@@ -150,7 +151,7 @@ class JcrContentHandler extends DefaultHandler {
 
         this.currentNode = parent;
 
-        this.jcrValueFactory = session.getValueFactory();
+        this.jcrValueFactory = session.getValueFactory(binaryStoreHint);
         this.nodeTypes = session.nodeTypeManager();
         this.jcrNamespaceRegistry = (org.modeshape.jcr.api.NamespaceRegistry)session.workspace().getNamespaceRegistry();
 
