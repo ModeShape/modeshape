@@ -661,7 +661,7 @@ public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
         return repository -> {
             JcrSession session = repository.login();
             // sleep a bit to make sure reindexing completes
-            Thread.sleep(100);
+            Thread.sleep(300);
             try {
                 AbstractJcrNode node = session.getNode("/fs2/file.txt");
                 String createdBy = node.getProperty("jcr:createdBy").getString();
@@ -824,7 +824,7 @@ public class JcrRepositoryStartupTest extends MultiPassAbstractTest {
             Node testNode = session.getRootNode().addNode("testRoot");
             testNode.setProperty("testProp", "test");
             session.save();
-            Thread.sleep(100);
+            Thread.sleep(300);
             String sql = "select [jcr:path] from [nt:unstructured] where testProp = 'test'";
             Query query = session.getWorkspace().getQueryManager().createQuery(sql, Query.JCR_SQL2);
             ValidateQuery.validateQuery().rowCount(1).useIndex("testProp").validate(query, query.execute());
