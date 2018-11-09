@@ -34,7 +34,6 @@ import org.xml.sax.ContentHandler;
  * A specialization of the standard JCR {@link javax.jcr.Session} interface that returns the ModeShape-specific extension
  * interfaces from {@link #getWorkspace()}, {@link #getRepository()}, and {@link #getValueFactory()}.
  */
-@SuppressWarnings("deprectation")
 public interface Session extends javax.jcr.Session {
 
     @Override

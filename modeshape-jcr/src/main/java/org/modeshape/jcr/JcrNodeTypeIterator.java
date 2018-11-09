@@ -30,7 +30,7 @@ final class JcrNodeTypeIterator implements NodeTypeIterator {
 
     private int size;
     private int position;
-    private Iterator<NodeType> iterator;
+    private Iterator<? extends NodeType> iterator;
 
     JcrNodeTypeIterator( Collection<? extends NodeType> values ) {
         this.iterator = Collections.unmodifiableCollection(values).iterator();
@@ -69,8 +69,7 @@ final class JcrNodeTypeIterator implements NodeTypeIterator {
 
     @Override
     public Object next() {
-        position++;
-        return iterator.next();
+        return nextNodeType();
     }
 
     @Override
