@@ -239,7 +239,19 @@ public class FullTextSearch implements Constraint, javax.jcr.query.qom.FullTextS
                 public Binary getBinary() throws RepositoryException {
                     throw new ValueFormatException();
                 }
-            });
+            }) {
+                final Literal visitorLiteral = new Literal(fullTextSearchExpression());
+
+                /**
+                 * {@inheritDoc}
+                 *
+                 * @see org.modeshape.jcr.query.model.Literal#accept(org.modeshape.jcr.query.model.Visitor)
+                 */
+                @Override
+                public void accept( Visitor visitor ) {
+                    visitorLiteral.accept(visitor);
+                }
+            };
         }
         return expression;
     }
