@@ -222,7 +222,10 @@ public class FileDb implements SchematicDb {
                     "'" + id  + "'");
         }
         ACTIVE_TX_ID.set(id);
-        this.transactionalContentById.putIfAbsent(id, this.txStore.begin().openMap(REPOSITORY_CONTENT));
+        if (!this.transactionalContentById.containsKey(id)) {
+            TransactionStore.TransactionMap<String, Document> transactionMap = this.txStore.begin().openMap(REPOSITORY_CONTENT);
+            this.transactionalContentById.put(id, transactionMap);
+        }
     }
 
     @Override
