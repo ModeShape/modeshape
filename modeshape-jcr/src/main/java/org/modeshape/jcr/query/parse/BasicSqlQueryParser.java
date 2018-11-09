@@ -1795,8 +1795,8 @@ public class BasicSqlQueryParser implements QueryParser {
                         startIndex = input.index();
                         pos = input.position(input.index());
                         // Read as long as there is a valid XML character ...
-                        int tokenType = (Character.isLetterOrDigit(c) || c == '_') ? WORD : OTHER;
-                        while (input.isNextLetterOrDigit() || input.isNext('_')) {
+                        int tokenType = XmlCharacters.isValidNcName(c) ? WORD : OTHER;
+                        while (input.isNextValidXmlNcNameCharacter() && !input.isNextAnyOf(".-")) {
                             c = input.next();
                         }
                         endIndex = input.index() + 1; // beyond last character that was included

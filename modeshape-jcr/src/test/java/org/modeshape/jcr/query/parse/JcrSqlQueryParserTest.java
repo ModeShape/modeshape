@@ -21,6 +21,7 @@ import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertThat;
 import org.junit.Before;
 import org.junit.Test;
+import org.modeshape.common.FixFor;
 import org.modeshape.common.text.ParsingException;
 import org.modeshape.common.text.TokenStream;
 import org.modeshape.jcr.ExecutionContext;
@@ -411,6 +412,13 @@ public class JcrSqlQueryParserTest {
         assertThat(parser.removeBracketsAndQuotes("\"string\"", null), is("\"string\""));
         assertThat(parser.removeBracketsAndQuotes("\"word one and two\"", null), is("\"word one and two\""));
         assertThat(parser.removeBracketsAndQuotes("[word one and two]", null), is("[word one and two]"));
+    }
+
+    @Test
+    @FixFor( "MODE-2734" )
+    public void shouldParseBindVariables() {
+        query = parse("select [nt:base].[jcr:primaryType] FROM [nt:base] WHERE [nt:base].[jcr:localName] = $nodeName");
+        query = parse("select [nt:base].[jcr:primaryType] FROM [nt:base] WHERE [nt:base].[jcr:localName] = $node\uFE60\uFE5F20\uFE54name");
     }
 
     /*
