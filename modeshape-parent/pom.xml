@@ -201,6 +201,8 @@
         <version.org.wildfly>10.1.0.Final</version.org.wildfly>
         <version.org.wildfly.core>2.2.0.Final</version.org.wildfly.core>
 
+        <version.enforcer.asm>7.0</version.enforcer.asm>
+
         <!-- The id of the maven distribution which is building the current wf kit -->
         <wf.dist.id>jboss-wf-dist</wf.dist.id>
         
@@ -837,6 +839,21 @@
                         <groupId>de.is24.maven.enforcer.rules</groupId>
                         <artifactId>illegal-transitive-dependency-check</artifactId>
                         <version>1.7.1</version>
+                    </dependency>
+                    <dependency>
+                        <artifactId>asm</artifactId>
+                        <groupId>org.ow2.asm</groupId>
+                        <version>${version.enforcer.asm}</version>
+                    </dependency>
+                    <dependency>
+                        <artifactId>asm-tree</artifactId>
+                        <groupId>org.ow2.asm</groupId>
+                        <version>${version.enforcer.asm}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>org.ow2.asm</groupId>
+                        <artifactId>asm-analysis</artifactId>
+                        <version>${version.enforcer.asm}</version>
                     </dependency>
                 </dependencies>
                 <executions>

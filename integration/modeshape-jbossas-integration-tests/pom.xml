@@ -21,7 +21,7 @@
         <preferIpv6>false</preferIpv6>
 
         <!--Overwrite the default Lucene version because this version of ES uses an older Lucene version -->
-        <version.org.apache.lucene>5.3.1</version.org.apache.lucene>
+        <version.org.apache.lucene>5.5.4</version.org.apache.lucene>
     </properties>
     <dependencyManagement>
         <dependencies>
@@ -166,7 +166,7 @@
         <dependency>
             <groupId>org.elasticsearch</groupId>
             <artifactId>elasticsearch</artifactId>
-        </dependency>  
+        </dependency>
         <dependency>
             <!-- JNA library needed to start ES cluster -->
             <groupId>net.java.dev.jna</groupId>
