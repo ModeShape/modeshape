@@ -20,6 +20,7 @@ import static org.modeshape.jcr.value.ValueComparators.STRING_COMPARATOR;
 import java.util.Objects;
 import java.util.function.BiPredicate;
 import java.util.function.Function;
+import java.util.function.IntPredicate;
 import java.util.regex.Pattern;
 import javax.jcr.query.qom.Comparison;
 import org.apache.lucene.index.LeafReaderContext;
@@ -29,7 +30,6 @@ import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.TermRangeQuery;
 import org.apache.lucene.search.Weight;
 import org.apache.lucene.search.WildcardQuery;
-import org.apache.lucene.util.BytesRef;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.jcr.query.engine.QueryUtil;
 
@@ -40,7 +40,44 @@ import org.modeshape.jcr.query.engine.QueryUtil;
  */
 @Immutable
 public class CompareStringQuery extends CompareQuery<String> {
-    
+    private enum FieldComparison {
+        EQ(cmp -> cmp == 0), GT(cmp -> cmp > 0), GE(cmp -> cmp >= 0), LT(cmp -> cmp < 0), LE(cmp -> cmp <= 0);
+
+        final IntPredicate testCmp;
+
+        private FieldComparison(IntPredicate testCmp) {
+            this.testCmp = testCmp;
+        }
+
+        boolean test(int cmp) {
+            return testCmp.test(cmp);
+        }
+
+        Query createQueryForNodesWithField(String constraintValue, String fieldName, Function<String, String> caseOperation) {
+            constraintValue = QueryUtil.unescape(constraintValue);
+            if (caseOperation == null) {
+                // no need to process the stored index values, so we can use a default Lucene query
+                if (this == EQ) {
+                    return new TermQuery(new Term(fieldName, constraintValue));
+                }
+                return TermRangeQuery.newStringRange(fieldName,
+                                                     test(-1) ? null : constraintValue,
+                                                     test(1) ? null : constraintValue,
+                                                     test(0),
+                                                     test(0));
+            }
+            final BiPredicate<String, String> evaluator;
+            if (this == EQ) {
+                evaluator = Objects::equals;
+            } else {
+                evaluator = ( s1, s2 ) -> test(STRING_COMPARATOR.compare(s1, s2));
+            }
+            return new CompareStringQuery(fieldName, constraintValue, evaluator, caseOperation);
+        }
+    }
+
+    private static final String LUCENE_SPECIAL_CHARACTERS = "+-&|!(){}[]^\"~?*:\\";
+
     /**
      * Construct a {@link Query} implementation that scores nodes according to the supplied comparator.
      *
@@ -80,11 +117,7 @@ public class CompareStringQuery extends CompareQuery<String> {
     public static Query createQueryForNodesWithFieldEqualTo(String constraintValue,
                                                             String fieldName,
                                                             Function<String, String> caseOperation) {
-        if (caseOperation == null) {
-            // no need to process the stored index values, so we can use a default Lucene query
-            return new TermQuery(new Term(fieldName, constraintValue));
-        }
-        return new CompareStringQuery(fieldName, constraintValue, Objects::equals, caseOperation);
+        return FieldComparison.EQ.createQueryForNodesWithField(constraintValue, fieldName, caseOperation);
     }
     
     /**
@@ -100,14 +133,9 @@ public class CompareStringQuery extends CompareQuery<String> {
     public static Query createQueryForNodesWithFieldGreaterThan(String constraintValue,
                                                                 String fieldName,
                                                                 Function<String, String> caseOperation) {
-        if (caseOperation == null) {
-            // no need to process the stored index values, so we can use a default Lucene query
-            return new TermRangeQuery(fieldName, new BytesRef(constraintValue), null, false, false);
-        }
-        return new CompareStringQuery(fieldName, constraintValue,
-                                      (s1, s2) -> STRING_COMPARATOR.compare(s1, s2) > 0, caseOperation);
+        return FieldComparison.GT.createQueryForNodesWithField(constraintValue, fieldName, caseOperation);
     }
-    
+
     /**
      * Construct a {@link Query} implementation that scores documents with a string field value that is greater than or equal to
      * the supplied constraint value.
@@ -121,12 +149,7 @@ public class CompareStringQuery extends CompareQuery<String> {
     public static Query createQueryForNodesWithFieldGreaterThanOrEqualTo(String constraintValue,
                                                                          String fieldName,
                                                                          Function<String, String> caseOperation) {
-        if (caseOperation == null) {
-            // no need to process the stored index values, so we can use a default Lucene query
-            return new TermRangeQuery(fieldName, new BytesRef(constraintValue), null, true, false);
-        }
-        return new CompareStringQuery(fieldName, constraintValue,
-                                      (s1, s2) -> STRING_COMPARATOR.compare(s1, s2) >= 0, caseOperation);
+        return FieldComparison.GE.createQueryForNodesWithField(constraintValue, fieldName, caseOperation);
     }
     
     /**
@@ -142,12 +165,7 @@ public class CompareStringQuery extends CompareQuery<String> {
     public static Query createQueryForNodesWithFieldLessThan(String constraintValue,
                                                              String fieldName,
                                                              Function<String, String> caseOperation) {
-        if (caseOperation == null) {
-            // no need to process the stored index values, so we can use a default Lucene query
-            return new TermRangeQuery(fieldName, null, new BytesRef(constraintValue), false, false);
-        }
-        return new CompareStringQuery(fieldName, constraintValue,
-                                      (s1, s2) -> STRING_COMPARATOR.compare(s1, s2) < 0, caseOperation);
+        return FieldComparison.LT.createQueryForNodesWithField(constraintValue, fieldName, caseOperation);
     }
     
     /**
@@ -163,12 +181,7 @@ public class CompareStringQuery extends CompareQuery<String> {
     public static Query createQueryForNodesWithFieldLessThanOrEqualTo(String constraintValue,
                                                                       String fieldName,
                                                                       Function<String, String> caseOperation) {
-        if (caseOperation == null) {
-            // no need to process the stored index values, so we can use a default Lucene query
-            return new TermRangeQuery(fieldName, null, new BytesRef(constraintValue), true, true);
-        }
-        return new CompareStringQuery(fieldName, constraintValue,
-                                      (s1, s2) -> STRING_COMPARATOR.compare(s1, s2) <= 0, caseOperation);
+        return FieldComparison.LE.createQueryForNodesWithField(constraintValue, fieldName, caseOperation);
     }
     
     /**
@@ -205,8 +218,7 @@ public class CompareStringQuery extends CompareQuery<String> {
             char firstChar = likeExpression.charAt(0);
             if (firstChar != '%' && firstChar != '_' && firstChar != '*' && firstChar != '?') {
                 // Create a wildcard query ...
-                String expression = toWildcardExpression(likeExpression);
-                return new WildcardQuery(new Term(fieldName, expression));
+                return new WildcardQuery(new Term(fieldName, toWildcardExpression(likeExpression)));
             }
         }
         // Create a regex query...
@@ -218,12 +230,47 @@ public class CompareStringQuery extends CompareQuery<String> {
     /**
      * Convert the JCR like expression to a Lucene wildcard expression. The JCR like expression uses '%' to match 0 or more
      * characters, '_' to match any single character, '\x' to match the 'x' character, and all other characters to match
-     * themselves.
+     * themselves. Since ModeShape v5.5, this method additionally escapes Lucene special characters, with the exception,
+     * for backwards compatibility, of the '*' and '?' wildcard characters themselves, which are supported alternatives
+     * despite not being officially part of the JCR specification.
      *
      * @param likeExpression the like expression; may not be null
      * @return the expression that can be used with a WildcardQuery; never null
      */
     protected static String toWildcardExpression( String likeExpression ) {
-        return likeExpression.replace('%', '*').replace('_', '?').replaceAll("\\\\(.)", "$1");
+        if (likeExpression.isEmpty()) {
+            return likeExpression;
+        }
+        final int sz = likeExpression.length();
+        final StringBuilder buf = new StringBuilder(sz);
+        int pos = -1;
+        while (++pos < sz) {
+            final char c = likeExpression.charAt(pos);
+            char out;
+            switch (c) {
+                case '%':
+                case '*':
+                    buf.append('*');
+                    continue;
+                case '_':
+                case '?':
+                    buf.append('?');
+                    continue;
+                case '\\':
+                    if (++pos < sz) {
+                        out = likeExpression.charAt(pos);
+                        break;
+                    }
+                    // weird case with a trailing backslash, treat as "escaped nothing" i.e. skip it
+                    continue;
+                default:
+                    out = c;
+            }
+            if (LUCENE_SPECIAL_CHARACTERS.indexOf(out) >= 0) {
+                buf.append('\\');
+            }
+            buf.append(c);
+        }
+        return buf.toString();
     }
 }

@@ -49,8 +49,30 @@ public class QueryUtil {
         }
         return false;
     }
-    
-    
+
+    /**
+     * Removes {@code \}-triggered escape sequences from {@code jcrExpression}.
+     * @param jcrExpression {@link String}, never {@code null}
+     * @return {@link String}
+     * @since 5.5
+     */
+    public static String unescape( String jcrExpression ) {
+        Objects.requireNonNull(jcrExpression);
+        if (jcrExpression.indexOf('\\') < 0) {
+            return jcrExpression;
+        }
+        final StringBuilder buf = new StringBuilder(jcrExpression.length());
+
+        for (CharacterIterator iter = new StringCharacterIterator(jcrExpression); iter.current() != CharacterIterator.DONE; iter.next()) {
+            if (iter.current() == '\\' && iter.next() == '\\') {
+                buf.append('\\');
+                continue;
+            }
+            buf.append(iter.current());
+        }
+        return buf.toString();
+    }
+
     /**
      * Convert the JCR like expression to a regular expression. The JCR like expression uses '%' to match 0 or more characters,
      * '_' to match any single character, '\x' to match the 'x' character, and all other characters to match themselves. Note that
