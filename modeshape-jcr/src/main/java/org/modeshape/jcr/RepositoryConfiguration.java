@@ -438,6 +438,7 @@ public class RepositoryConfiguration {
         public static final String PORT = "port";
         public static final String BUCKET_NAME = "bucketName";
         public static final String ENDPOINT_URL = "endPoint";
+        public static final String DELETE_UNUSED_NATIVELY = "deleteUnusedNatively";
 
         public static final String GARBAGE_COLLECTION = "garbageCollection";
         public static final String INITIAL_TIME = "initialTime";
@@ -1211,7 +1212,8 @@ public class RepositoryConfiguration {
                 String password = binaryStorage.getString(FieldName.USER_PASSWORD);
                 String bucketName = binaryStorage.getString(FieldName.BUCKET_NAME);
                 String endPoint = binaryStorage.getString(FieldName.ENDPOINT_URL);
-                store = new S3BinaryStore(username, password, bucketName, endPoint);
+                Boolean deleteUnusedNatively = binaryStorage.getBoolean(FieldName.DELETE_UNUSED_NATIVELY);
+                store = new S3BinaryStore(username, password, bucketName, endPoint, deleteUnusedNatively);
             }
 
             if (store == null) store = TransientBinaryStore.get();

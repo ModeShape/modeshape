@@ -16,6 +16,7 @@
 package org.modeshape.jcr.value.binary;
 
 import com.amazonaws.services.s3.AmazonS3Client;
+import com.amazonaws.services.s3.model.BucketLifecycleConfiguration;
 import com.amazonaws.services.s3.model.CopyObjectRequest;
 import com.amazonaws.services.s3.model.GetObjectTaggingRequest;
 import com.amazonaws.services.s3.model.GetObjectTaggingResult;
@@ -30,24 +31,39 @@ import com.amazonaws.services.s3.model.Tag;
 import com.amazonaws.util.IOUtils;
 import com.amazonaws.util.StringInputStream;
 import org.easymock.Capture;
-import org.easymock.EasyMockRunner;
+import org.easymock.EasyMock;
+import org.easymock.EasyMockRule;
 import org.easymock.EasyMockSupport;
+import org.easymock.IArgumentMatcher;
 import org.easymock.Mock;
-import org.easymock.TestSubject;
 import org.junit.After;
+import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameter;
+import org.junit.runners.Parameterized.Parameters;
 import org.modeshape.jcr.value.BinaryKey;
 import org.modeshape.jcr.value.BinaryValue;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import java.util.Optional;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Predicate;
+import java.util.stream.Stream;
+import static com.amazonaws.services.s3.model.BucketLifecycleConfiguration.DISABLED;
+import static com.amazonaws.services.s3.model.BucketLifecycleConfiguration.ENABLED;
 import static org.easymock.EasyMock.capture;
 import static org.easymock.EasyMock.eq;
 import static org.easymock.EasyMock.expect;
@@ -63,13 +79,72 @@ import static org.junit.Assert.fail;
  *
  * @author bbranan
  */
-@RunWith(EasyMockRunner.class)
+@RunWith(Parameterized.class)
 public class S3BinaryStoreTest extends EasyMockSupport {
+    private static BucketLifecycleConfiguration bucketLifecycleConfiguration(String status) {
+        return new BucketLifecycleConfiguration().withRules(
+                new BucketLifecycleConfiguration.Rule().withId(S3BinaryStore.UNUSED_RULE).withStatus(status));
+    }
 
-    private static final String BUCKET = "MOCK_BUCKET";
+    @Parameters(name="{0}")
+    public static List<Object[]> createParameters() {
+        return Arrays.asList(
+             new Object[] { "noNativeIgnoreMissingConfig", false, null },
+             new Object[] { "noNativeIgnoreDisabledConfig", false, bucketLifecycleConfiguration(DISABLED) },
+             new Object[] { "noNativeDisableEnabledConfig", false, bucketLifecycleConfiguration(ENABLED) },
+             new Object[] { "nativeEnableMissingConfig", true, null },
+             new Object[] { "nativeIgnoreEnabledConfig", true, bucketLifecycleConfiguration(ENABLED) },
+             new Object[] { "nativeEnableDisabledConfig", true, bucketLifecycleConfiguration(DISABLED) }
+        );
+    }
+
+    private static <T> T customMatcher(String desc, Predicate<T> test) {
+        EasyMock.reportMatcher(new IArgumentMatcher() {
+
+            @SuppressWarnings( "unchecked" )
+            @Override
+            public boolean matches( Object argument ) {
+                return test.test((T) argument);
+            }
+
+            @Override
+            public void appendTo( StringBuffer buffer ) {
+                buffer.append(desc);
+            }
+        });
+        return null;
+    }
+
+    private static Optional<com.amazonaws.services.s3.model.BucketLifecycleConfiguration.Rule> getUnusedRule(
+            BucketLifecycleConfiguration blc ) {
+        return Optional.ofNullable(blc).map(BucketLifecycleConfiguration::getRules).map(Collection::stream)
+            .orElseGet(Stream::empty).filter(r -> S3BinaryStore.UNUSED_RULE.equals(r.getId())).findFirst();
+    }
+
+    private static Predicate<com.amazonaws.services.s3.model.BucketLifecycleConfiguration.Rule> isEnabled() {
+        return r -> ENABLED.equals(r.getStatus());
+    }
+
+    private static Predicate<com.amazonaws.services.s3.model.BucketLifecycleConfiguration.Rule> isDisabled() {
+        return r -> DISABLED.equals(r.getStatus());
+    }
+
+    private static final String BUCKET = "mock.bucket";
     private static final String TEST_KEY = "test-key";
     private static final String TEST_MIME = "text/plain";
     private static final String TEST_CONTENT = "test-content";
+
+    @Rule
+    public EasyMockRule easyMock = new EasyMockRule(this);
+
+    @Parameter(0)
+    public String description;
+    
+    @Parameter(1)
+    public boolean deleteUnusedNatively;
+
+    @Parameter(2)
+    public BucketLifecycleConfiguration bucketLifecycleConfiguration;
 
     @Mock
     private AmazonS3Client s3Client;
@@ -77,8 +152,12 @@ public class S3BinaryStoreTest extends EasyMockSupport {
     @Mock
     private ObjectListing objectListing;
 
-    @TestSubject
-    private S3BinaryStore s3BinaryStore = new S3BinaryStore(BUCKET, s3Client);
+    private S3BinaryStore s3BinaryStore;
+
+    @Before
+    public void setUp() {
+        s3BinaryStore = new S3BinaryStore(BUCKET, s3Client, deleteUnusedNatively);
+    }
 
     @After
     public void tearDown() {
@@ -124,7 +203,7 @@ public class S3BinaryStoreTest extends EasyMockSupport {
      * extracted text value which exceeds the capacity of S3
      */
     @Test
-    public void testStoreExtractedTextTooLong() throws BinaryStoreException {
+    public void testStoreExtractedTextTooLong() {
         StringBuilder textBuilder = new StringBuilder();
         for (int i = 0; i < 2001; i++) {
             textBuilder.append("a");
@@ -163,7 +242,7 @@ public class S3BinaryStoreTest extends EasyMockSupport {
         assertEquals(TEST_KEY, copyRequest.getDestinationKey());
         assertEquals(extractedText, copyRequest.getNewObjectMetadata()
                                                .getUserMetadata()
-                                               .get(s3BinaryStore.EXTRACTED_TEXT_KEY));
+                                               .get(S3BinaryStore.EXTRACTED_TEXT_KEY));
     }
 
     @Test
@@ -172,7 +251,7 @@ public class S3BinaryStoreTest extends EasyMockSupport {
 
         ObjectMetadata objMeta = new ObjectMetadata();
         Map<String, String> userMeta = new HashMap<>();
-        userMeta.put(s3BinaryStore.EXTRACTED_TEXT_KEY, extractedText);
+        userMeta.put(S3BinaryStore.EXTRACTED_TEXT_KEY, extractedText);
         objMeta.setUserMetadata(userMeta);
         expect(s3Client.getObjectMetadata(BUCKET, TEST_KEY)).andReturn(objMeta);
 
@@ -419,15 +498,46 @@ public class S3BinaryStoreTest extends EasyMockSupport {
             .andReturn(objectListing);
         expect(objectListing.getObjectSummaries()).andReturn(objectList);
         expect(objectListing.isTruncated()).andReturn(false);
+        expect(objectListing.isTruncated()).andReturn(false);
 
         replayAll();
 
-        Iterable<BinaryKey> allKeys = s3BinaryStore.getAllBinaryKeys();
-        int keyCount = 0;
-        for (BinaryKey key : allKeys) {
-            keyCount++;
+        final AtomicInteger keyCount = new AtomicInteger();
+        s3BinaryStore.getAllBinaryKeys().forEach(k -> keyCount.incrementAndGet());
+        assertEquals(202, keyCount.get()); // Expecting two sets of 101 objects
+    }
+
+    @Test
+    public void testRemoveUnusedValues() throws BinaryStoreException {
+        expect(s3Client.getBucketLifecycleConfiguration(BUCKET)).andReturn(bucketLifecycleConfiguration);
+
+        if (deleteUnusedNatively) {
+            if (!getUnusedRule(bucketLifecycleConfiguration).filter(isEnabled()).isPresent()) {
+                s3Client.setBucketLifecycleConfiguration(eq(BUCKET), S3BinaryStoreTest.customMatcher(description, blc ->
+                        getUnusedRule(blc).filter(isEnabled()).isPresent()));
+                EasyMock.expectLastCall();
+            }
+        } else {
+            if (getUnusedRule(bucketLifecycleConfiguration).filter(isEnabled()).isPresent()) {
+                s3Client.setBucketLifecycleConfiguration(eq(BUCKET), S3BinaryStoreTest.customMatcher(description, blc ->
+                        getUnusedRule(blc).filter(isDisabled()).isPresent()));
+                EasyMock.expectLastCall();
+            }
+            expect(s3Client.listObjects(isA(ListObjectsRequest.class))).andReturn(objectListing);
+            expect(objectListing.getObjectSummaries()).andReturn(Collections.emptyList());
+            expect(objectListing.isTruncated()).andReturn(false);
+            expect(objectListing.isTruncated()).andReturn(false);
+            expect(s3Client.listObjects(isA(ListObjectsRequest.class))).andReturn(objectListing);
+            expect(objectListing.getObjectSummaries()).andReturn(Collections.emptyList());
+            expect(objectListing.isTruncated()).andReturn(false);
+            expect(objectListing.isTruncated()).andReturn(false);
         }
-        assertEquals(202, keyCount); // Expecting two sets of 101 objects
+        replayAll();
+
+        s3BinaryStore.removeValuesUnusedLongerThan(1, TimeUnit.HOURS);
+        s3BinaryStore.removeValuesUnusedLongerThan(1, TimeUnit.HOURS);
+
+        verifyAll();
     }
 
     private void assertUnusedTagInSetTaggingRequest(SetObjectTaggingRequest setTaggingRequest, String tagValue) {
