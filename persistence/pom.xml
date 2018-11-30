@@ -76,10 +76,8 @@
     </build>
 
     <modules>
-        <module>modeshape-persistence-relational</module>
         <module>modeshape-persistence-file</module>
     </modules>
-
     <profiles>
         <profile>
             <id>assembly</id>
@@ -99,5 +97,11 @@
                 </plugins>
             </build>
         </profile>
+        <profile>
+            <id>integration</id>
+            <modules>
+                <module>modeshape-persistence-relational</module>
+            </modules>
+        </profile>        
     </profiles>
 </project>
