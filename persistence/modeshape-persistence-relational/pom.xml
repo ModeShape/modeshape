@@ -33,9 +33,12 @@
             <artifactId>h2</artifactId>
         </dependency>
     </dependencies>
-    <build>
-        <plugins>
-            <!--Start and run docker -->
+    
+    <profiles>
+        <profile>
+            <id>integration</id>
+            <build>
+                <plugins>
             <plugin>
                 <groupId>io.fabric8</groupId>
                 <artifactId>docker-maven-plugin</artifactId>
@@ -57,7 +60,6 @@
                     </execution>
                 </executions>
             </plugin>
-            <!-- Run the integration tests-->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
@@ -70,6 +72,8 @@
                     </execution>
                 </executions>
             </plugin>
-        </plugins>
-    </build>
+                </plugins>
+            </build>
+        </profile>      
+    </profiles>
 </project>
