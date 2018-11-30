@@ -26,7 +26,7 @@ jdk:
   - oraclejdk8
   
 env:
-  - MAVEN_OPTS="-Xms1524m -Xmx=1524m"
+  - MAVEN_OPTS="-Xms1024m -Xmx1024m"
   
 # We use docker for the persistence integration tests
 services:
@@ -39,4 +39,4 @@ before_script:
 # We're also changing the Maven default logging to avoid printing out all the 'Downloading' messages which can cause the Travis
 # build to fail when the log size exceeds 4MB
 script: 
-  - mvn -s settings.xml clean install -Pintegration -Ppersistence-integration -DpreferIpv4 -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer=warn -B
+  - mvn -s settings.xml clean install -DskipTests -Dintegration -B
