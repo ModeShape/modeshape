@@ -60,7 +60,6 @@ import org.modeshape.jcr.security.AnonymousProvider;
 import org.modeshape.jcr.security.JaasProvider;
 import org.modeshape.jcr.txn.DefaultTransactionManagerLookup;
 import org.modeshape.jcr.value.PropertyType;
-import org.modeshape.jcr.value.binary.AbstractBinaryStore;
 import org.modeshape.jcr.value.binary.BinaryStore;
 import org.modeshape.jcr.value.binary.BinaryStoreException;
 import org.modeshape.jcr.value.binary.CassandraBinaryStore;
@@ -1237,9 +1236,9 @@ public class RepositoryConfiguration {
         /*
          * Instantiates custom binary store.
          */
-        private AbstractBinaryStore createInstance() throws Exception {
+        private BinaryStore createInstance() throws Exception {
             ClassLoader classLoader = environment().getClassLoader(this, classPath);
-            return (AbstractBinaryStore)classLoader.loadClass(classname).newInstance();
+            return classLoader.loadClass(classname).asSubclass(BinaryStore.class).newInstance();
         }
 
         @SuppressWarnings( "synthetic-access" )
