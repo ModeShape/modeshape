@@ -493,6 +493,11 @@
                                     "description" : "The endpoint URL used to communicate with S3.",
                                     "required" : false
                                 },
+                                "deleteUnusedNatively" : {
+                                    "type" : "boolean",
+                                    "description" : "Whether to use native functionality to delete unused binary values.",
+                                    "required" : false
+                                },
                                 "minimumBinarySizeInBytes" : {
                                     "type" : "integer",
                                     "default" : 4096,
