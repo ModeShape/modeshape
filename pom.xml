@@ -10,6 +10,7 @@
 
 	<groupId>org.modeshape</groupId>
 	<artifactId>modeshape</artifactId>
+        <version>5.5-SNAPSHOT</version>
 
 	<packaging>pom</packaging>
 	<name>ModeShape</name>
