@@ -2,18 +2,33 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>org.modeshape</groupId>
-        <artifactId>modeshape-parent</artifactId>
-        <version>5.5-SNAPSHOT</version>
-        <relativePath>modeshape-parent/pom.xml</relativePath>
+        <groupId>org.jboss</groupId>
+        <artifactId>jboss-parent</artifactId>
+        <version>20</version>
+        <relativePath></relativePath>
     </parent>
 
     <groupId>org.modeshape</groupId>
     <artifactId>modeshape</artifactId>
+    <version>5.5-SNAPSHOT</version>
 
     <packaging>pom</packaging>
     <name>ModeShape</name>
     <description>Builds the entire ModeShape distribution.</description>
+
+    <licenses>
+        <license>
+            <name>Apache Software License 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+
+    <scm>
+        <connection>scm:git:git://github.com/ModeShape/modeshape.git</connection>
+        <developerConnection>scm:git:git@github.com:ModeShape/modeshape.git</developerConnection>
+        <url>http://github.com/ModeShape/modeshape</url>
+    </scm>
 
     <modules>
         <!-- Order is important -->
