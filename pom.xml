@@ -1,21 +1,21 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
-	<modelVersion>4.0.0</modelVersion>
+    <modelVersion>4.0.0</modelVersion>
 
-  <parent>
+    <parent>
+        <groupId>org.modeshape</groupId>
+        <artifactId>modeshape-parent</artifactId>
+        <version>5.5-SNAPSHOT</version>
+        <relativePath>modeshape-parent/pom.xml</relativePath>
+    </parent>
+
     <groupId>org.modeshape</groupId>
-    <artifactId>modeshape-parent</artifactId>
-	<version>5.5-SNAPSHOT</version>
-    <relativePath>modeshape-parent/pom.xml</relativePath>
-  </parent>
+    <artifactId>modeshape</artifactId>
 
-	<groupId>org.modeshape</groupId>
-	<artifactId>modeshape</artifactId>
+    <packaging>pom</packaging>
+    <name>ModeShape</name>
+    <description>Builds the entire ModeShape distribution.</description>
 
-	<packaging>pom</packaging>
-	<name>ModeShape</name>
-	<description>Builds the entire ModeShape distribution.</description>
-
-	<modules>
+    <modules>
         <!-- Order is important -->
 
         <!-- First these -->
@@ -43,8 +43,8 @@
         <module>modeshape-jdbc</module>
         <!-- 
           JCA Resource adapter
-    	-->
-    	<module>modeshape-jca</module>
+        -->
+        <module>modeshape-jca</module>
 
         <!--
           The JBoss AS7 subsystem needs the web components and (local) JDBC drivers.
@@ -57,30 +57,30 @@
         <module>boms/modeshape-bom-jbossas</module>
         <module>boms/modeshape-bom-remote-client</module>
     </modules>
-	<properties>
-		<rootDir>${project.basedir}</rootDir>
-	</properties>
+    <properties>
+        <rootDir>${project.basedir}</rootDir>
+    </properties>
 
-	<profiles>
-		<!-- 
-		  This profile is used to run the build plus the integration tests
-			and must be activated manually, as in "mvn ... -Pintegration ..."
-		-->
-		<profile>
-			<id>integration</id>
-			<modules>
-			  <!-- 
-			    Build the distribution before running the integration tests, 
-			    as some of the integration tests rely upon the distributions
-			  -->
-				<module>integration</module>
-			</modules>
-		</profile>
-		
-		<!-- 
-		  This profile is used to run longer-running performance tests,
-		  and must be activated manually, as in "mvn ... -Pperformance ..."
-		-->
+    <profiles>
+        <!-- 
+          This profile is used to run the build plus the integration tests
+            and must be activated manually, as in "mvn ... -Pintegration ..."
+        -->
+        <profile>
+            <id>integration</id>
+            <modules>
+              <!-- 
+                Build the distribution before running the integration tests, 
+                as some of the integration tests rely upon the distributions
+              -->
+                <module>integration</module>
+            </modules>
+        </profile>
+        
+        <!-- 
+          This profile is used to run longer-running performance tests,
+          and must be activated manually, as in "mvn ... -Pperformance ..."
+        -->
         <profile>
             <id>performance</id>
             <modules>
@@ -97,11 +97,11 @@
                 <module>modeshape-persistence-tests</module>
             </modules>
         </profile>
-                		
-		<!-- 
-		  This profile is used to build everything for a release, including all assemblies,
-			and must be activated manually, as in "mvn ... -Passembly ..."
-		-->
+                        
+        <!-- 
+          This profile is used to build everything for a release, including all assemblies,
+            and must be activated manually, as in "mvn ... -Passembly ..."
+        -->
         <profile>
             <id>assembly</id>
             <modules>
@@ -110,5 +110,5 @@
                 <module>integration</module>
             </modules>
         </profile>
-	</profiles>
+    </profiles>
 </project>
