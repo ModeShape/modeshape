@@ -61,10 +61,7 @@
         -->
         <module>modeshape-jca</module>
 
-        <!--
-          The JBoss AS7 subsystem needs the web components and (local) JDBC drivers.
-        -->
-        <module>deploy/jbossas</module>
+        <module>deploy</module>
         <module>modeshape-distribution</module>
 
         <!-- Finally the BOMs -->
