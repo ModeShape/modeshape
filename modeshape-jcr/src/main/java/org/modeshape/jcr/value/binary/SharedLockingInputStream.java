@@ -60,40 +60,34 @@ public final class SharedLockingInputStream extends InputStream {
     }
 
     protected void open() throws IOException {
-        doOperation(new Callable<Object>() {
-            @Override
-            public Object call() throws Exception {
-                if (SharedLockingInputStream.this.stream == null) {
-                    // At this point, we know the lock exists and we just need to wait until the write (if there is one) is done.
-                    // We do that by getting a read lock for the SHA-1 (to prevent other threads from modifying the file) ...
-                    if (lockManager != null) {
-                        processLock = lockManager.readLock(key.toString());
-                    }
-                    // Also get a shared file lock to prevent other processes from modifying the file ...
-                    SharedLockingInputStream.this.fileLock = FileLocks.get().readLock(file);
-
-                    // Now create a buffered stream ...
-                    SharedLockingInputStream.this.stream = new BufferedInputStream(
-                                                                                   new FileInputStream(file),
-                                                                                   AbstractBinaryStore.bestBufferSize(file.length()));
-                    SharedLockingInputStream.this.eofReached = false;
+        doOperation(() -> {
+            if (SharedLockingInputStream.this.stream == null) {
+                // At this point, we know the lock exists and we just need to wait until the write (if there is one) is done.
+                // We do that by getting a read lock for the SHA-1 (to prevent other threads from modifying the file) ...
+                if (lockManager != null) {
+                    processLock = lockManager.readLock(key.toString());
                 }
-                return null;
+                // Also get a shared file lock to prevent other processes from modifying the file ...
+                SharedLockingInputStream.this.fileLock = FileLocks.get().readLock(file);
+
+                // Now create a buffered stream ...
+                SharedLockingInputStream.this.stream = new BufferedInputStream(
+                                                                               new FileInputStream(file),
+                                                                               AbstractBinaryStore.bestBufferSize(file.length()));
+                SharedLockingInputStream.this.eofReached = false;
             }
+            return null;
         });
     }
 
     @Override
     public int available() throws IOException {
-        return doOperation(new Callable<Integer>() {
-            @Override
-            public Integer call() throws Exception {
-                if (eofReached) {
-                    return 0;
-                }
-                open();
-                return stream.available();
+        return doOperation(() -> {
+            if (eofReached) {
+                return 0;
             }
+            open();
+            return stream.available();
         });
     }
 
@@ -139,15 +133,12 @@ public final class SharedLockingInputStream extends InputStream {
     @Override
     public void mark( final int readlimit ) {
         try {
-            doOperation(new Callable<Void>() {
-                @Override
-                public Void call() throws Exception {
-                    open();
-                    if (stream.markSupported()) {
-                        stream.mark(readlimit);
-                    }
-                    return null;
+            doOperation(() -> {
+                open();
+                if (stream.markSupported()) {
+                    stream.mark(readlimit);
                 }
+                return null;
             });
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -157,12 +148,9 @@ public final class SharedLockingInputStream extends InputStream {
     @Override
     public boolean markSupported() {
         try {
-            return doOperation(new Callable<Boolean>() {
-                @Override
-                public Boolean call() throws Exception {
-                    open();
-                    return stream.markSupported();
-                }
+            return doOperation(() -> {
+                open();
+                return stream.markSupported();
             });
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -173,83 +161,68 @@ public final class SharedLockingInputStream extends InputStream {
     public int read( final byte[] b,
                      final int off,
                      final int len ) throws IOException {
-        return doOperation(new Callable<Integer>() {
-            @Override
-            public Integer call() throws Exception {
-                if (eofReached) {
-                    return -1;
-                }
-                open();
-                int result = stream.read(b, off, len);
-                if (result == -1) {
-                    eofReached = true;
-                    close();
-                }
-                return result;
+        return doOperation(() -> {
+            if (eofReached) {
+                return -1;
             }
+            open();
+            int result = stream.read(b, off, len);
+            if (result == -1) {
+                eofReached = true;
+                close();
+            }
+            return result;
         });
     }
 
     @Override
     public int read( final byte[] b ) throws IOException {
-        return doOperation(new Callable<Integer>() {
-            @Override
-            public Integer call() throws Exception {
-                if (eofReached) {
-                    return -1;
-                }
-                open();
-                int result = stream.read(b);
-                if (result == -1) {
-                    eofReached = true;
-                    close();
-                }
-                return result;
+        return doOperation(() -> {
+            if (eofReached) {
+                return -1;
             }
+            open();
+            int result = stream.read(b);
+            if (result == -1) {
+                eofReached = true;
+                close();
+            }
+            return result;
         });
     }
 
     @Override
     public int read() throws IOException {
-        return doOperation(new Callable<Integer>() {
-            @Override
-            public Integer call() throws Exception {
-                if (eofReached) {
-                    return -1;
-                }
-                open();
-                int result = stream.read();
-                if (result == -1) {
-                    eofReached = true;
-                    close(); // without this, there might be locks
-                }
-                return result;
+        return doOperation(() -> {
+            if (eofReached) {
+                return -1;
             }
+            open();
+            int result = stream.read();
+            if (result == -1) {
+                eofReached = true;
+                close(); // without this, there might be locks
+            }
+            return result;
         });
     }
 
     @Override
     public void reset() throws IOException {
-        doOperation(new Callable<Void>() {
-            @Override
-            public Void call() throws Exception {
-                open();
-                if (stream.markSupported()) {
-                    stream.reset();
-                }
-                return null;
+        doOperation(() -> {
+            open();
+            if (stream.markSupported()) {
+                stream.reset();
             }
+            return null;
         });
     }
 
     @Override
     public long skip( final long n ) throws IOException {
-        return doOperation(new Callable<Long>() {
-            @Override
-            public Long call() throws Exception {
-                open();
-                return stream.skip(n);
-            }
+        return doOperation(() -> {
+            open();
+            return stream.skip(n);
         });
     }
 
