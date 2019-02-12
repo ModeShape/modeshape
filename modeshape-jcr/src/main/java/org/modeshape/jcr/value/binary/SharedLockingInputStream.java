@@ -40,6 +40,8 @@ public final class SharedLockingInputStream extends InputStream {
     protected Lock processLock;
     protected FileLocks.WrappedLock fileLock;
     protected boolean eofReached;
+    private boolean anyRead;
+    private boolean markZero;
 
     /**
      * Create a self-closing, (shared) locking {@link InputStream} to read the content of the supplied {@link File file}.
@@ -75,6 +77,8 @@ public final class SharedLockingInputStream extends InputStream {
                                                                                new FileInputStream(file),
                                                                                AbstractBinaryStore.bestBufferSize(file.length()));
                 SharedLockingInputStream.this.eofReached = false;
+                SharedLockingInputStream.this.anyRead = false;
+                SharedLockingInputStream.this.markZero = false;
             }
             return null;
         });
@@ -135,8 +139,15 @@ public final class SharedLockingInputStream extends InputStream {
         try {
             doOperation(() -> {
                 open();
-                if (stream.markSupported()) {
-                    stream.mark(readlimit);
+                if (!anyRead) {
+                    markZero = true;
+                } else {
+                    if (markZero) {
+                        markZero = false;
+                    }
+                    if (stream.markSupported()) {
+                        stream.mark(readlimit);
+                    }
                 }
                 return null;
             });
@@ -150,7 +161,7 @@ public final class SharedLockingInputStream extends InputStream {
         try {
             return doOperation(() -> {
                 open();
-                return stream.markSupported();
+                return !anyRead || stream.markSupported();
             });
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -170,6 +181,8 @@ public final class SharedLockingInputStream extends InputStream {
             if (result == -1) {
                 eofReached = true;
                 close();
+            } else {
+                anyRead = true;
             }
             return result;
         });
@@ -186,6 +199,8 @@ public final class SharedLockingInputStream extends InputStream {
             if (result == -1) {
                 eofReached = true;
                 close();
+            } else {
+                anyRead = true;
             }
             return result;
         });
@@ -202,6 +217,8 @@ public final class SharedLockingInputStream extends InputStream {
             if (result == -1) {
                 eofReached = true;
                 close(); // without this, there might be locks
+            } else {
+                anyRead = true;
             }
             return result;
         });
@@ -210,8 +227,13 @@ public final class SharedLockingInputStream extends InputStream {
     @Override
     public void reset() throws IOException {
         doOperation(() -> {
+            if (markZero) {
+                close();
+            }
             open();
-            if (stream.markSupported()) {
+            if (markZero) {
+                markZero = false;
+            } else if (stream.markSupported()) {
                 stream.reset();
             }
             return null;
@@ -222,7 +244,11 @@ public final class SharedLockingInputStream extends InputStream {
     public long skip( final long n ) throws IOException {
         return doOperation(() -> {
             open();
-            return stream.skip(n);
+            long result = stream.skip(n);
+            if (result > 0) {
+                anyRead = true;
+            }
+            return result;
         });
     }
 
@@ -246,5 +272,4 @@ public final class SharedLockingInputStream extends InputStream {
             throw new RuntimeException(t);
         }
     }
-
 }
