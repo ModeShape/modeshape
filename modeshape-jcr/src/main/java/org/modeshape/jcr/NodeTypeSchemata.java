@@ -58,12 +58,12 @@ public class NodeTypeSchemata implements Schemata {
 
     private final Schemata schemata;
     private final Map<Integer, String> types;
-    private final Map<String, String> prefixesByUris = new HashMap<String, String>();
+    private final Map<String, String> prefixesByUris = new HashMap<>();
     private final boolean includeColumnsForInheritedProperties;
     private final boolean includePseudoColumnsInSelectStar;
     private final NodeTypes nodeTypes;
-    private final Map<JcrNodeType, Collection<JcrNodeType>> subtypesByName = new HashMap<JcrNodeType, Collection<JcrNodeType>>();
-    private final List<JcrPropertyDefinition> pseudoProperties = new ArrayList<JcrPropertyDefinition>();
+    private final Map<JcrNodeType, Collection<JcrNodeType>> subtypesByName = new HashMap<>();
+    private final List<JcrPropertyDefinition> pseudoProperties = new ArrayList<>();
     private final Name[] keyPropertyNames;
 
     NodeTypeSchemata( ExecutionContext context,
@@ -85,7 +85,7 @@ public class NodeTypeSchemata implements Schemata {
             for (JcrNodeType supertype : nodeType.getTypeAndSupertypes()) {
                 Collection<JcrNodeType> types = subtypesByName.get(supertype);
                 if (types == null) {
-                    types = new LinkedList<JcrNodeType>();
+                    types = new LinkedList<>();
                     subtypesByName.put(supertype, types);
                 }
                 types.add(nodeType);
@@ -97,7 +97,7 @@ public class NodeTypeSchemata implements Schemata {
         ImmutableSchemata.Builder builder = ImmutableSchemata.createBuilder(context, nodeTypes);
 
         // Build the fast-search for type names based upon PropertyType values ...
-        types = new HashMap<Integer, String>();
+        types = new HashMap<>();
         types.put(PropertyType.BINARY, typeSystem.getBinaryFactory().getTypeName());
         types.put(PropertyType.BOOLEAN, typeSystem.getBooleanFactory().getTypeName());
         types.put(PropertyType.DATE, typeSystem.getDateTimeFactory().getTypeName());
@@ -161,8 +161,8 @@ public class NodeTypeSchemata implements Schemata {
 
         String tableName = AllNodes.ALL_NODES_NAME.name();
         boolean first = true;
-        Map<String, String> typesForNames = new HashMap<String, String>();
-        Set<String> fullTextSearchableNames = new HashSet<String>();
+        Map<String, String> typesForNames = new HashMap<>();
+        Set<String> fullTextSearchableNames = new HashSet<>();
         for (JcrPropertyDefinition defn : nodeTypes.getAllPropertyDefinitions()) {
             if (defn.isResidual()) continue;
             Name name = defn.getInternalName();
@@ -241,7 +241,7 @@ public class NodeTypeSchemata implements Schemata {
     protected Set<Operator> operatorsFor( JcrPropertyDefinition defn ) {
         String[] ops = defn.getAvailableQueryOperators();
         if (ops == null || ops.length == 0) return EnumSet.allOf(Operator.class);
-        Set<Operator> result = new HashSet<Operator>();
+        Set<Operator> result = new HashSet<>();
         for (String symbol : ops) {
             Operator op = JcrPropertyDefinition.operatorFromSymbol(symbol);
             assert op != null;

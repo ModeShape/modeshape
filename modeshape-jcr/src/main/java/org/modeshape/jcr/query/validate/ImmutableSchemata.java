@@ -78,11 +78,11 @@ public class ImmutableSchemata implements Schemata {
         private final ExecutionContext context;
         private final NodeTypes nodeTypes;
         private final TypeSystem typeSystem;
-        private final Map<String, MutableTable> tables = new HashMap<String, MutableTable>();
-        private final Map<SelectorName, QueryCommand> viewDefinitions = new HashMap<SelectorName, QueryCommand>();
-        private final Set<SelectorName> tablesOrViewsWithExtraColumns = new HashSet<SelectorName>();
-        private final Map<String, Map<String, Boolean>> orderableColumnsByTableName = new HashMap<String, Map<String, Boolean>>();
-        private final Map<String, Map<String, Set<Operator>>> operatorsForColumnsByTableName = new HashMap<String, Map<String, Set<Operator>>>();
+        private final Map<String, MutableTable> tables = new HashMap<>();
+        private final Map<SelectorName, QueryCommand> viewDefinitions = new HashMap<>();
+        private final Set<SelectorName> tablesOrViewsWithExtraColumns = new HashSet<>();
+        private final Map<String, Map<String, Boolean>> orderableColumnsByTableName = new HashMap<>();
+        private final Map<String, Map<String, Set<Operator>>> operatorsForColumnsByTableName = new HashMap<>();
 
         protected Builder( ExecutionContext context,
                            NodeTypes nodeTypes ) {
@@ -105,7 +105,7 @@ public class ImmutableSchemata implements Schemata {
                                  String... columnNames ) {
             CheckArg.isNotEmpty(name, "name");
             CheckArg.isNotEmpty(columnNames, "columnNames");
-            List<Column> columns = new ArrayList<Column>();
+            List<Column> columns = new ArrayList<>();
             int i = 0;
             for (String columnName : columnNames) {
                 CheckArg.isNotEmpty(columnName, "columnName[" + (i++) + "]");
@@ -134,7 +134,7 @@ public class ImmutableSchemata implements Schemata {
             CheckArg.isNotEmpty(columnNames, "columnNames");
             CheckArg.isNotEmpty(types, "types");
             CheckArg.isEquals(columnNames.length, "columnNames.length", types.length, "types.length");
-            List<Column> columns = new ArrayList<Column>();
+            List<Column> columns = new ArrayList<>();
             assert columnNames.length == types.length;
             for (int i = 0; i != columnNames.length; ++i) {
                 String columnName = columnNames[i];
@@ -239,7 +239,7 @@ public class ImmutableSchemata implements Schemata {
             Column column = new ImmutableColumn(columnName, type, requiredType, fullTextSearchable, orderable, minimum, maximum,
                                                 operations);
             if (existing == null) {
-                List<Column> columns = new ArrayList<Column>();
+                List<Column> columns = new ArrayList<>();
                 columns.add(column);
                 existing = new MutableTable(tableName, columns, false);
                 tables.put(tableName, existing);
@@ -263,7 +263,7 @@ public class ImmutableSchemata implements Schemata {
             CheckArg.isNotEmpty(columnName, "columnName");
             MutableTable existing = tables.get(tableName);
             if (existing == null) {
-                List<Column> columns = new ArrayList<Column>();
+                List<Column> columns = new ArrayList<>();
                 columns.add(new ImmutableColumn(columnName, typeSystem.getDefaultType(), ImmutableColumn.DEFAULT_REQUIRED_TYPE,
                                                 true));
                 existing = new MutableTable(tableName, columns, false);
@@ -295,7 +295,7 @@ public class ImmutableSchemata implements Schemata {
             CheckArg.isNotEmpty(tableName, "tableName");
             Map<String, Boolean> byColumnNames = orderableColumnsByTableName.get(tableName);
             if (byColumnNames == null) {
-                byColumnNames = new HashMap<String, Boolean>();
+                byColumnNames = new HashMap<>();
                 orderableColumnsByTableName.put(tableName, byColumnNames);
             }
             byColumnNames.put(columnName, orderable);
@@ -329,7 +329,7 @@ public class ImmutableSchemata implements Schemata {
             Map<String, Set<Operator>> byColumnNames = operatorsForColumnsByTableName.get(tableName);
             if (byColumnNames == null) {
                 if (useDefaults) return this;
-                byColumnNames = new HashMap<String, Set<Operator>>();
+                byColumnNames = new HashMap<>();
                 operatorsForColumnsByTableName.put(tableName, byColumnNames);
             }
             if (useDefaults) {
@@ -384,7 +384,7 @@ public class ImmutableSchemata implements Schemata {
             CheckArg.isNotEmpty(columnName, "columnName");
             MutableTable existing = tables.get(tableName);
             if (existing == null) {
-                List<Column> columns = new ArrayList<Column>();
+                List<Column> columns = new ArrayList<>();
                 columns.add(new ImmutableColumn(columnName, typeSystem.getDefaultType()));
                 existing = new MutableTable(tableName, columns, false);
                 tables.put(tableName, existing);
@@ -410,7 +410,7 @@ public class ImmutableSchemata implements Schemata {
             if (existing == null) {
                 throw new IllegalArgumentException(GraphI18n.tableDoesNotExist.text(tableName));
             }
-            Set<Column> keyColumns = new HashSet<Column>();
+            Set<Column> keyColumns = new HashSet<>();
             for (String columnName : columnNames) {
                 Column existingColumn = existing.getColumn(columnName);
                 if (existingColumn == null) {
@@ -431,7 +431,7 @@ public class ImmutableSchemata implements Schemata {
          * @throws InvalidQueryException if any of the view definitions is invalid and cannot be resolved
          */
         public Schemata build() {
-            Map<SelectorName, Table> tablesByName = new HashMap<SelectorName, Table>();
+            Map<SelectorName, Table> tablesByName = new HashMap<>();
             // Add all the tables ...
             for (MutableTable mutableTable : tables.values()) {
                 if (tablesOrViewsWithExtraColumns.contains(mutableTable.getName())) {
@@ -443,12 +443,12 @@ public class ImmutableSchemata implements Schemata {
             ImmutableSchemata schemata = new ImmutableSchemata(tablesByName);
 
             // Make a copy of the view definitions, and create the views ...
-            Map<SelectorName, QueryCommand> definitions = new HashMap<SelectorName, QueryCommand>(viewDefinitions);
+            Map<SelectorName, QueryCommand> definitions = new HashMap<>(viewDefinitions);
             boolean added = false;
             BufferManager bufferManager = new BufferManager(context);
             do {
                 added = false;
-                Set<SelectorName> viewNames = new HashSet<SelectorName>(definitions.keySet());
+                Set<SelectorName> viewNames = new HashSet<>(definitions.keySet());
                 for (SelectorName name : viewNames) {
                     QueryCommand command = definitions.get(name);
                     // Create the canonical plan for the definition ...
@@ -474,9 +474,9 @@ public class ImmutableSchemata implements Schemata {
 
                     // Go through all the columns and look up the types ...
                     Map<SelectorName, SelectorName> tableNameByAlias = null;
-                    List<Column> viewColumns = new ArrayList<Column>(columns.size());
-                    List<Column> viewColumnsInSelectStar = new ArrayList<Column>(columns.size());
-                    Set<String> columnNames = new HashSet<String>();
+                    List<Column> viewColumns = new ArrayList<>(columns.size());
+                    List<Column> viewColumnsInSelectStar = new ArrayList<>(columns.size());
+                    Set<String> columnNames = new HashSet<>();
                     for (org.modeshape.jcr.query.model.Column column : columns) {
                         // Find the table that the column came from ...
                         Table source = schemata.getTable(column.selectorName());
@@ -525,8 +525,8 @@ public class ImmutableSchemata implements Schemata {
                     // }
 
                     // If we could resolve the definition ...
-                    Map<String, Column> viewColumnsByName = new HashMap<String, Column>();
-                    Map<String, Column> viewSelectStarColumnsByName = new HashMap<String, Column>();
+                    Map<String, Column> viewColumnsByName = new HashMap<>();
+                    Map<String, Column> viewSelectStarColumnsByName = new HashMap<>();
                     for (Column column : viewColumns) {
                         viewColumnsByName.put(column.getName(), column);
                     }
@@ -567,7 +567,7 @@ public class ImmutableSchemata implements Schemata {
     }
 
     public ImmutableSchemata with( Table table ) {
-        Map<SelectorName, Table> tables = new HashMap<SelectorName, Table>(this.tables);
+        Map<SelectorName, Table> tables = new HashMap<>(this.tables);
         tables.put(table.getName(), table);
         return new ImmutableSchemata(tables);
     }
@@ -586,11 +586,11 @@ public class ImmutableSchemata implements Schemata {
 
     protected static class MutableTable {
         private final SelectorName name;
-        private final Map<String, Column> columnsByName = new HashMap<String, Column>();
-        private final List<Column> columns = new LinkedList<Column>();
-        private final Set<Key> keys = new HashSet<Key>();
+        private final Map<String, Column> columnsByName = new HashMap<>();
+        private final List<Column> columns = new LinkedList<>();
+        private final Set<Key> keys = new HashSet<>();
         private boolean extraColumns = false;
-        private final Set<String> columnNamesNotInSelectStar = new HashSet<String>();
+        private final Set<String> columnNamesNotInSelectStar = new HashSet<>();
 
         protected MutableTable( String name,
                                 List<Column> columns,
@@ -639,8 +639,8 @@ public class ImmutableSchemata implements Schemata {
             Map<String, Column> columnsByName = Collections.unmodifiableMap(this.columnsByName);
             List<Column> columns = Collections.unmodifiableList(this.columns);
             Set<Key> keys = Collections.unmodifiableSet(this.keys);
-            List<Column> columnsInSelectStar = new ArrayList<Column>();
-            Map<String, Column> columnsInSelectStarByName = new HashMap<String, Column>();
+            List<Column> columnsInSelectStar = new ArrayList<>();
+            Map<String, Column> columnsInSelectStarByName = new HashMap<>();
             for (Column column : columns) {
                 if (!columnNamesNotInSelectStar.contains(column.getName())) {
                     columnsInSelectStar.add(column);
