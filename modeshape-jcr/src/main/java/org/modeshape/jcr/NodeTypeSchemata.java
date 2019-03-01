@@ -56,6 +56,7 @@ public class NodeTypeSchemata implements Schemata {
     protected static final boolean DEFAULT_CAN_CONTAIN_REFERENCES = true;
     protected static final boolean DEFAULT_FULL_TEXT_SEARCHABLE = true;
 
+    private final ExecutionContext context;
     private final Schemata schemata;
     private final Map<Integer, String> types;
     private final Map<String, String> prefixesByUris = new HashMap<>();
@@ -70,6 +71,7 @@ public class NodeTypeSchemata implements Schemata {
                       NodeTypes nodeTypes,
                       boolean includeColumnsForInheritedProperties,
                       boolean includePseudoColumnsInSelectStar ) {
+        this.context = context;
         this.includeColumnsForInheritedProperties = includeColumnsForInheritedProperties;
         this.includePseudoColumnsInSelectStar = includePseudoColumnsInSelectStar;
         this.nodeTypes = nodeTypes;
@@ -83,12 +85,7 @@ public class NodeTypeSchemata implements Schemata {
         for (JcrNodeType nodeType : nodeTypes.getAllNodeTypes()) {
             // For each of the supertypes ...
             for (JcrNodeType supertype : nodeType.getTypeAndSupertypes()) {
-                Collection<JcrNodeType> types = subtypesByName.get(supertype);
-                if (types == null) {
-                    types = new LinkedList<>();
-                    subtypesByName.put(supertype, types);
-                }
-                types.add(nodeType);
+                subtypesByName.computeIfAbsent(supertype, k -> new LinkedList<>()).add(nodeType);
             }
         }
 
@@ -261,7 +258,7 @@ public class NodeTypeSchemata implements Schemata {
         }
 
         String tableName = nodeType.getName();
-        JcrPropertyDefinition[] defns = null;
+        JcrPropertyDefinition[] defns;
         if (includeColumnsForInheritedProperties) {
             defns = nodeType.getPropertyDefinitions();
         } else {
@@ -358,7 +355,7 @@ public class NodeTypeSchemata implements Schemata {
 
     @Override
     public Table getTable( SelectorName name ) {
-        return schemata.getTable(name);
+        return schemata.getTable(name.qualifiedForm(context.getValueFactories().getNameFactory()));
     }
 
     /**
@@ -441,6 +438,7 @@ public class NodeTypeSchemata implements Schemata {
 
         @Override
         public Table getTable( SelectorName name ) {
+            name = name.qualifiedForm(context.getValueFactories().getNameFactory());
             Table table = schemata.getTable(name);
             if (table == null) {
                 // Try getting it ...

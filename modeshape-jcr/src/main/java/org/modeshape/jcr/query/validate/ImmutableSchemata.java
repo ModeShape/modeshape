@@ -440,7 +440,7 @@ public class ImmutableSchemata implements Schemata {
                 Table table = mutableTable.asImmutable();
                 tablesByName.put(table.getName(), table);
             }
-            ImmutableSchemata schemata = new ImmutableSchemata(tablesByName);
+            ImmutableSchemata schemata = new ImmutableSchemata(context, tablesByName);
 
             // Make a copy of the view definitions, and create the views ...
             Map<SelectorName, QueryCommand> definitions = new HashMap<>(viewDefinitions);
@@ -540,7 +540,7 @@ public class ImmutableSchemata implements Schemata {
                     definitions.remove(name);
 
                     tablesByName.put(view.getName(), view);
-                    schemata = new ImmutableSchemata(tablesByName);
+                    schemata = new ImmutableSchemata(context, tablesByName);
                     added = true;
                 }
             } while (added && !definitions.isEmpty());
@@ -555,21 +555,21 @@ public class ImmutableSchemata implements Schemata {
         }
     }
 
+    private final ExecutionContext context;
     private final Map<SelectorName, Table> tables;
 
-    protected ImmutableSchemata( Map<SelectorName, Table> tables ) {
+    protected ImmutableSchemata( ExecutionContext context, Map<SelectorName, Table> tables ) {
+        this.context = context;
         this.tables = Collections.unmodifiableMap(tables);
     }
 
     @Override
     public Table getTable( SelectorName name ) {
-        return tables.get(name);
+        return tables.get(name.qualifiedForm(context.getValueFactories().getNameFactory()));
     }
 
     public ImmutableSchemata with( Table table ) {
-        Map<SelectorName, Table> tables = new HashMap<>(this.tables);
-        tables.put(table.getName(), table);
-        return new ImmutableSchemata(tables);
+        return new ImmutableSchemata(context, Collections.singletonMap(table.getName(), table));
     }
 
     @Override
