@@ -16,7 +16,9 @@
 package org.modeshape.common.collection;
 
 import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -28,6 +30,7 @@ import java.util.Set;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.modeshape.common.FixFor;
 
 public abstract class AbstractMultimapTest {
 
@@ -71,7 +74,6 @@ public abstract class AbstractMultimapTest {
         assertEntries(multimap, entry(keys[0], values[0]));
     }
 
-    @SuppressWarnings( "unchecked" )
     @Test
     public void shouldNotBeEmptyAfterAddingKeyAndTwoValuesToEmptyCollection() {
         multimap.put(keys[0], values[0]);
@@ -83,7 +85,6 @@ public abstract class AbstractMultimapTest {
         assertEntries(multimap, entry(keys[0], values[0]), entry(keys[0], values[1]));
     }
 
-    @SuppressWarnings( "unchecked" )
     @Test
     public void shouldNotBeEmptyAfterAddingMultipleKeyValuePairsToEmptyCollection() {
         multimap.put(keys[0], values[0]);
@@ -96,7 +97,6 @@ public abstract class AbstractMultimapTest {
         assertEntries(multimap, entry(keys[0], values[0]), entry(keys[1], values[1]));
     }
 
-    @SuppressWarnings( "unchecked" )
     @Test
     public void shouldNotBeEmptyAfterAddingMultipleKeyValuePairsMultipleTimesToEmptyCollection() {
         for (int i = 0; i != 3; ++i) {
@@ -125,7 +125,6 @@ public abstract class AbstractMultimapTest {
         }
     }
 
-    @SuppressWarnings( "unchecked" )
     @Test
     public void shouldAllowAddingToCollectionOfValues() {
         multimap.put(keys[0], values[0]);
@@ -137,6 +136,20 @@ public abstract class AbstractMultimapTest {
         assertKeys(multimap, keys[0]);
         assertValues(multimap, keys[0], values[0], values[1], values[2]);
         assertEntries(multimap, entry(keys[0], values[0]), entry(keys[0], values[1]), entry(keys[0], values[2]));
+    }
+
+    @Test
+    @FixFor("MODE-2743")
+    public void shouldDecrementSizeOnValueIteratorRemove() {
+        assertEquals(0, multimap.size());
+        assertTrue(multimap.isEmpty());
+        multimap.put(keys[0], values[0]);
+        assertEquals(1, multimap.size());
+        Iterator<String> iterator = multimap.get(keys[0]).iterator();
+        iterator.next();
+        iterator.remove();
+        assertEquals(0, multimap.size());
+        assertTrue(multimap.isEmpty());
     }
 
     protected <K, V> Map.Entry<K, V> entry( K key,

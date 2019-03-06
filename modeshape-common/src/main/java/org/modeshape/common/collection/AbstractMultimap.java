@@ -418,7 +418,7 @@ public abstract class AbstractMultimap<K, V> implements Multimap<K, V> {
 
         @Override
         public Iterator<V> iterator() {
-            return delegate().iterator();
+            return new DelegateIterator();
         }
 
         @Override
