@@ -72,7 +72,7 @@ public class ImmutableColumn implements Column {
                                Object maximum,
                                Operator... operators ) {
         this(name, type, requiredType, fullTextSearchable, orderable, minimum, maximum,
-             operators != null && operators.length != 0 ? EnumSet.copyOf(Arrays.asList(operators)) : null);
+             operators != null && operators.length > 0 ? EnumSet.copyOf(Arrays.asList(operators)) : null);
     }
 
     protected ImmutableColumn( String name,
@@ -91,22 +91,9 @@ public class ImmutableColumn implements Column {
         this.operators = operators == null || operators.isEmpty() ? ALL_OPERATORS : Collections.unmodifiableSet(EnumSet.copyOf(operators));
         this.minimumValue = minimum;
         this.maximumValue = maximum;
-        if (this.operators.isEmpty()) {
-            this.comparable = false;
-        } else {
-            boolean comparable = this.requiredType == PropertyType.STRING;
-            if (!comparable) {
-                // See if the operators expect comparable ...
-                for (Operator operator : this.operators) {
-                    if (operator == Operator.GREATER_THAN || operator == Operator.GREATER_THAN_OR_EQUAL_TO
-                        || operator == Operator.LESS_THAN || operator == Operator.LESS_THAN_OR_EQUAL_TO) {
-                        comparable = true;
-                        break;
-                    }
-                }
-            }
-            this.comparable = comparable;
-        }
+        this.comparable = !this.operators.isEmpty() && (this.requiredType == PropertyType.STRING
+                                                        || this.operators.stream().anyMatch(Operator::isRangeOperator));
+
         assert this.name != null;
         assert this.typeName != null;
         assert this.operators != null;

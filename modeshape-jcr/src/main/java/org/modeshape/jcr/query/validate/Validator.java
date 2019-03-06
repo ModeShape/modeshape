@@ -19,6 +19,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import javax.jcr.PropertyType;
 import javax.jcr.Value;
 import javax.jcr.query.qom.Literal;
@@ -92,11 +93,11 @@ public class Validator extends AbstractVisitor {
         this.context = context;
         this.problems = this.context.getProblems();
         this.selectorsByNameOrAlias = selectorsByName;
-        this.selectorsByName = new HashMap<SelectorName, Table>();
+        this.selectorsByName = new HashMap<>();
         for (Table table : selectorsByName.values()) {
             this.selectorsByName.put(table.getName(), table);
         }
-        this.columnsByAlias = new HashMap<String, Schemata.Column>();
+        this.columnsByAlias = new HashMap<>();
         this.validateColumnExistence = context.getHints().validateColumnExistance;
     }
 
@@ -212,14 +213,7 @@ public class Validator extends AbstractVisitor {
             // Don't need to check if the selector is the '__ALLNODES__' selector ...
             if (table != null && !AllNodes.ALL_NODES_NAME.equals(table.getName())) {
                 // Make sure there is at least one column on the table that is full-text searchable ...
-                boolean searchable = false;
-                for (Schemata.Column column : table.getColumns()) {
-                    if (column.isFullTextSearchable()) {
-                        searchable = true;
-                        break;
-                    }
-                }
-                if (!searchable) {
+                if (table.getColumns().stream().noneMatch(Schemata.Column::isFullTextSearchable)) {
                     problems.addError(GraphI18n.tableIsNotFullTextSearchable, selectorName);
                 }
             }
@@ -284,10 +278,10 @@ public class Validator extends AbstractVisitor {
     @Override
     public void visit( ReferenceValue obj ) {
         String propName = obj.getPropertyName();
-        if (propName != null) {
-            verify(obj.selectorName(), propName, this.validateColumnExistence);
-        } else {
+        if (propName == null) {
             verify(obj.selectorName());
+        } else {
+            verify(obj.selectorName(), propName, this.validateColumnExistence);
         }
     }
 
@@ -413,10 +407,7 @@ public class Validator extends AbstractVisitor {
                                         fail = true;
                                     }
                                 }
-                            } catch (ValueFormatException e) {
-                                // nope ...
-                                fail = true;
-                            } catch (IllegalArgumentException e) {
+                            } catch (ValueFormatException | IllegalArgumentException e) {
                                 // nope ...
                                 fail = true;
                             }
@@ -483,18 +474,11 @@ public class Validator extends AbstractVisitor {
         Schemata.Column column = verify(selectorName, propertyName, false);
         if (column != null) {
             if (!column.getOperators().contains(op)) {
-                StringBuilder sb = new StringBuilder();
-                boolean first = true;
-                for (Operator allowed : column.getOperators()) {
-                    if (first) first = false;
-                    else sb.append(", ");
-                    sb.append(allowed.symbol());
-                }
                 problems.addError(GraphI18n.operatorIsNotValidAgainstColumnInTable,
                                   op.symbol(),
                                   propertyName,
                                   selectorName.getString(),
-                                  sb);
+                                  column.getOperators().stream().map(Operator::symbol).collect(Collectors.joining(", ")));
             }
         }
     }
@@ -530,9 +514,7 @@ public class Validator extends AbstractVisitor {
             if (!path.isAbsolute()) {
                 problems.addError(GraphI18n.pathIsNotAbsolute, pathStr);
             }
-        } catch (IllegalArgumentException e) {
-            problems.addError(GraphI18n.pathIsNotValid, pathStr);
-        } catch (ValueFormatException e) {
+        } catch (IllegalArgumentException | ValueFormatException e) {
             problems.addError(GraphI18n.pathIsNotValid, pathStr);
         }
     }
@@ -542,14 +524,11 @@ public class Validator extends AbstractVisitor {
                                       boolean columnIsRequired ) {
         Table table = tableWithNameOrAlias(selectorName);
         if (table == null) {
-            StringBuilder existingSelectors = new StringBuilder();
-            boolean first = true;
-            for (SelectorName sel : selectorsByNameOrAlias.keySet()) {
-                if (first) first = false;
-                else existingSelectors.append(", ");
-                existingSelectors.append("'").append(sel.getString()).append("'");
-            }
-            problems.addError(GraphI18n.tableDoesNotExistButMatchesAnotherTable, selectorName.name(), existingSelectors);
+            problems.addError(GraphI18n.tableDoesNotExistButMatchesAnotherTable,
+                              selectorName.name(),
+                              selectorsByNameOrAlias.keySet().stream().map(SelectorName::getString).collect(Collectors.joining("', '",
+                                                                                                                               "'",
+                                                                                                                               "'")));
             return null;
         }
         Schemata.Column column = table.getColumn(propertyName);
@@ -561,11 +540,9 @@ public class Validator extends AbstractVisitor {
                 if (!table.hasExtraColumns() && columnIsRequired) {
                     problems.addError(GraphI18n.columnDoesNotExistOnTable, propertyName, selectorName.name());
                     checkVariationsOfPropertyName(selectorName, propertyName, table, problems);
-                } else {
-                    if (!checkVariationsOfPropertyName(selectorName, propertyName, table, problems)) {
-                        problems.addWarning(GraphI18n.columnDoesNotExistOnTableAndMayBeResidual, propertyName,
-                                            selectorName.name());
-                    }
+                } else if (!checkVariationsOfPropertyName(selectorName, propertyName, table, problems)) {
+                    problems.addWarning(GraphI18n.columnDoesNotExistOnTableAndMayBeResidual, propertyName,
+                                        selectorName.name());
                 }
             }
         }

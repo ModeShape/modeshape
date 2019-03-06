@@ -18,6 +18,7 @@ package org.modeshape.jcr.query.validate;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.jcr.query.model.QueryCommand;
 import org.modeshape.jcr.query.model.SelectorName;
@@ -89,26 +90,13 @@ class ImmutableView extends ImmutableTable implements View {
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder(getName().name());
-        sb.append('(');
-        boolean first = true;
-        for (Column column : getColumns()) {
-            if (first) first = false;
-            else sb.append(", ");
-            sb.append(column);
+        String result = getColumns().stream().map(Object::toString).collect(Collectors.joining(", ",
+                                                                                               getName().name() + '(',
+                                                                                               ") AS '"))
+                        + Visitors.readable(definition) + '\'';
+        if (getKeys().isEmpty()) {
+            return result;
         }
-        sb.append(") AS '");
-        sb.append(Visitors.readable(definition));
-        sb.append('\'');
-        if (!getKeys().isEmpty()) {
-            sb.append(" with keys ");
-            first = true;
-            for (Key key : getKeys()) {
-                if (first) first = false;
-                else sb.append(", ");
-                sb.append(key);
-            }
-        }
-        return sb.toString();
+        return result + getKeys().stream().map(Object::toString).collect(Collectors.joining(", ", " with keys ", ""));
     }
 }

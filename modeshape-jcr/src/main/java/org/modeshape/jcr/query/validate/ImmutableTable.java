@@ -25,6 +25,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.jcr.query.model.SelectorName;
 import org.modeshape.jcr.query.validate.Schemata.Column;
@@ -240,24 +241,10 @@ class ImmutableTable implements Table {
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder(name.name());
-        sb.append('(');
-        boolean first = true;
-        for (Column column : columns) {
-            if (first) first = false;
-            else sb.append(", ");
-            sb.append(column);
+        String result = columns.stream().map(Object::toString).collect(Collectors.joining(", ", name.name() + '(', ")"));
+        if (keys.isEmpty()) {
+            return result;
         }
-        sb.append(')');
-        if (!keys.isEmpty()) {
-            sb.append(" with keys ");
-            first = true;
-            for (Key key : keys) {
-                if (first) first = false;
-                else sb.append(", ");
-                sb.append(key);
-            }
-        }
-        return sb.toString();
+        return result + keys.stream().map(Object::toString).collect(Collectors.joining(", ", " with keys ", ""));
     }
 }
