@@ -16,6 +16,11 @@
 
 package org.modeshape.jcr.spi.index;
 
+import java.util.List;
+import java.util.Objects;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 import org.modeshape.jcr.spi.index.provider.IndexProvider;
 import org.modeshape.jcr.value.Path;
 
@@ -29,6 +34,66 @@ import org.modeshape.jcr.value.Path;
 public interface IndexFeedback {
 
     public static interface IndexingCallback {
+        public static IndexingCallback noop() {
+            return new IndexingCallback() {
+                
+                @Override
+                public IndexWriter writer() {
+                    return IndexWriter.noop();
+                }
+                
+                @Override
+                public void beforeIndexing() {
+                }
+                
+                @Override
+                public void afterIndexing() {
+                }
+            };
+        }
+
+        public static IndexingCallback compose(Iterable<IndexingCallback> delegates, Consumer<Exception> handler) {
+            Objects.requireNonNull(delegates, "delegates");
+            Objects.requireNonNull(handler, "handler");
+
+            List<IndexingCallback> useDelegates = delegates instanceof List<?> ? (List<IndexingCallback>)delegates : StreamSupport.stream(delegates.spliterator(),
+                                                                                                                                          false).collect(Collectors.toList());
+
+            if (useDelegates.isEmpty()) {
+                return noop();
+            }
+
+            return new IndexingCallback() {
+                
+                @Override
+                public IndexWriter writer() {
+                    return IndexWriter.compose(() -> useDelegates.stream().map(IndexingCallback::writer).iterator(), handler);
+                }
+
+                @Override
+                public void beforeIndexing() {
+                    for (IndexingCallback indexingCallback : useDelegates) {
+                        try {
+                            indexingCallback.beforeIndexing();
+                        } catch (Exception e) {
+                            handler.accept(e);
+                        }
+                    }
+                }
+
+                @Override
+                public void afterIndexing() {
+                    for (IndexingCallback indexingCallback : useDelegates) {
+                        try {
+                            indexingCallback.afterIndexing();
+                        } catch (Exception e) {
+                            handler.accept(e);
+                        }
+                    }
+                }
+            };
+        }
+
         void beforeIndexing();
 
         void afterIndexing();

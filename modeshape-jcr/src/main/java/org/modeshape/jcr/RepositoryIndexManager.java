@@ -32,6 +32,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import javax.jcr.RepositoryException;
 import org.modeshape.common.annotation.Immutable;
@@ -943,16 +944,19 @@ class RepositoryIndexManager implements IndexManager, NodeTypes.Listener {
             for (Map.Entry<String, PathToScan> entry : pathsToScanByWorkspace.entries()) {
                 String workspaceName = entry.getKey();
                 PathToScan pathToScan = entry.getValue();
-                for (IndexingCallback callback : pathToScan) {
-                    callback.beforeIndexing();
-                    try {
-                        operation.scan(workspaceName, pathToScan.path(), callback.writer());
-                    } catch (Exception e) {
-                        Logger.getLogger(getClass()).error(e, JcrI18n.errorIndexing, pathToScan.path(), workspaceName,
-                                                           e.getMessage());
-                    } finally {
-                        callback.afterIndexing();
-                    }
+
+                Consumer<Exception> exceptionHandler = e -> Logger.getLogger(getClass()).error(e,
+                                                                                               JcrI18n.errorIndexing,
+                                                                                               pathToScan.path(),
+                                                                                               workspaceName,
+                                                                                               e.getMessage());
+
+                IndexingCallback callback = IndexingCallback.compose(pathToScan, exceptionHandler);
+                callback.beforeIndexing();
+                try {
+                    operation.scan(workspaceName, pathToScan.path(), callback.writer());
+                } finally {
+                    callback.afterIndexing();
                 }
             }
         }
