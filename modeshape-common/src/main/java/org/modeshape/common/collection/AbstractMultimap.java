@@ -365,8 +365,8 @@ public abstract class AbstractMultimap<K, V> implements Multimap<K, V> {
     }
 
     protected class WrappedCollection implements Collection<V> {
-        private Collection<V> delegate;
         private final K key;
+        private Collection<V> delegate;
 
         protected WrappedCollection( K key,
                                      Collection<V> values ) {
@@ -408,7 +408,8 @@ public abstract class AbstractMultimap<K, V> implements Multimap<K, V> {
 
         @Override
         public boolean isEmpty() {
-            return delegate().isEmpty();
+            Collection<V> d = delegate();
+            return d == null || d.isEmpty();
         }
 
         @Override
@@ -515,8 +516,8 @@ public abstract class AbstractMultimap<K, V> implements Multimap<K, V> {
         }
 
         protected class DelegateIterator implements Iterator<V> {
-            private final Collection<V> source;
             private final Iterator<V> iterator;
+            private Collection<V> source;
 
             protected DelegateIterator() {
                 source = delegate();
@@ -550,6 +551,9 @@ public abstract class AbstractMultimap<K, V> implements Multimap<K, V> {
                 iterator.remove();
                 decrementSize(1);
                 removeIfEmpty();
+                if (isEmpty()) {
+                    source = null;
+                }
             }
         }
     }

@@ -152,6 +152,18 @@ public abstract class AbstractMultimapTest {
         assertTrue(multimap.isEmpty());
     }
 
+    @Test
+    public void shouldIterateSuccessfullyWithRemoval() {
+        for (String v : values) {
+            multimap.put(keys[0], v);
+        }
+        for (Iterator<String> iter = multimap.get(keys[0]).iterator(); iter.hasNext();) {
+            iter.next();
+            iter.remove();
+        }
+        assertTrue(multimap.isEmpty());
+    }
+
     protected <K, V> Map.Entry<K, V> entry( K key,
                                             V value ) {
         return new ImmutableMapEntry<K, V>(key, value);
