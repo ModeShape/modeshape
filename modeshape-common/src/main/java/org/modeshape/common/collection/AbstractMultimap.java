@@ -62,12 +62,12 @@ public abstract class AbstractMultimap<K, V> implements Multimap<K, V> {
 
     protected abstract Collection<V> createUnmodifiableEmptyCollection();
 
-    @SuppressWarnings( {"unchecked", "rawtypes"} )
     protected Collection<V> createUnmodifiable( Collection<V> original ) {
-        if (original instanceof List) {
-            return Collections.unmodifiableList((List)original);
-        } else if (original instanceof Set) {
-            return Collections.unmodifiableSet((Set)original);
+        if (original instanceof List<?>) {
+            return Collections.unmodifiableList((List<V>) original);
+        }
+        if (original instanceof Set<?>) {
+            return Collections.unmodifiableSet((Set<V>) original);
         }
         return Collections.unmodifiableCollection(original);
     }
@@ -98,21 +98,18 @@ public abstract class AbstractMultimap<K, V> implements Multimap<K, V> {
 
     @Override
     public boolean containsValue( Object value ) {
-        for (Collection<V> collection : data.values()) {
-            if (collection.contains(value)) return true;
-        }
-        return false;
+        return data.values().stream().anyMatch(c -> c.contains(value));
     }
 
     @Override
     public boolean containsEntry( Object key,
                                   Object value ) {
         Collection<V> values = data.get(key);
-        return values == null ? false : values.contains(value);
+        return values != null && values.contains(value);
     }
 
     @Override
-    public java.util.Collection<V> get( K key ) {
+    public Collection<V> get( K key ) {
         Collection<V> collection = data.get(key);
         if (collection == null) {
             collection = createCollection();
@@ -131,12 +128,7 @@ public abstract class AbstractMultimap<K, V> implements Multimap<K, V> {
     }
 
     protected Collection<V> getOrCreateCollection( K key ) {
-        Collection<V> values = data.get(key);
-        if (values == null) {
-            values = createCollection();
-            data.put(key, values);
-        }
-        return values;
+        return data.computeIfAbsent(key, k -> createCollection());
     }
 
     @Override
@@ -154,7 +146,7 @@ public abstract class AbstractMultimap<K, V> implements Multimap<K, V> {
     }
 
     @Override
-    public java.util.Collection<V> removeAll( K key ) {
+    public Collection<V> removeAll( K key ) {
         Collection<V> values = data.remove(key);
         if (values == null) return createUnmodifiableEmptyCollection();
         Collection<V> copy = createCollection();
@@ -217,9 +209,6 @@ public abstract class AbstractMultimap<K, V> implements Multimap<K, V> {
 
     protected Collection<V> wrapCollection( K key,
                                             Collection<V> values ) {
-        // if (values instanceof Set) {
-        // return new WrappedSet(key, (Set<V>)values);
-        // } else
         if (values instanceof List) {
             return wrapList(key, (List<V>)values);
         }
@@ -306,7 +295,7 @@ public abstract class AbstractMultimap<K, V> implements Multimap<K, V> {
             if (iter.hasNext()) {
                 nextKey();
             } else {
-                currentValuesIterator = new EmptyIterator<V>();
+                currentValuesIterator = new EmptyIterator<>();
             }
         }
 
@@ -327,7 +316,7 @@ public abstract class AbstractMultimap<K, V> implements Multimap<K, V> {
             if (!currentValuesIterator.hasNext()) {
                 nextKey();
             }
-            return new ImmutableMapEntry<K, V>(currentKey, currentValuesIterator.next());
+            return new ImmutableMapEntry<>(currentKey, currentValuesIterator.next());
         }
 
         @SuppressWarnings( "synthetic-access" )
@@ -467,10 +456,10 @@ public abstract class AbstractMultimap<K, V> implements Multimap<K, V> {
         public boolean addAll( Collection<? extends V> c ) {
             if (c.isEmpty()) return false;
             if (isEmpty()) getOrCreateCollection(key);
-            Collection<V> delegate = delegate();
-            int sizeBefore = delegate.size();
-            if (!delegate.addAll(c)) return false;
-            incrementSize(delegate.size() - sizeBefore);
+            Collection<V> d = delegate();
+            int sizeBefore = d.size();
+            if (!d.addAll(c)) return false;
+            incrementSize(d.size() - sizeBefore);
             return true;
         }
 
@@ -479,10 +468,10 @@ public abstract class AbstractMultimap<K, V> implements Multimap<K, V> {
             if (c.isEmpty() || isEmpty()) {
                 return false;
             }
-            Collection<V> delegate = delegate();
-            int sizeBefore = delegate.size();
-            if (!delegate.removeAll(c)) return false;
-            incrementSize(delegate.size() - sizeBefore); // will be negative
+            Collection<V> d = delegate();
+            int sizeBefore = d.size();
+            if (!d.removeAll(c)) return false;
+            incrementSize(d.size() - sizeBefore); // will be negative
             removeIfEmpty();
             return true;
         }
@@ -492,10 +481,10 @@ public abstract class AbstractMultimap<K, V> implements Multimap<K, V> {
             if (c.isEmpty() || isEmpty()) {
                 return false;
             }
-            Collection<V> delegate = delegate();
-            int sizeBefore = delegate.size();
-            if (!delegate.retainAll(c)) return false;
-            int diff = delegate.size() - sizeBefore;
+            Collection<V> d = delegate();
+            int sizeBefore = d.size();
+            if (!d.retainAll(c)) return false;
+            int diff = d.size() - sizeBefore;
             incrementSize(diff); // will change correctly if diff is negative
             return true;
         }
@@ -805,7 +794,7 @@ public abstract class AbstractMultimap<K, V> implements Multimap<K, V> {
                 Map.Entry<K, Collection<V>> currentEntry = delegateIterator.next();
                 currentValues = currentEntry.getValue();
                 K key = currentEntry.getKey();
-                return new ImmutableMapEntry<K, Collection<V>>(key, wrapCollection(key, currentValues));
+                return new ImmutableMapEntry<>(key, wrapCollection(key, currentValues));
             }
 
             @Override
