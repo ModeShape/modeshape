@@ -206,6 +206,18 @@ public abstract class AbstractMultimapTest {
 
     @Test
     public void shouldSuccessfullyAddValueToEmptyValueCollection() {
+        Collection<String> collection = multimap.get(keys[0]);
+
+        assertTrue(collection.add(values[0]));
+        assertTrue(collection.contains(values[0]));
+        assertFalse(collection.isEmpty());
+        assertEquals(1, collection.size());
+        assertFalse(multimap.isEmpty());
+        assertEquals(1, multimap.size());
+    }
+
+    @Test
+    public void shouldSuccessfullyAddValueToEmptiedValueCollection() {
         multimap.put(keys[0], values[0]);
         Collection<String> collection = multimap.get(keys[0]);
 
@@ -281,10 +293,21 @@ public abstract class AbstractMultimapTest {
 
     @Test
     public void shouldSuccessfullyAddAllToEmptyValueCollection() {
+        Collection<String> collection = multimap.get(keys[0]);
+
+        assertTrue(collection.addAll(Arrays.asList(values)));
+        assertEquals(values.length, collection.size());
+        assertFalse(collection.isEmpty());
+        assertEquals(values.length, multimap.size());
+        assertFalse(multimap.isEmpty());
+    }
+
+    @Test
+    public void shouldSuccessfullyAddAllToEmptiedValueCollection() {
         multimap.put(keys[0], values[0]);
         Collection<String> collection = multimap.get(keys[0]);
         collection.clear();
-        
+
         assertTrue(collection.addAll(Arrays.asList(values)));
         assertEquals(values.length, collection.size());
         assertFalse(collection.isEmpty());
@@ -306,6 +329,17 @@ public abstract class AbstractMultimapTest {
 
     @Test
     public void shouldSuccessfullyRetainAllInEmptyValueCollection() {
+        Collection<String> collection = multimap.get(keys[0]);
+
+        assertFalse(collection.retainAll(Arrays.asList(values)));
+        assertTrue(collection.isEmpty());
+        assertEquals(0, collection.size());
+        assertTrue(multimap.isEmpty());
+        assertEquals(0, multimap.size());
+    }
+
+    @Test
+    public void shouldSuccessfullyRetainAllInEmptiedValueCollection() {
         multimap.put(keys[0], values[0]);
         Collection<String> collection = multimap.get(keys[0]);
         collection.clear();
@@ -319,6 +353,11 @@ public abstract class AbstractMultimapTest {
 
     @Test
     public void shouldProduceHashCodeOfEmptyValueCollection() {
+        multimap.get(keys[0]).hashCode();
+    }
+
+    @Test
+    public void shouldProduceHashCodeOfEmptiedValueCollection() {
         multimap.put(keys[0], values[0]);
         Collection<String> collection = multimap.get(keys[0]);
         collection.clear();
@@ -327,6 +366,21 @@ public abstract class AbstractMultimapTest {
 
     @Test
     public void shouldCompareEqualityOfEmptyValueCollection() {
+        Collection<String> collection = multimap.get(keys[0]);
+
+        assertNotEquals(this, collection);
+        assertNotEquals(collection, this);
+        if (collection instanceof List<?>) {
+            assertEquals(Collections.emptyList(), collection);
+            assertEquals(collection, Collections.emptyList());
+        } else if (collection instanceof Set<?>) {
+            assertEquals(Collections.emptySet(), collection);
+            assertEquals(collection, Collections.emptySet());
+        }
+    }
+
+    @Test
+    public void shouldCompareEqualityOfEmptiedValueCollection() {
         multimap.put(keys[0], values[0]);
         Collection<String> collection = multimap.get(keys[0]);
         collection.clear();
