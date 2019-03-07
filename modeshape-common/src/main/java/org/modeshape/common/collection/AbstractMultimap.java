@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.SortedSet;
@@ -403,7 +404,8 @@ public abstract class AbstractMultimap<K, V> implements Multimap<K, V> {
 
         @Override
         public int size() {
-            return delegate().size();
+            Collection<V> d = delegate();
+            return d == null ? 0 : d.size();
         }
 
         @Override
@@ -414,7 +416,8 @@ public abstract class AbstractMultimap<K, V> implements Multimap<K, V> {
 
         @Override
         public boolean contains( Object o ) {
-            return delegate().contains(o);
+            Collection<V> d = delegate();
+            return d != null && d.contains(o);
         }
 
         @Override
@@ -436,17 +439,20 @@ public abstract class AbstractMultimap<K, V> implements Multimap<K, V> {
 
         @Override
         public boolean add( V e ) {
-            Collection<V> values = delegate();
-            boolean wasEmpty = values.isEmpty();
-            if (!values.add(e)) return false;
-            incrementSize(1);
-            if (wasEmpty) addToMap();
-            return true;
+            boolean wasEmpty = isEmpty();
+            try {
+                return AbstractMultimap.this.put(key, e);
+            } finally {
+                if (wasEmpty) {
+                    delegate();
+                }
+            }
         }
 
         @Override
         public boolean remove( Object o ) {
-            if (!delegate().remove(o)) return false;
+            Collection<V> d = delegate();
+            if (d == null || !d.remove(o)) return false;
             decrementSize(1);
             removeIfEmpty();
             return true;
@@ -460,17 +466,19 @@ public abstract class AbstractMultimap<K, V> implements Multimap<K, V> {
         @Override
         public boolean addAll( Collection<? extends V> c ) {
             if (c.isEmpty()) return false;
+            if (isEmpty()) getOrCreateCollection(key);
             Collection<V> delegate = delegate();
             int sizeBefore = delegate.size();
             if (!delegate.addAll(c)) return false;
             incrementSize(delegate.size() - sizeBefore);
-            if (sizeBefore == 0) addToMap();
             return true;
         }
 
         @Override
         public boolean removeAll( Collection<?> c ) {
-            if (c.isEmpty()) return false;
+            if (c.isEmpty() || isEmpty()) {
+                return false;
+            }
             Collection<V> delegate = delegate();
             int sizeBefore = delegate.size();
             if (!delegate.removeAll(c)) return false;
@@ -481,7 +489,9 @@ public abstract class AbstractMultimap<K, V> implements Multimap<K, V> {
 
         @Override
         public boolean retainAll( Collection<?> c ) {
-            if (c.isEmpty()) return false;
+            if (c.isEmpty() || isEmpty()) {
+                return false;
+            }
             Collection<V> delegate = delegate();
             int sizeBefore = delegate.size();
             if (!delegate.retainAll(c)) return false;
@@ -492,22 +502,23 @@ public abstract class AbstractMultimap<K, V> implements Multimap<K, V> {
 
         @Override
         public void clear() {
-            Collection<V> delegate = delegate();
-            int sizeBefore = delegate.size();
-            delegate.clear();
+            if (isEmpty()) return;
+            Collection<V> d = delegate();
+            int sizeBefore = d.size();
+            d.clear();
             decrementSize(sizeBefore);
             removeIfEmpty();
         }
 
         @Override
         public int hashCode() {
-            return delegate().hashCode();
+            return isEmpty() ? Collections.EMPTY_SET.hashCode() : delegate().hashCode();
         }
 
         @Override
         public boolean equals( Object obj ) {
-            if (obj == this) return true;
-            return delegate().equals(obj);
+            return obj == this
+                   || Optional.ofNullable(delegate()).orElseGet(AbstractMultimap.this::createUnmodifiableEmptyCollection).equals(obj);
         }
 
         @Override
@@ -636,6 +647,16 @@ public abstract class AbstractMultimap<K, V> implements Multimap<K, V> {
                                 int toIndex ) {
             List<V> valueSublist = delegate().subList(fromIndex, toIndex);
             return wrapList(getKey(), valueSublist);
+        }
+
+        /**
+         * {@inheritDoc}
+         *
+         * @see org.modeshape.common.collection.AbstractMultimap.WrappedCollection#hashCode()
+         */
+        @Override
+        public int hashCode() {
+            return isEmpty() ? Collections.EMPTY_LIST.hashCode() : delegate().hashCode();
         }
 
         protected class DelegateListIterator extends DelegateIterator implements ListIterator<V> {

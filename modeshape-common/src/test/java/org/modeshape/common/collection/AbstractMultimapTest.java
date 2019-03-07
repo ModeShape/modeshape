@@ -17,11 +17,14 @@ package org.modeshape.common.collection;
 
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -162,6 +165,181 @@ public abstract class AbstractMultimapTest {
             iter.remove();
         }
         assertTrue(multimap.isEmpty());
+    }
+
+    @Test
+    public void shouldSuccessfullyRemoveLastElementFromValueCollection() {
+        multimap.put(keys[0], values[0]);
+        Collection<String> collection = multimap.get(keys[0]);
+        assertTrue(collection.contains(values[0]));
+
+        assertTrue(collection.remove(values[0]));
+        assertFalse(collection.contains(values[0]));
+        assertTrue(collection.isEmpty());
+        assertEquals(0, collection.size());
+        assertTrue(multimap.isEmpty());
+        assertEquals(0, multimap.size());
+
+        assertFalse(collection.remove(values[0]));
+        assertFalse(collection.contains(values[0]));
+        assertTrue(collection.isEmpty());
+        assertEquals(0, collection.size());
+        assertTrue(multimap.isEmpty());
+        assertEquals(0, multimap.size());
+    }
+
+    @Test
+    public void shouldSuccessfullyAddValueToValueCollection() {
+        multimap.put(keys[0], values[0]);
+        Collection<String> collection = multimap.get(keys[0]);
+        assertEquals(1, collection.size());
+        assertFalse(collection.isEmpty());
+        assertEquals(1, multimap.size());
+        assertFalse(multimap.isEmpty());
+
+        assertTrue(collection.add(values[1]));
+        assertEquals(2, collection.size());
+        assertFalse(collection.isEmpty());
+        assertEquals(2, multimap.size());
+        assertFalse(multimap.isEmpty());
+    }
+
+    @Test
+    public void shouldSuccessfullyAddValueToEmptyValueCollection() {
+        multimap.put(keys[0], values[0]);
+        Collection<String> collection = multimap.get(keys[0]);
+
+        assertTrue(collection.remove(values[0]));
+        assertFalse(collection.contains(values[0]));
+        assertTrue(collection.isEmpty());
+        assertEquals(0, collection.size());
+        assertTrue(multimap.isEmpty());
+        assertEquals(0, multimap.size());
+
+        assertTrue(collection.add(values[0]));
+        assertTrue(collection.contains(values[0]));
+        assertFalse(collection.isEmpty());
+        assertEquals(1, collection.size());
+        assertFalse(multimap.isEmpty());
+        assertEquals(1, multimap.size());
+    }
+
+    @Test
+    public void shouldSuccessfullyRemoveAllFromValueCollection() {
+        multimap.put(keys[0], values[0]);
+        Collection<String> collection = multimap.get(keys[0]);
+
+        assertTrue(collection.removeAll(Arrays.asList(values)));
+        assertTrue(collection.isEmpty());
+        assertEquals(0, collection.size());
+        assertTrue(multimap.isEmpty());
+        assertEquals(0, multimap.size());
+
+        assertFalse(collection.removeAll(Arrays.asList(values)));
+        assertTrue(collection.isEmpty());
+        assertEquals(0, collection.size());
+        assertTrue(multimap.isEmpty());
+        assertEquals(0, multimap.size());
+    }
+
+    @Test
+    public void shouldSuccessfullyAddAllToValueCollection() {
+        multimap.put(keys[0], values[0]);
+        Collection<String> collection = multimap.get(keys[0]);
+
+        collection.addAll(Arrays.asList(values));
+
+        int expectedNumberOfValues = values.length;
+        if (valuesAllowDuplicates()) {
+            expectedNumberOfValues++;
+        }
+
+        assertEquals(expectedNumberOfValues, collection.size());
+        assertFalse(collection.isEmpty());
+
+        assertEquals(expectedNumberOfValues, multimap.size());
+        assertFalse(multimap.isEmpty());
+    }
+
+    @Test
+    public void shouldSuccessfullyClearValueCollection() {
+        multimap.put(keys[0], values[0]);
+        Collection<String> collection = multimap.get(keys[0]);
+
+        collection.clear();
+        assertTrue(collection.isEmpty());
+        assertEquals(0, collection.size());
+        assertTrue(multimap.isEmpty());
+        assertEquals(0, multimap.size());
+
+        collection.clear();
+        assertTrue(collection.isEmpty());
+        assertEquals(0, collection.size());
+        assertTrue(multimap.isEmpty());
+        assertEquals(0, multimap.size());
+    }
+
+    @Test
+    public void shouldSuccessfullyAddAllToEmptyValueCollection() {
+        multimap.put(keys[0], values[0]);
+        Collection<String> collection = multimap.get(keys[0]);
+        collection.clear();
+        
+        assertTrue(collection.addAll(Arrays.asList(values)));
+        assertEquals(values.length, collection.size());
+        assertFalse(collection.isEmpty());
+        assertEquals(values.length, multimap.size());
+        assertFalse(multimap.isEmpty());
+    }
+
+    @Test
+    public void shouldSuccessfullyRetainAllInValueCollection() {
+        multimap.put(keys[0], values[0]);
+        Collection<String> collection = multimap.get(keys[0]);
+
+        assertFalse(collection.retainAll(Arrays.asList(values)));
+        assertFalse(collection.isEmpty());
+        assertEquals(1, collection.size());
+        assertFalse(multimap.isEmpty());
+        assertEquals(1, multimap.size());
+    }
+
+    @Test
+    public void shouldSuccessfullyRetainAllInEmptyValueCollection() {
+        multimap.put(keys[0], values[0]);
+        Collection<String> collection = multimap.get(keys[0]);
+        collection.clear();
+
+        assertFalse(collection.retainAll(Arrays.asList(values)));
+        assertTrue(collection.isEmpty());
+        assertEquals(0, collection.size());
+        assertTrue(multimap.isEmpty());
+        assertEquals(0, multimap.size());
+    }
+
+    @Test
+    public void shouldProduceHashCodeOfEmptyValueCollection() {
+        multimap.put(keys[0], values[0]);
+        Collection<String> collection = multimap.get(keys[0]);
+        collection.clear();
+        collection.hashCode();
+    }
+
+    @Test
+    public void shouldCompareEqualityOfEmptyValueCollection() {
+        multimap.put(keys[0], values[0]);
+        Collection<String> collection = multimap.get(keys[0]);
+        collection.clear();
+
+        assertNotEquals(this, collection);
+        assertNotEquals(collection, this);
+        if (collection instanceof List<?>) {
+            assertEquals(Collections.emptyList(), collection);
+            assertEquals(collection, Collections.emptyList());
+        } else if (collection instanceof Set<?>) {
+            assertEquals(Collections.emptySet(), collection);
+            assertEquals(collection, Collections.emptySet());
+        }
     }
 
     protected <K, V> Map.Entry<K, V> entry( K key,
