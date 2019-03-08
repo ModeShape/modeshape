@@ -316,6 +316,40 @@ public abstract class AbstractMultimapTest {
     }
 
     @Test
+    public void shouldRetainAllInValueCollection() {
+        for (String value : values) {
+            multimap.put(keys[0], value);
+        }
+        assertEquals(values.length, multimap.size());
+        Collection<String> collection = multimap.get(keys[0]);
+        assertEquals(values.length, collection.size());
+
+        assertFalse(collection.retainAll(Arrays.asList(values)));
+        assertEquals(values.length, multimap.size());
+        assertEquals(values.length, collection.size());
+
+        assertTrue(collection.retainAll(Collections.singleton(values[0])));
+        assertEquals(1, multimap.size());
+        assertEquals(1, collection.size());
+    }
+
+    @Test
+    public void shouldRetainNoneInValueCollection() {
+        for (String value : values) {
+            multimap.put(keys[0], value);
+        }
+        assertEquals(values.length, multimap.size());
+        Collection<String> collection = multimap.get(keys[0]);
+        assertEquals(values.length, collection.size());
+
+        assertTrue(collection.retainAll(Collections.emptySet()));
+        assertTrue(multimap.isEmpty());
+        assertEquals(0, multimap.size());
+        assertTrue(collection.isEmpty());
+        assertEquals(0, collection.size());
+    }
+
+    @Test
     public void shouldSuccessfullyRetainAllInValueCollection() {
         multimap.put(keys[0], values[0]);
         Collection<String> collection = multimap.get(keys[0]);

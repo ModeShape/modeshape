@@ -478,7 +478,7 @@ public abstract class AbstractMultimap<K, V> implements Multimap<K, V> {
 
         @Override
         public boolean retainAll( Collection<?> c ) {
-            if (c.isEmpty() || isEmpty()) {
+            if (isEmpty()) {
                 return false;
             }
             Collection<V> d = delegate();
