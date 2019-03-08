@@ -19,7 +19,7 @@ import com.amazonaws.AmazonClientException;
 import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
-import com.amazonaws.auth.profile.ProfileCredentialsProvider;
+import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.iterable.S3Objects;
@@ -157,7 +157,7 @@ public class S3BinaryStore extends AbstractBinaryStore {
 
         AWSCredentialsProvider credentialsProvider;
         if (accessKey == null && secretKey == null) {
-            credentialsProvider = new ProfileCredentialsProvider();
+            credentialsProvider = new DefaultAWSCredentialsProviderChain();
         } else {
             credentialsProvider = new AWSStaticCredentialsProvider(new BasicAWSCredentials(accessKey, secretKey));
         }
