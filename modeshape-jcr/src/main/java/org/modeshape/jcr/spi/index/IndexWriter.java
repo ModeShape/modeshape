@@ -15,7 +15,12 @@
  */
 package org.modeshape.jcr.spi.index;
 
+import java.util.List;
+import java.util.Objects;
 import java.util.Set;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 import org.modeshape.jcr.cache.CachedNode.Properties;
 import org.modeshape.jcr.cache.NodeKey;
 import org.modeshape.jcr.spi.index.provider.IndexProvider;
@@ -29,6 +34,120 @@ import org.modeshape.jcr.value.Path;
  * @author Randall Hauch (rhauch@redhat.com)
  */
 public interface IndexWriter {
+    public static IndexWriter noop() {
+        return new IndexWriter() {
+
+            @Override
+            public boolean canBeSkipped() {
+                return true;
+            }
+
+            @Override
+            public void clearAllIndexes() {
+            }
+
+            @Override
+            public boolean add( String workspace,
+                                NodeKey key,
+                                Path path,
+                                Name primaryType,
+                                Set<Name> mixinTypes,
+                                Properties properties ) {
+                return false;
+            }
+
+            @Override
+            public boolean remove( String workspace,
+                                   NodeKey key ) {
+                return false;
+            }
+
+            @Override
+            public void commit( String workspace ) {
+            }
+        };
+    }
+
+    public static IndexWriter compose(Iterable<IndexWriter> delegates, Consumer<Exception> handler) {
+        Objects.requireNonNull(delegates, "delegates");
+        Objects.requireNonNull(handler, "handler");
+
+        List<IndexWriter> useDelegates = StreamSupport.stream(delegates.spliterator(),
+                                                              false).filter(t -> !t.canBeSkipped()).collect(Collectors.toList());        
+
+        if (useDelegates.isEmpty()) {
+            return noop();
+        }
+
+        return new IndexWriter() {
+
+            @Override
+            public boolean remove( String workspace,
+                                   NodeKey key ) {
+                boolean result = false;
+                for (IndexWriter indexWriter : delegates) {
+                    try {
+                        result = indexWriter.remove(workspace, key) || result;
+                    } catch (Exception e) {
+                        handler.accept(e);
+                    }
+                }
+                return result;
+            }
+
+            @Override
+            public void commit( String workspace ) {
+                delegates.forEach(d -> {
+                    try {
+                        d.commit(workspace);
+                    } catch (Exception e) {
+                        handler.accept(e);
+                    }
+                });
+            }
+
+            @Override
+            public void clearAllIndexes() {
+                delegates.forEach(t -> {
+                    try {
+                        t.clearAllIndexes();
+                    } catch (Exception e) {
+                        handler.accept(e);
+                    }
+                });
+            }
+
+            @Override
+            public boolean canBeSkipped() {
+                for (IndexWriter indexWriter : delegates) {
+                    try {
+                        if (!indexWriter.canBeSkipped()) return false;
+                    } catch (Exception e) {
+                        handler.accept(e);
+                    }
+                }
+                return true;
+            }
+
+            @Override
+            public boolean add( String workspace,
+                                NodeKey key,
+                                Path path,
+                                Name primaryType,
+                                Set<Name> mixinTypes,
+                                Properties properties ) {
+                boolean result = false;
+                for (IndexWriter indexWriter : delegates) {
+                    try {
+                        result = indexWriter.add(workspace, key, path, primaryType, mixinTypes, properties) || result;
+                    } catch (Exception e) {
+                        handler.accept(e);
+                    }
+                }
+                return result;
+            }
+        };
+    }
 
     /**
      * Flag that defines whether this index may be skipped. This is usually the case when the writer has no indexes behind it.
