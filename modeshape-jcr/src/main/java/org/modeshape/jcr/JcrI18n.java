@@ -436,6 +436,8 @@ public final class JcrI18n {
     public static I18n upgrade4_0_0_Alpha1_Failed;
     public static I18n upgrade4_0_0_Beta3_Running;
     public static I18n upgrade4_0_0_Beta3_Failed;
+    public static I18n upgrade5_5_0_Running;
+    public static I18n upgrade5_5_0_Failed;
 
     public static I18n cannotStartJournal;
     public static I18n cannotStopJournal;
