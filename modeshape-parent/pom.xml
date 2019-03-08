@@ -172,7 +172,7 @@
         <version.postgresql.9>9.2-1002.jdbc4</version.postgresql.9>
         <version.mysql>5.1.39</version.mysql>
         <version.com.oracle>11.2.0.1.0</version.com.oracle>
-        <version.com.amazonaws>1.11.24</version.com.amazonaws>
+        <version.com.amazonaws>1.11.454</version.com.amazonaws>
         <version.com.microsoft.sqlserver.mssql-jdbc>6.1.0.jre8</version.com.microsoft.sqlserver.mssql-jdbc>
 
         <version.docker.postgresql>9.5.4</version.docker.postgresql>

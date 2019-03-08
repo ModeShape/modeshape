@@ -15,44 +15,62 @@
  */
 package org.modeshape.jcr.value.binary;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.TimeUnit;
-
 import com.amazonaws.services.s3.AmazonS3Client;
+import com.amazonaws.services.s3.model.BucketLifecycleConfiguration;
 import com.amazonaws.services.s3.model.CopyObjectRequest;
+import com.amazonaws.services.s3.model.GetObjectTaggingRequest;
+import com.amazonaws.services.s3.model.GetObjectTaggingResult;
 import com.amazonaws.services.s3.model.ListObjectsRequest;
 import com.amazonaws.services.s3.model.ObjectListing;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.S3Object;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
+import com.amazonaws.services.s3.model.SetObjectTaggingRequest;
+import com.amazonaws.services.s3.model.SetObjectTaggingResult;
+import com.amazonaws.services.s3.model.Tag;
 import com.amazonaws.util.IOUtils;
 import com.amazonaws.util.StringInputStream;
 import org.easymock.Capture;
-import org.easymock.EasyMockRunner;
+import org.easymock.EasyMock;
+import org.easymock.EasyMockRule;
 import org.easymock.EasyMockSupport;
+import org.easymock.IArgumentMatcher;
 import org.easymock.Mock;
-import org.easymock.TestSubject;
 import org.junit.After;
+import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameter;
+import org.junit.runners.Parameterized.Parameters;
 import org.modeshape.jcr.value.BinaryKey;
 import org.modeshape.jcr.value.BinaryValue;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import java.util.Optional;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Predicate;
+import java.util.stream.Stream;
+import static com.amazonaws.services.s3.model.BucketLifecycleConfiguration.DISABLED;
+import static com.amazonaws.services.s3.model.BucketLifecycleConfiguration.ENABLED;
 import static org.easymock.EasyMock.capture;
 import static org.easymock.EasyMock.eq;
 import static org.easymock.EasyMock.expect;
-import static org.easymock.EasyMock.expectLastCall;
 import static org.easymock.EasyMock.isA;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 /**
@@ -61,13 +79,72 @@ import static org.junit.Assert.fail;
  *
  * @author bbranan
  */
-@RunWith(EasyMockRunner.class)
+@RunWith(Parameterized.class)
 public class S3BinaryStoreTest extends EasyMockSupport {
+    private static BucketLifecycleConfiguration bucketLifecycleConfiguration(String status) {
+        return new BucketLifecycleConfiguration().withRules(
+                new BucketLifecycleConfiguration.Rule().withId(S3BinaryStore.UNUSED_RULE).withStatus(status));
+    }
 
-    private static final String BUCKET = "MOCK_BUCKET";
+    @Parameters(name="{0}")
+    public static List<Object[]> createParameters() {
+        return Arrays.asList(
+             new Object[] { "noNativeIgnoreMissingConfig", false, null },
+             new Object[] { "noNativeIgnoreDisabledConfig", false, bucketLifecycleConfiguration(DISABLED) },
+             new Object[] { "noNativeDisableEnabledConfig", false, bucketLifecycleConfiguration(ENABLED) },
+             new Object[] { "nativeEnableMissingConfig", true, null },
+             new Object[] { "nativeIgnoreEnabledConfig", true, bucketLifecycleConfiguration(ENABLED) },
+             new Object[] { "nativeEnableDisabledConfig", true, bucketLifecycleConfiguration(DISABLED) }
+        );
+    }
+
+    private static <T> T customMatcher(String desc, Predicate<T> test) {
+        EasyMock.reportMatcher(new IArgumentMatcher() {
+
+            @SuppressWarnings( "unchecked" )
+            @Override
+            public boolean matches( Object argument ) {
+                return test.test((T) argument);
+            }
+
+            @Override
+            public void appendTo( StringBuffer buffer ) {
+                buffer.append(desc);
+            }
+        });
+        return null;
+    }
+
+    private static Optional<com.amazonaws.services.s3.model.BucketLifecycleConfiguration.Rule> getUnusedRule(
+            BucketLifecycleConfiguration blc ) {
+        return Optional.ofNullable(blc).map(BucketLifecycleConfiguration::getRules).map(Collection::stream)
+            .orElseGet(Stream::empty).filter(r -> S3BinaryStore.UNUSED_RULE.equals(r.getId())).findFirst();
+    }
+
+    private static Predicate<com.amazonaws.services.s3.model.BucketLifecycleConfiguration.Rule> isEnabled() {
+        return r -> ENABLED.equals(r.getStatus());
+    }
+
+    private static Predicate<com.amazonaws.services.s3.model.BucketLifecycleConfiguration.Rule> isDisabled() {
+        return r -> DISABLED.equals(r.getStatus());
+    }
+
+    private static final String BUCKET = "mock.bucket";
     private static final String TEST_KEY = "test-key";
     private static final String TEST_MIME = "text/plain";
     private static final String TEST_CONTENT = "test-content";
+
+    @Rule
+    public EasyMockRule easyMock = new EasyMockRule(this);
+
+    @Parameter(0)
+    public String description;
+    
+    @Parameter(1)
+    public boolean deleteUnusedNatively;
+
+    @Parameter(2)
+    public BucketLifecycleConfiguration bucketLifecycleConfiguration;
 
     @Mock
     private AmazonS3Client s3Client;
@@ -75,8 +152,12 @@ public class S3BinaryStoreTest extends EasyMockSupport {
     @Mock
     private ObjectListing objectListing;
 
-    @TestSubject
-    private S3BinaryStore s3BinaryStore = new S3BinaryStore(BUCKET, s3Client);
+    private S3BinaryStore s3BinaryStore;
+
+    @Before
+    public void setUp() {
+        s3BinaryStore = new S3BinaryStore(BUCKET, s3Client, deleteUnusedNatively);
+    }
 
     @After
     public void tearDown() {
@@ -95,10 +176,6 @@ public class S3BinaryStoreTest extends EasyMockSupport {
         BinaryValue binaryValue = createBinaryValue(TEST_KEY, TEST_CONTENT);
         String mimeType = s3BinaryStore.getStoredMimeType(binaryValue);
         assertEquals(TEST_MIME, mimeType);
-    }
-
-    private BinaryValue createBinaryValue(String key, String content) {
-        return new StoredBinaryValue(s3BinaryStore, new BinaryKey(key), content.length());
     }
 
     @Test
@@ -122,13 +199,13 @@ public class S3BinaryStoreTest extends EasyMockSupport {
     }
 
     /**
-     * Ensures that an execption is thrown if an attempt is made to store an
+     * Ensures that an exception is thrown if an attempt is made to store an
      * extracted text value which exceeds the capacity of S3
      */
     @Test
-    public void testStoreExtractedTextTooLong() throws BinaryStoreException {
+    public void testStoreExtractedTextTooLong() {
         StringBuilder textBuilder = new StringBuilder();
-        for(int i=0; i<2001; i++) {
+        for (int i = 0; i < 2001; i++) {
             textBuilder.append("a");
         }
         String extractedText = textBuilder.toString();
@@ -165,7 +242,7 @@ public class S3BinaryStoreTest extends EasyMockSupport {
         assertEquals(TEST_KEY, copyRequest.getDestinationKey());
         assertEquals(extractedText, copyRequest.getNewObjectMetadata()
                                                .getUserMetadata()
-                                               .get(s3BinaryStore.EXTRACTED_TEXT_KEY));
+                                               .get(S3BinaryStore.EXTRACTED_TEXT_KEY));
     }
 
     @Test
@@ -174,7 +251,7 @@ public class S3BinaryStoreTest extends EasyMockSupport {
 
         ObjectMetadata objMeta = new ObjectMetadata();
         Map<String, String> userMeta = new HashMap<>();
-        userMeta.put(s3BinaryStore.EXTRACTED_TEXT_KEY, extractedText);
+        userMeta.put(S3BinaryStore.EXTRACTED_TEXT_KEY, extractedText);
         objMeta.setUserMetadata(userMeta);
         expect(s3Client.getObjectMetadata(BUCKET, TEST_KEY)).andReturn(objMeta);
 
@@ -185,51 +262,144 @@ public class S3BinaryStoreTest extends EasyMockSupport {
         assertEquals(extractedText, extractValue);
     }
 
-    /*
-     * Tests storing new content
-     */
     @Test
-    public void testStoreValue() throws BinaryStoreException, UnsupportedEncodingException {
+    public void testStoreValueWhenAbsent() throws BinaryStoreException, IOException {
         String valueToStore = "value-to-store";
 
         expect(s3Client.doesObjectExist(eq(BUCKET), isA(String.class))).andReturn(false);
-        Capture<ObjectMetadata> objMetaCapture = Capture.newInstance();
         expect(s3Client.putObject(eq(BUCKET), isA(String.class),
-                                  isA(InputStream.class), capture(objMetaCapture)))
-            .andReturn(null);
+                isA(InputStream.class), isA(ObjectMetadata.class)))
+                .andReturn(null);
+
+        Capture<GetObjectTaggingRequest> getTaggingRequestCapture = Capture.newInstance();
+        GetObjectTaggingResult getTaggingResult = new GetObjectTaggingResult(new ArrayList<>());
+        expect(s3Client.getObjectTagging(capture(getTaggingRequestCapture)))
+                .andReturn(getTaggingResult);
+
+        Capture<SetObjectTaggingRequest> setTaggingRequestCapture = Capture.newInstance();
+        expect(s3Client.setObjectTagging(capture(setTaggingRequestCapture)))
+                .andReturn(new SetObjectTaggingResult());
 
         replayAll();
 
         s3BinaryStore.storeValue(new StringInputStream(valueToStore), false);
-        ObjectMetadata objMeta = objMetaCapture.getValue();
-        assertEquals(String.valueOf(false),
-                     objMeta.getUserMetadata().get(s3BinaryStore.UNUSED_KEY));
+
+        SetObjectTaggingRequest setTaggingRequest = setTaggingRequestCapture.getValue();
+        assertUnusedTagInSetTaggingRequest(setTaggingRequest, String.valueOf(false));
     }
 
-    /*
-     * Tests storing content which already exists. Ensures that the call to set the
-     * markAsUnread property is made.
-     */
     @Test
-    public void testStoreValueExisting() throws BinaryStoreException, IOException {
+    public void testStoreValueWhenExisting() throws BinaryStoreException, IOException {
         String valueToStore = "value-to-store";
 
         expect(s3Client.doesObjectExist(eq(BUCKET), isA(String.class))).andReturn(true);
-        expect(s3Client.getObjectMetadata(eq(BUCKET), isA(String.class)))
-            .andReturn(new ObjectMetadata());
-        ObjectMetadata objMeta = new ObjectMetadata();
-        Map<String, String> userMeta = new HashMap<>();
-        userMeta.put(s3BinaryStore.UNUSED_KEY, String.valueOf(true));
-        objMeta.setUserMetadata(userMeta);
-        Capture<CopyObjectRequest> copyRequestCapture = Capture.newInstance();
-        expect(s3Client.copyObject(capture(copyRequestCapture))).andReturn(null);
+
+        Capture<GetObjectTaggingRequest> getTaggingRequestCapture = Capture.newInstance();
+        GetObjectTaggingResult getTaggingResult = new GetObjectTaggingResult(new ArrayList<>());
+        expect(s3Client.getObjectTagging(capture(getTaggingRequestCapture)))
+                .andReturn(getTaggingResult);
+
+        Capture<SetObjectTaggingRequest> setTaggingRequestCapture = Capture.newInstance();
+        expect(s3Client.setObjectTagging(capture(setTaggingRequestCapture)))
+                .andReturn(new SetObjectTaggingResult());
+
+        replayAll();
+
+        s3BinaryStore.storeValue(new StringInputStream(valueToStore), false);
+
+        SetObjectTaggingRequest setTaggingRequest = setTaggingRequestCapture.getValue();
+        assertUnusedTagInSetTaggingRequest(setTaggingRequest, String.valueOf(false));
+    }
+
+    @Test
+    public void testStoreValueWhenExistingUnused() throws BinaryStoreException, IOException {
+        String valueToStore = "value-to-store";
+
+        expect(s3Client.doesObjectExist(eq(BUCKET), isA(String.class))).andReturn(true);
+
+        Capture<GetObjectTaggingRequest> getTaggingRequestCapture = Capture.newInstance();
+        GetObjectTaggingResult getTaggingResult = new GetObjectTaggingResult(new ArrayList<>());
+        getTaggingResult.getTagSet().add(new Tag(S3BinaryStore.UNUSED_TAG_KEY, String.valueOf(true)));
+        expect(s3Client.getObjectTagging(capture(getTaggingRequestCapture)))
+                .andReturn(getTaggingResult);
+
+        Capture<SetObjectTaggingRequest> setTaggingRequestCapture = Capture.newInstance();
+        expect(s3Client.setObjectTagging(capture(setTaggingRequestCapture)))
+                .andReturn(new SetObjectTaggingResult());
+
+        replayAll();
+
+        s3BinaryStore.storeValue(new StringInputStream(valueToStore), false);
+
+        SetObjectTaggingRequest setTaggingRequest = setTaggingRequestCapture.getValue();
+        assertUnusedTagInSetTaggingRequest(setTaggingRequest, String.valueOf(false));
+    }
+
+    @Test
+    public void testStoreUnusedValueWhenAbsent() throws BinaryStoreException, IOException {
+        String valueToStore = "value-to-store";
+
+        expect(s3Client.doesObjectExist(eq(BUCKET), isA(String.class))).andReturn(false);
+        expect(s3Client.putObject(eq(BUCKET), isA(String.class),
+                isA(InputStream.class), isA(ObjectMetadata.class)))
+                .andReturn(null);
+
+        Capture<GetObjectTaggingRequest> getTaggingRequestCapture = Capture.newInstance();
+        GetObjectTaggingResult getTaggingResult = new GetObjectTaggingResult(new ArrayList<>());
+        expect(s3Client.getObjectTagging(capture(getTaggingRequestCapture)))
+                .andReturn(getTaggingResult);
+
+        Capture<SetObjectTaggingRequest> setTaggingRequestCapture = Capture.newInstance();
+        expect(s3Client.setObjectTagging(capture(setTaggingRequestCapture)))
+                .andReturn(new SetObjectTaggingResult());
 
         replayAll();
 
         s3BinaryStore.storeValue(new StringInputStream(valueToStore), true);
-        ObjectMetadata newObjMeta = copyRequestCapture.getValue().getNewObjectMetadata();
-        assertEquals(String.valueOf(true),
-                     newObjMeta.getUserMetadata().get(s3BinaryStore.UNUSED_KEY));
+
+        SetObjectTaggingRequest setTaggingRequest = setTaggingRequestCapture.getValue();
+        assertUnusedTagInSetTaggingRequest(setTaggingRequest, String.valueOf(true));
+    }
+
+    @Test
+    public void testStoreUnusedValueWhenExisting() throws BinaryStoreException, IOException {
+        String valueToStore = "value-to-store";
+
+        expect(s3Client.doesObjectExist(eq(BUCKET), isA(String.class))).andReturn(true);
+
+        Capture<GetObjectTaggingRequest> getTaggingRequestCapture = Capture.newInstance();
+        GetObjectTaggingResult getTaggingResult = new GetObjectTaggingResult(new ArrayList<>());
+        getTaggingResult.getTagSet().add(new Tag(S3BinaryStore.UNUSED_TAG_KEY, String.valueOf(false)));
+        expect(s3Client.getObjectTagging(capture(getTaggingRequestCapture)))
+                .andReturn(getTaggingResult);
+
+        Capture<SetObjectTaggingRequest> setTaggingRequestCapture = Capture.newInstance();
+        expect(s3Client.setObjectTagging(capture(setTaggingRequestCapture)))
+                .andReturn(new SetObjectTaggingResult());
+
+        replayAll();
+
+        s3BinaryStore.storeValue(new StringInputStream(valueToStore), true);
+
+        SetObjectTaggingRequest setTaggingRequest = setTaggingRequestCapture.getValue();
+        assertUnusedTagInSetTaggingRequest(setTaggingRequest, String.valueOf(true));
+    }
+
+    @Test
+    public void testStoreUnusedValueWhenExistingUnused() throws BinaryStoreException, IOException {
+        String valueToStore = "value-to-store";
+
+        expect(s3Client.doesObjectExist(eq(BUCKET), isA(String.class))).andReturn(true);
+
+        Capture<GetObjectTaggingRequest> getTaggingRequestCapture = Capture.newInstance();
+        GetObjectTaggingResult getTaggingResult = new GetObjectTaggingResult(new ArrayList<>());
+        getTaggingResult.getTagSet().add(new Tag(S3BinaryStore.UNUSED_TAG_KEY, String.valueOf(true)));
+        expect(s3Client.getObjectTagging(capture(getTaggingRequestCapture)))
+                .andReturn(getTaggingResult);
+
+        replayAll();
+
+        s3BinaryStore.storeValue(new StringInputStream(valueToStore), true);
     }
 
     @Test
@@ -246,125 +416,74 @@ public class S3BinaryStoreTest extends EasyMockSupport {
 
     @Test
     public void testMarkAsUsed() throws BinaryStoreException {
-        ObjectMetadata objMeta = new ObjectMetadata();
-        Map<String, String> userMeta = new HashMap<>();
-        // Existing value of unused property set to true (so file is considered not used)
-        userMeta.put(s3BinaryStore.UNUSED_KEY, String.valueOf(true));
-        objMeta.setUserMetadata(userMeta);
-        expect(s3Client.getObjectMetadata(eq(BUCKET), isA(String.class)))
-            .andReturn(objMeta);
-        Capture<CopyObjectRequest> copyRequestCapture = Capture.newInstance();
-        expect(s3Client.copyObject(capture(copyRequestCapture))).andReturn(null);
+        Capture<GetObjectTaggingRequest> getTaggingRequestCapture = Capture.newInstance();
+        GetObjectTaggingResult getTaggingResult = new GetObjectTaggingResult(new ArrayList<>());
+        getTaggingResult.getTagSet().add(new Tag(S3BinaryStore.UNUSED_TAG_KEY, String.valueOf(true)));
+        expect(s3Client.getObjectTagging(capture(getTaggingRequestCapture)))
+                .andReturn(getTaggingResult);
+
+        Capture<SetObjectTaggingRequest> setTaggingRequestCapture = Capture.newInstance();
+        expect(s3Client.setObjectTagging(capture(setTaggingRequestCapture)))
+                .andReturn(new SetObjectTaggingResult());
 
         replayAll();
 
         s3BinaryStore.markAsUsed(Collections.singleton(new BinaryKey(TEST_KEY)));
-        ObjectMetadata newObjMeta = copyRequestCapture.getValue().getNewObjectMetadata();
-        assertEquals(String.valueOf(false),
-                     newObjMeta.getUserMetadata().get(s3BinaryStore.UNUSED_KEY));
+
+        SetObjectTaggingRequest setTaggingRequest = setTaggingRequestCapture.getValue();
+        assertUnusedTagInSetTaggingRequest(setTaggingRequest, String.valueOf(false));
     }
 
     @Test
     public void testMarkAsUnused() throws BinaryStoreException {
-        ObjectMetadata objMeta = new ObjectMetadata();
-        Map<String, String> userMeta = new HashMap<>();
-        // Existing value of unused property set to false (so file is considered used)
-        userMeta.put(s3BinaryStore.UNUSED_KEY, String.valueOf(false));
-        objMeta.setUserMetadata(userMeta);
-        expect(s3Client.getObjectMetadata(eq(BUCKET), isA(String.class)))
-            .andReturn(objMeta);
-        Capture<CopyObjectRequest> copyRequestCapture = Capture.newInstance();
-        expect(s3Client.copyObject(capture(copyRequestCapture))).andReturn(null);
+        Capture<GetObjectTaggingRequest> getTaggingRequestCapture = Capture.newInstance();
+        GetObjectTaggingResult getTaggingResult = new GetObjectTaggingResult(new ArrayList<>());
+        getTaggingResult.getTagSet().add(new Tag(S3BinaryStore.UNUSED_TAG_KEY, String.valueOf(false)));
+        expect(s3Client.getObjectTagging(capture(getTaggingRequestCapture)))
+                .andReturn(getTaggingResult);
+
+        Capture<SetObjectTaggingRequest> setTaggingRequestCapture = Capture.newInstance();
+        expect(s3Client.setObjectTagging(capture(setTaggingRequestCapture)))
+                .andReturn(new SetObjectTaggingResult());
 
         replayAll();
 
         s3BinaryStore.markAsUnused(Collections.singleton(new BinaryKey(TEST_KEY)));
-        ObjectMetadata newObjMeta = copyRequestCapture.getValue().getNewObjectMetadata();
-        assertEquals(String.valueOf(true),
-                     newObjMeta.getUserMetadata().get(s3BinaryStore.UNUSED_KEY));
+
+        SetObjectTaggingRequest setTaggingRequest = setTaggingRequestCapture.getValue();
+        assertUnusedTagInSetTaggingRequest(setTaggingRequest, String.valueOf(true));
     }
 
-    /*
-     * Tests setting the unused property given that the existing value is already set
-     * to the preferred value. No update calls should occur.
-     */
+    @Test
+    public void testMarkAsUsedNoChangeNeeded() throws BinaryStoreException {
+        Capture<GetObjectTaggingRequest> getTaggingRequestCapture = Capture.newInstance();
+        GetObjectTaggingResult getTaggingResult = new GetObjectTaggingResult(new ArrayList<>());
+        getTaggingResult.getTagSet().add(new Tag(S3BinaryStore.UNUSED_TAG_KEY, String.valueOf(false)));
+        expect(s3Client.getObjectTagging(capture(getTaggingRequestCapture)))
+                .andReturn(getTaggingResult);
+
+        replayAll();
+
+        s3BinaryStore.markAsUsed(Collections.singleton(new BinaryKey(TEST_KEY)));
+    }
+
     @Test
     public void testMarkAsUnusedNoChangeNeeded() throws BinaryStoreException {
-        ObjectMetadata objMeta = new ObjectMetadata();
-        Map<String, String> userMeta = new HashMap<>();
-        // Existing value of unused property set to true, so file is already considered
-        // to be not used. No change should be needed.
-        userMeta.put(s3BinaryStore.UNUSED_KEY, String.valueOf(true));
-        objMeta.setUserMetadata(userMeta);
-        expect(s3Client.getObjectMetadata(eq(BUCKET), isA(String.class)))
-            .andReturn(objMeta);
+        Capture<GetObjectTaggingRequest> getTaggingRequestCapture = Capture.newInstance();
+        GetObjectTaggingResult getTaggingResult = new GetObjectTaggingResult(new ArrayList<>());
+        getTaggingResult.getTagSet().add(new Tag(S3BinaryStore.UNUSED_TAG_KEY, String.valueOf(true)));
+        expect(s3Client.getObjectTagging(capture(getTaggingRequestCapture)))
+                .andReturn(getTaggingResult);
 
         replayAll();
 
         s3BinaryStore.markAsUnused(Collections.singleton(new BinaryKey(TEST_KEY)));
-    }
-
-    @Test
-    public void testRemoveValuesUnusedLongerThan() throws BinaryStoreException {
-        String usedObjectKey = "used-object";
-        String unusedNewKey = "unused-new";
-        String unusedOldKey = "unused-old";
-
-        // List of objects, one with unused=false,
-        // one with unused=true but updated within the hour,
-        // one with unused=true and last updated over a week ago (which should be removed)
-        List<S3ObjectSummary> objectList = new ArrayList<>();
-        S3ObjectSummary usedObject = new S3ObjectSummary();
-        usedObject.setKey(usedObjectKey);
-        objectList.add(usedObject);
-        S3ObjectSummary unusedNewObject = new S3ObjectSummary();
-        unusedNewObject.setKey(unusedNewKey);
-        objectList.add(unusedNewObject);
-        S3ObjectSummary unusedOldObject = new S3ObjectSummary();
-        unusedOldObject.setKey(unusedOldKey);
-        objectList.add(unusedOldObject);
-
-        // Expect request to get object list
-        expect(s3Client.listObjects(isA(ListObjectsRequest.class)))
-            .andReturn(objectListing);
-        expect(objectListing.getObjectSummaries()).andReturn(objectList);
-        expect(objectListing.isTruncated()).andReturn(false);
-
-        // Request for used object
-        ObjectMetadata usedObjMeta = new ObjectMetadata();
-        usedObjMeta.setUserMetadata(
-            Collections.singletonMap(s3BinaryStore.UNUSED_KEY, String.valueOf(false)));
-        usedObjMeta.setLastModified(new Date());
-        expect(s3Client.getObjectMetadata(BUCKET, usedObjectKey)).andReturn(usedObjMeta);
-
-        // Request for unused object with recent update
-        ObjectMetadata unusedNewObjMeta = new ObjectMetadata();
-        unusedNewObjMeta.setUserMetadata(
-            Collections.singletonMap(s3BinaryStore.UNUSED_KEY, String.valueOf(true)));
-        unusedNewObjMeta.setLastModified(new Date());
-        expect(s3Client.getObjectMetadata(BUCKET, unusedNewKey)).andReturn(unusedNewObjMeta);
-
-        // Request for unused object with old update
-        ObjectMetadata unusedOldObjMeta = new ObjectMetadata();
-        unusedOldObjMeta.setUserMetadata(
-            Collections.singletonMap(s3BinaryStore.UNUSED_KEY, String.valueOf(true)));
-        // Last modified 8 days ago
-        unusedOldObjMeta.setLastModified(new Date(System.currentTimeMillis() - 691200000));
-        expect(s3Client.getObjectMetadata(BUCKET, unusedOldKey)).andReturn(unusedOldObjMeta);
-
-        // Expect one delete
-        s3Client.deleteObject(BUCKET, unusedOldKey);
-        expectLastCall();
-
-        replayAll();
-
-        s3BinaryStore.removeValuesUnusedLongerThan(7, TimeUnit.DAYS);
     }
 
     @Test
     public void testGetAllBinaryKeys() throws BinaryStoreException {
         List<S3ObjectSummary> objectList = new ArrayList<>();
-        for(int i=0; i< 101; i++) {
+        for (int i = 0; i < 101; i++) {
             S3ObjectSummary object = new S3ObjectSummary();
             object.setKey(String.valueOf(i));
             objectList.add(object);
@@ -379,15 +498,60 @@ public class S3BinaryStoreTest extends EasyMockSupport {
             .andReturn(objectListing);
         expect(objectListing.getObjectSummaries()).andReturn(objectList);
         expect(objectListing.isTruncated()).andReturn(false);
+        expect(objectListing.isTruncated()).andReturn(false);
 
         replayAll();
 
-        Iterable<BinaryKey> allKeys = s3BinaryStore.getAllBinaryKeys();
-        int keyCount = 0;
-        for(BinaryKey key : allKeys) {
-            keyCount++;
-        }
-        assertEquals(202, keyCount); // Expecting two sets of 101 objects
+        final AtomicInteger keyCount = new AtomicInteger();
+        s3BinaryStore.getAllBinaryKeys().forEach(k -> keyCount.incrementAndGet());
+        assertEquals(202, keyCount.get()); // Expecting two sets of 101 objects
     }
 
+    @Test
+    public void testRemoveUnusedValues() throws BinaryStoreException {
+        expect(s3Client.getBucketLifecycleConfiguration(BUCKET)).andReturn(bucketLifecycleConfiguration);
+
+        if (deleteUnusedNatively) {
+            if (!getUnusedRule(bucketLifecycleConfiguration).filter(isEnabled()).isPresent()) {
+                s3Client.setBucketLifecycleConfiguration(eq(BUCKET), S3BinaryStoreTest.customMatcher(description, blc ->
+                        getUnusedRule(blc).filter(isEnabled()).isPresent()));
+                EasyMock.expectLastCall();
+            }
+        } else {
+            if (getUnusedRule(bucketLifecycleConfiguration).filter(isEnabled()).isPresent()) {
+                s3Client.setBucketLifecycleConfiguration(eq(BUCKET), S3BinaryStoreTest.customMatcher(description, blc ->
+                        getUnusedRule(blc).filter(isDisabled()).isPresent()));
+                EasyMock.expectLastCall();
+            }
+            expect(s3Client.listObjects(isA(ListObjectsRequest.class))).andReturn(objectListing);
+            expect(objectListing.getObjectSummaries()).andReturn(Collections.emptyList());
+            expect(objectListing.isTruncated()).andReturn(false);
+            expect(objectListing.isTruncated()).andReturn(false);
+            expect(s3Client.listObjects(isA(ListObjectsRequest.class))).andReturn(objectListing);
+            expect(objectListing.getObjectSummaries()).andReturn(Collections.emptyList());
+            expect(objectListing.isTruncated()).andReturn(false);
+            expect(objectListing.isTruncated()).andReturn(false);
+        }
+        replayAll();
+
+        s3BinaryStore.removeValuesUnusedLongerThan(1, TimeUnit.HOURS);
+        s3BinaryStore.removeValuesUnusedLongerThan(1, TimeUnit.HOURS);
+
+        verifyAll();
+    }
+
+    private void assertUnusedTagInSetTaggingRequest(SetObjectTaggingRequest setTaggingRequest, String tagValue) {
+        if (tagValue == null) {
+            assertTrue(setTaggingRequest.getTagging().getTagSet().stream().noneMatch(
+                    tag -> tag.getKey().equals(S3BinaryStore.UNUSED_TAG_KEY)));
+        } else {
+            assertTrue(setTaggingRequest.getTagging().getTagSet().stream().anyMatch(
+                    tag -> tag.getKey().equals(S3BinaryStore.UNUSED_TAG_KEY) &&
+                            tag.getValue().equals(String.valueOf(tagValue))));
+        }
+    }
+
+    private BinaryValue createBinaryValue(String key, String content) {
+        return new StoredBinaryValue(s3BinaryStore, new BinaryKey(key), content.length());
+    }
 }
