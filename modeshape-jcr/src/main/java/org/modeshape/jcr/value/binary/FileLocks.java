@@ -17,11 +17,11 @@ package org.modeshape.jcr.value.binary;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.RandomAccessFile;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
-import java.util.HashMap;
-import java.util.Map;
+import java.nio.file.StandardOpenOption;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Condition;
@@ -50,7 +50,7 @@ public final class FileLocks {
     }
 
     private final Lock masterLock = new ReentrantLock();
-    private final Map<String, LockHolder> locks = new HashMap<String, LockHolder>();
+    private final ConcurrentMap<String, LockHolder> locks = new ConcurrentHashMap<>();
 
     private FileLocks() {
         // Prevent others from instantiating
@@ -119,25 +119,14 @@ public final class FileLocks {
     protected final WrappedLock lock( File file,
                                       boolean writeLock,
                                       boolean block ) throws IOException {
-        LockHolder holder = null;
+        LockHolder holder;
         try {
             masterLock.lock();
-            // Look for a lock with the supplied name ...
-            holder = locks.get(file.getAbsolutePath());
-            if (holder == null) {
-                // Create a new named lock, which wraps and obtains the actual lock ...
-                holder = new LockHolder(file);
-                // Now store the wrapper in the map ...
-                locks.put(file.getAbsolutePath(), holder);
-                // Obtain and return the read or write lock (which we just created and nobody else can even see yet) ...
-                return holder.lock(writeLock, block);
-            }
-            // Otherwise we found the lock and just need to increment the counter within the 'masterLock' scope ...
+            holder = locks.computeIfAbsent(file.getAbsolutePath(), k -> new LockHolder(file));
             holder.incrementReferenceCount();
         } finally {
             masterLock.unlock();
         }
-
         // Now be sure to obtain the lock (outside of the 'masterLock' scope) ...
         return holder.lock(writeLock, block);
     }
@@ -235,7 +224,7 @@ public final class FileLocks {
         protected final WrappedLock readLock;
         protected final WrappedLock writeLock;
         private final ReadWriteLock lock = new ReentrantReadWriteLock();
-        private final AtomicInteger referenceCount = new AtomicInteger(1);
+        private final AtomicInteger referenceCount = new AtomicInteger();
         private final Lock fileLockLock = new ReentrantLock();
         @GuardedBy( "fileLockLock" )
         private FileLock fileLock;
@@ -271,14 +260,18 @@ public final class FileLocks {
                 this.lock.writeLock().lock();
                 assert this.fileLock == null;
                 assert this.lockedReaders == 0;
+
                 // We have an exclusive write lock in this VM, so we can safely create the file lock ...
-                RandomAccessFile raf = new RandomAccessFile(file, "rw");
-                FileChannel channel = raf.getChannel();
+                FileChannel channel = FileChannel.open(file.toPath(),
+                                                       StandardOpenOption.READ,
+                                                       StandardOpenOption.WRITE,
+                                                       StandardOpenOption.CREATE);
+
                 // Create a exclusive (non-shared) lock that does not allow other readers ...
                 if (block) {
-                    fileLock = channel.lock(0, Long.MAX_VALUE, false);
+                    fileLock = channel.lock();
                 } else {
-                    fileLock = channel.tryLock(0, Long.MAX_VALUE, false);
+                    fileLock = channel.tryLock();
                     if (fileLock == null) {
                         // Couldn't immediately get our write-lock, so unlock the read lock and return ...
                         this.lock.writeLock().unlock();
@@ -300,8 +293,7 @@ public final class FileLocks {
                     assert this.lockedReaders == 0;
 
                     // We have an exclusive write lock in this VM, so we can safely create the file lock ...
-                    RandomAccessFile raf = new RandomAccessFile(file, "r");
-                    FileChannel channel = raf.getChannel();
+                    FileChannel channel = FileChannel.open(file.toPath(), StandardOpenOption.READ);
                     // Create a shared lock that allows other readers ...
                     if (block) {
                         fileLock = channel.lock(0, Long.MAX_VALUE, true);
@@ -357,7 +349,7 @@ public final class FileLocks {
 
         @Override
         public String toString() {
-            return "FileLockHolder \"" + file + "\" (" + referenceCount.get() + " referrers)";
+            return "File LockHolder \"" + file + "\" (" + referenceCount.get() + " referrers)";
         }
     }
 
