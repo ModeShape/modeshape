@@ -27,6 +27,9 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import javax.jcr.ItemExistsException;
 import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
@@ -52,6 +55,7 @@ import org.modeshape.jcr.value.StringFactory;
 @Immutable
 public class NodeTypes {
 
+    @FunctionalInterface
     public static interface Supplier {
         /**
          * Get the immutable cache of node types.
@@ -61,6 +65,7 @@ public class NodeTypes {
         NodeTypes getNodeTypes();
     }
 
+    @FunctionalInterface
     public static interface Listener {
         /**
          * Notification that the NodeTypes instance has changed.
@@ -90,9 +95,24 @@ public class NodeTypes {
         ANY
     }
 
-    private final Map<Name, JcrNodeType> nodeTypes = new HashMap<Name, JcrNodeType>();
-    private final Map<PropertyDefinitionId, JcrPropertyDefinition> propertyDefinitions = new HashMap<PropertyDefinitionId, JcrPropertyDefinition>();
-    private final Map<NodeDefinitionId, JcrNodeDefinition> childNodeDefinitions = new HashMap<NodeDefinitionId, JcrNodeDefinition>();
+    /**
+     * The set of node type names that require no extra work during pre-save operations, as long as nodes that have this primary
+     * type do not have any mixins. Note that this contains all node types not in any of the other sets.
+     */
+    private static final Set<Name> fullyDefinedNodeTypes = new HashSet<>();
+
+    private static final Set<Name> NONE = Collections.emptySet();
+
+    /** Thread local variable containing the last NodeDefinitionSet used */
+    private static final ThreadLocal<ReusableNodeDefinitionSet> nodeDefinitionSet = ThreadLocal.withInitial(EmptyNodeDefinitionSet::new);
+
+    private static boolean atLeastOneSatisfies(Predicate<? super Name> test, Name primaryType, Collection<? extends Name> mixinTypes) {
+        return test.test(primaryType) || mixinTypes != null && !mixinTypes.isEmpty() && mixinTypes.stream().anyMatch(test);
+    }
+
+    private final Map<Name, JcrNodeType> nodeTypes = new HashMap<>();
+    private final Map<PropertyDefinitionId, JcrPropertyDefinition> propertyDefinitions = new HashMap<>();
+    private final Map<NodeDefinitionId, JcrNodeDefinition> childNodeDefinitions = new HashMap<>();
 
     private final Collection<JcrNodeType> unmodifiableNodeTypes;
     private final Collection<JcrNodeType> unmodifiableMixinNodeTypes;
@@ -107,22 +127,6 @@ public class NodeTypes {
 
     private final ExecutionContext context;
     private final NameFactory nameFactory;
-
-    /**
-     * The set of node type names that require no extra work during pre-save operations, as long as nodes that have this primary
-     * type do not have any mixins. Note that this contains all node types not in any of the other sets.
-     */
-    private static final Set<Name> fullyDefinedNodeTypes = new HashSet<>();
-
-    private static final Set<Name> NONE = Collections.emptySet();
-
-    /** Thread local variable containing the last NodeDefinitionSet used */
-    private static final ThreadLocal<ReusableNodeDefinitionSet> nodeDefinitionSet = new ThreadLocal<ReusableNodeDefinitionSet>() {
-        @Override
-        protected ReusableNodeDefinitionSet initialValue() {
-            return new EmptyNodeDefinitionSet();
-        }
-    };
 
     /**
      * The set of standard built-in NodeDefinitionSet
@@ -163,7 +167,7 @@ public class NodeTypes {
     private final Set<Name> nodeTypeNamesThatAreShareable = new HashSet<>();
 
     private final Set<Name> nodeTypeNamesWithNoChildNodeDefns = new HashSet<>();
-    
+
     private final Set<Name> nodeTypeNamesThatAreUnorderableCollections = new HashSet<>();
 
     /**
@@ -205,9 +209,9 @@ public class NodeTypes {
         this.context = context;
         this.nameFactory = context.getValueFactories().getNameFactory();
 
-        Set<Name> mixinNames = new HashSet<Name>();
-        List<JcrNodeType> mixins = new ArrayList<JcrNodeType>();
-        List<JcrNodeType> primaries = new ArrayList<JcrNodeType>();
+        Set<Name> mixinNames = new HashSet<>();
+        List<JcrNodeType> mixins = new ArrayList<>();
+        List<JcrNodeType> primaries = new ArrayList<>();
         if (nodeTypes != null) {
             JcrNodeType ntUnstructured = null;
             for (JcrNodeType nodeType : nodeTypes) {
@@ -244,8 +248,8 @@ public class NodeTypes {
 
                 if (nodeType.isNodeType(ModeShapeLexicon.UNORDERED_COLLECTION)) {
                     nodeTypeNamesThatAreUnorderableCollections.add(name);
-                }   
-               
+                }
+
                 boolean fullyDefined = true;
                 if (nodeType.isNodeType(JcrMixLexicon.CREATED)) {
                     createdNodeTypeNames.add(name);
@@ -279,7 +283,6 @@ public class NodeTypes {
                     if (propDefn.isAutoCreated() && !propDefn.isProtected()) {
                         autoCreatedPropertiesNodeTypes.put(name, propDefn);
                         // This isn't used in the pre-save operations, since auto-created items should be set on node creation
-                        // fullDefined = false;
                     }
                 }
                 Collection<JcrNodeDefinition> allChildNodeDefinitions = nodeType.allChildNodeDefinitions();
@@ -294,7 +297,6 @@ public class NodeTypes {
                     if (childDefn.isAutoCreated() && !childDefn.isProtected()) {
                         autoCreatedChildrenNodeTypes.put(name, childDefn);
                         // This isn't used in the pre-save operations, since auto-created items should be set on node creation
-                        // fullDefined = false;
                     }
                     if (childDefn.allowsSameNameSiblings()) {
                        allowsSNS = true;
@@ -309,7 +311,7 @@ public class NodeTypes {
                 if (fullyDefined) {
                     fullyDefinedNodeTypes.add(name);
                 }
-                
+
                 if (!nodeType.isQueryable()) {
                     nonQueryableNodeTypes.add(name);
                 }
@@ -358,7 +360,7 @@ public class NodeTypes {
      */
     protected NodeTypes without( Collection<JcrNodeType> removedNodeTypes ) {
         if (removedNodeTypes.isEmpty()) return this;
-        Collection<JcrNodeType> nodeTypes = new HashSet<JcrNodeType>(this.nodeTypes.values());
+        Collection<JcrNodeType> nodeTypes = new HashSet<>(this.nodeTypes.values());
         nodeTypes.removeAll(removedNodeTypes);
         return new NodeTypes(this.context, nodeTypes, getVersion() + 1);
     }
@@ -371,7 +373,7 @@ public class NodeTypes {
      */
     protected NodeTypes with( Collection<JcrNodeType> addedNodeTypes ) {
         if (addedNodeTypes.isEmpty()) return this;
-        Collection<JcrNodeType> nodeTypes = new HashSet<JcrNodeType>(this.nodeTypes.values());
+        Collection<JcrNodeType> nodeTypes = new HashSet<>(this.nodeTypes.values());
         // if there are updated node types, remove them first (hashcode is based on name alone),
         // else addAll() will ignore the changes.
         nodeTypes.removeAll(addedNodeTypes);
@@ -410,13 +412,8 @@ public class NodeTypes {
      */
     public boolean isFullyDefinedType( Name primaryTypeName,
                                        Set<Name> mixinTypeNames ) {
-        if (!fullyDefinedNodeTypes.contains(primaryTypeName)) return false;
-        if (!mixinTypeNames.isEmpty()) {
-            for (Name nodeTypeName : mixinTypeNames) {
-                if (!fullyDefinedNodeTypes.contains(nodeTypeName)) return false;
-            }
-        }
-        return true;
+        return fullyDefinedNodeTypes.contains(primaryTypeName)
+               && (mixinTypeNames.isEmpty() || mixinTypeNames.stream().allMatch(fullyDefinedNodeTypes::contains));
     }
 
     public Set<Name> getAllSubtypes( Name nodeTypeName ) {
@@ -459,10 +456,7 @@ public class NodeTypes {
      */
     public boolean isTypeOrSubtype( Set<Name> nodeTypeNames,
                                     Name candidateSupertypeName ) {
-        for (Name nodeTypeName : nodeTypeNames) {
-            if (isTypeOrSubtype(nodeTypeName, candidateSupertypeName)) return true;
-        }
-        return false;
+        return nodeTypeNames.stream().anyMatch(n -> isTypeOrSubtype(n, candidateSupertypeName));
     }
 
     /**
@@ -475,10 +469,7 @@ public class NodeTypes {
      */
     public boolean isTypeOrSubtype( Name[] nodeTypeNames,
                                     Name candidateSupertypeName ) {
-        for (Name nodeTypeName : nodeTypeNames) {
-            if (isTypeOrSubtype(nodeTypeName, candidateSupertypeName)) return true;
-        }
-        return false;
+        return Stream.of(nodeTypeNames).anyMatch(n -> isTypeOrSubtype(n, candidateSupertypeName));
     }
 
     /**
@@ -490,13 +481,7 @@ public class NodeTypes {
      */
     public boolean isCreated( Name primaryType,
                               Set<Name> mixinTypes ) {
-        if (createdNodeTypeNames.contains(primaryType)) return true;
-        if (mixinTypes != null) {
-            for (Name mixinType : mixinTypes) {
-                if (createdNodeTypeNames.contains(mixinType)) return true;
-            }
-        }
-        return false;
+        return atLeastOneSatisfies(createdNodeTypeNames::contains, primaryType, mixinTypes);
     }
 
     /**
@@ -508,13 +493,7 @@ public class NodeTypes {
      */
     public boolean isLastModified( Name primaryType,
                                    Set<Name> mixinTypes ) {
-        if (lastModifiedNodeTypeNames.contains(primaryType)) return true;
-        if (mixinTypes != null) {
-            for (Name mixinType : mixinTypes) {
-                if (lastModifiedNodeTypeNames.contains(mixinType)) return true;
-            }
-        }
-        return false;
+        return atLeastOneSatisfies(lastModifiedNodeTypeNames::contains, primaryType, mixinTypes);
     }
 
     /**
@@ -537,13 +516,7 @@ public class NodeTypes {
      */
     public boolean isETag( Name primaryType,
                            Set<Name> mixinTypes ) {
-        if (etagNodeTypeNames.contains(primaryType)) return true;
-        if (mixinTypes != null) {
-            for (Name mixinType : mixinTypes) {
-                if (etagNodeTypeNames.contains(mixinType)) return true;
-            }
-        }
-        return false;
+        return atLeastOneSatisfies(etagNodeTypeNames::contains, primaryType, mixinTypes);
     }
 
     /**
@@ -555,13 +528,7 @@ public class NodeTypes {
      */
     public boolean isReferenceable( Name primaryType,
                                     Set<Name> mixinTypes ) {
-        if (nodeTypeNamesThatAreReferenceable.contains(primaryType)) return true;
-        if (mixinTypes != null) {
-            for (Name mixinType : mixinTypes) {
-                if (nodeTypeNamesThatAreReferenceable.contains(mixinType)) return true;
-            }
-        }
-        return false;
+        return atLeastOneSatisfies(nodeTypeNamesThatAreReferenceable::contains, primaryType, mixinTypes);
     }
 
     /**
@@ -573,13 +540,7 @@ public class NodeTypes {
      */
     public boolean isShareable( Name primaryType,
                                 Set<Name> mixinTypes ) {
-        if (nodeTypeNamesThatAreShareable.contains(primaryType)) return true;
-        if (mixinTypes != null) {
-            for (Name mixinType : mixinTypes) {
-                if (nodeTypeNamesThatAreShareable.contains(mixinType)) return true;
-            }
-        }
-        return false;
+        return atLeastOneSatisfies(nodeTypeNamesThatAreShareable::contains, primaryType, mixinTypes);
     }
 
     /**
@@ -596,14 +557,7 @@ public class NodeTypes {
             // regardless of the actual types, if at least one of them is an unordered collection, SNS are not allowed
             return false;
         }
-        if (nodeTypeNamesThatAllowSameNameSiblings.contains(primaryType)) return true;
-        if (mixinTypes != null && !mixinTypes.isEmpty()) {
-            for (Name mixinType : mixinTypes) {
-                if (nodeTypeNamesThatAllowSameNameSiblings.contains(mixinType))
-                    return true;
-            }
-        }
-        return false;
+        return atLeastOneSatisfies(nodeTypeNamesThatAllowSameNameSiblings::contains, primaryType, mixinTypes);
     }
 
     /**
@@ -624,22 +578,12 @@ public class NodeTypes {
      * @return true if any of the named node type is an unordered collection, or false otherwise
      */
     public boolean isUnorderedCollection( Name nodeTypeName, Collection<Name> mixinTypes ) {
-        if (nodeTypeName != null && nodeTypeNamesThatAreUnorderableCollections.contains(nodeTypeName)) {
-            return true;
-        }
-        if (mixinTypes != null && !mixinTypes.isEmpty()) {
-            for (Name mixin : mixinTypes) {
-                if (nodeTypeNamesThatAreUnorderableCollections.contains(mixin)) {
-                    return true;
-                }
-            }
-        }
-        return false;
+        return atLeastOneSatisfies(nodeTypeNamesThatAreUnorderableCollections::contains, nodeTypeName, mixinTypes);
     }
 
     /**
      * Determine the length of a bucket ID for an unordered collection, based on its type and possible mixins.
-     * 
+     *
      * @param nodeTypeName the primary type of the collection; may not be null.
      * @param mixinTypes the mixin type names; may be null or empty
      * @return the order of magnitude, as a power of 16
@@ -653,11 +597,14 @@ public class NodeTypes {
         for (Name typeName : allTypes) {
             if (isTypeOrSubtype(typeName, ModeShapeLexicon.TINY_UNORDERED_COLLECTION)) {
                 return 1;
-            } else if (isTypeOrSubtype(typeName, ModeShapeLexicon.SMALL_UNORDERED_COLLECTION)) {
+            }
+            if (isTypeOrSubtype(typeName, ModeShapeLexicon.SMALL_UNORDERED_COLLECTION)) {
                 return 2;
-            } else if (isTypeOrSubtype(typeName, ModeShapeLexicon.LARGE_UNORDERED_COLLECTION)) {
+            }
+            if (isTypeOrSubtype(typeName, ModeShapeLexicon.LARGE_UNORDERED_COLLECTION)) {
                 return 3;
-            } else if (isTypeOrSubtype(typeName, ModeShapeLexicon.HUGE_UNORDERED_COLLECTION)) {
+            }
+            if (isTypeOrSubtype(typeName, ModeShapeLexicon.HUGE_UNORDERED_COLLECTION)) {
                 return 4;
             }
         }
@@ -673,11 +620,7 @@ public class NodeTypes {
      */
     public boolean isVersionable( Name primaryType,
                                   Collection<Name> mixinTypes ) {
-        if (primaryType != null && versionableNodeTypeNames.contains(primaryType)) return true;
-        for (Name mixinType : mixinTypes) {
-            if (versionableNodeTypeNames.contains(mixinType)) return true;
-        }
-        return false;
+        return atLeastOneSatisfies(versionableNodeTypeNames::contains, primaryType, mixinTypes);
     }
 
     /**
@@ -691,16 +634,17 @@ public class NodeTypes {
     public boolean isReferenceProperty( Name nodeTypeName,
                                         Name propertyName ) {
         JcrNodeType type = getNodeType(nodeTypeName);
-        if (type != null) {
-            for (JcrPropertyDefinition propDefn : type.allPropertyDefinitions(propertyName)) {
-                int requiredType = propDefn.getRequiredType();
-                if (requiredType == PropertyType.REFERENCE || requiredType == PropertyType.WEAKREFERENCE
-                    || requiredType == org.modeshape.jcr.api.PropertyType.SIMPLE_REFERENCE) {
-                    return true;
-                }
-            }
-        }
-        return false;
+        return type != null
+               && type.allPropertyDefinitions(propertyName).stream().mapToInt(JcrPropertyDefinition::getRequiredType).anyMatch(requiredType -> {
+                   switch (requiredType) {
+                       case PropertyType.REFERENCE:
+                       case PropertyType.WEAKREFERENCE:
+                       case org.modeshape.jcr.api.PropertyType.SIMPLE_REFERENCE:
+                           return true;
+                       default:
+                           return false;
+                   }
+               });
     }
 
     /**
@@ -713,11 +657,7 @@ public class NodeTypes {
      */
     public boolean hasMandatoryPropertyDefinitions( Name primaryType,
                                                     Set<Name> mixinTypes ) {
-        if (mandatoryPropertiesNodeTypes.containsKey(primaryType)) return true;
-        for (Name mixinType : mixinTypes) {
-            if (mandatoryPropertiesNodeTypes.containsKey(mixinType)) return true;
-        }
-        return false;
+        return atLeastOneSatisfies(mandatoryPropertiesNodeTypes::containsKey, primaryType, mixinTypes);
     }
 
     /**
@@ -731,11 +671,7 @@ public class NodeTypes {
      */
     public boolean hasMandatoryChildNodeDefinitions( Name primaryType,
                                                      Set<Name> mixinTypes ) {
-        if (mandatoryChildrenNodeTypes.containsKey(primaryType)) return true;
-        for (Name mixinType : mixinTypes) {
-            if (mandatoryChildrenNodeTypes.containsKey(mixinType)) return true;
-        }
-        return false;
+        return atLeastOneSatisfies(mandatoryChildrenNodeTypes::containsKey, primaryType, mixinTypes);
     }
 
     /**
@@ -749,15 +685,12 @@ public class NodeTypes {
      */
     public Collection<JcrPropertyDefinition> getMandatoryPropertyDefinitions( Name primaryType,
                                                                               Set<Name> mixinTypes ) {
-        if (mixinTypes.isEmpty()) {
-            return mandatoryPropertiesNodeTypes.get(primaryType);
+        Collection<JcrPropertyDefinition> result = mandatoryPropertiesNodeTypes.get(primaryType);
+        if (!mixinTypes.isEmpty()) {
+            result = new HashSet<>(result);
+            mixinTypes.stream().map(mandatoryPropertiesNodeTypes::get).flatMap(Collection::stream).forEach(result::add);
         }
-        Set<JcrPropertyDefinition> defn = new HashSet<JcrPropertyDefinition>();
-        defn.addAll(mandatoryPropertiesNodeTypes.get(primaryType));
-        for (Name mixinType : mixinTypes) {
-            defn.addAll(mandatoryPropertiesNodeTypes.get(mixinType));
-        }
-        return defn;
+        return Collections.unmodifiableCollection(result);
     }
 
     /**
@@ -771,15 +704,11 @@ public class NodeTypes {
      */
     public Collection<JcrNodeDefinition> getMandatoryChildNodeDefinitions( Name primaryType,
                                                                            Set<Name> mixinTypes ) {
-        if (mixinTypes.isEmpty()) {
-            return mandatoryChildrenNodeTypes.get(primaryType);
+        Collection<JcrNodeDefinition> result = mandatoryChildrenNodeTypes.get(primaryType);
+        if (!mixinTypes.isEmpty()) {
+            mixinTypes.stream().map(mandatoryChildrenNodeTypes::get).flatMap(Collection::stream).forEach(result::add);
         }
-        Set<JcrNodeDefinition> defn = new HashSet<JcrNodeDefinition>();
-        defn.addAll(mandatoryChildrenNodeTypes.get(primaryType));
-        for (Name mixinType : mixinTypes) {
-            defn.addAll(mandatoryChildrenNodeTypes.get(mixinType));
-        }
-        return defn;
+        return Collections.unmodifiableCollection(result);
     }
 
     /**
@@ -875,25 +804,15 @@ public class NodeTypes {
     }
 
     /**
-     * Check if the node type and mixin types are queryable or not. 
+     * Check if the node type and mixin types are queryable or not.
      *
      * @param nodeTypeName a {@link Name}, never {@code null}
-     * @param mixinTypes the mixin type names; may not be null but may be empty 
-     * 
+     * @param mixinTypes the mixin type names; may not be null but may be empty
+     *
      * @return {@code false} if at least one of the node types is not queryable, {@code true} otherwise
      */
     public boolean isQueryable(Name nodeTypeName, Set<Name> mixinTypes) {
-        if (nonQueryableNodeTypes.contains(nodeTypeName)) {
-            return false;
-        }
-        if (!mixinTypes.isEmpty()) {
-            for (Name mixinType : mixinTypes) {
-                if (nonQueryableNodeTypes.contains(mixinType)) {
-                    return false;
-                }
-            }
-        }
-        return true;    
+        return !atLeastOneSatisfies(nonQueryableNodeTypes::contains, nodeTypeName, mixinTypes);
     }
 
     /**
@@ -1594,7 +1513,7 @@ public class NodeTypes {
         assert typeNamesToCheck != null;
 
         Collection<JcrPropertyDefinition> propDefs = null;
-        List<JcrPropertyDefinition> matchingDefs = new ArrayList<JcrPropertyDefinition>();
+        List<JcrPropertyDefinition> matchingDefs = new ArrayList<>();
 
         // Look for a single-value property definition on the mixin types that matches by name and type ...
         for (Name typeNameToCheck : typeNamesToCheck) {
@@ -1736,10 +1655,10 @@ public class NodeTypes {
             }
         }
 
+        if (itemName.equals(JcrNodeType.RESIDUAL_NAME)) return false;
+
         // Nothing was found, so look for residual item definitions ...
-        if (!itemName.equals(JcrNodeType.RESIDUAL_NAME)) return canRemoveItem(primaryTypeNameOfParent, mixinTypeNamesOfParent,
-                                                                              JcrNodeType.RESIDUAL_NAME, skipProtected);
-        return false;
+        return canRemoveItem(primaryTypeNameOfParent, mixinTypeNamesOfParent, JcrNodeType.RESIDUAL_NAME, skipProtected);
     }
 
     protected final JcrNodeDefinition findChildNodeDefinitionForUnstructured() {
@@ -1756,7 +1675,7 @@ public class NodeTypes {
         if (mixinTypes.size() == 1) return mixinTypes;
 
         // This happens pretty infrequently ...
-        Set<Name> result = new HashSet<Name>();
+        Set<Name> result = new HashSet<>();
         for (Name mixinType : mixinTypes) {
             if (!nodeTypeNamesWithNoChildNodeDefns.contains(mixinType)) result.add(mixinType);
         }
@@ -1788,7 +1707,7 @@ public class NodeTypes {
                                                       List<JcrNodeType> pendingTypes ) {
         assert typeNamesToCheck != null;
         Collection<JcrNodeDefinition> nodeDefs = null;
-        List<JcrNodeDefinition> matchingDefs = new ArrayList<JcrNodeDefinition>();
+        List<JcrNodeDefinition> matchingDefs = new ArrayList<>();
 
         for (Name typeNameToCheck : typeNamesToCheck) {
             JcrNodeType typeName = findTypeInMapOrList(typeNameToCheck, pendingTypes);
@@ -2059,7 +1978,7 @@ public class NodeTypes {
             if (primaryItemName != null && primaryItemName.equals(node.getInternalName())) {
                 foundExact = true;
             }
-            
+
             if (node.allowsSameNameSiblings()) {
                 foundSNS = true;
             }
@@ -2486,13 +2405,8 @@ public class NodeTypes {
             this.childName = strings.create(childName);
             this.childPrimaryType = strings.create(childPrimaryType);
             this.parentPrimaryType = strings.create(parentPrimaryType);
-            StringBuilder parentMixinTypesStr = new StringBuilder("{");
-            for (Name mixin : parentMixinTypes) {
-                if (parentMixinTypesStr.length() > 1) parentMixinTypesStr.append(',');
-                parentMixinTypesStr.append(strings.create(mixin));
-            }
-            parentMixinTypesStr.append('}');
-            this.parentMixinTypes = parentMixinTypesStr.toString();
+            this.parentMixinTypes = parentMixinTypes.stream().map(strings::create).collect(Collectors.joining(",", "{", "}"));
+
             this.parentPath = strings.create(parentPath);
             this.workspaceName = workspaceName;
             this.repositoryName = repositoryName;
@@ -2913,11 +2827,7 @@ public class NodeTypes {
             if (mixinTypes == null || mixinTypes.isEmpty()) {
                 this.additionalTypes = null;
             } else {
-                this.additionalTypes = new JcrNodeType[mixinTypes.size()];
-                int index = -1;
-                for (Name mixinType : mixinTypes) {
-                    this.additionalTypes[++index] = getNodeType(mixinType);
-                }
+                this.additionalTypes = mixinTypes.stream().map(NodeTypes.this::getNodeType).toArray(JcrNodeType[]::new);
             }
         }
 
@@ -2975,15 +2885,11 @@ public class NodeTypes {
                                                 String repositoryName,
                                                 ExecutionContext context ) throws ConstraintViolationException {
             StringFactory strings = context.getValueFactories().getStringFactory();
-            String parentType = strings.create(parentPrimaryType);
-            StringBuilder parentMixinTypesStr = new StringBuilder('{');
-            for (Name mixin : parentMixinTypes) {
-                if (parentMixinTypesStr.length() > 1) parentMixinTypesStr.append(',');
-                parentMixinTypesStr.append(strings.create(mixin));
-            }
-            parentMixinTypesStr.append('}');
-            throw new ConstraintViolationException(JcrI18n.noChildNodeDefinitions.text(parentPath, parentType,
-                                                                                       parentMixinTypesStr));
+            throw new ConstraintViolationException(JcrI18n.noChildNodeDefinitions.text(parentPath,
+                                                                                       strings.create(parentPrimaryType),
+                                                                                       parentMixinTypes.stream().map(strings::create).collect(Collectors.joining(",",
+                                                                                                                                                                 "{",
+                                                                                                                                                                 "}"))));
         }
     }
 
