@@ -33,7 +33,7 @@ import org.modeshape.jcr.value.Path;
  */
 public interface IndexFeedback {
 
-    public static interface IndexingCallback {
+    public interface IndexingCallback {
         public static IndexingCallback noop() {
             return new IndexingCallback() {
                 

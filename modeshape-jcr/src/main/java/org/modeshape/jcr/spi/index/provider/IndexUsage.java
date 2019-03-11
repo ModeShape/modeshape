@@ -38,6 +38,7 @@ import org.modeshape.jcr.api.query.qom.Operator;
 import org.modeshape.jcr.api.query.qom.ReferenceValue;
 import org.modeshape.jcr.api.query.qom.Relike;
 import org.modeshape.jcr.api.query.qom.SetCriteria;
+import org.modeshape.jcr.query.PseudoColumns;
 import org.modeshape.jcr.query.QueryContext;
 import org.modeshape.jcr.query.model.And;
 import org.modeshape.jcr.query.model.Cast;
@@ -68,7 +69,7 @@ public class IndexUsage {
     private final QueryContext context;
     private final Name indexedNodeTypeName;
     private final Set<String> selectedNamesOrAliases;
-   
+
     public IndexUsage( QueryContext context,
                        IndexCostCalculator calculator,
                        IndexDefinition defn ) {
@@ -121,7 +122,7 @@ public class IndexUsage {
             return false;
         }
         // These are exact matches, so these will apply if the index uses 'jcr:uuid' or 'mode:id' properties
-        return defn.appliesToProperty("jcr:uuid") || defn.appliesToProperty("mode:id");
+        return defn.appliesToProperty(PseudoColumns.Name.JCR_UUID) || defn.appliesToProperty(PseudoColumns.Name.MODE_ID);
     }
 
     /**
@@ -257,7 +258,7 @@ public class IndexUsage {
     protected boolean applies( UpperCase operand ) {
         return applies(operand.getOperand());
     }
-    
+
     protected boolean applies( Cast operand ) {
         return applies(operand.getOperand());
     }
@@ -276,17 +277,17 @@ public class IndexUsage {
 
     protected boolean applies( NodeName operand ) {
         // This should apply to the 'jcr:name' pseudo-column on the index ...
-        return defn.appliesToProperty("jcr:name");
+        return defn.appliesToProperty(PseudoColumns.Name.JCR_NAME);
     }
 
     protected boolean applies( NodeLocalName operand ) {
         // This should apply to the 'mode:localName' pseudo-column on the index ...
-        return defn.appliesToProperty("mode:localName");
+        return defn.appliesToProperty(PseudoColumns.Name.MODE_LOCALNAME);
     }
 
     protected boolean applies( NodePath operand ) {
         // This should apply to the 'jcr:path' pseudo-column on the index ...
-        return defn.appliesToProperty("jcr:path");
+        return defn.appliesToProperty(PseudoColumns.Name.JCR_PATH);
     }
 
     protected boolean applies( NodeId operand ) {
@@ -296,7 +297,7 @@ public class IndexUsage {
 
     protected boolean applies( NodeDepth operand ) {
         // This should apply to the 'mode:depth' pseudo-column on the index ...
-        return defn.appliesToProperty("mode:depth");
+        return defn.appliesToProperty(PseudoColumns.Name.MODE_DEPTH);
     }
 
     protected boolean applies( ChildCount operand ) {
@@ -319,17 +320,11 @@ public class IndexUsage {
     }
 
     protected boolean applies( FullTextSearch constraint ) {
-        if (defn.getKind() != IndexDefinition.IndexKind.TEXT) {
-            return false;
+        if (defn.getKind() == IndexDefinition.IndexKind.TEXT && matchesSelectorName(constraint.getSelectorName())) {
+            String propertyName = constraint.getPropertyName();
+            return propertyName == null || defn.appliesToProperty(propertyName);
         }
-        if (!matchesSelectorName(constraint.getSelectorName())) {
-            return false;
-        }
-        String propertyName = constraint.getPropertyName();
-        if (propertyName != null && !defn.appliesToProperty(propertyName)) {
-            return false;
-        }
-        return true;
+        return false;
     }
 
     protected final boolean matchesSelectorName( String selectorName ) {
@@ -348,16 +343,14 @@ public class IndexUsage {
         assert refPropName != null;
         if (defn.appliesToProperty(refPropName)) {
             // The definition does apply to this property ...
-            Name columnName = name(refPropName);
-            return nodeTypes().isReferenceProperty(indexedNodeTypeName, columnName);
+            return nodeTypes().isReferenceProperty(indexedNodeTypeName, name(refPropName));
         }
         return false;
     }
 
     protected final boolean isReferenceIndex() {
         for (IndexColumnDefinition columnDefn : defn) {
-            Name columnName = name(columnDefn.getPropertyName());
-            if (nodeTypes().isReferenceProperty(indexedNodeTypeName, columnName)) return true;
+            if (nodeTypes().isReferenceProperty(indexedNodeTypeName, name(columnDefn.getPropertyName()))) return true;
         }
         return false;
     }
