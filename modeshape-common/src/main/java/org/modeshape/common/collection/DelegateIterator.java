@@ -25,12 +25,14 @@ import org.modeshape.common.function.Function;
  * @author Randall Hauch (rhauch@redhat.com)
  * @param <T> the iterator's type
  * @param <V> the type of the delegate iterator
+ * @deprecated unnecessary since Java 8
  */
+@Deprecated
 public class DelegateIterator<T, V> implements Iterator<T> {
 
     public static <T, V> Iterator<T> around( Iterator<V> delegate,
                                              Function<V, T> converter ) {
-        return new DelegateIterator<T, V>(delegate, converter);
+        return new DelegateIterator<>(delegate, converter);
     }
 
     private final Function<V, T> converter;

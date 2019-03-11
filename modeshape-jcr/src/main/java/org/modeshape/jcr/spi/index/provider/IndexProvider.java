@@ -24,15 +24,14 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import javax.jcr.RepositoryException;
 import javax.jcr.query.qom.Constraint;
 import javax.jcr.query.qom.JoinCondition;
 import org.modeshape.common.annotation.GuardedBy;
 import org.modeshape.common.annotation.ThreadSafe;
-import org.modeshape.common.collection.DelegateIterable;
 import org.modeshape.common.collection.Problems;
-import org.modeshape.common.function.Function;
-import org.modeshape.common.function.Predicate;
 import org.modeshape.common.util.CheckArg;
 import org.modeshape.jcr.Environment;
 import org.modeshape.jcr.ExecutionContext;
@@ -129,8 +128,8 @@ public abstract class IndexProvider {
      * The default number of rows in a batch.
      */
     public static final int DEFAULT_BATCH_SIZE = 100;
-    
-    private final static IndexWriter EMPTY_WRITER = NoOpQueryIndexWriter.INSTANCE;
+
+    private static final IndexWriter EMPTY_WRITER = NoOpQueryIndexWriter.INSTANCE;
 
     /**
      * The logger instance, set via reflection
@@ -277,7 +276,7 @@ public abstract class IndexProvider {
      * Get the context in which this provider executes. This is set prior to {@link #initialize() initialization} by ModeShape,
      * and never changed.
      *
-     * @return the execution context; never null
+     * @return the execution context; never {@code null}
      */
     protected final ExecutionContext context() {
         return context;
@@ -286,7 +285,7 @@ public abstract class IndexProvider {
     /**
      * Get the repository's running environment
      * 
-     * @return a {@link Environment} instance, never null.
+     * @return a {@link Environment} instance, never {@code null}.
      */
     protected final Environment environment() {
         return environment;
@@ -298,7 +297,7 @@ public abstract class IndexProvider {
      *
      * @throws RepositoryException if there is a problem initializing the provider
      */
-    public synchronized final void initialize() throws RepositoryException {
+    public final synchronized void initialize() throws RepositoryException {
         if (!initialized) {
             try {
                 doInitialize();
@@ -308,7 +307,7 @@ public abstract class IndexProvider {
             }
         }
     }
-    
+
     /**
      * Method called by the code calling {@link #initialize} (typically via reflection) to signal that the initialize method is
      * completed. See initialize() for details, and no this method is indeed used.
@@ -345,7 +344,7 @@ public abstract class IndexProvider {
      *
      * @throws RepositoryException if there is a problem shutting down the provider
      */
-    public synchronized final void shutdown() throws RepositoryException {
+    public final synchronized void shutdown() throws RepositoryException {
         preShutdown();
 
         delegateWriter = NoOpQueryIndexWriter.INSTANCE;
@@ -386,20 +385,16 @@ public abstract class IndexProvider {
      * Notify the provider that the NodeTypes have changed. This method should only be called by ModeShape and never called by
      * other code.
      *
-     * @param updatedNodeTypes the new node types; may not be null
+     * @param updatedNodeTypes the new node types; may not be {@code null}
      */
     public void notify( final NodeTypes updatedNodeTypes ) {
         CheckArg.isNotNull(updatedNodeTypes, "updatedNodeTypes");
         // For each of the provided indexes ...
-        onEachIndex(new ProvidedIndexOperation() {
-            @Override
-            public void apply( String workspaceName,
-                               AtomicIndex index ) {
-                @SuppressWarnings( "synthetic-access" )
-                NodeTypeMatcher matcher = nodeTypePredicate(updatedNodeTypes, index.indexDefinition());
-                index.update(index.managed(), index.indexDefinition(), matcher);
-            }
-        });
+        onEachIndex((ProvidedIndexOperation)( workspaceName,
+                                              index ) -> index.update(index.managed(),
+                                                                      index.indexDefinition(),
+                                                                      nodeTypePredicate(updatedNodeTypes,
+                                                                                        index.indexDefinition())));
     }
 
     /**
@@ -411,11 +406,11 @@ public abstract class IndexProvider {
      * via {@link #validateDefaultColumnTypes(ExecutionContext, IndexDefinition, Problems)}
      * </p>
      *   
-     * @param context the execution context in which to perform the validation; never null
-     * @param defn the proposed index definition; never null
+     * @param context the execution context in which to perform the validation; never {@code null}
+     * @param defn the proposed index definition; never {@code null}
      * @param nodeTypesSupplier the supplier for the NodeTypes object that contains information about the currently-registered
-     *        node types; never null
-     * @param problems the problems that should be used to report any issues with the index definition; never null
+     *        node types; never {@code null}
+     * @param problems the problems that should be used to report any issues with the index definition; never {@code null}
      */
     public void validateProposedIndex( ExecutionContext context,
                                        IndexDefinition defn,
@@ -427,9 +422,9 @@ public abstract class IndexProvider {
     /**
      * Validates that if certain default columns are present in the index definition, they have a required type.
      *
-     * @param context the execution context in which to perform the validation; never null
-     * @param defn the proposed index definition; never null
-     * @param problems the component to record any problems, errors, or warnings; may not be null
+     * @param context the execution context in which to perform the validation; never {@code null}
+     * @param defn the proposed index definition; never {@code null}
+     * @param problems the component to record any problems, errors, or warnings; may not be {@code null}
      */
     public void validateDefaultColumnTypes( ExecutionContext context,
                                             IndexDefinition defn,
@@ -441,51 +436,72 @@ public abstract class IndexProvider {
     }
 
     protected void validateDefaultColumnDefinitionType( ExecutionContext context,
-                                                        IndexDefinition defn, 
+                                                        IndexDefinition defn,
                                                         IndexColumnDefinition columnDefn,
-                                                        Problems problems) {
-        int columnType = columnDefn.getColumnType();
-        PropertyType type = PropertyType.valueFor(columnType);
+                                                        Problems problems ) {
+        PropertyType type = PropertyType.valueFor(columnDefn.getColumnType());
         switch (defn.getKind()) {
             case UNIQUE_VALUE:
-            case ENUMERATED_VALUE:    
+            case ENUMERATED_VALUE:
             case VALUE:
                 if ((matches(context, columnDefn, JcrLexicon.PATH) && !isType(type, PropertyType.PATH))) {
-                    problems.addError(JcrI18n.indexMustHaveOneColumnOfSpecificType, defn.getProviderName(),
-                                      defn.getName(), columnDefn.getPropertyName(), type, PropertyType.PATH);
+                    problems.addError(JcrI18n.indexMustHaveOneColumnOfSpecificType,
+                                      defn.getProviderName(),
+                                      defn.getName(),
+                                      columnDefn.getPropertyName(),
+                                      type,
+                                      PropertyType.PATH);
                 }
                 if ((matches(context, columnDefn, ModeShapeLexicon.LOCALNAME) && !isType(type, PropertyType.STRING))
                     || (matches(context, columnDefn, ModeShapeLexicon.ID) && !isType(type, PropertyType.STRING))) {
-                    problems.addError(JcrI18n.indexMustHaveOneColumnOfSpecificType, defn.getProviderName(),
-                                      defn.getName(), columnDefn.getPropertyName(), type, PropertyType.STRING);
+                    problems.addError(JcrI18n.indexMustHaveOneColumnOfSpecificType,
+                                      defn.getProviderName(),
+                                      defn.getName(),
+                                      columnDefn.getPropertyName(),
+                                      type,
+                                      PropertyType.STRING);
                 }
                 if ((matches(context, columnDefn, ModeShapeLexicon.DEPTH) && !isType(type, PropertyType.LONG))) {
-                    problems.addError(JcrI18n.indexMustHaveOneColumnOfSpecificType, defn.getProviderName(),
-                                      defn.getName(), columnDefn.getPropertyName(), type, PropertyType.LONG);
+                    problems.addError(JcrI18n.indexMustHaveOneColumnOfSpecificType,
+                                      defn.getProviderName(),
+                                      defn.getName(),
+                                      columnDefn.getPropertyName(),
+                                      type,
+                                      PropertyType.LONG);
                 }
-                if ((matches(context ,columnDefn, JcrLexicon.PRIMARY_TYPE) && !isType(type, PropertyType.NAME))
+                if ((matches(context, columnDefn, JcrLexicon.PRIMARY_TYPE) && !isType(type, PropertyType.NAME))
                     || (matches(context, columnDefn, JcrLexicon.MIXIN_TYPES) && !isType(type, PropertyType.NAME))
                     || (matches(context, columnDefn, JcrLexicon.NAME) && !isType(type, PropertyType.NAME))) {
-                    problems.addError(JcrI18n.indexMustHaveOneColumnOfSpecificType, defn.getProviderName(),
-                                      defn.getName(), columnDefn.getPropertyName(), type, PropertyType.NAME);
+                    problems.addError(JcrI18n.indexMustHaveOneColumnOfSpecificType,
+                                      defn.getProviderName(),
+                                      defn.getName(),
+                                      columnDefn.getPropertyName(),
+                                      type,
+                                      PropertyType.NAME);
                 }
                 break;
             case NODE_TYPE:
                 if (PropertyType.STRING != type) {
-                    problems.addError(JcrI18n.indexMustHaveOneColumnOfSpecificType, defn.getProviderName(),
-                                      defn.getName(), columnDefn.getPropertyName(), type, PropertyType.STRING);
+                    problems.addError(JcrI18n.indexMustHaveOneColumnOfSpecificType,
+                                      defn.getProviderName(),
+                                      defn.getName(),
+                                      columnDefn.getPropertyName(),
+                                      type,
+                                      PropertyType.STRING);
                 }
                 break;
-            case TEXT: {
-                if (PropertyType.STRING != type && PropertyType.BINARY != type && PropertyType.PATH != type &&
-                    PropertyType.NAME != type) {
+            case TEXT:
+                if (PropertyType.STRING != type && PropertyType.BINARY != type && PropertyType.PATH != type
+                    && PropertyType.NAME != type) {
                     String expectedTypeMsg = PropertyType.STRING + " or " + PropertyType.BINARY;
-                    problems.addError(JcrI18n.indexMustHaveOneColumnOfSpecificType, defn.getProviderName(),
-                                      defn.getName(), columnDefn.getPropertyName(), type, expectedTypeMsg);                     
+                    problems.addError(JcrI18n.indexMustHaveOneColumnOfSpecificType,
+                                      defn.getProviderName(),
+                                      defn.getName(),
+                                      columnDefn.getPropertyName(),
+                                      type,
+                                      expectedTypeMsg);
                 }
                 break;
-            }
-                
         }
     }
 
@@ -518,9 +534,9 @@ public abstract class IndexProvider {
     /**
      * Get the queryable index with the given name and applicable for the given workspace.
      *
-     * @param indexName the name of the index in this provider; never null
-     * @param workspaceName the name of the workspace; never null
-     * @return the queryable index, or null if there is no such index
+     * @param indexName the name of the index in this provider; never {@code null}
+     * @param workspaceName the name of the workspace; never {@code null}
+     * @return the queryable index, or {@code null} if there is no such index
      */
     public final Index getIndex( String indexName,
                                  String workspaceName ) {
@@ -529,13 +545,13 @@ public abstract class IndexProvider {
         Map<String, AtomicIndex> byWorkspaceNames = providedIndexesByWorkspaceNameByIndexName.get(indexName);
         return byWorkspaceNames == null ? null : byWorkspaceNames.get(workspaceName);
     }
-    
+
     /**
      * Get the managed index with the given name and applicable for the given workspace.
      *
-     * @param indexName the name of the index in this provider; never null
-     * @param workspaceName the name of the workspace; never null
-     * @return the managed index, or null if there is no such index
+     * @param indexName the name of the index in this provider; never {@code null}
+     * @param workspaceName the name of the workspace; never {@code null}
+     * @return the managed index, or {@code null} if there is no such index
      */
     public final ManagedIndex getManagedIndex( String indexName,
                                                String workspaceName ) {
@@ -564,24 +580,19 @@ public abstract class IndexProvider {
     /**
      * Get this provider's {@link ManagedIndex} instances for the given workspace.
      *
-     * @param workspaceName the name of the workspace; may not be null
-     * @return the iterator over the provided indexes; never null but possibly empty
+     * @param workspaceName the name of the workspace; may not be {@code null}
+     * @return {@link Iterable} of provided indexes; never {@code null} but possibly empty
      */
     protected final Iterable<ManagedIndex> getIndexes( String workspaceName ) {
         final Map<String, AtomicIndex> byIndexName = providedIndexesByIndexNameByWorkspaceName.get(workspaceName);
         if (byIndexName == null) return Collections.emptySet();
-        return DelegateIterable.around(byIndexName.values(), new Function<AtomicIndex, ManagedIndex>() {
-            @Override
-            public ManagedIndex apply( AtomicIndex input ) {
-                return input.managed();
-            }
-        });
+        return byIndexName.values().stream().map(AtomicIndex::managed).collect(Collectors.toSet());
     }
 
     /**
      * Perform the specified operation on each of the managed indexes.
      *
-     * @param op the operation; may not be null
+     * @param op the operation; may not be {@code null}
      */
     protected final void onEachIndex( ManagedIndexOperation op ) {
         for (String workspaceName : workspaceNames()) {
@@ -592,7 +603,7 @@ public abstract class IndexProvider {
     /**
      * Perform the specified operation on each of the managed indexes.
      *
-     * @param op the operation; may not be null
+     * @param op the operation; may not be {@code null}
      */
     private final void onEachIndex( ProvidedIndexOperation op ) {
         for (String workspaceName : workspaceNames()) {
@@ -608,22 +619,19 @@ public abstract class IndexProvider {
     }
 
     private synchronized Set<String> workspaceNames() {
-        return new HashSet<String>(providedIndexesByIndexNameByWorkspaceName.keySet());
+        return new HashSet<>(providedIndexesByIndexNameByWorkspaceName.keySet());
     }
 
     private synchronized Collection<AtomicIndex> providedIndexesFor( String workspaceName ) {
         Map<String, AtomicIndex> byIndexName = providedIndexesByIndexNameByWorkspaceName.get(workspaceName);
-        if (byIndexName != null) {
-            return new ArrayList<>(byIndexName.values());
-        }
-        return null;
+        return byIndexName == null ? null : byIndexName.values();
     }
 
     /**
      * Perform the specified operation on each of the managed indexes in the named workspace.
      *
-     * @param workspaceName the name of the workspace; may not be null
-     * @param op the operation; may not be null
+     * @param workspaceName the name of the workspace; may not be {@code null}
+     * @param op the operation; may not be {@code null}
      */
     public final void onEachIndexInWorkspace( String workspaceName,
                                               ManagedIndexOperation op ) {
@@ -643,12 +651,13 @@ public abstract class IndexProvider {
      *
      * @author Randall Hauch (rhauch@redhat.com)
      */
-    public static interface ManagedIndexOperation {
+    @FunctionalInterface
+    public interface ManagedIndexOperation {
         /**
          * Apply the operation to a managed index
          *
-         * @param workspaceName the name of the workspace in which the index exists; may not be null
-         * @param index the managed index instance; may not be null
+         * @param workspaceName the name of the workspace in which the index exists; may not be {@code null}
+         * @param index the managed index instance; may not be {@code null}
          * @param defn the definition for the index
          */
         void apply( String workspaceName,
@@ -661,12 +670,13 @@ public abstract class IndexProvider {
      *
      * @author Randall Hauch (rhauch@redhat.com)
      */
-    private static interface ProvidedIndexOperation {
+    @FunctionalInterface
+    private interface ProvidedIndexOperation {
         /**
          * Apply the operation to a provided index
          *
-         * @param workspaceName the name of the workspace in which the index exists; may not be null
-         * @param index the managed index instance; may not be null
+         * @param workspaceName the name of the workspace in which the index exists; may not be {@code null}
+         * @param index the managed index instance; may not be {@code null}
          */
         void apply( String workspaceName,
                     AtomicIndex index );
@@ -684,64 +694,60 @@ public abstract class IndexProvider {
         @Override
         public void applyIndexes( final QueryContext context,
                                   final IndexCostCalculator calculator ) {
-            final ManagedIndexOperation planningOp = new ManagedIndexOperation() {
-                @Override
-                public void apply( String workspaceName,
-                                   ManagedIndex index,
-                                   IndexDefinition defn ) {
-                    boolean traceEnabled = logger().isTraceEnabled();
-                    if (!defn.isEnabled()) {
-                        if (traceEnabled) {
-                            logger().trace("Skipping index '{0}' in '{1}' provider because it is not enabled",
-                                           defn.getName(), getName());
-                        }
-                        return;
+            final ManagedIndexOperation planningOp = ( workspaceName,
+                                                       index,
+                                                       defn ) -> {
+                boolean traceEnabled = logger().isTraceEnabled();
+                if (!defn.isEnabled()) {
+                    if (traceEnabled) {
+                        logger().trace("Skipping index '{0}' in '{1}' provider because it is not enabled",
+                                       defn.getName(),
+                                       getName());
                     }
-                    if (!defn.getWorkspaceMatchRule().usedInWorkspace(workspaceName)) {
-                        if (traceEnabled) {
-                            logger().trace("Skipping index '{0}' in '{1}' provider for query because it doest not match the '{2}' workspace",  
-                                           defn.getName(), getName(), workspaceName);
-                        }
-                        return;
+                    return;
+                }
+                if (!defn.getWorkspaceMatchRule().usedInWorkspace(workspaceName)) {
+                    if (traceEnabled) {
+                        logger().trace("Skipping index '{0}' in '{1}' provider for query because it doest not match the '{2}' workspace",
+                                       defn.getName(),
+                                       getName(),
+                                       workspaceName);
                     }
-
-                    if (matchesType(defn, calculator, context)) {
-                        if (traceEnabled) {
-                            logger().trace("Considering index '{0}' in '{1}' provider for query in workspace '{2}'",
-                                           defn.getName(),
-                                           getName(), 
-                                           workspaceName);
-                        }
-                        planUseOfIndex(context, calculator, workspaceName, index, defn);
-                    } else if (traceEnabled) {
-                        logger().trace("Skipping index '{0}' in '{1}' provider for query because the index definition node type '{2}' does not match the selected node types '{3}'",
-                                       defn.getName(), getName(), defn.getNodeTypeName(), calculator.selectedNodeTypes());
+                    return;
+                }
+                if (matchesType(defn, calculator, context)) {
+                    if (traceEnabled) {
+                        logger().trace("Considering index '{0}' in '{1}' provider for query in workspace '{2}'",
+                                       defn.getName(),
+                                       getName(),
+                                       workspaceName);
                     }
+                    planUseOfIndex(context, calculator, workspaceName, index, defn);
+                } else if (traceEnabled) {
+                    logger().trace("Skipping index '{0}' in '{1}' provider for query because the index definition node type '{2}' does not match the selected node types '{3}'",
+                                   defn.getName(),
+                                   getName(),
+                                   defn.getNodeTypeName(),
+                                   calculator.selectedNodeTypes());
                 }
             };
             for (String workspaceName : context.getWorkspaceNames()) {
                 onEachIndexInWorkspace(workspaceName, planningOp);
             }
         }
-    }
 
-    private boolean matchesType( IndexDefinition defn,
-                                 IndexCostCalculator calculator,
-                                 QueryContext context ) {
-        final NodeTypes nodeTypes = context.getNodeTypes();
-        final NameFactory nameFactory = context.getExecutionContext().getValueFactories().getNameFactory();
-        // check of the node type of the index defn matches the request node type(s) from the query
-        String indexedNodeType = defn.getNodeTypeName();
-        Name indexedNodeTypeName = nameFactory.create(indexedNodeType);
-        Set<String> selectedNodeTypes = calculator.selectedNodeTypes();
-        assert !selectedNodeTypes.isEmpty();
-        for (String nodeTypeOrAlias : selectedNodeTypes) {
-            Name selectedNodeTypeName = nameFactory.create(nodeTypeOrAlias);
-            if (nodeTypes.isTypeOrSubtype(selectedNodeTypeName, indexedNodeTypeName)) {
-                return true;
-            }
+        private boolean matchesType( IndexDefinition defn,
+                                     IndexCostCalculator calculator,
+                                     QueryContext context ) {
+            final NodeTypes nodeTypes = context.getNodeTypes();
+            final NameFactory nameFactory = context.getExecutionContext().getValueFactories().getNameFactory();
+            // check of the node type of the index defn matches the request node type(s) from the query
+            Name indexedNodeTypeName = nameFactory.create(defn.getNodeTypeName());
+            Set<String> selectedNodeTypes = calculator.selectedNodeTypes();
+            assert !selectedNodeTypes.isEmpty();
+            return selectedNodeTypes.stream().map(nameFactory::create).anyMatch(name -> nodeTypes.isTypeOrSubtype(name,
+                                                                                                                  indexedNodeTypeName));
         }
-        return false;
     }
 
     /**
@@ -754,11 +760,11 @@ public abstract class IndexProvider {
      * </p>
      * The {@link IndexUsage} class is useful to determine for a given index definition whether criteria is applicable.
      *
-     * @param context the context of the original query; never null
-     * @param calculator the calculator that should be used to record plan information for the index; never null
-     * @param workspaceName the name of the workspace against which the query is operating; never null
-     * @param index the managed index in the given workspace; never null
-     * @param defn the definition for the index; never null
+     * @param context the context of the original query; never {@code null}
+     * @param calculator the calculator that should be used to record plan information for the index; never {@code null}
+     * @param workspaceName the name of the workspace against which the query is operating; never {@code null}
+     * @param index the managed index in the given workspace; never {@code null}
+     * @param defn the definition for the index; never {@code null}
      */
     protected void planUseOfIndex( QueryContext context,
                                    IndexCostCalculator calculator,
@@ -770,7 +776,7 @@ public abstract class IndexProvider {
         if (planner == null) {
             throw new UnsupportedOperationException("Providers should either override this method or the #evaluateUsage method");
         }
-        
+
         // Does this index apply to any of the ANDed constraints?
         int costEstimate = getCostEstimate();
         List<Constraint> applicableConstraints = new ArrayList<>();
@@ -807,7 +813,7 @@ public abstract class IndexProvider {
                 applicableJoins.add(joinCondition);
             }
         }
-        
+
         if (!applicableJoins.isEmpty()) {
             // The index does apply to this constraint, but the number of values corresponds to the total number of values
             // in the index (this is a JOIN CONDITON for which there is no literal values) ...
@@ -819,9 +825,9 @@ public abstract class IndexProvider {
     /**
      * Returns an object which is used during the planning phase to evaluate if a certain index should be used or not.
      *
-     * @param context the context of the original query; never null
-     * @param calculator the calculator that should be used to record plan information for the index; never null
-     * @param defn the definition for the index; never null
+     * @param context the context of the original query; never {@code null}
+     * @param calculator the calculator that should be used to record plan information for the index; never {@code null}
+     * @param defn the definition for the index; never {@code null}
      * @return an {@link IndexUsage} instance, or {@code null} which is the default and which indicates that a provider chooses
      * to override the {@link #planUseOfIndex(QueryContext, IndexCostCalculator, String, ManagedIndex, IndexDefinition)} method
      * 
@@ -855,7 +861,7 @@ public abstract class IndexProvider {
      * This method is typically called only once after the provider has been {@link #initialize() initialized}.
      * </p>
      *
-     * @return the index planner; may not be null
+     * @return the index planner; may not be {@code null}
      */
     public final IndexPlanner getIndexPlanner() {
         return planner;
@@ -865,7 +871,7 @@ public abstract class IndexProvider {
      * Get the namespace registry for the provider's {@link #context() execution context}, and which can be used to convert
      * qualified names (e.g., "{@code jcr:description}") to unqualified names (or vice versa).
      *
-     * @return the namespace registry; never null
+     * @return the namespace registry; never {@code null}
      */
     protected final NamespaceRegistry namespaces() {
         return context.getNamespaceRegistry();
@@ -874,7 +880,7 @@ public abstract class IndexProvider {
     /**
      * Get the container for the type-specific factories useful to convert values that will be written to the index.
      *
-     * @return the container of type-specific value factories; never null
+     * @return the container of type-specific value factories; never {@code null}
      */
     protected final ValueFactories valueFactories() {
         return context.getValueFactories();
@@ -894,17 +900,17 @@ public abstract class IndexProvider {
      * each of the affected indexes.
      * </p>
      *
-     * @param changes the changes in the workspaces; never null
+     * @param changes the changes in the workspaces; never {@code null}
      * @param observable the Observable object with which an index can register a listener for changes; this is the only mechanism
      *        by which the indexes can be updated
      * @param nodeTypesSupplier the supplier from which can be very efficiently obtained the latest {@link NodeTypes snapshot of
      *        node types} useful in determining if changes on a node are to be included in an index of a particular
      *        {@link IndexDefinition#getNodeTypeName() index node type}.
-     * @param workspaceNames the names of all workspaces in this repository; never null and likely never null
+     * @param workspaceNames the names of all workspaces in this repository; never {@code null}
      * @param feedback the feedback mechanism for this provider to signal to ModeShape that one or more indexes need to be
-     *        entirely or partially rebuilt via scanning; never null
+     *        entirely or partially rebuilt via scanning; never {@code null}
      */
-    public synchronized final void notify( final WorkspaceChanges changes,
+    public final synchronized void notify( final WorkspaceChanges changes,
                                            ChangeBus observable,
                                            NodeTypes.Supplier nodeTypesSupplier,
                                            final Set<String> workspaceNames,
@@ -920,22 +926,19 @@ public abstract class IndexProvider {
                         addProvidedIndex(index);
                         registerIndex(index, observable);
                     } catch (RuntimeException e) {
-                        String msg = "Error updating index '{0}' in workspace '{1}' with definition: {2}";
-                        logger().error(e, msg, defn.getName(), workspaceName, defn);
+                        logger().error(e,
+                                       "Error updating index '{0}' in workspace '{1}' with definition: {2}",
+                                       defn.getName(),
+                                       workspaceName,
+                                       defn);
                     }
-
                 }
             }
         }
         final Set<String> removedWorkspaces = changes.getRemovedWorkspaces();
         if (!removedWorkspaces.isEmpty()) {
             // Remove the managed indexes for workspaces that no longer exist ...
-            removeProvidedIndexes(observable, new Predicate<AtomicIndex>() {
-                @Override
-                public boolean test(AtomicIndex index) {
-                    return removedWorkspaces.contains(index.workspaceName());
-                }
-            });
+            removeProvidedIndexes(observable, index -> removedWorkspaces.contains(index.workspaceName()));
         }
         refreshDelegateIndexWriter(nodeTypesSupplier);
     }
@@ -950,17 +953,17 @@ public abstract class IndexProvider {
      * for each of the affected indexes.
      * </p>
      *
-     * @param changes the changes in the definitions; never null
+     * @param changes the changes in the definitions; never {@code null}
      * @param observable the Observable object with which an index can register a listener for changes; this is the only mechanism
      *        by which the indexes can be updated
      * @param nodeTypesSupplier the supplier from which can be very efficiently obtained the latest {@link NodeTypes snapshot of
      *        node types} useful in determining if changes on a node are to be included in an index of a particular
      *        {@link IndexDefinition#getNodeTypeName() index node type}.
-     * @param workspaceNames the names of all workspaces in this repository; never null and likely never null
+     * @param workspaceNames the names of all workspaces in this repository; never {@code null}
      * @param feedback the feedback mechanism for this provider to signal to ModeShape that one or more indexes need to be
-     *        entirely or partially rebuilt via scanning; never null
+     *        entirely or partially rebuilt via scanning; never {@code null}
      */
-    public synchronized final void notify( final IndexDefinitionChanges changes,
+    public final synchronized void notify( final IndexDefinitionChanges changes,
                                            ChangeBus observable,
                                            NodeTypes.Supplier nodeTypesSupplier,
                                            final Set<String> workspaceNames,
@@ -1029,23 +1032,13 @@ public abstract class IndexProvider {
                     }
                 }
                 // Remove the managed indexes for workspaces that no longer exist ...
-                removeProvidedIndexes(observable, new Predicate<AtomicIndex>() {
-                    @Override
-                    public boolean test( AtomicIndex index ) {
-                        return !workspaceNames.contains(index.workspaceName());
-                    }
-                });
+                removeProvidedIndexes(observable, index -> !workspaceNames.contains(index.workspaceName()));
             }
         }
         final Set<String> removedIndexDefinitions = changes.getRemovedIndexDefinitions();
         if (!removedIndexDefinitions.isEmpty()) {
             // Remove all of the managed indexes for REMOVED index definitions ...
-            removeProvidedIndexes(observable, new Predicate<AtomicIndex>() {
-                @Override
-                public boolean test(AtomicIndex index) {
-                    return removedIndexDefinitions.contains(index.getName());
-                }
-            });
+            removeProvidedIndexes(observable, index -> removedIndexDefinitions.contains(index.getName()));
         }
         refreshDelegateIndexWriter(nodeTypesSupplier);
     }
@@ -1065,38 +1058,23 @@ public abstract class IndexProvider {
 
     private boolean isChanged( IndexColumnDefinition defn1,
                                IndexColumnDefinition defn2 ) {
-        if (defn1.getColumnType() != defn2.getColumnType()) return true;
-        if (!defn1.getPropertyName().equals(defn2.getPropertyName())) return true;
-        return false;
+        return defn1.getColumnType() != defn2.getColumnType() || !defn1.getPropertyName().equals(defn2.getPropertyName());
     } 
 
     @GuardedBy( "this" )
     private void addProvidedIndex( AtomicIndex index ) {
         String indexName = index.getName();
         String workspaceName = index.workspaceName();
-        Map<String, AtomicIndex> managedIndexesByWorkspaceName = providedIndexesByWorkspaceNameByIndexName.get(indexName);
-        if (managedIndexesByWorkspaceName == null) {
-            managedIndexesByWorkspaceName = new HashMap<>();
-            providedIndexesByWorkspaceNameByIndexName.put(indexName, managedIndexesByWorkspaceName);
-        }
-        managedIndexesByWorkspaceName.put(workspaceName, index);
-
-        // Add it to the reverse lookup ...
-        Map<String, AtomicIndex> byName = providedIndexesByIndexNameByWorkspaceName.get(workspaceName);
-        if (byName == null) {
-            byName = new HashMap<>();
-            providedIndexesByIndexNameByWorkspaceName.put(workspaceName, byName);
-        }
-        byName.put(indexName, index);
+        providedIndexesByWorkspaceNameByIndexName.computeIfAbsent(indexName, k -> new HashMap<>()).put(workspaceName, index);
+        providedIndexesByIndexNameByWorkspaceName.computeIfAbsent(workspaceName, k -> new HashMap<>()).put(indexName, index);
     }
-    
+
     private void scanWorkspace(IndexFeedback feedback,
                                final IndexDefinition defn,
                                final String workspaceName,
                                final ManagedIndex managedIndex, 
                                final NodeTypes.Supplier nodeTypesSupplier) {
         feedback.scan(workspaceName, new IndexFeedback.IndexingCallback() {
-            @SuppressWarnings( "synthetic-access" )
             @Override
             public void beforeIndexing() {
                 logger().debug(
@@ -1105,7 +1083,6 @@ public abstract class IndexProvider {
                 managedIndex.enable(false);
             }
 
-            @SuppressWarnings( "synthetic-access" )
             @Override
             public void afterIndexing() {
                 managedIndex.enable(true);
@@ -1155,17 +1132,13 @@ public abstract class IndexProvider {
         final Map<String, Collection<IndexChangeAdapter>> adaptersByWorkspaceName = new HashMap<>();
         final Collection<ManagedIndex> managedIndexes = new ArrayList<>();
         for (Map<String, AtomicIndex> providedIndexesByWorkspaceName : providedIndexesByWorkspaceNameByIndexName.values()) {
-            for (Map.Entry<String, AtomicIndex> entry : providedIndexesByWorkspaceName.entrySet()) {
-                String workspaceName = entry.getKey();
-                AtomicIndex index = entry.getValue();
-                Collection<IndexChangeAdapter> adaptersForWorkspace = adaptersByWorkspaceName.get(workspaceName);
-                if (adaptersForWorkspace == null) {
-                    adaptersForWorkspace = new ArrayList<>();
-                    adaptersByWorkspaceName.put(workspaceName, adaptersForWorkspace);
-                }
-                adaptersForWorkspace.add(index.managed().getIndexChangeAdapter());
-                managedIndexes.add(index.managed());
-            }
+            providedIndexesByWorkspaceName.forEach(( workspaceName,
+                                                     index ) -> {
+                ManagedIndex managedIndex = index.managed();
+                adaptersByWorkspaceName.computeIfAbsent(workspaceName,
+                                                        k -> new ArrayList<>()).add(managedIndex.getIndexChangeAdapter());
+                managedIndexes.add(managedIndex);
+            });
         }
         final boolean canBeSkipped = managedIndexes.isEmpty();
 
@@ -1178,9 +1151,7 @@ public abstract class IndexProvider {
 
             @Override
             public void clearAllIndexes() {
-                for (ManagedIndex index : managedIndexes) {
-                    index.clearAllData();
-                }
+                managedIndexes.forEach(ManagedIndex::clearAllData);
             }
 
             @Override
@@ -1197,7 +1168,8 @@ public abstract class IndexProvider {
                     // There are adapters for this workspace ...
                     for (IndexChangeAdapter adapter : adapters) {
                         if (adapter != null) {
-                            indexesUpdated |= adapter.reindex(workspace, key, path, primaryType, mixinTypes, properties, queryable);
+                            indexesUpdated = adapter.reindex(workspace, key, path, primaryType, mixinTypes, properties, queryable)
+                                             || indexesUpdated;
                         }
                     }
                 }
@@ -1231,17 +1203,11 @@ public abstract class IndexProvider {
             }
 
             private Collection<IndexChangeAdapter> applicableAdapters( String workspace ) {
-                Collection<IndexChangeAdapter> adapters = null;
                 if (systemWorkspaceName.equals(workspace)) {
                     // the system workspace is linked to each WS, so all adapters have to process system data...
-                    adapters = new ArrayList<>();
-                    for (Collection<IndexChangeAdapter> adapterCollection : adaptersByWorkspaceName.values()) {
-                        adapters.addAll(adapterCollection);
-                    }
-                } else {
-                    adapters = adaptersByWorkspaceName.get(workspace);
+                    return adaptersByWorkspaceName.values().stream().flatMap(Collection::stream).collect(Collectors.toList());
                 }
-                return adapters;
+                return adaptersByWorkspaceName.get(workspace);
             }
         };
     }
@@ -1256,14 +1222,14 @@ public abstract class IndexProvider {
      * method which is the easier route and provides some built-in defaults.
      * </p>
      *
-     * @param defn the definition of the index; never null
-     * @param workspaceName the name of the actual workspace to which the new index applies; never null
-     * @param nodeTypesSupplier the supplier for the current node types cache; never null
+     * @param defn the definition of the index; never {@code null}
+     * @param workspaceName the name of the actual workspace to which the new index applies; never {@code null}
+     * @param nodeTypesSupplier the supplier for the current node types cache; never {@code null}
      * @param matcher the node type matcher used to determine which nodes should be included in the index, and which automatically
-     *        updates when node types are changed in the repository; may not be null
+     *        updates when node types are changed in the repository; may not be {@code null}
      * @param feedback the feedback mechanism for this provider to signal to ModeShape that portions of the repository content
-     *        must be scanned to build/populate the new index; never null
-     * @return the implementation-specific {@link ManagedIndex} for the new index; may not be null
+     *        must be scanned to build/populate the new index; never {@code null}
+     * @return the implementation-specific {@link ManagedIndex} for the new index; may not be {@code null}
      */
     protected ManagedIndex createIndex( IndexDefinition defn,
                                         String workspaceName,
@@ -1294,17 +1260,17 @@ public abstract class IndexProvider {
      * create and register a new one via the builder.
      * </p>
      * 
-     * @param oldDefn the previous definition of the index; never null
-     * @param updatedDefn the updated definition of the index; never null
+     * @param oldDefn the previous definition of the index; never {@code null}
+     * @param updatedDefn the updated definition of the index; never {@code null}
      * @param existingIndex the existing index prior to this update, as returned from {@link #createIndex} or {@link #updateIndex}
-     *        ; never null
-     * @param workspaceName the name of the actual workspace to which the new index applies; never null
-     * @param nodeTypesSupplier the supplier for the current node types cache; never null
+     *        ; never {@code null}
+     * @param workspaceName the name of the actual workspace to which the new index applies; never {@code null}
+     * @param nodeTypesSupplier the supplier for the current node types cache; never {@code null}
      * @param matcher the node type matcher used to determine which nodes should be included in the index, and which automatically
-     *        updates when node types are changed in the repository; may not be null
+     *        updates when node types are changed in the repository; may not be {@code null}
      * @param feedback the feedback mechanism for this provider to signal to ModeShape that portions of the repository content
-     *        must be scanned to rebuild/repopulate the updated index; never null
-     * @return the operations and provider-specific state for this index; never null
+     *        must be scanned to rebuild/repopulate the updated index; never {@code null}
+     * @return the operations and provider-specific state for this index; never {@code null}
      */
     protected ManagedIndex updateIndex( IndexDefinition oldDefn,
                                         IndexDefinition updatedDefn,
@@ -1335,10 +1301,10 @@ public abstract class IndexProvider {
      * {@link org.modeshape.jcr.spi.index.provider.ProvidedIndex#shutdown(boolean)} method, indicating that the index should be destroyed.    
      * </p>
      *
-     * @param oldDefn the previous definition of the index; never null
+     * @param oldDefn the previous definition of the index; never {@code null}
      * @param existingIndex the existing index prior to this update, as returned from {@link #createIndex} or {@link #updateIndex}
-     *        ; never null
-     * @param workspaceName the name of the actual workspace to which the new index applies; never null
+     *        ; never {@code null}
+     * @param workspaceName the name of the actual workspace to which the new index applies; never {@code null}
      */
     protected void removeIndex( IndexDefinition oldDefn,
                                 ManagedIndex existingIndex,
@@ -1363,11 +1329,11 @@ public abstract class IndexProvider {
      * methods.
      * </p>
      *
-     * @param defn the definition of the index; never null
-     * @param workspaceName the name of the actual workspace to which the new index applies; never null
-     * @param nodeTypesSupplier the supplier for the current node types cache; never null
+     * @param defn the definition of the index; never {@code null}
+     * @param workspaceName the name of the actual workspace to which the new index applies; never {@code null}
+     * @param nodeTypesSupplier the supplier for the current node types cache; never {@code null}
      * @param matcher the node type matcher used to determine which nodes should be included in the index, and which automatically
-     *        updates when node types are changed in the repository; may not be null
+     *        updates when node types are changed in the repository; may not be {@code null}
      * @return a {@link ManagedIndexBuilder} instance, or {@code null} (the default) which indicates that a provider chooses to
      * ovveride both the createIndex and updateIndex methods.
      */

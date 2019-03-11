@@ -38,7 +38,7 @@ import org.modeshape.jcr.value.Property;
  */
 public abstract class ChangeSetAdapter implements ChangeSetListener {
 
-    public static interface NodeTypePredicate {
+    public interface NodeTypePredicate {
         /**
          * Determine if the given primary type and mixin types satisfies the node type requirements of an event.
          *

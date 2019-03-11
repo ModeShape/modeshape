@@ -16,20 +16,15 @@
 
 package org.modeshape.common.function;
 
+
 /**
  * Represents an operation that accepts a single input argument and returns no result. Unlike most other functional interfaces,
  * Consumer is expected to operate via side-effects.
  *
  * @author Randall Hauch (rhauch@redhat.com)
  * @param <T> - the type of the input to the function
+ * @deprecated unnecessary since Java 8
  */
-public interface Consumer<T> {
-
-    /**
-     * Performs this operation on the given argument.
-     * 
-     * @param t the value to consume
-     */
-    void accept( T t );
-
+@Deprecated
+public interface Consumer<T> extends java.util.function.Consumer<T> {
 }

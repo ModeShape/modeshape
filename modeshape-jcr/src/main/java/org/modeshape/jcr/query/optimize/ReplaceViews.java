@@ -79,7 +79,7 @@ public class ReplaceViews implements OptimizerRule {
 
         // For each of the SOURCE nodes ...
         Schemata schemata = context.getSchemata();
-        Set<PlanNode> processedSources = new HashSet<PlanNode>();
+        Set<PlanNode> processedSources = new HashSet<>();
         boolean foundViews = false;
         do {
             foundViews = false;
