@@ -17,9 +17,9 @@ package org.modeshape.common.collection;
 
 import java.util.EnumSet;
 import java.util.Iterator;
+import java.util.function.Consumer;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.common.collection.Problem.Status;
-import org.modeshape.common.function.Consumer;
 import org.modeshape.common.i18n.I18n;
 import org.modeshape.common.logging.Logger;
 import org.modeshape.common.util.CheckArg;

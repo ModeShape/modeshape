@@ -22,7 +22,9 @@ package org.modeshape.common.function;
  * @author Randall Hauch (rhauch@redhat.com)
  * @param <T> - the type of the input to the function
  * @param <R> - the type of the result of the function
+ * @deprecated unnecessary since Java 8
  */
+@Deprecated
 public abstract class Function<T, R> {
 
     public abstract R apply( T input );

@@ -23,7 +23,9 @@ import java.util.Objects;
  * 
  * @param <T> the type of input for the {@link #test(Object)} method
  * @author Randall Hauch (rhauch@redhat.com)
+ * @deprecated unused and unnecessary since Java 8
  */
+@Deprecated
 public abstract class Predicate<T> {
 
     public abstract boolean test( T input );
