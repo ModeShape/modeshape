@@ -15,9 +15,13 @@
  */
 package org.modeshape.jcr.query.validate;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.stream.Collectors;
 import org.modeshape.jcr.query.validate.Schemata.Column;
 import org.modeshape.jcr.query.validate.Schemata.Key;
 
@@ -30,7 +34,7 @@ public class ImmutableKey implements Key {
 
     protected ImmutableKey( Iterable<Column> columns ) {
         assert columns != null;
-        Set<Column> columnSet = new HashSet<Column>();
+        Set<Column> columnSet = new HashSet<>();
         for (Column column : columns) {
             if (column != null) columnSet.add(column);
         }
@@ -41,7 +45,7 @@ public class ImmutableKey implements Key {
     protected ImmutableKey( Column... columns ) {
         assert columns != null;
         assert columns.length > 0;
-        Set<Column> columnSet = new HashSet<Column>();
+        Set<Column> columnSet = new HashSet<>();
         for (Column column : columns) {
             if (column != null) columnSet.add(column);
         }
@@ -56,33 +60,23 @@ public class ImmutableKey implements Key {
 
     @Override
     public boolean hasColumns( Column... columns ) {
-        Set<Column> keyColumns = new HashSet<Column>(this.columns);
-        for (Column expected : columns) {
-            if (!keyColumns.remove(expected)) return false;
-        }
-        return keyColumns.isEmpty();
+        return hasColumns(Arrays.asList(columns));
     }
 
     @Override
     public boolean hasColumns( Iterable<Column> columns ) {
-        Set<Column> keyColumns = new HashSet<Column>(this.columns);
-        for (Column expected : columns) {
-            if (!keyColumns.remove(expected)) return false;
+        Collection<Column> coll;
+        if (columns instanceof Collection<?>) {
+            coll = (Collection<Column>)columns;
+        } else {
+            coll = new ArrayList<>();
+            columns.forEach(coll::add);
         }
-        return keyColumns.isEmpty();
+        return coll.size() == this.columns.size() && this.columns.containsAll(coll);
     }
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder();
-        boolean first = true;
-        sb.append('[');
-        for (Column column : columns) {
-            if (first) first = false;
-            else sb.append(", ");
-            sb.append(column);
-        }
-        sb.append(']');
-        return sb.toString();
+        return columns.stream().map(Object::toString).collect(Collectors.joining(", ", "[", "]"));
     }
 }

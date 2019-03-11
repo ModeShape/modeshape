@@ -56,20 +56,22 @@ public class NodeTypeSchemata implements Schemata {
     protected static final boolean DEFAULT_CAN_CONTAIN_REFERENCES = true;
     protected static final boolean DEFAULT_FULL_TEXT_SEARCHABLE = true;
 
+    private final ExecutionContext context;
     private final Schemata schemata;
     private final Map<Integer, String> types;
-    private final Map<String, String> prefixesByUris = new HashMap<String, String>();
+    private final Map<String, String> prefixesByUris = new HashMap<>();
     private final boolean includeColumnsForInheritedProperties;
     private final boolean includePseudoColumnsInSelectStar;
     private final NodeTypes nodeTypes;
-    private final Map<JcrNodeType, Collection<JcrNodeType>> subtypesByName = new HashMap<JcrNodeType, Collection<JcrNodeType>>();
-    private final List<JcrPropertyDefinition> pseudoProperties = new ArrayList<JcrPropertyDefinition>();
+    private final Map<JcrNodeType, Collection<JcrNodeType>> subtypesByName = new HashMap<>();
+    private final List<JcrPropertyDefinition> pseudoProperties = new ArrayList<>();
     private final Name[] keyPropertyNames;
 
     NodeTypeSchemata( ExecutionContext context,
                       NodeTypes nodeTypes,
                       boolean includeColumnsForInheritedProperties,
                       boolean includePseudoColumnsInSelectStar ) {
+        this.context = context;
         this.includeColumnsForInheritedProperties = includeColumnsForInheritedProperties;
         this.includePseudoColumnsInSelectStar = includePseudoColumnsInSelectStar;
         this.nodeTypes = nodeTypes;
@@ -83,12 +85,7 @@ public class NodeTypeSchemata implements Schemata {
         for (JcrNodeType nodeType : nodeTypes.getAllNodeTypes()) {
             // For each of the supertypes ...
             for (JcrNodeType supertype : nodeType.getTypeAndSupertypes()) {
-                Collection<JcrNodeType> types = subtypesByName.get(supertype);
-                if (types == null) {
-                    types = new LinkedList<JcrNodeType>();
-                    subtypesByName.put(supertype, types);
-                }
-                types.add(nodeType);
+                subtypesByName.computeIfAbsent(supertype, k -> new LinkedList<>()).add(nodeType);
             }
         }
 
@@ -97,7 +94,7 @@ public class NodeTypeSchemata implements Schemata {
         ImmutableSchemata.Builder builder = ImmutableSchemata.createBuilder(context, nodeTypes);
 
         // Build the fast-search for type names based upon PropertyType values ...
-        types = new HashMap<Integer, String>();
+        types = new HashMap<>();
         types.put(PropertyType.BINARY, typeSystem.getBinaryFactory().getTypeName());
         types.put(PropertyType.BOOLEAN, typeSystem.getBooleanFactory().getTypeName());
         types.put(PropertyType.DATE, typeSystem.getDateTimeFactory().getTypeName());
@@ -161,8 +158,8 @@ public class NodeTypeSchemata implements Schemata {
 
         String tableName = AllNodes.ALL_NODES_NAME.name();
         boolean first = true;
-        Map<String, String> typesForNames = new HashMap<String, String>();
-        Set<String> fullTextSearchableNames = new HashSet<String>();
+        Map<String, String> typesForNames = new HashMap<>();
+        Set<String> fullTextSearchableNames = new HashSet<>();
         for (JcrPropertyDefinition defn : nodeTypes.getAllPropertyDefinitions()) {
             if (defn.isResidual()) continue;
             Name name = defn.getInternalName();
@@ -241,7 +238,7 @@ public class NodeTypeSchemata implements Schemata {
     protected Set<Operator> operatorsFor( JcrPropertyDefinition defn ) {
         String[] ops = defn.getAvailableQueryOperators();
         if (ops == null || ops.length == 0) return EnumSet.allOf(Operator.class);
-        Set<Operator> result = new HashSet<Operator>();
+        Set<Operator> result = new HashSet<>();
         for (String symbol : ops) {
             Operator op = JcrPropertyDefinition.operatorFromSymbol(symbol);
             assert op != null;
@@ -261,7 +258,7 @@ public class NodeTypeSchemata implements Schemata {
         }
 
         String tableName = nodeType.getName();
-        JcrPropertyDefinition[] defns = null;
+        JcrPropertyDefinition[] defns;
         if (includeColumnsForInheritedProperties) {
             defns = nodeType.getPropertyDefinitions();
         } else {
@@ -358,7 +355,7 @@ public class NodeTypeSchemata implements Schemata {
 
     @Override
     public Table getTable( SelectorName name ) {
-        return schemata.getTable(name);
+        return schemata.getTable(name.qualifiedForm(context.getValueFactories().getNameFactory()));
     }
 
     /**
@@ -441,6 +438,7 @@ public class NodeTypeSchemata implements Schemata {
 
         @Override
         public Table getTable( SelectorName name ) {
+            name = name.qualifiedForm(context.getValueFactories().getNameFactory());
             Table table = schemata.getTable(name);
             if (table == null) {
                 // Try getting it ...

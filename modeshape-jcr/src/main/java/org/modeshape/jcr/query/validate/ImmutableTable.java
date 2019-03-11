@@ -25,6 +25,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import org.modeshape.common.annotation.Immutable;
 import org.modeshape.jcr.query.model.SelectorName;
 import org.modeshape.jcr.query.validate.Schemata.Column;
@@ -54,21 +55,21 @@ class ImmutableTable implements Table {
                               Iterable<Column>... keyColumns ) {
         this.name = name;
         // Define the columns ...
-        List<Column> columnList = new ArrayList<Column>();
-        Map<String, Column> columnMap = new HashMap<String, Column>();
+        List<Column> columnList = new ArrayList<>();
+        Map<String, Column> columnMap = new HashMap<>();
         for (Column column : columns) {
             Column old = columnMap.put(column.getName(), column);
-            if (old != null) {
-                columnList.set(columnList.indexOf(old), column);
-            } else {
+            if (old == null) {
                 columnList.add(column);
+            } else {
+                columnList.set(columnList.indexOf(old), column);
             }
         }
         this.columnsByName = Collections.unmodifiableMap(columnMap);
         this.columns = Collections.unmodifiableList(columnList);
         // Define the keys ...
         if (keyColumns != null) {
-            Set<Key> keys = new HashSet<Key>();
+            Set<Key> keys = new HashSet<>();
             for (Iterable<Column> keyColumnSet : keyColumns) {
                 if (keyColumnSet != null) {
                     Key key = new ImmutableKey(keyColumnSet);
@@ -175,10 +176,10 @@ class ImmutableTable implements Table {
 
     public ImmutableTable withColumns( Iterable<Column> columns ) {
         // Add to the list and map ...
-        List<Column> newColumns = new LinkedList<Column>(this.getColumns());
-        List<Column> selectStarColumns = new LinkedList<Column>(this.selectStarColumns);
-        Map<String, Column> selectStarColumnMap = new HashMap<String, Column>(this.selectStarColumnsByName);
-        Map<String, Column> columnMap = new HashMap<String, Column>(columnsByName);
+        List<Column> newColumns = new LinkedList<>(this.getColumns());
+        List<Column> selectStarColumns = new LinkedList<>(this.selectStarColumns);
+        Map<String, Column> selectStarColumnMap = new HashMap<>(this.selectStarColumnsByName);
+        Map<String, Column> columnMap = new HashMap<>(columnsByName);
         for (Column column : columns) {
             Column newColumn = new ImmutableColumn(column.getName(), column.getPropertyTypeName(), column.getRequiredType(),
                                                    column.isFullTextSearchable(), column.isOrderable(), column.getMinimum(),
@@ -202,7 +203,7 @@ class ImmutableTable implements Table {
     }
 
     public ImmutableTable withKey( Iterable<Column> keyColumns ) {
-        Set<Key> keys = new HashSet<Key>(this.keys);
+        Set<Key> keys = new HashSet<>(this.keys);
         for (Column keyColumn : keyColumns) {
             assert columns.contains(keyColumn);
         }
@@ -230,8 +231,8 @@ class ImmutableTable implements Table {
         if (!getSelectAllColumnsByName().containsKey(name)) {
             return this; // already not in select *
         }
-        List<Column> selectStarColumns = new LinkedList<Column>(this.selectStarColumns);
-        Map<String, Column> selectStarColumnsByName = new HashMap<String, Column>(this.selectStarColumnsByName);
+        List<Column> selectStarColumns = new LinkedList<>(this.selectStarColumns);
+        Map<String, Column> selectStarColumnsByName = new HashMap<>(this.selectStarColumnsByName);
         selectStarColumns.remove(column);
         selectStarColumnsByName.remove(name);
         return new ImmutableTable(this.name, columnsByName, columns, keys, extraColumns, selectStarColumnsByName,
@@ -240,24 +241,10 @@ class ImmutableTable implements Table {
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder(name.name());
-        sb.append('(');
-        boolean first = true;
-        for (Column column : columns) {
-            if (first) first = false;
-            else sb.append(", ");
-            sb.append(column);
+        String result = columns.stream().map(Object::toString).collect(Collectors.joining(", ", name.name() + '(', ")"));
+        if (keys.isEmpty()) {
+            return result;
         }
-        sb.append(')');
-        if (!keys.isEmpty()) {
-            sb.append(" with keys ");
-            first = true;
-            for (Key key : keys) {
-                if (first) first = false;
-                else sb.append(", ");
-                sb.append(key);
-            }
-        }
-        return sb.toString();
+        return result + keys.stream().map(Object::toString).collect(Collectors.joining(", ", " with keys ", ""));
     }
 }

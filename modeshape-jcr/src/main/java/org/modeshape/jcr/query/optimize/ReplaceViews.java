@@ -36,7 +36,7 @@ import org.modeshape.jcr.query.validate.Schemata.View;
 
 /**
  * An {@link OptimizerRule optimizer rule} that replaces any SOURCE nodes that happen to be {@link View views}. This rewriting
- * changes all of the elements of the plan that reference the SOURCE and it's columns, including criteria, project nodes, etc.
+ * changes all of the elements of the plan that reference the SOURCE and its columns, including criteria, project nodes, etc.
  * <p>
  * For example, here is the portion of a plan that uses a single SOURCE that is defined to use a view.
  * 

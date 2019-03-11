@@ -1416,4 +1416,29 @@ public class LocalIndexProviderTest extends AbstractIndexProviderTest {
                 .validate(query, query.execute());
         
     }
+
+    @Test
+    public void shouldUseSingleColumnStringIndexForQueryWithFQSource() throws Exception {
+        registerNodeType("nt:typeWithReference");
+        registerNodeType("nt:typeWithSysName");
+        registerValueIndex("refIndex", "nt:typeWithReference", null, "*", "referenceId", PropertyType.STRING);
+        registerValueIndex("sysIndex", "nt:typeWithSysName", null, "*", "sysName", PropertyType.STRING);
+
+        // print = true;
+        
+        Node root = session().getRootNode();
+        Node newNode1 = root.addNode("nodeWithSysName", "nt:typeWithSysName");
+        newNode1.setProperty("sysName", "X");
+        newNode1.addMixin("mix:referenceable");
+        Node newNode2 = root.addNode("nodeWithReference", "nt:typeWithReference");
+        newNode2.setProperty("referenceId", newNode1.getIdentifier());
+        session().save();
+
+        String uri = session().getWorkspace().getNamespaceRegistry().getURI("nt");
+        
+        // Compute a query plan that should use this index ...
+        Query query = jcrSql2Query(String.format("SELECT A.* FROM [{%s}typeWithReference] AS A WHERE A.referenceId = $sysName", uri));
+        query.bindValue("sysName", valueFactory().createValue(newNode1.getIdentifier()));
+        validateQuery().rowCount(1L).useIndex("refIndex").validate(query, query.execute());
+    }
 }
