@@ -37,6 +37,7 @@ import com.amazonaws.services.s3.model.Tag;
 import com.amazonaws.services.s3.model.lifecycle.LifecycleFilter;
 import com.amazonaws.services.s3.model.lifecycle.LifecycleTagPredicate;
 import org.modeshape.common.logging.Logger;
+import org.modeshape.jcr.ExecutionContext;
 import org.modeshape.jcr.JcrI18n;
 import org.modeshape.jcr.value.BinaryKey;
 import org.modeshape.jcr.value.BinaryValue;
@@ -50,6 +51,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.function.Supplier;
@@ -74,7 +76,7 @@ public class S3BinaryStore extends AbstractBinaryStore {
 
     /**
      * Metadata key for storing boolean which describes if object is unused.
-     * @see #migrateUnusedMetadataToTags()
+     * @see #migrateUnusedMetadataToTags(ExecutionContext)
      */
     @Deprecated
     protected static final String UNUSED_KEY = "unused";
@@ -411,19 +413,29 @@ public class S3BinaryStore extends AbstractBinaryStore {
 
     /**
      * Upgrade function to migrate {@link #UNUSED_KEY} to {@link #UNUSED_TAG_KEY}.
+     * @param context
      * @throws BinaryStoreException 
      * @since Modeshape 5.5
      */
-    public void migrateUnusedMetadataToTags() throws BinaryStoreException {
-        for (S3ObjectSummary s : S3Objects.inBucket(s3Client, bucketName)) {
-            String k = s.getKey();
-            ObjectMetadata metadata = s3Client.getObjectMetadata(bucketName, k);
-            String unused = metadata.getUserMetaDataOf(UNUSED_KEY);
-            if (unused != null) {
-                setS3ObjectTag(k, UNUSED_TAG_KEY, unused);
-                setS3ObjectUserProperty(k, UNUSED_KEY, null);
+    public void migrateUnusedMetadataToTags(ExecutionContext context) throws BinaryStoreException {
+        final String threadPoolName = String.format("%s.migrateUnused", S3BinaryStore.class.getSimpleName());
+        final ExecutorService pool = context.getCachedTreadPool(threadPoolName, 1);
+        pool.execute(() -> {
+            for (S3ObjectSummary s : S3Objects.inBucket(s3Client, bucketName)) {
+                String k = s.getKey();
+                ObjectMetadata metadata = s3Client.getObjectMetadata(bucketName, k);
+                String unused = metadata.getUserMetaDataOf(UNUSED_KEY);
+                if (unused != null) {
+                    try {
+                        setS3ObjectTag(k, UNUSED_TAG_KEY, unused);
+                        setS3ObjectUserProperty(k, UNUSED_KEY, null);
+                    } catch (BinaryStoreException e) {
+                        logger.error(JcrI18n.upgrade5_5_0_Failed, e.getMessage());
+                    }
+                }
             }
-        }
+            context.releaseThreadPool(pool);
+        });
     }
 
     private Supplier<Stream<S3ObjectSummary>> supplyObjects() {

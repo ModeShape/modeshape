@@ -326,7 +326,7 @@ public class Upgrades {
             BinaryStore binaryStore = runningState.binaryStore();
             try {
                 if (binaryStore instanceof S3BinaryStore) {
-                    ((S3BinaryStore)binaryStore).migrateUnusedMetadataToTags();
+                    ((S3BinaryStore)binaryStore).migrateUnusedMetadataToTags(resources.getRepository().context());
                 }
             } catch (BinaryStoreException e) {
                 LOGGER.error(e, JcrI18n.upgrade5_5_0_Failed, e.getMessage());
