@@ -92,9 +92,9 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
-                <configuration>
+                <!--configuration>
                     <useDefaultManifestFile>true</useDefaultManifestFile>
-                </configuration>
+                </configuration-->
                 <executions>
                     <execution>
                         <id>test-jar</id>

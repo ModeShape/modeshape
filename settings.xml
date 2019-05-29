@@ -1,92 +1,119 @@
 <settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
-          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-          xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0
-                      http://maven.apache.org/xsd/settings-1.0.0.xsd">
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0
+http://maven.apache.org/xsd/settings-1.0.0.xsd">
 
-    <profiles>
-        <profile>
-            <id>jboss-public-repository</id>
-            <repositories>
-                <repository>
-                    <id>jboss-public-repository-group</id>
-                    <name>JBoss Public Maven Repository Group</name>
-                    <url>http://repository.jboss.org/nexus/content/groups/public/</url>
-                    <layout>default</layout>
-                    <releases>
-                        <enabled>true</enabled>
-                        <updatePolicy>never</updatePolicy>
-                    </releases>
-                    <snapshots>
-                        <enabled>true</enabled>
-                        <updatePolicy>never</updatePolicy>
-                    </snapshots>
-                </repository>
-            </repositories>
-            <pluginRepositories>
-                <pluginRepository>
-                    <id>jboss-public-repository-group</id>
-                    <name>JBoss Public Maven Repository Group</name>
-                    <url>http://repository.jboss.org/nexus/content/groups/public/</url>
-                    <layout>default</layout>
-                    <releases>
-                        <enabled>true</enabled>
-                        <updatePolicy>never</updatePolicy>
-                    </releases>
-                    <snapshots>
-                        <enabled>true</enabled>
-                        <updatePolicy>never</updatePolicy>
-                    </snapshots>
-                </pluginRepository>
-            </pluginRepositories>
-        </profile>
-        <!--
-        <profile>
-            <id>jboss-eap-repository</id>
-            <repositories>
-                This is a non-standard repository, where EAP/AS components artifacts are located
-                <repository>
-                    <id>jboss-eap-techpreview</id>
-                    <name>JBoss.org Public EAP Repository</name>
-                    <url>http://maven.repository.redhat.com/techpreview/eap6/6.1.1/maven-repository</url>
-                    <layout>default</layout>
-                    <releases>
-                        <enabled>true</enabled>
-                        <updatePolicy>never</updatePolicy>
-                    </releases>
-                    <snapshots>
-                        <enabled>false</enabled>
-                        <updatePolicy>never</updatePolicy>
-                    </snapshots>
-                </repository>
-            </repositories>
-        </profile>
-        -->
-	<profile>
-		<id>jboss-public-jboss-repository</id>
-		<repositories> 
-			<repository> 
-				<id>jboss-pub-jboss-repository</id> 
-				<name>Jboss.org Developer repository</name> 
-				<url>https://repository.jboss.org/nexus/content/repositories/public-jboss/</url> 
-				<layout>default</layout> 
-				<releases> 
-					<enabled>true</enabled> 
-					<updatePolicy>never</updatePolicy> 
-				</releases> 
-				<snapshots>
-					<enabled>false</enabled>
-					<updatePolicy>never</updatePolicy>
-				</snapshots>
+  <profiles>
+    <profile>
+      <id>jboss-public-repository</id>
+      <repositories>
+        <repository>
+            <id>central</id>
+            <name>Maven Central</name>
+            <url>https://repo.maven.apache.org/maven2/</url>
+            <snapshots>
+                <enabled>false</enabled>
+                <updatePolicy>never</updatePolicy>
+            </snapshots>
+        </repository>      
+        <repository>
+          <id>jboss-public-repository-group</id>
+          <name>JBoss Public Maven Repository Group</name>
+          <url>https://repository.jboss.org/nexus/content/groups/public/</url>
+          <layout>default</layout>
+          <releases>
+            <enabled>true</enabled>
+            <updatePolicy>never</updatePolicy>
+          </releases>
+          <snapshots>
+            <enabled>false</enabled>
+            <updatePolicy>never</updatePolicy>
+          </snapshots>
+        </repository>
+      </repositories>
+      <pluginRepositories>
+        <pluginRepository>
+          <id>jboss-public-repository-group</id>
+          <name>JBoss Public Maven Repository Group</name>
+          <url>https://repository.jboss.org/nexus/content/groups/public/</url>
+          <layout>default</layout>
+          <releases>
+            <enabled>true</enabled>
+            <updatePolicy>never</updatePolicy>
+          </releases>
+          <snapshots>
+            <enabled>false</enabled>
+            <updatePolicy>never</updatePolicy>
+          </snapshots>
+        </pluginRepository>
+      </pluginRepositories>
+    </profile>
 
-			</repository> 
-		</repositories> 
-	</profile>
-        
-    </profiles>
+   <profile>
+      <id>rh-ga</id>
+      <repositories>
+        <repository>
+          <id>rh-ga</id>
+          <name>Red Hat GA Release</name>
+          <url>https://maven.repository.redhat.com/ga/</url>
+          <layout>default</layout>
+          <releases>
+            <enabled>true</enabled>
+            <updatePolicy>never</updatePolicy>
+          </releases>
+          <snapshots>
+            <enabled>false</enabled>
+          </snapshots>
+        </repository>
+      </repositories>
+    </profile>
+    
+    <profile>
+      <id>rh-techpreview</id>
+      <repositories>
+        <repository>
+          <id>rh-techpreview</id>
+          <name>Red Hat Tech Preview</name>
+          <url>https://maven.repository.redhat.com/techpreview/all/</url>
+          <layout>default</layout>
+          <releases>
+            <enabled>true</enabled>
+            <updatePolicy>never</updatePolicy>
+          </releases>
+          <snapshots>
+            <enabled>false</enabled>
+          </snapshots>
+        </repository>
+      </repositories>
+    </profile>
+    <profile>
+      <id>rh-earlyaccess</id>
+      <repositories>
+        <repository>
+          <id>rh-earlyaccess</id>
+          <name>Red Hat Early Access</name>
+          <url>https://maven.repository.redhat.com/earlyaccess/all/</url>
+          <layout>default</layout>
+          <releases>
+            <enabled>true</enabled>
+            <updatePolicy>never</updatePolicy>
+          </releases>
+          <snapshots>
+            <enabled>false</enabled>
+          </snapshots>
+        </repository>
+      </repositories>
+    </profile>                               
+  </profiles>
+  
 
-    <activeProfiles>
-        <activeProfile>jboss-public-repository</activeProfile>
-        <activeProfile>jboss-public-jboss-repository</activeProfile>
-        <!--<activeProfile>jboss-eap-repository</activeProfile>-->
-    </activeProfiles>
+  <activeProfiles>
+    <activeProfile>rh-ga</activeProfile>
+    <activeProfile>rh-earlyaccess</activeProfile>    
+    <activeProfile>rh-techpreview</activeProfile>
+
+    <activeProfile>jboss-public-repository</activeProfile>
+ 
+  </activeProfiles>
+
 </settings>

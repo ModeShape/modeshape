@@ -1,16 +1,14 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
-    <parent>
-        <groupId>org.jboss</groupId>
-        <artifactId>jboss-parent</artifactId>
-        <version>20</version>
-        <relativePath></relativePath>
-    </parent>
+    
+  <parent>
+    <groupId>org.modeshape</groupId>
+    <artifactId>modeshape</artifactId>
+	<version>5.4.1.Final</version>
+  </parent>
 
     <modelVersion>4.0.0</modelVersion>
-    <groupId>org.modeshape</groupId>
     <artifactId>modeshape-parent</artifactId>
-    <version>5.4.1.Final</version>
     <name>ModeShape Parent</name>
 
     <url>http://www.modeshape.org</url>
@@ -22,20 +20,6 @@
         <name>JBoss, a division of Red Hat</name>
         <url>http://www.jboss.org</url>
     </organization>
-
-    <licenses>
-        <license>
-            <name>Apache Software License 2.0</name>
-            <url>http://www.apache.org/licenses/LICENSE-2.0</url>
-            <distribution>repo</distribution>
-        </license>
-    </licenses>
-
-    <scm>
-        <connection>scm:git:git://github.com/ModeShape/modeshape.git</connection>
-        <developerConnection>scm:git:git@github.com:ModeShape/modeshape.git</developerConnection>
-        <url>http://github.com/ModeShape/modeshape</url>
-    </scm>
 
     <issueManagement>
         <system>jira</system>
@@ -169,7 +153,7 @@
         <version.org.eclipse.emf.ecore-change>2.2.3</version.org.eclipse.emf.ecore-change>
         <version.org.eclipse.emf.ecore-xmi>2.4.1</version.org.eclipse.emf.ecore-xmi>
         <!-- nightmare end -->        
-        <version.org.apache.tika>1.14</version.org.apache.tika>
+        <version.org.apache.tika>1.20</version.org.apache.tika>
         <version.com.drewnoakes.metadata-extractor>2.6.2</version.com.drewnoakes.metadata-extractor>
         <version.org.apache.lucene>6.4.1</version.org.apache.lucene>
         <version.io.humble>0.2.1</version.io.humble>
