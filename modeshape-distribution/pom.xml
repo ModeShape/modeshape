@@ -67,6 +67,18 @@
 
         <dependency>
             <groupId>org.modeshape</groupId>
+            <artifactId>modeshape-sequencer-ddl</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.modeshape</groupId>
+            <artifactId>modeshape-sequencer-xml</artifactId>
+        </dependency>
+
+<!--        
+        
+        <dependency>
+            <groupId>org.modeshape</groupId>
             <artifactId>modeshape-sequencer-images</artifactId>
         </dependency>
 
@@ -92,11 +104,6 @@
 
         <dependency>
             <groupId>org.modeshape</groupId>
-            <artifactId>modeshape-sequencer-xml</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.modeshape</groupId>
             <artifactId>modeshape-sequencer-xsd</artifactId>
         </dependency>
 
@@ -115,10 +122,6 @@
             <artifactId>modeshape-sequencer-zip</artifactId>
         </dependency>
 
-        <dependency>
-            <groupId>org.modeshape</groupId>
-            <artifactId>modeshape-sequencer-ddl</artifactId>
-        </dependency>
 
         <dependency>
             <groupId>org.modeshape</groupId>
@@ -144,7 +147,8 @@
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-sequencer-odf</artifactId>
         </dependency>
-
+        -->
+        
         <dependency>
             <groupId>org.modeshape</groupId>
             <artifactId>modeshape-lucene-index-provider</artifactId>

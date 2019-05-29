@@ -82,22 +82,26 @@
     </dependencies>
 
     <modules>
+        <!--module>modeshape-sequencer-java</module-->
+        <!--module>modeshape-sequencer-zip</module-->
+        <module>modeshape-sequencer-ddl</module>
+        <!--module>modeshape-sequencer-text</module-->
+        <!--module>modeshape-sequencer-xsd</module-->
+        <module>modeshape-sequencer-xml</module>
+        <!--module>modeshape-sequencer-wsdl</module-->
+        
+        <!--
         <module>modeshape-sequencer-msoffice</module>
         <module>modeshape-sequencer-images</module>
-        <module>modeshape-sequencer-java</module>
-        <module>modeshape-sequencer-zip</module>
-        <module>modeshape-sequencer-ddl</module>
         <module>modeshape-sequencer-mp3</module>
-        <module>modeshape-sequencer-text</module>
         <module>modeshape-sequencer-sramp</module>
-        <module>modeshape-sequencer-xsd</module>
-        <module>modeshape-sequencer-xml</module>
-        <module>modeshape-sequencer-wsdl</module>
         <module>modeshape-sequencer-video</module>
         <module>modeshape-sequencer-pdf</module>
         <module>modeshape-sequencer-audio</module>
         <module>modeshape-sequencer-epub</module>
         <module>modeshape-sequencer-odf</module>
+        
+        -->
     </modules>
 
     <profiles>
