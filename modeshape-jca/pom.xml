@@ -127,10 +127,12 @@
     <repositories>
         <repository>
             <id>jboss</id>
+            <name>jboss</name>
             <url>http://repository.jboss.org/nexus/content/groups/public</url>
         </repository>
         <repository>
             <id>fungal</id>
+            <name>fungal</name>
             <url>https://repository.jboss.org/nexus/content/repositories/thirdparty-uploads/</url>
         </repository>
     </repositories>
