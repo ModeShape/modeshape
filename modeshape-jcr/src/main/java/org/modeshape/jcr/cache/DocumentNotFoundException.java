@@ -35,7 +35,7 @@ public class DocumentNotFoundException extends DocumentStoreException {
      */
     public DocumentNotFoundException( String key,
                                       String message ) {
-        super(message);
+        super(key, message);
     }
 
     /**
