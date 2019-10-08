@@ -572,7 +572,7 @@ public class SystemContent {
             String providerLocalName = providerName.getLocalName();
             boolean providerExists = providerNames == null || providerNames.contains(providerLocalName);
             if (!providerExists) {
-                LOGGER.debug("Ignoring all index definitions for provider '{}' because it isn't present in the configuration",
+                LOGGER.debug("Ignoring all index definitions for provider '{0}' because it isn't present in the configuration",
                              providerLocalName);
                 continue;
             }
@@ -582,7 +582,7 @@ public class SystemContent {
                 if (defn.isEnabled()) {
                     defns.add(defn);
                 } else {
-                    LOGGER.debug("Ignoring index definition '{}' because it's disabled", defn.getName());
+                    LOGGER.debug("Ignoring index definition '{0}' because it's disabled", defn.getName());
                 }
             }
         }
