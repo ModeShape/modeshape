@@ -152,7 +152,7 @@
         <version.org.eclipse.emf.ecore-change>2.2.3</version.org.eclipse.emf.ecore-change>
         <version.org.eclipse.emf.ecore-xmi>2.4.1</version.org.eclipse.emf.ecore-xmi>
         <!-- nightmare end -->        
-        <version.org.apache.tika>1.14</version.org.apache.tika>
+        <version.org.apache.tika>1.22</version.org.apache.tika>
         <version.com.drewnoakes.metadata-extractor>2.6.2</version.com.drewnoakes.metadata-extractor>
         <version.org.apache.lucene>6.4.1</version.org.apache.lucene>
         <version.io.humble>0.2.1</version.io.humble>
