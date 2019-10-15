@@ -55,7 +55,7 @@
         <dependency>
             <groupId>com.puppycrawl.tools</groupId>
             <artifactId>checkstyle</artifactId>
-            <version>6.15</version>
+            <version>8.18</version>
             <exclusions>
                 <exclusion>
                     <groupId>com.sun</groupId>
