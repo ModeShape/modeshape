@@ -599,7 +599,7 @@ final class JcrObservationManager implements ObservationManager {
                         sb.append(" from ").append(info.get(MOVE_FROM_KEY)).append(" to ").append(info.get(MOVE_TO_KEY));
                     } else {
                         sb.append("Node reordered");
-                        String destination = info.get(ORDER_DEST_KEY).toString();
+                        String destination = (String)info.get(ORDER_DEST_KEY);
                         if (destination == null) {
                             destination = " at the end of the children list";
                         }
