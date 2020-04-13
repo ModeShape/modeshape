@@ -136,11 +136,23 @@ public interface ModeShapePermissions {
      */
     public static final String MODIFY_ACCESS_CONTROL = "modify_access_control";
     
+    /**
+     * The permission that allows the user ability to lock and unlock nodes 
+     * related to access control.
+     */
+    public static final String LOCK_MANAGEMENT = "lock_management";
+    
+    /**
+     * The permission that allows the user ability to perform versioning operations on a node 
+     * related to access control.
+     */
+    public static final String VERSION_MANAGEMENT = "version_management";
+    
     static final String[] ALL_CHANGE_PERMISSIONS = new String[] {REGISTER_NAMESPACE, REGISTER_TYPE, UNLOCK_ANY, ADD_NODE,
-        SET_PROPERTY, REMOVE, CREATE_WORKSPACE, DELETE_WORKSPACE, INDEX_WORKSPACE, BACKUP, RESTORE};
+        SET_PROPERTY, REMOVE, CREATE_WORKSPACE, DELETE_WORKSPACE, INDEX_WORKSPACE, BACKUP, RESTORE, LOCK_MANAGEMENT, VERSION_MANAGEMENT};
 
     static final String[] ALL_PERMISSIONS = new String[] {REGISTER_NAMESPACE, REGISTER_TYPE, UNLOCK_ANY, ADD_NODE, SET_PROPERTY,
-        REMOVE, READ, CREATE_WORKSPACE, DELETE_WORKSPACE, INDEX_WORKSPACE, MONITOR, BACKUP, RESTORE};
+        REMOVE, READ, CREATE_WORKSPACE, DELETE_WORKSPACE, INDEX_WORKSPACE, MONITOR, BACKUP, RESTORE, LOCK_MANAGEMENT, VERSION_MANAGEMENT};
 
     static final List<String> READONLY_EXTERNAL_PATH_PERMISSIONS = Arrays.asList(READ, INDEX_WORKSPACE);
 }

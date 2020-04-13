@@ -29,6 +29,8 @@ import javax.jcr.Property;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.UnsupportedRepositoryOperationException;
+import javax.jcr.Workspace;
+import javax.jcr.lock.LockManager;
 import javax.jcr.nodetype.ConstraintViolationException;
 import javax.jcr.security.AccessControlList;
 import javax.jcr.security.AccessControlManager;
@@ -48,6 +50,7 @@ public class AccessControlManagerTest extends MultiUseAbstractTest {
 
     private AccessControlManager acm;
     private Privileges privileges;
+    private LockManager lm;
 
     @BeforeClass
     public static final void beforeAll() throws Exception {
@@ -62,7 +65,7 @@ public class AccessControlManagerTest extends MultiUseAbstractTest {
         setPolicy("/Cars/Luxury/", Privilege.JCR_READ, Privilege.JCR_MODIFY_ACCESS_CONTROL, Privilege.JCR_READ_ACCESS_CONTROL);
         setPolicy("/Cars/Sports/", Privilege.JCR_READ, Privilege.JCR_WRITE, Privilege.JCR_MODIFY_ACCESS_CONTROL);
         setPolicy("/Cars/Utility/Ford F-150/", Privilege.JCR_MODIFY_ACCESS_CONTROL, Privilege.JCR_READ_ACCESS_CONTROL);
-        setPolicy("/Cars/Utility/", Privilege.JCR_READ_ACCESS_CONTROL);
+        setPolicy("/Cars/Utility/", Privilege.JCR_READ_ACCESS_CONTROL, Privilege.JCR_LOCK_MANAGEMENT);
 
     }
 
@@ -77,6 +80,8 @@ public class AccessControlManagerTest extends MultiUseAbstractTest {
         super.beforeEach();
         acm = session.getAccessControlManager();
         privileges = new Privileges(session);
+        Workspace ws = session.getWorkspace();
+        lm = ws.getLockManager();
     }
 
     @Test
@@ -149,6 +154,39 @@ public class AccessControlManagerTest extends MultiUseAbstractTest {
         } catch (AccessDeniedException e) {
             //expected
         } 
+    }
+
+    @FixFor("MODE-2724")
+    @Test
+    public void shouldGrantLockWhenHasAllPrivileges() throws Exception {
+        try {
+            lm.lock("/Cars", true, true, 60, "anonymous");
+            lm.unlock("/Cars");
+        } catch (AccessDeniedException e) {
+            fail("Should grant lock management");
+        }
+    }
+
+    @FixFor("MODE-2724")
+    @Test
+    public void shouldGrantLockWhenHasLockManagementPrivilege() throws Exception {
+        try {
+            lm.lock("/Cars/Utility", true, true, 60, "anonymous");
+            lm.unlock("/Cars/Utility");
+        } catch (AccessDeniedException e) {
+            fail("Should grant lock management");
+        }
+    }
+
+    @FixFor("MODE-2724")
+    @Test
+    public void shouldDenyLock() throws RepositoryException {
+        try {
+            lm.lock("/Cars/Luxury/Lexus IS350", true, true, 60, "anonymous");
+            fail("Should deny locking node");
+        } catch (AccessDeniedException e) {
+            //expected
+        }
     }
 
     @Test

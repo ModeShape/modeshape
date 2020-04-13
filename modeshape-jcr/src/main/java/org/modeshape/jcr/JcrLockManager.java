@@ -141,7 +141,7 @@ class JcrLockManager implements LockManager {
 
     @Override
     public String[] getLockTokens() {
-        Set<String> tokens =  new HashSet<String>();
+        Set<String> tokens = new HashSet<String>();
         for (String token : lockTokens) {
             ModeShapeLock lock = lockManager.findLockByToken(token);
             if (lock != null && !lock.isSessionScoped()) {
@@ -161,7 +161,8 @@ class JcrLockManager implements LockManager {
     }
 
     @Override
-    public Lock getLock( String absPath ) throws PathNotFoundException, LockException, AccessDeniedException, RepositoryException {
+    public Lock getLock( String absPath )
+        throws PathNotFoundException, LockException, AccessDeniedException, RepositoryException {
         ModeShapeLock lock = getLowestLockAlongPath(session.node(session.absolutePathFor(absPath)), false);
         if (lock != null) return lock.lockFor(session);
         throw new LockException(JcrI18n.notLocked.text(absPath));
@@ -178,10 +179,11 @@ class JcrLockManager implements LockManager {
         return lock == null ? null : lock.lockFor(session);
     }
 
-    private ModeShapeLock getLowestLockAlongPath(final AbstractJcrNode node, boolean skipExpiredLocks)
+    private ModeShapeLock getLowestLockAlongPath( final AbstractJcrNode node,
+                                                  boolean skipExpiredLocks )
         throws PathNotFoundException, AccessDeniedException, RepositoryException {
         session.checkLive();
-       
+
         SessionCache sessionCache = session.cache();
         NodeCache cache = sessionCache;
         NodeKey nodeKey = node.key();
@@ -262,10 +264,13 @@ class JcrLockManager implements LockManager {
         if (!node.isLockable()) {
             throw new LockException(JcrI18n.nodeNotLockable.text(node.location()));
         }
+
+        session.checkPermission(session.workspaceName(), node.path(), ModeShapePermissions.LOCK_MANAGEMENT);
+
         if (node.isLocked()) {
-            throw new LockException(JcrI18n.alreadyLocked.text(node.location()));            
+            throw new LockException(JcrI18n.alreadyLocked.text(node.location()));
         }
-        if (node.isNew()|| node.isModified()) {
+        if (node.isNew() || node.isModified()) {
             throw new InvalidItemStateException(JcrI18n.changedNodeCannotBeLocked.text(node.location()));
         }
 
@@ -286,6 +291,8 @@ class JcrLockManager implements LockManager {
     public void unlock( AbstractJcrNode node )
         throws PathNotFoundException, LockException, AccessDeniedException, InvalidItemStateException, RepositoryException {
 
+        session.checkPermission(session.workspaceName(), node.path(), ModeShapePermissions.LOCK_MANAGEMENT);
+
         if (node.isModified()) {
             throw new InvalidItemStateException(JcrI18n.changedNodeCannotBeUnlocked.text(node.getPath()));
         }
@@ -296,7 +303,7 @@ class JcrLockManager implements LockManager {
             try {
                 session.checkPermission(session.workspaceName(), node.path(), ModeShapePermissions.UNLOCK_ANY);
             } catch (AccessDeniedException e) {
-                //expected by the TCK
+                // expected by the TCK
                 throw new LockException(e);
             }
         }
