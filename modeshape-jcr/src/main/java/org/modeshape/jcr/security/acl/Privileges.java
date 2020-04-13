@@ -154,6 +154,8 @@ public class Privileges {
         actions.put(ModeShapePermissions.READ_ACCESS_CONTROL, readAccessControl);
         actions.put(ModeShapePermissions.REMOVE_CHILD_NODES, removeChildNodes);
         actions.put(ModeShapePermissions.REMOVE, removeNode);
+        actions.put(ModeShapePermissions.LOCK_MANAGEMENT, lockManagement);
+        actions.put(ModeShapePermissions.VERSION_MANAGEMENT, versionManagement);
     }
     
     /**
