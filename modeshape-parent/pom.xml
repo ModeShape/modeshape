@@ -98,7 +98,7 @@
         <version.org.odftoolkit.odfdom-java>0.8.7</version.org.odftoolkit.odfdom-java>
         <version.org.odftoolkit.simple-odf>0.6.6</version.org.odftoolkit.simple-odf>
 
-        <version.junit>4.12</version.junit>
+        <version.junit>4.13.1</version.junit>
         <version.org.hamcrest>1.3</version.org.hamcrest>
         <version.org.mockito>1.10.19</version.org.mockito>
         <version.org.easymock>3.4</version.org.easymock>
