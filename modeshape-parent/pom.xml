@@ -202,7 +202,7 @@
         <version.gwt.maven.plugin>2.5.1</version.gwt.maven.plugin>
         <version.org.wildfly.plugings.wildfly-maven-plugin>1.1.0.Final</version.org.wildfly.plugings.wildfly-maven-plugin>
         <version.fabric8.docker.plugin>0.19.0</version.fabric8.docker.plugin>
-        <version.org.elasticsearch>2.4.5</version.org.elasticsearch>
+        <version.org.elasticsearch>6.8.13</version.org.elasticsearch>
         <version.jna>4.1.0</version.jna>
         <!--The name of the modeshape-client artifact used by tools-->
         <client.artifactId>modeshape-client</client.artifactId>
