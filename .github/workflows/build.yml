@@ -2,7 +2,11 @@
 
 name: Build
 
-on: [ push, pull_request ]
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
 
 jobs:
   build:
@@ -15,13 +19,5 @@ jobs:
       uses: actions/setup-java@v1
       with:
         java-version: 1.8
-    - name: Cache Maven packages
-      uses: actions/cache@v2
-      with:
-        path: ~/.m2
-        key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
-        restore-keys: ${{ runner.os }}-m2
     - name: Build with Maven
       run: mvn -s settings.xml clean install -Pintegration -Ppersistence-integration -DpreferIpv4 -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer=warn -B
-      env:
-        MAVEN_OPTS: "-Xms1524M -Xmx1524M"
