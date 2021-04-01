@@ -856,7 +856,8 @@ public class FileSystemConnectorTest extends SingleUseAbstractTest {
         assertThat(content.getName(), is("jcr:content"));
         assertThat(content.getIndex(), is(1));
         assertThat(content.getPrimaryNodeType().getName(), is("nt:resource"));
-        assertThat(content.getProperty("jcr:lastModified").getLong(), is(file.lastModified()));
+        // Round modified timestamp to seconds so precision matches
+        assertThat(content.getProperty("jcr:lastModified").getLong() / 1000 * 1000, is(file.lastModified()));
     }
 
     private void assertPathNotFound( String path ) throws Exception {
