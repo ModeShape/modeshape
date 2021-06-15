@@ -166,7 +166,7 @@
         <version.org.jboss.ironjacamar>1.0.13.Final</version.org.jboss.ironjacamar>
         <version.com.datastax.cassandra>2.0.0-rc2</version.com.datastax.cassandra>
         <version.org.apache.cassandra>2.0.3</version.org.apache.cassandra>
-        <version.org.apache.pdfbox>2.0.3</version.org.apache.pdfbox>
+        <version.org.apache.pdfbox>2.0.24</version.org.apache.pdfbox>
         
         <version.com.h2>1.4.191</version.com.h2>
         <version.postgresql.9>9.2-1002.jdbc4</version.postgresql.9>
