@@ -2,7 +2,7 @@ language: java
 
 # Our Git tests require information from early branches/versions so we need to make sure Travis gets everything when cloning
 git:
-  depth: 9999
+  depth: 3
    
 # Travis by defaults runs the following `install` command:
 #
