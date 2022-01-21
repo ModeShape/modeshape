@@ -168,7 +168,7 @@
         <version.org.apache.cassandra>2.0.3</version.org.apache.cassandra>
         <version.org.apache.pdfbox>2.0.3</version.org.apache.pdfbox>
         
-        <version.com.h2>1.4.191</version.com.h2>
+        <version.com.h2>2.1.210</version.com.h2>
         <version.postgresql.9>9.2-1002.jdbc4</version.postgresql.9>
         <version.mysql>5.1.39</version.mysql>
         <version.com.oracle>11.2.0.1.0</version.com.oracle>
