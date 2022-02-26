@@ -165,7 +165,7 @@
         <version.org.jboss.spec.javax.resource.jboss-connector-api_1.7_spec>1.0.0.Final</version.org.jboss.spec.javax.resource.jboss-connector-api_1.7_spec>
         <version.org.jboss.ironjacamar>1.0.13.Final</version.org.jboss.ironjacamar>
         <version.com.datastax.cassandra>2.0.0-rc2</version.com.datastax.cassandra>
-        <version.org.apache.cassandra>2.0.3</version.org.apache.cassandra>
+        <version.org.apache.cassandra>3.0.26</version.org.apache.cassandra>
         <version.org.apache.pdfbox>2.0.3</version.org.apache.pdfbox>
         
         <version.com.h2>1.4.191</version.com.h2>
