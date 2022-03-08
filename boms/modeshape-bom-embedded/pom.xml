@@ -87,7 +87,7 @@
         <version.org.eclipse.emf.ecore-xmi>2.4.1</version.org.eclipse.emf.ecore-xmi>
         <version.org.javassist>3.18.1-GA</version.org.javassist>
         <version.org.jaudiotagger>2.0.3</version.org.jaudiotagger>
-        <version.org.apache.poi>3.15</version.org.apache.poi>
+        <version.org.apache.poi>5.2.1</version.org.apache.poi>
         <version.com.beust.jcommander>1.5</version.com.beust.jcommander>
         <version.wsdl4j>1.6.3</version.wsdl4j>
         <version.org.apache.lucene>6.4.1</version.org.apache.lucene>
